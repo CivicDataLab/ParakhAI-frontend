@@ -26,7 +26,7 @@ export default function Home() {
       {!session ? (
         <div>
           <p className="home-subtitle">
-            Welcome to ParakhAI Platform
+            AI Authentication Platform
           </p>
           <button 
             onClick={() => signIn("keycloak")}

@@ -1,0 +1,300 @@
+@import "tailwindcss";
+
+/* Import your design tokens first - these are your source of truth */
+@import url('./tokens/_variables.css');
+@import url('opub-ui/dist/assets/styles.css');
+
+/* Map CSS variables to Tailwind v4 utilities */
+@theme {
+  /* Colors - reference from variables.css */
+  --color-primary-purple: var(--purple-primary-color);
+  --color-secondary-green: var(--green-secondary-color);
+  
+  /* Spacing */
+  --spacing-7: var(--space-7);
+  --spacing-30: var(--header-height);
+  --spacing-256: 256px;
+  --spacing-592: 592px;
+  
+  /* Font sizes */
+  --font-size-32: 32px;
+  
+  /* Line heights */
+  --line-height-40: 40px;
+}
+
+/* Role card styles - flex-shrink was the issue, not the approach */
+.role-card {
+  width: 592px;
+  height: 250px;
+  flex-shrink: 0;
+}
+
+.role-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Welcome section - complex container needs custom class */
+.welcome-section {
+  width: 256px;
+  background: white;
+  border: 1px solid rgba(209, 213, 219, 1.4);
+  border-radius: 16px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+/* CDL Logo container */
+.cdl-logo-container {
+  width: 140px;
+  height: 140px;
+  border-radius: 8px;
+  border: 2px solid #F2F2F5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Welcome Divider */
+.welcome-divider > div {
+  width: 100%;
+  border-color: #F2F2F5;
+}
+
+/* Metric Card */
+.metric-card {
+  width: 227px;
+  height: 120px;
+  background: #3B00FF0D;
+  border-radius: 16px;
+  padding: 16px;
+  border: 0.5px solid #C4B8F3;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.metric-card-label {
+  color: #60646C;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.metric-card-value {
+  color: #6849EE;
+  font-size: 40px;
+  line-height: 48px;
+  font-weight: 500;
+}
+
+/* Add New Model button */
+.add-model-button {
+  background-color: #E2F5C4;
+  color: #000000;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+/* Audit table styles */
+.audit-model-link {
+  color: #2563EB;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.test-result-bar {
+  width: 60px;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+}
+
+.test-result-pass {
+  width: 50%;
+  height: 100%;
+  background-color: #4CE64F;
+}
+
+.test-result-fail {
+  width: 50%;
+  height: 100%;
+  background-color: #E93D82;
+}
+
+.auditor-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #644FC1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* Page layout styles */
+.main-content-wrapper {
+  padding-top: 32px;
+}
+
+.section-margin-bottom {
+  margin-bottom: 48px;
+}
+
+.section-title-margin {
+  margin-bottom: 32px;
+}
+
+.overview-heading {
+  font-weight: bold;
+  font-size: 24px;
+}
+
+.model-card {
+  width: 500px;
+  height: 302px;
+  background: #FFFFFF;
+  border-radius: 16px;
+  border: 0.5px solid #C4B8F3;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.new-audit-button {
+  background-color: #5746AF;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  width: 217px;
+  height: 36px;
+  padding: 8px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.view-details-button {
+  border: none !important;
+  background-color: transparent !important;
+}
+
+.audits-section {
+  max-width: 1060px;
+  margin-bottom: 48px;
+}
+
+/* Homepage styles */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.home-page-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.home-main-content {
+  text-align: center;
+  margin-top: 5rem;
+  padding: 20px;
+  flex-grow: 1;
+}
+
+.home-title {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #6366f1;
+}
+
+.home-subtitle {
+  margin-bottom: 2rem;
+  font-size: 1.2rem;
+}
+
+.sign-in-button {
+  padding: 12px 32px;
+  font-size: 16px;
+  cursor: pointer;
+  background-color: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.sign-out-button {
+  padding: 12px 32px;
+  font-size: 16px;
+  cursor: pointer;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.greeting-title {
+  margin-bottom: 1rem;
+}
+
+.greeting-text {
+  margin-bottom: 2rem;
+  color: #666;
+}
+
+.text-white {
+  color: #ffffff;
+}
+
+/* Welcome Section styles */
+.welcome-text {
+  font-family: 'Inter, sans-serif';
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.nav-item-link {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.nav-icon-inactive {
+  filter: brightness(0) saturate(100%) invert(28%) sepia(6%) saturate(698%) hue-rotate(184deg) brightness(94%) contrast(89%);
+  opacity: 1;
+}
+
+.nav-icon-active {
+  filter: brightness(0) invert(1);
+}
+
+
+
+
