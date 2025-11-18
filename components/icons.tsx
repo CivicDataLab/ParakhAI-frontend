@@ -36,6 +36,8 @@ import {
   IconLayoutSidebarLeftCollapse,
   IconLayoutSidebarLeftExpand,
   IconLink,
+  IconTestPipe,
+  IconDiscountCheck,
   IconLoader,
   IconMapPin,
   IconMenu2,
@@ -133,4 +135,6 @@ export const Icons: {
   networkNode: IconNetwork,
   document: IconFileText,
   userProfile: IconUserCircle,
+  testPipe: IconTestPipe,
+  discountCheck: IconDiscountCheck,
 };

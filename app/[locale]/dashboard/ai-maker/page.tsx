@@ -18,7 +18,8 @@ import {
   IconUsers, 
   IconPlus, 
   IconCheck, 
-  IconTool 
+  IconTool,
+  IconMoodSad 
 } from '@tabler/icons-react';
 import { createColumnHelper } from '@tanstack/react-table';
 import Link from 'next/link';
@@ -36,51 +37,63 @@ type Audit = {
   auditor: string;
 };
 
-const AIMakerDashboard = () => {
-  const metrics = [
-    { label: 'Audit Runs', value: '16' },
-    { label: 'Test Cases', value: '1250' },
-    { label: 'Models Covered', value: '4' },
-    { label: 'Issues Flagged', value: '45' },
-  ];
+type Model = {
+  title: string;
+  desc: string;
+  date: string;
+  testCases: string;
+  audits: string;
+  tags: string[];
+  version: string;
+};
 
-  const models = [
-    { 
-      title: 'Region-al', 
-      desc: 'Context-aware translations between regional and less-common languages.',
-      date: '21 Sep 2024',
-      testCases: '1023 test cases',
-      audits: '2 audits',
-      tags: ['Translator', 'Low-Resource'],
-      version: 'Ver. 1.2.1',
-    },
-    { 
-      title: 'LinguaFlow', 
-      desc: 'Multilingual model for smooth real-time translation across major world languages.',
-      date: '21 Sep 2024',
-      testCases: '1023 test cases',
-      audits: '2 audits',
-      tags: ['Translator'],
-      version: 'Ver. 1.2.1',
-    },
-    { 
-      title: 'Transcend', 
-      desc: 'High-fidelity translation model for business and legal documentation.',
-      date: '21 Sep 2024',
-      testCases: '1023 test cases',
-      audits: '2 audits',
-      tags: ['Translator', 'Technical'],
-      version: 'Ver. 1.2.1',
-    },
-    { 
-      title: 'Mediscribe', 
-      desc: 'Language model to interpret clinical text and generate patient-friendly summaries.',
-      date: '21 Sep 2024',
-      testCases: '1023 test cases',
-      audits: '2 audits',
-      tags: ['Paraphrase', 'Technical'],
-      version: 'Ver. 1.2.1',
-    },
+const AIMakerDashboard = () => {
+   const models: Model[] = [];
+  //   { 
+  //     title: 'Region-al', 
+  //     desc: 'Context-aware translations between regional and less-common languages.',
+  //     date: '21 Sep 2024',
+  //     testCases: '1023 test cases',
+  //     audits: '2 audits',
+  //     tags: ['Translator', 'Low-Resource'],
+  //     version: 'Ver. 1.2.1',
+  //   },
+  //   { 
+  //     title: 'LinguaFlow', 
+  //     desc: 'Multilingual model for smooth real-time translation across major world languages.',
+  //     date: '21 Sep 2024',
+  //     testCases: '1023 test cases',
+  //     audits: '2 audits',
+  //     tags: ['Translator'],
+  //     version: 'Ver. 1.2.1',
+  //   },
+  //   { 
+  //     title: 'Transcend', 
+  //     desc: 'High-fidelity translation model for business and legal documentation.',
+  //     date: '21 Sep 2024',
+  //     testCases: '1023 test cases',
+  //     audits: '2 audits',
+  //     tags: ['Translator', 'Technical'],
+  //     version: 'Ver. 1.2.1',
+  //   },
+  //   { 
+  //     title: 'Mediscribe', 
+  //     desc: 'Language model to interpret clinical text and generate patient-friendly summaries.',
+  //     date: '21 Sep 2024',
+  //     testCases: '1023 test cases',
+  //     audits: '2 audits',
+  //     tags: ['Paraphrase', 'Technical'],
+  //     version: 'Ver. 1.2.1',
+  //   },
+  // ];
+
+  const hasModels = models.length > 0;
+
+  const metrics = [
+    { label: 'Audit Runs', value: hasModels ? '16' : '--' },
+    { label: 'Test Cases', value: hasModels ? '1250' : '--' },
+    { label: 'Models Covered', value: hasModels ? '4' : '--' },
+    { label: 'Issues Flagged', value: hasModels ? '45' : '--' },
   ];
 
   // Create column helper
@@ -190,13 +203,13 @@ const AIMakerDashboard = () => {
       <BreadCrumbs
         data={[
           { href: '/', label: 'Home' },
-          { href: '/dashboard', label: 'Dashboard' },
+          { href: '/dashboard', label: 'User Dashboard' },
           { href: '#', label: 'AI Maker' },
         ]}
       />
 
       {/* Sidebar and Content Layout */}
-      <div className="flex flex-1 gap-8 px-8 main-content-wrapper">
+      <div className="flex flex-1 gap-8 px-8 main-content-wrapper ai-maker-container">
         {/* Sidebar */}
         <WelcomeSection />
 
@@ -208,7 +221,7 @@ const AIMakerDashboard = () => {
           </div>
 
           {/* Metrics */}
-          <div className="grid grid-cols-4 gap-4 mb-12">
+          <div className="grid grid-cols-4 gap-4 mb-12 metrics-grid">
             {metrics.map((m) => (
               <div key={m.label} className="metric-card">
                 <p className="metric-card-label">{m.label}</p>
@@ -216,20 +229,22 @@ const AIMakerDashboard = () => {
               </div>
             ))}
           </div>
-
           {/* Models Section */}
           <div className="section-margin-bottom">
-            <div className="flex items-center section-title-margin">
-              <Text variant="headingLg" as="h2" fontWeight="bold">Models</Text>
-              <div className="ml-[75%]">
-                <button className="add-model-button">
-                  Add A New Model
-                </button>
-              </div>
+            <div className="flex items-center justify-between section-title-margin">
+              <Text variant="headingLg" as="h2" fontWeight="bold">Models</Text> 
+              {hasModels && (
+                <div className="add-model-button-wrapper">
+                  <button className="add-model-button">
+                    Add A New Model
+                  </button>
+                </div>
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-6">
-              {models.map((model) => (
-                <div key={model.title} className="model-card">
+            {hasModels ? (
+              <div className="grid grid-cols-2 gap-6 models-grid">
+                {models.map((model) => (
+                  <div key={model.title} className="model-card">
                   <Text variant="headingMd" color="highlight" fontWeight="bold">{model.title}</Text>
                   
                   {/* Metadata */}
@@ -239,11 +254,11 @@ const AIMakerDashboard = () => {
                       <Text variant="bodySm">{model.date}</Text>
                     </div>
                     <div className="flex items-center gap-2">
-                    <img src="/images/icons/tabler-icon-test-pipe.png" alt="Test Cases" width={20} height={20} />
+                      <img src="/images/icons/tabler-icon-test-pipe.png" alt="Test Cases" width={20} height={20} />
                       <Text variant="bodySm">{model.testCases}</Text>
                     </div>
                     <div className="flex items-center gap-2">
-                    <img src="/images/icons/tabler-icon-discount-check.png" alt="Audits" width={20} height={20} />
+                      <img src="/images/icons/tabler-icon-discount-check.png" alt="Audits" width={20} height={20} />
                       <Text variant="bodySm">{model.audits}</Text>
                     </div>
                   </div>
@@ -287,24 +302,46 @@ const AIMakerDashboard = () => {
                 </div>
               ))}
             </div>
-          </div>
+          ) : (
+            <div className="ai-maker-empty-state">
+              <div className="ai-maker-empty-icon">
+                <img
+                  src="/images/icons/mood-empty.png"
+                  alt="No models"
+                  width={70}
+                  height={70}
+                />
+              </div>
+              <Text as="p" className="ai-maker-empty-title">
+                You have no registered AI models.
+                <br />
+                Register your first model to get started!
+              </Text>
+              <button className="add-model-button ai-maker-empty-button">
+                Add A New Model
+              </button>
+            </div>
+          )}
+        </div>
 
           {/* Audits Table Section */}
-          <div className="audits-section">
-            <div className="flex justify-between items-center mb-4">
-              <Text variant="headingLg" as="h2">Last 10 Audits</Text>
-              <a href="/audits" className="text-blue-600">See All</a>
+          {hasModels && (
+            <div className="audits-section">
+              <div className="flex justify-between items-center mb-4">
+                <Text variant="headingLg" as="h2">Last 10 Audits</Text>
+                <a href="/audits" className="text-blue-600">See All</a>
+              </div>
+              <DataTable
+                rows={auditData}
+                columns={columns}
+                hoverable={true}
+                sortColumns={['model', 'auditTime']}
+                defaultSortDirection="asc"
+                hideSelection={true}
+                hideFooter={true}
+              />
             </div>
-            <DataTable
-              rows={auditData}
-              columns={columns}
-              hoverable={true}
-              sortColumns={['model', 'auditTime']}
-              defaultSortDirection="asc"
-              hideSelection={true}
-              hideFooter={true}
-            />
-          </div>
+          )}
         </div>
       </div>
     </div>

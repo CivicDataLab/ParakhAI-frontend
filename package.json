@@ -2,10 +2,10 @@
   "name": "parakh_ai",
   "version": "1.0.0",
   "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "dev:fresh": "graphql-codegen --config ./config/codegen.ts && next dev",
-    "dev:turbo": "next dev --turbo",
+    "scripts": {
+    "dev": "next dev -p 3000",
+    "dev:fresh": "graphql-codegen --config ./config/codegen.ts && next dev -p 3000",    
+    "dev:turbo": "next dev --turbo -p 3000",
     "build": "graphql-codegen --config ./config/codegen.ts && next build",
     "start": "next start",
     "lint": "next lint",

@@ -30,10 +30,10 @@ const MainFooter = () => {
   
   return (
     <div className="bg-primary-purple">
-      <div className="w-full max-w-[1440px] mx-auto h-[88px] py-6 px-[112px]">
-        <div className="flex items-center justify-between h-full">
+      <div className="footer-container w-full max-w-[1440px] mx-auto h-[88px] py-6 px-[112px]">
+        <div className="footer-inner flex items-center justify-between h-full">
           {/* Left: Footer Links */}
-          <div className="flex items-center gap-8 -ml-20">
+          <div className="footer-links flex items-center gap-8 -ml-20">
             <Link href={'/sitemap'} className="hover:opacity-80 transition-opacity text-white text-[14px] leading-5 font-normal">
               SITEMAP
             </Link>
@@ -49,7 +49,7 @@ const MainFooter = () => {
           </div>
 
           {/* Center: Made by CivicDataLab and Social Media Icons */}
-          <div className="flex items-center gap-1">
+          <div className="footer-center flex items-center gap-1">
             <Link
               href={'https://www.civicdatalab.in'}
               target="_blank"
@@ -66,7 +66,7 @@ const MainFooter = () => {
             </Link>
             
             {/* Social Media Icons */}
-            <div className="flex items-center gap-[10px] ml-6">
+            <div className="footer-social flex items-center gap-[10px] ml-6">
               {socialMedia.map((item, index) => (
                 <Link
                   key={index}
