@@ -48,7 +48,10 @@ type Model = {
 };
 
 const AIMakerDashboard = () => {
-   const models: Model[] = [];
+  const aiMakerBaseUrl = process.env.NEXT_PUBLIC_AI_MAKER_URL || 'https://dev.civicdataspace.in/dashboard';
+  const addModelUrl = aiMakerBaseUrl.replace(/\/$/, '');
+
+   const models: Model[] = []
   //   { 
   //     title: 'Region-al', 
   //     desc: 'Context-aware translations between regional and less-common languages.',
@@ -235,94 +238,101 @@ const AIMakerDashboard = () => {
               <Text variant="headingLg" as="h2" fontWeight="bold">Models</Text> 
               {hasModels && (
                 <div className="add-model-button-wrapper">
-                  <button className="add-model-button">
+                  <Link 
+                    href={addModelUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="add-model-button"
+                    style={{ textDecoration: 'none', display: 'inline-block' }}
+                  >
                     Add A New Model
-                  </button>
+                  </Link>
                 </div>
               )}
             </div>
             {hasModels ? (
               <div className="grid grid-cols-2 gap-6 models-grid">
-                {models.map((model) => (
-                  <div key={model.title} className="model-card">
-                  <Text variant="headingMd" color="highlight" fontWeight="bold">{model.title}</Text>
-                  
-                  {/* Metadata */}
-                  <div className="flex gap-4">
-                    <div className="flex items-center gap-2">
-                      <img src="/images/icons/Frame 16.png" alt="Calendar" width={20} height={20} />
-                      <Text variant="bodySm">{model.date}</Text>
+                {models.map((model) => {
+                  // Card metadata (top row inside card)
+                  const metadataContent = [
+                    {
+                      icon: Icons.calendar,
+                      label: 'Created',
+                      value: model.date,
+                      tooltip: model.date,
+                    },
+                    {
+                      icon: Icons.testPipe,
+                      label: 'Test cases',
+                      value: model.testCases,
+                      tooltip: model.testCases,
+                    },
+                    {
+                      icon: Icons.discountCheck,
+                      label: 'Audits',
+                      value: model.audits,
+                      tooltip: model.audits,
+                    },
+                  ] as any;
+
+                  // Card footer info (bottom row inside card)
+                  const footerContent = [
+                    {
+                      icon: '/images/icons/Ellipse 4.png',
+                      label: 'Owner',
+                      tooltip: 'Owner',
+                    },
+                  ];
+
+                  const type = model.tags.map((tag) => ({
+                    label: tag,
+                    fillColor: '#E2F5C4',
+                    borderColor: '#E2F5C4',
+                  }));
+
+                  return (
+                    <div key={model.title} className="model-card">
+                      <Card
+                        title={model.title}
+                        description={model.desc}
+                        variation="collapsed"
+                        iconColor="highlight"
+                        metadataContent={metadataContent}
+                        footerContent={footerContent}
+                        type={type}
+                        tag={model.tags}
+                      />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <img src="/images/icons/tabler-icon-test-pipe.png" alt="Test Cases" width={20} height={20} />
-                      <Text variant="bodySm">{model.testCases}</Text>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <img src="/images/icons/tabler-icon-discount-check.png" alt="Audits" width={20} height={20} />
-                      <Text variant="bodySm">{model.audits}</Text>
-                    </div>
-                  </div>
-                  
-                  {/* Description */}
-                  <Text variant="bodyMd">{model.desc}</Text>
-                  
-                  {/* Tags */}
-                  <div className="flex gap-2">
-                    {model.tags.map((tag) => (
-                      <Tag key={tag} variation="filled" fillColor="#E2F5C4" textColor="#000000">
-                        {tag}
-                      </Tag>
-                    ))}
-                  </div>
-                  
-                  {/* Version and Owner/Auditors */}
-                  <div className="flex items-center justify-between">
-                    <Text variant="bodySm" color="subdued">{model.version}</Text>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <Text variant="bodySm" color="subdued">Owner:</Text>
-                        <img src="/images/icons/Ellipse 4.png" alt="Owner" width={32} height={32} />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Text variant="bodySm" color="subdued">Auditors:</Text>
-                        <Avatar size="small" name="User 1" showInitials={true} />
-                        <Avatar size="small" name="User 2" showInitials={true} />
-                        <Text variant="bodySm" color="subdued">+3</Text>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Buttons */}
-                  <div className="flex justify-between items-center">
-                    <Button kind="secondary" className="view-details-button">View Details</Button>
-                    <button className="new-audit-button">
-                      New Audit
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="ai-maker-empty-state">
-              <div className="ai-maker-empty-icon">
-                <img
-                  src="/images/icons/mood-empty.png"
-                  alt="No models"
-                  width={70}
-                  height={70}
-                />
+                  );
+                })}
               </div>
-              <Text as="p" className="ai-maker-empty-title">
-                You have no registered AI models.
-                <br />
-                Register your first model to get started!
-              </Text>
-              <button className="add-model-button ai-maker-empty-button">
-                Add A New Model
-              </button>
-            </div>
-          )}
-        </div>
+            ) : (
+              <div className="ai-maker-empty-state">
+                <div className="ai-maker-empty-icon">
+                  <img
+                    src="/images/icons/mood-empty.png"
+                    alt="No models"
+                    width={70}
+                    height={70}
+                  />
+                </div>
+                <Text as="p" className="ai-maker-empty-title">
+                  You have no registered AI models.
+                  <br />
+                  Register your first model to get started!
+                </Text>
+                <Link 
+                  href={addModelUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="add-model-button ai-maker-empty-button"
+                  style={{ textDecoration: 'none', display: 'inline-block' }}
+                >
+                  Add A New Model
+                </Link>
+              </div>
+            )}
+          </div>
 
           {/* Audits Table Section */}
           {hasModels && (

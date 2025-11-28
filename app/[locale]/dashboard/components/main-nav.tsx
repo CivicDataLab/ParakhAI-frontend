@@ -36,7 +36,7 @@ const MainNav = () => {
 
   return (
     <>
-      <nav className="bg-primary-purple relative z-[9999]">
+      <nav className="bg-primary-purple relative z-[9999] sticky top-0">
         <div className="max-w-7xl mx-auto px-12 sm:px-16 lg:px-32">
           <div className="desktop-nav-container relative flex justify-between items-center h-30 pt-10 pr-10 pb-7 pl-10">
             {/* Mobile Navigation */}

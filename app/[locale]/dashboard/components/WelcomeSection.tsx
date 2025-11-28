@@ -97,7 +97,7 @@ const WelcomeSection = () => {
         </div>
         
         {/* Welcome Text */}
-        <p className="mb-2 text-[#0A0704] welcome-text">
+        <p className="welcome-text">
           Welcome, CivicDataLab
         </p>
         

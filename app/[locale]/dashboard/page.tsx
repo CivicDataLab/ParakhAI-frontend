@@ -8,14 +8,14 @@ import { Icons } from '@/components/icons';
 import { useDashboardStore } from '@/config/store';
 import { Loading } from '@/components/loading';
 
-const aiMakerBaseUrl = process.env.NEXT_PUBLIC_AI_MAKER_URL;
+// Keep environment variable for later use
+// const aiMakerBaseUrl = process.env.NEXT_PUBLIC_AI_MAKER_URL;
 
 const UserDashboard = () => {
   const { userDetails } = useDashboardStore();
 
-  const aiMakerLink = aiMakerBaseUrl
-    ? `${aiMakerBaseUrl.replace(/\/$/, '')}/organization`
-    : '/dashboard/ai-maker';
+  // For now, use local route. Environment variable will be used later
+  const aiMakerLink = '/dashboard/ai-maker';
 
   const list = [
     {

@@ -27,85 +27,9 @@
   --line-height-40: 40px;
 }
 
-/* Phones: absolutely zero space before footerContent */
-@media (max-width:640px){
-  /* catch ANY element after the hidden Divider */
-  .prompt-card-wrapper :is(a,div) [class*="Divider"] + *,
-  .prompt-card-wrapper :is(a,div) [class*="Divider"] ~ *{
-    margin-top: 0 !important;
-  }
-  /* remove column gap so the last block (footer) has no top space */
-  .prompt-card-wrapper > :is(a,div) > .flex.flex-col{
-    gap: 0 !important;
-  }
-  /* keep a tiny rhythm between earlier blocks, but NONE before footer */
-  .prompt-card-wrapper > :is(a,div) > .flex.flex-col > :not(:last-child){
-    margin-bottom: 6px !important;
-  }
-  /* footer row itself stays flush */
-  .prompt-card-wrapper > :is(a,div) > .flex.flex-col > :last-child{
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    min-height: 0 !important;
-  }
-}
-/* Hard zero above footerContent on phones */
-@media (max-width:640px){
-  /* 1) Nuke any margin re-added after the hidden Divider (for both <a> and <div> wrappers) */
-  .prompt-card-wrapper :is(a,div) [class*="Divider"] + *,
-  .prompt-card-wrapper :is(a,div) [class*="Divider"] ~ *{
-    margin-top: 0 !important;
-  }
-  /* 2) Footer container is the LAST block in the main column stack */
-  .prompt-card-wrapper > :is(a,div) > .flex.flex-col > :last-child{
-    margin-top: 0 !important;          /* zero space before footer container */
-    padding-top: 0 !important;
-  }
-  /* 3) Inside footer container there is often another flex-col (footer + formats) – kill its gap */
-  .prompt-card-wrapper > :is(a,div) > .flex.flex-col > .flex.flex-col{
-    gap: 0 !important;                  /* remove internal 16px gap between rows */
-  }
-  /* 4) The actual footer row itself */
-  .prompt-card-wrapper > :is(a,div) > .flex.flex-col > .flex:last-child{
-    margin-top: 0 !important;           /* keep flush */
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    min-height: 0 !important;
-  }
-  /* 5) Logo chips – no inner padding so the row stays short */
-  .prompt-card-wrapper > :is(a,div) > .flex.flex-col > .flex:last-child :is(img,[class*="h-9"][class*="w-9"]){
-    width: 24px !important;
-    height: 24px !important;
-    padding: 0 !important;
-  }
-}
-/* Ultra-compact footer on phones (no space above/below) */
-@media (max-width:640px){
-  /* collapse the vertical stack more */
-  .prompt-card-wrapper > :is(a,div) > .flex.flex-col{
-    gap: 6px !important;
-  }
-  /* remove ALL space right before the footer row */
-  .prompt-card-wrapper :is(a,div) [class*="Divider"] + * ,
-  .prompt-card-wrapper :is(a,div) [class*="Divider"] ~ * ,
-  .prompt-card-wrapper > :is(a,div) > .flex.flex-col.gap-4 > *:last-child,
-  .prompt-card-wrapper > :is(a,div) > .flex.flex-col > .flex:last-child{
-    margin-top: 0 !important;
-  }
-  /* kill vertical padding inside the footer row */
-  .prompt-card-wrapper > :is(a,div) > .flex.flex-col > .flex:last-child{
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    min-height: 0 !important;
-  }
-  /* remove padding on the logo chips themselves */
-  .prompt-card-wrapper > :is(a,div) > .flex.flex-col > .flex:last-child :is(img,[class*="h-9"][class*="w-9"]){
-    width: 24px !important;
-    height: 24px !important;
-    padding: 0 !important;         /* overrides p-2 or p-[2px] */
-  }
-}
+/* (Legacy prompt-card mobile tweaks removed; consolidated rules live later) */
+/* (More legacy mobile footer tweaks removed to avoid duplication) */
+/* (Older ultra-compact footer block removed; behavior covered by later rules) */
 /* FINAL mobile-only fix for tall card space - works for both <a> and <div> wrappers */
 @media (max-width: 640px){
   /* 0) Make sure we target either anchor or div wrapper */
@@ -119,26 +43,26 @@
   .prompt-card-wrapper :is(a,div) [class*="Divider"] { display: none; }
   .prompt-card-wrapper :is(a,div) [class*="Divider"] + * ,
   .prompt-card-wrapper :is(a,div) [class*="Divider"] ~ * {
-    margin-top: 6px !important;   /* or 0 if you want it flush */
+    margin-top: 6px ;   /* or 0 if you want it flush */
   }
 
   /* 2) Tighten the vertical stack inside the card body */
   .prompt-card-wrapper > :is(a,div) > .flex.flex-col{
-    gap: 10px !important;         /* was gap-4 */
+    gap: 10px ;         /* was gap-4 */
   }
 
   /* 3) Footer block (last flex row) – remove extra space above/below */
   .prompt-card-wrapper > :is(a,div) > .flex.flex-col > .flex:last-child{
-    margin-top: 6px !important;   /* reduce tall jump before footer */
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    min-height: 0 !important;
+    margin-top: 6px ;   /* reduce tall jump before footer */
+    padding-top: 0 ;
+    padding-bottom: 0 ;
+    min-height: 0 ;
   }
 
   /* 4) Smaller footer logos so the row is shorter */
   .prompt-card-wrapper > :is(a,div) :is(img,[class*="h-9"][class*="w-9"]){
-    width: 24px !important;
-    height: 24px !important;
+    width: 24px ;
+    height: 24px ;
   }
 }
 
@@ -148,18 +72,18 @@
   .prompt-card-wrapper > :is(a,div) [class*="Divider"] + div,
   .prompt-card-wrapper > :is(a,div) [class*="Divider"] ~ div,
   .prompt-card-wrapper > :is(a,div) > div.flex.flex-col.gap-4 > div:last-child {
-    margin-top: 0 !important;   /* or 6px if you want a tiny gap */
+    margin-top: 0 ;   /* or 6px if you want a tiny gap */
   }
 
   /* ensure the footer row itself has no extra vertical padding */
   .prompt-card-wrapper > :is(a,div) > .flex.flex-col > .flex:last-child {
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    min-height: 0 !important;
+    padding-top: 0 ;
+    padding-bottom: 0 ;
+    min-height: 0 ;
   }
 
   /* optional: slightly tighten the column stack */
-  .prompt-card-wrapper > :is(a,div) > .flex.flex-col { gap: 8px !important; }
+  .prompt-card-wrapper > :is(a,div) > .flex.flex-col { gap: 8px ; }
 }
 /* Mobile-only footer tightening using exact selectors from DOM */
 @media (max-width: 640px) {
@@ -205,7 +129,7 @@
 
   /* Remove the large spacer above the footer row */
   .prompt-card-wrapper > :is(a, div) > .flex.flex-col.gap-4 > *:last-child { 
-    margin-top: 0 !important; 
+    margin-top: 0 ; 
   }
 
   /* Footer row itself: small padding and small logos */
@@ -215,8 +139,8 @@
     padding-bottom: 6px;
   }
   .prompt-card-wrapper :is(img,[class*="h-9"][class*="w-9"]) {
-    width: 24px !important;
-    height: 24px !important;
+    width: 24px ;
+    height: 24px ;
   }
 
   /* Keep metadata row on a single line and compact */
@@ -242,89 +166,105 @@
 @media (max-width: 640px){
   /* 1) Kill the spacer that pushes the last block down */
   .prompt-card-wrapper > a > .flex.flex-col.gap-4 > *:last-child{
-    margin-top: 0 !important;
+    margin-top: 0 ;
   }
 
   /* 2) Tighten the footer container (the block that holds logos) */
   .prompt-card-wrapper > a > .flex.flex-col > .flex:last-child{
-    margin-top: 6px !important;     /* was 24px via overrides */
-    padding-top: 4px !important;
-    padding-bottom: 4px !important;
+    margin-top: 6px ;     /* was 24px via overrides */
+    padding-top: 4px ;
+    padding-bottom: 4px ;
   }
 
   /* 3) Make logos smaller to reduce footer height */
   .prompt-card-wrapper > a img[class*="h-9"][class*="w-9"],
   .prompt-card-wrapper > a [class*="h-9"][class*="w-9"]{
-    width: 24px !important;
-    height: 24px !important;
+    width: 24px ;
+    height: 24px ;
   }
 
   /* 4) Align footer items tighter */
   .prompt-card-wrapper > a > .flex.flex-col > .flex:last-child .flex{
-    gap: 6px !important;
+    gap: 6px ;
   }
 
   /* 5) Reduce overall card padding on phones only (desktop untouched) */
   .prompt-card-wrapper > a{
-    padding: 12px !important;        /* was 24px */
+    padding: 12px ;        /* was 24px */
   }
 
   /* 6) Reduce internal stack gap (title/metadata/footer) */
   .prompt-card-wrapper > a > .flex.flex-col{
-    gap: 10px !important;            /* was 16px */
+    gap: 10px ;            /* was 16px */
   }
 }
 /* Compact card ONLY on small screens – does not affect desktop */
 @media (max-width: 640px){
 
   /* 1) Stop the card from stretching to the tallest grid item (h-full) */
-  .prompt-card-wrapper{ height: auto !important; }
-  .prompt-card-wrapper > a{ height: auto !important; padding: 12px 12px !important; }
+  .prompt-card-wrapper{ height: auto ; }
+  .prompt-card-wrapper > a{ height: auto ; padding: 12px 12px ; }
 
   /* 2) Reduce internal vertical gaps */
-  .prompt-card-wrapper > a > .flex.flex-col{ gap: 10px !important; }
-  .prompt-card-wrapper .flex.flex-wrap{ row-gap: 6px !important; }
-  .prompt-card-wrapper .flex.flex-wrap.items-center.gap-4{ gap: 8px !important; }
+  .prompt-card-wrapper > a > .flex.flex-col{ gap: 10px ; }
+  .prompt-card-wrapper .flex.flex-wrap{ row-gap: 6px ; }
+  .prompt-card-wrapper .flex.flex-wrap.items-center.gap-4{ gap: 8px ; }
 
   /* 3) Kill large margins introduced by the hidden Divider + last-child spacer */
-  .prompt-card-wrapper > a [class*="Divider"]{ display: none !important; }
-  .prompt-card-wrapper > a [class*="Divider"] + *{ margin-top: 8px !important; } /* was 24px */
-  .prompt-card-wrapper > a > .flex.flex-col.gap-4 > *:last-child{ margin-top: 0 !important; }
+  .prompt-card-wrapper > a [class*="Divider"]{ display: none ; }
+  .prompt-card-wrapper > a [class*="Divider"] + *{ margin-top: 8px ; } /* was 24px */
+  .prompt-card-wrapper > a > .flex.flex-col.gap-4 > *:last-child{ margin-top: 0 ; }
 
   /* 4) Tighten metadata and footer row height */
-  .prompt-card-wrapper .flex.items-center{ min-height: 0 !important; }
-  .prompt-card-wrapper .flex.items-center.gap-1{ line-height: 18px !important; }
+  .prompt-card-wrapper .flex.items-center{ min-height: 0 ; }
+  .prompt-card-wrapper .flex.items-center.gap-1{ line-height: 18px ; }
   .prompt-card-wrapper .flex.items-center.gap-1 svg{ width: 16px; height: 16px; }
 
   /* 5) Smaller footer logos to avoid tall rows */
   .prompt-card-wrapper img[class*="h-9"][class*="w-9"]{
-    width: 28px !important;   /* from 36px */
-    height: 28px !important;
+    width: 28px ;   /* from 36px */
+    height: 28px ;
   }
 
   /* 6) Reduce the “mb-2” above the title/tags area */
-  .prompt-card-wrapper > a [class*="mb-2"]{ margin-bottom: 6px !important; }
+  .prompt-card-wrapper > a [class*="mb-2"]{ margin-bottom: 6px ; }
 
   /* 7) Keep metadata on one line and allow text to ellipsize */
-  .prompt-card-wrapper .flex.flex-wrap.items-center{ flex-wrap: nowrap !important; overflow: hidden; }
+  .prompt-card-wrapper .flex.flex-wrap.items-center{ flex-wrap: nowrap ; overflow: hidden; }
   .prompt-card-wrapper .flex.flex-wrap.items-center > span{ min-width:0; }
   .prompt-card-wrapper .flex.items-center > *:not(svg){ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
   /* 8) Tighten footer row padding/height */
   .prompt-card-wrapper > a > .flex.flex-col > div:last-child{
-    margin-top: 8px !important;
-    padding-top: 6px !important;
-    padding-bottom: 6px !important;
-    min-height: auto !important;
+    margin-top: 8px ;
+    padding-top: 6px ;
+    padding-bottom: 6px ;
+    min-height: auto ;
   }
   .prompt-card-wrapper [class*="py-4"]{
-    padding-top: 8px !important;
-    padding-bottom: 8px !important;
+    padding-top: 8px ;
+    padding-bottom: 8px ;
   }
   /* shrink any rounded icon container that uses h-9 w-9 (not only img) */
   .prompt-card-wrapper [class*="h-9"][class*="w-9"]{
-    width: 28px !important;
-    height: 28px !important;
+    width: 28px ;
+    height: 28px ;
+  }
+
+  /* 9) EXTRA: target Card's exact internal flex layout to kill remaining white space */
+  /* Let cards size to their content instead of h-full */
+  .prompt-card-wrapper > a {
+    height: auto ;
+  }
+
+  /* Stop the main body block (flex-1) from stretching vertically */
+  .prompt-card-wrapper > a > .flex.flex-1.flex-col.gap-4 {
+    flex: 0 0 auto ;
+  }
+
+  /* Remove the mt-auto spacer pushing footer to the bottom */
+  .prompt-card-wrapper > a > .mt-auto.flex.flex-col.gap-4 {
+    margin-top: 0 ;
   }
 }
 /* Breadcrumb visibility rules */
@@ -380,7 +320,8 @@ html.mobile-menu-open .breadcrumbs-ml {
 
 /* Welcome Divider */
 .welcome-divider > div {
-  width: 100%;
+  width: 468px;
+  max-width: 100%;
   border-color: #F2F2F5;
 }
 
@@ -797,155 +738,6 @@ html.mobile-menu-open .breadcrumbs-ml {
   }
 }
 
-/* Mobile: Truncate breadcrumbs with tooltips */
-@media (max-width: 768px) {
-  .breadcrumbs-wrap { 
-    overflow-x: auto; /* Allow horizontal scroll if needed, but prioritize showing last item */
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .breadcrumbs-inner { 
-    overflow-x: visible; /* Don't hide horizontal overflow - allow last item to show */
-    overflow-y: hidden;
-    display: flex;
-    justify-content: flex-start; /* Start from left */
-    align-items: center;
-    position: relative;
-    /* Ensure container allows last item to be visible */
-    min-width: 0;
-  }
-  
-  /* Make BreadcrumbList a flex container that ensures last item is visible */
-  .breadcrumbs-inner [class*="BreadcrumbList"] {
-    display: flex !important;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: nowrap;
-    min-width: 0; /* Allow shrinking */
-    width: 100%;
-    justify-content: flex-start;
-    /* Ensure we can see the last item by allowing horizontal scroll if needed */
-    position: relative;
-  }
-  
-  /* When content overflows, scroll to show last item */
-  .breadcrumbs-inner [class*="BreadcrumbList"]:after {
-    content: '';
-    flex-shrink: 0;
-    width: 0;
-  }
-  
-  /* Truncate previous breadcrumb links (not the last item) with ellipsis and tooltips */
-  .breadcrumbs-inner .breadcrumb-link-item,
-  .breadcrumbs-inner [class*="BreadcrumbLink"] {
-    max-width: 10ch !important; /* Smaller width for previous items on mobile - prioritize last item */
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-    cursor: pointer; /* Indicate tooltip availability */
-    position: relative; /* For tooltip positioning */
-    flex-shrink: 2 !important; /* Allow links to shrink more aggressively to make room */
-    min-width: 0; /* Allow further shrinking */
-    /* Ensure previous items don't take up too much space */
-    flex-basis: auto;
-  }
-  
-  /* Last item (current page) should always be visible and NOT truncated */
-  .breadcrumbs-inner .breadcrumb-last-item,
-  .breadcrumbs-inner [class*="BreadcrumbPage"] {
-    max-width: none !important; /* No width limit for last item */
-    overflow: visible !important; /* Don't hide overflow */
-    text-overflow: clip !important; /* Show full text */
-    white-space: nowrap !important;
-    cursor: default;
-    position: relative;
-    flex-shrink: 0 !important; /* Prevent last item from shrinking */
-    min-width: fit-content !important; /* Allow it to take needed space */
-  }
-  
-  /* Ensure last item container doesn't shrink and is always visible */
-  .breadcrumbs-inner [class*="BreadcrumbItem"]:last-child {
-    flex-shrink: 0 !important;
-    min-width: fit-content !important;
-    order: 999; /* Ensure it's always at the end */
-  }
-  
-  /* Ensure BreadcrumbItem containers allow proper flex behavior */
-  .breadcrumbs-inner [class*="BreadcrumbItem"] {
-    display: inline-flex;
-    flex-shrink: 1; /* Allow previous items to shrink */
-    min-width: 0;
-  }
-  
-  /* Override for last item */
-  .breadcrumbs-inner [class*="BreadcrumbItem"]:last-child {
-    flex-shrink: 0 !important;
-  }
-  
-  /* Ensure tooltips work on mobile - title attribute shows on long-press */
-  .breadcrumb-item,
-  .breadcrumb-item span {
-    cursor: help; /* Show help cursor to indicate tooltip */
-  }
-  
-  /* Make truncated items more accessible for tooltip interaction */
-  .breadcrumbs-inner [class*="BreadcrumbLink"]:hover,
-  .breadcrumbs-inner [class*="BreadcrumbPage"]:hover {
-    opacity: 0.9;
-  }
-  
-  /* Very small screens: Show only first and last items */
-  @media (max-width: 640px) {
-    .breadcrumbs-inner [class*="BreadcrumbList"] { 
-      display: flex; 
-      align-items: center; 
-      gap: 4px;
-      flex-wrap: nowrap; /* Keep single line */
-      min-width: 0; /* Allow flex shrinking */
-    }
-    
-    /* Truncate first item (Home) more on very small screens */
-    .breadcrumbs-inner [class*="BreadcrumbItem"]:first-child .breadcrumb-link-item,
-    .breadcrumbs-inner [class*="BreadcrumbItem"]:first-child [class*="BreadcrumbLink"] {
-      max-width: 10ch !important; /* Even smaller for first item */
-    }
-    
-    /* Hide middle items on very small screens - but ALWAYS show last item */
-    .breadcrumbs-inner [class*="BreadcrumbItem"]:not(:first-child):not(:last-child) { 
-      display: none; 
-    }
-    
-    /* Ensure last item (current page) is always visible and not hidden */
-    .breadcrumbs-inner [class*="BreadcrumbItem"]:last-child {
-      display: inline-flex !important;
-      flex-shrink: 0 !important; /* Don't shrink the last item */
-      min-width: fit-content !important;
-    }
-    
-    /* Last item should be fully visible on very small screens */
-    .breadcrumbs-inner [class*="BreadcrumbItem"]:last-child .breadcrumb-last-item,
-    .breadcrumbs-inner [class*="BreadcrumbItem"]:last-child [class*="BreadcrumbPage"] {
-      max-width: none !important; /* No limit - show full text */
-      min-width: fit-content !important; /* Allow it to take needed space */
-      overflow: visible !important;
-      text-overflow: clip !important;
-    }
-    
-    /* Hide all separators on very small screens - we'll use ellipsis instead */
-    .breadcrumbs-inner [class*="BreadcrumbSeparator"] {
-      display: none;
-    }
-    
-    /* Add ellipsis after first item when middle items are hidden */
-    .breadcrumbs-inner [class*="BreadcrumbItem"]:first-child::after {
-      content: " … ";
-      margin: 0 4px;
-      color: rgb(75, 85, 99);
-    }
-  }
-}
-
 /* 2) Card tightening / text clamping on small screens */
 @supports (-webkit-line-clamp: 1) {
   .prompt-card-wrapper .prompt-page-title,
@@ -958,7 +750,23 @@ html.mobile-menu-open .breadcrumbs-ml {
 }
 
 @media (max-width: 640px) {
-  .prompt-card-wrapper > a { padding: 12px 14px; border-radius: 12px; }
+  /* 1) Let cards size to their content - cancel h-full */
+  .prompt-card-wrapper > a {
+    height: auto ;
+    padding: 12px 14px;
+    border-radius: 12px;
+  }
+
+  /* 2) Stop the body from stretching - cancel flex-1 */
+  .prompt-card-wrapper > a > .flex.flex-1.flex-col.gap-4 {
+    flex: 0 0 auto ;
+  }
+
+  /* 3) Remove the big spacer effect of mt-auto on the footer */
+  .prompt-card-wrapper > a > .mt-auto.flex.flex-col.gap-4 {
+    margin-top: 0 ;
+  }
+
   .prompt-card-wrapper > a > .flex.flex-col { gap: 12px; }
   .prompt-card-wrapper .flex.flex-wrap { row-gap: 6px; column-gap: 8px; }
   .prompt-card-wrapper .flex.items-center { min-width: 0; }
@@ -984,7 +792,7 @@ html.mobile-menu-open .breadcrumbs-ml {
 
 /* 4) Grid breakpoints */
 @media (max-width: 640px) {
-  .prompt-card-grid { grid-template-columns: 1fr !important; }
+  .prompt-card-grid { grid-template-columns: 1fr ; }
 }
 @media (min-width: 641px) and (max-width: 1024px) {
   .prompt-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1055,7 +863,7 @@ html.mobile-menu-open .breadcrumbs-ml {
 }
 .prompt-card-wrapper > a .flex.flex-wrap.items-center.gap-4 > span[class*="gap"] { gap: 4px; }
 
-/* Stronger, order-based overrides without !important - appended at end of file */
+/* Stronger, order-based overrides without  - appended at end of file */
 .prompt-card-wrapper > a .flex.flex-wrap.items-center.gap-4 {
   flex-wrap: nowrap;
   align-items: center;
@@ -1082,7 +890,7 @@ html.mobile-menu-open .breadcrumbs-ml {
   width: 0;
 }
 
-/* === Restore pre-responsive metadata layout (no !important, order wins) === */
+/* === Restore pre-responsive metadata layout (no , order wins) === */
 /* Remove extra gaps inside each metadata item */
 .prompt-card-wrapper > a .flex.flex-wrap.items-center.gap-4 > span {
   gap: 0;
@@ -1188,6 +996,8 @@ html.mobile-menu-open .breadcrumbs-ml {
   .prompt-libraries-content {
     padding: 16px;
     margin-top: 8px;
+    width: 100%;
+    max-width: 100%;
   }
   .prompt-page-header {
     flex-direction: column;
@@ -1314,15 +1124,18 @@ html.mobile-menu-open .breadcrumbs-ml {
   width: 224px;
   height: 24px;
   color: #0A0704;
-  font-family: 'Inter, sans-serif';
+  font-family: Inter, sans-serif;
   font-size: 16px;
   line-height: 24px;
   font-weight: 600;
+  font-style: normal;
+  letter-spacing: 0px;
   text-align: center;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto;
+  vertical-align: middle;
 }
 
 .switch-roles-link {
@@ -1522,6 +1335,68 @@ html.mobile-menu-open .breadcrumbs-ml {
 .prompt-filter-popover-scroll::-webkit-scrollbar-thumb {
   background: rgba(100, 79, 193, 0.24);
   border-radius: 999px;
+}
+
+/* Single‑line, truncating breadcrumbs on small screens – final version */
+@media (max-width: 640px) {
+  .breadcrumbs-wrap {
+    overflow: hidden;
+  }
+
+  .breadcrumbs-inner {
+    display: flex;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.25rem 0.75rem;
+  }
+
+  .breadcrumbs-inner ol,
+  .breadcrumbs-inner [class*="BreadcrumbList"] {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;      /* force single row */
+    gap: 4px;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .breadcrumbs-inner li,
+  .breadcrumbs-inner [class*="BreadcrumbItem"] {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Base truncation for ALL breadcrumb text (links + current page) */
+  .breadcrumbs-inner [class*="BreadcrumbItem"] [class*="BreadcrumbLink"],
+  .breadcrumbs-inner [class*="BreadcrumbItem"] [class*="BreadcrumbPage"],
+  .breadcrumbs-inner [class*="BreadcrumbItem"] [class*="BreadcrumbLink"] span,
+  .breadcrumbs-inner [class*="BreadcrumbItem"] [class*="BreadcrumbPage"] span {
+    display: inline-block;
+    min-width: 0;
+    max-width: 9ch;            /* controls how much text shows */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Clamp last breadcrumb (Prompt Libraries) to a single truncated line */
+  .breadcrumbs-inner .breadcrumb-last-item,
+  .breadcrumbs-inner .breadcrumb-last-item span,
+  .breadcrumbs-inner [class*="BreadcrumbItem"]:last-child [class*="BreadcrumbPage"],
+  .breadcrumbs-inner [class*="BreadcrumbItem"]:last-child [class*="BreadcrumbPage"] span {
+    display: inline-block;
+    max-width: 9ch;       /* adjust if you want more/less text visible */
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 .prompt-filter-popover-header {
@@ -1998,12 +1873,22 @@ html.mobile-menu-open .breadcrumbs-ml {
     min-height: 100vh ;
   }
 
-  /* Make nav sticky on mobile */
+  /* Make nav sticky on mobile - ensure it stays at top when scrolling */
   nav.bg-primary-purple,
-  nav[class*="bg-primary-purple"] {
+  nav[class*="bg-primary-purple"],
+  nav.bg-primary-purple.sticky,
+  nav.sticky {
     position: sticky ;
     top: 0 ;
     z-index: 9999 ;
+    width: 100% ;
+  }
+  
+  /* Responsive nav container padding */
+  nav.bg-primary-purple > div,
+  nav[class*="bg-primary-purple"] > div {
+    padding-left: 1rem ;
+    padding-right: 1rem ;
   }
   
   /* Remove any gap between nav and breadcrumb */
@@ -2012,44 +1897,70 @@ html.mobile-menu-open .breadcrumbs-ml {
     margin-top: 0 ;
   }
   
-  /* Breadcrumbs - SHOW on mobile with same styling as desktop, make sticky below nav */
+  /* Breadcrumbs - Make sticky just below nav on mobile (reduce white gap) */
   .breadcrumbs-wrap {
-    display: flex ;
-    background-color: var(--green-secondary-color) ; /* light green background */
-    height: 2rem ; /* h-8 = 32px */
-    min-height: 2rem ;
-    max-height: 2rem ;
-    margin-top: 0 ;
-    padding-top: 0 ;
     position: sticky ;
-    top: 4.5rem ; /* Stick below nav (approx nav height on mobile) */
+    top: 3.5rem ; /* slightly closer to nav to remove extra white space */
     z-index: 10 ;
+    width: 100% ;
+    background-color: var(--green-secondary-color) ;
   }
+  
+  /* Ensure breadcrumbs inner has proper padding and vertical centering on mobile */
   .breadcrumbs-inner {
-    display: block ;
     padding-left: 1rem ;
     padding-right: 1rem ;
-    height: 2rem ;
-    padding-top: 0.25rem ;
+    padding-top: 0.25rem ;   /* center text vertically */
     padding-bottom: 0.25rem ;
+    width: 100% ;
+    box-sizing: border-box ;
   }
+  
+  /* Fix breadcrumb truncation - all links should truncate with ellipsis */
+  .breadcrumbs-inner .breadcrumb-link-item,
+  .breadcrumbs-inner [class*="BreadcrumbLink"] {
+    max-width: 12ch ; /* Constrain width to allow truncation */
+    min-width: 0 ; /* Allow shrinking for truncation */
+    overflow: hidden ;
+    text-overflow: ellipsis ;
+    white-space: nowrap ;
+  }
+  
+  /* Ensure last item (selected page) is bold and NOT truncated */
+  .breadcrumbs-inner .breadcrumb-last-item,
+  .breadcrumbs-inner [class*="BreadcrumbPage"],
+  .breadcrumbs-inner [class*="BreadcrumbPage"] span {
+    font-weight: bold ; /* Ensure it's bold */
+  }
+  
+  /* Ensure breadcrumb container handles overflow properly */
+  .breadcrumbs-inner {
+    overflow-x: auto ; /* Allow horizontal scroll if needed */
+    overflow-y: hidden ;
+    -webkit-overflow-scrolling: touch ;
+    scrollbar-width: none ; /* Hide scrollbar on Firefox */
+    -ms-overflow-style: none ; /* Hide scrollbar on IE/Edge */
+  }
+  
+  /* Hide scrollbar on webkit browsers */
+  .breadcrumbs-inner::-webkit-scrollbar {
+    display: none ;
+  }
+  
+  .breadcrumbs-inner [class*="BreadcrumbList"] {
+    min-width: 0 ; /* Allow flex shrinking */
+    overflow: visible ; /* Allow last item to show fully */
+    width: 100% ;
+  }
+  
+  /* Ensure breadcrumb wrapper doesn't overflow */
+  .breadcrumbs-wrap {
+    overflow: hidden ; /* Prevent wrapper from causing horizontal scroll */
+  }
+  
+  /* Breadcrumb margin adjustment for mobile */
   .breadcrumbs-ml {
-    display: block ;
     margin-left: 0 ;
-  }
-  /* Ensure breadcrumb text styling is preserved - only last item (BreadcrumbPage) should be bold */
-  .breadcrumbs-wrap [class*="BreadcrumbPage"] span {
-    font-weight: bold ;
-    color: rgb(31, 41, 55) ; /* text-gray-800 */
-  }
-  /* Links should NOT be bold */
-  .breadcrumbs-wrap [class*="BreadcrumbLink"] {
-    color: rgb(75, 85, 99) ; /* text-gray-600 */
-    font-weight: normal;
-  }
-  .breadcrumbs-wrap [class*="BreadcrumbLink"] span {
-    font-weight: normal;
-    color: rgb(75, 85, 99) ; /* text-gray-600 */
   }
 
   .mobile-hamburger-button {
@@ -2342,19 +2253,36 @@ html.mobile-menu-open .breadcrumbs-ml {
 
   .desktop-nav-container {
     height: auto;
-    padding-top: 1.1rem;
-    padding-bottom: 1.1rem;
-    justify-content: flex-start; /* keep logo to the left on mobile */
-    margin-left: -2rem; /* move hamburger and logo slightly to left */
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .desktop-nav-logo {
     margin-left: 0;
+    flex-shrink: 0;
   }
 
   .desktop-nav-logo img {
-    height: 35px;
+    height: 32px;
     width: auto;
+    max-width: 140px;
+    object-fit: contain;
+  }
+  
+  /* Ensure nav container doesn't overflow */
+  nav.bg-primary-purple .max-w-7xl,
+  nav[class*="bg-primary-purple"] .max-w-7xl {
+    width: 100%;
+    max-width: 100%;
+    padding-left: 0;
+    padding-right: 0;
   }
 
   /* Role selection page responsive styles */
@@ -2526,14 +2454,75 @@ html.mobile-menu-open .breadcrumbs-ml {
     font-size: 1.5rem ;
     line-height: 2rem ;
   }
+
+  /* Audit page responsive styles */
+  /* BreadCrumbs sticky behavior is already handled by general mobile styles above */
+  /* Ensure audit page content is responsive */
+  .audit-content {
+    padding: 1rem ;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Make audit name section responsive */
+  .audit-name-section {
+    flex-wrap: wrap ;
+    gap: 1rem;
+  }
+
+  .audit-name-section > div:first-child {
+    flex-wrap: wrap ;
+    width: 100%;
+  }
+
+  .audit-status-container {
+    width: 100%;
+    justify-content: flex-start;
+    margin-left: 0 ;
+    margin-right: 0 ;
+  }
+
+  /* Make tabs responsive */
+  .tabs-container {
+    width: 100% ;
+    max-width: 100% ;
+    flex-wrap: wrap;
+  }
+
+  .audit-config-tab {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    width: auto ;
+  }
+
+  /* Ensure footer is responsive on audit pages */
+  .bg-primary-purple footer,
+  footer .bg-primary-purple {
+    width: 100%;
+  }
+
+  /* Stack wide horizontal groups on small screens to avoid overflow on Audit page */
+  .audit-options-container,
+  .evaluation-modules-label + .flex,
+  .test-input-buttons-container {
+    flex-wrap: wrap ;
+  }
+
+  .evaluation-module-wrapper,
+  .test-cases-table,
+  .mode-of-evaluation-dropdown {
+    width: 100% ;
+    max-width: 100% ;
+  }
+
+  .evaluation-module-dropdown {
+    width: 100% ;
+  }
 }
 
 @media (min-width: 1024px) {
-  /* Breadcrumbs - desktop adjustments (defaults already set in component) */
-  .breadcrumbs-wrap {
-    position: sticky;
-  }
-
   .mobile-hamburger-button {
     display: none ;
   }
@@ -2614,6 +2603,7 @@ html.mobile-menu-open .breadcrumbs-ml {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  margin-left: -170px;
 }
 
 .audit-tag span,
@@ -2646,6 +2636,7 @@ html.mobile-menu-open .breadcrumbs-ml {
 .audit-auto-saved-wrapper img {
   margin-left: -4px;
 }
+
 
 /* Cancel Audit button styling - Body/Medium/Medium */
 .cancel-audit-button {
@@ -2724,10 +2715,13 @@ html.mobile-menu-open .breadcrumbs-ml {
   overflow: visible;
   display: flex;
   gap: 0;
+  width: 996px;
+  max-width: 996px;
   border-top: 2px solid #F2F2F5;
   border-left: 2px solid #F2F2F5;
   border-right: 2px solid #F2F2F5;
   border-radius: 16px 16px 0 0;
+  box-sizing: border-box;
 }
 
 /* Audit Configuration tab styling */
@@ -2736,10 +2730,10 @@ html.mobile-menu-open .breadcrumbs-ml {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  width: 329.33px;
-  min-width: 329.33px;
-  max-width: 329.33px;
-  flex: 0 0 329.33px;
+  width: 332px;
+  min-width: 332px;
+  max-width: 332px;
+  flex: 0 0 332px;
   height: 52px;
   min-height: 52px;
   max-height: 52px;
@@ -2786,9 +2780,9 @@ html.mobile-menu-open .breadcrumbs-ml {
 
 /* Override any conflicting styles */
 button.audit-config-tab {
-  width: 329.33px;
-  min-width: 329.33px;
-  max-width: 329.33px;
+  width: 332px;
+  min-width: 332px;
+  max-width: 332px;
   height: 52px;
   min-height: 52px;
   max-height: 52px;
@@ -2843,7 +2837,7 @@ button.audit-config-tab:last-child.audit-config-tab-active {
 button.audit-config-tab:not(.audit-config-tab-active) {
   padding: 16px;
   border: none;
-  border-bottom: 2px solid #F2F2F5;
+  border-bottom: 1px solid #F2F2F5;
   border-radius: 0;
 }
 
@@ -2890,14 +2884,42 @@ button.audit-config-tab:not(.audit-config-tab-active) {
 
 /* Audit Type label spacing */
 .audit-type-label {
+  width: 1004px;
+  height: 20px;
   margin-bottom: 0;
+  padding: 0;
   display: block;
+  box-sizing: border-box;
+  font-family: Inter;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0px;
+  color: #0A0704;
 }
 
 /* Ensure the label wrapper has proper spacing */
 .audit-type-label [class*="Label"],
 .audit-type-label > * {
   margin-bottom: 0;
+}
+
+.audit-type-label [class*="Text"],
+.audit-type-label [class*="Text"] *,
+.audit-type-label > * {
+  font-family: Inter ;
+  font-weight: 500 ;
+  font-size: 14px ;
+  line-height: 20px ;
+  letter-spacing: 0px ;
+  color: #0A0704 ;
+  margin: 0 ;
+  padding: 0 ;
+}
+
+.audit-type-label span {
+  margin-left: 4px;
+  color: inherit;
 }
 
 /* Spacing between label and options */
@@ -3020,6 +3042,7 @@ label:has(input[value="cultural"]:not(:checked)) {
   box-shadow: none;
 }
 
+/* Audit Name Label - prevent wrapping */
 .audit-name-label {
   font-family: Inter;
   font-weight: 400;
@@ -3027,33 +3050,126 @@ label:has(input[value="cultural"]:not(:checked)) {
   line-height: 20px;
   letter-spacing: 0px;
   color: #0A0704;
-  width: 82px;
-  height: 20px;
-  display: flex;
+  min-width: fit-content;
+  height: auto;
+  display: inline-flex;
   align-items: center;
   vertical-align: middle;
+  white-space: nowrap ; /* Force single line */
+  flex-shrink: 0;
+  overflow: visible; /* Changed from hidden */
 }
 
+/* Ensure Label text doesn't wrap */
+.audit-name-label [class*="Label"],
+.audit-name-label [class*="Text"],
+.audit-name-label label,
+.audit-name-label span {
+  white-space: nowrap ; /* Force single line */
+  overflow: visible; /* Changed from hidden */
+  text-overflow: clip;
+  display: inline-block;
+}
+
+/* Ensure Audit Name section stays on one line */
 .audit-name-input-wrapper {
-  width: auto;
-  max-width: none;
-  min-width: fit-content;
+  width: 100%;
+  max-width: 468px;
+  min-width: 0;
   display: inline-flex;
   flex-direction: column;
   overflow: visible;
   box-sizing: border-box;
-  flex-shrink: 0;
+  flex: 1 1 auto;
+  flex-shrink: 1;
+  margin-top: 2px;
 }
 
 /* Ensure parent container allows expansion */
 .flex.items-center.gap-4.flex-nowrap {
+  flex-wrap: nowrap ;
   min-width: 0;
   overflow: visible;
 }
 
 .flex.items-center.gap-4.flex-nowrap .audit-name-input-wrapper {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Audit Name Section - prevent wrapping and ensure proper layout */
+.audit-name-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: nowrap;
+  width: 100%;
+  overflow: visible;
+  position: relative;
+  max-width: 996px; /* Match tabs container width */
+}
+
+@media (max-width: 1024px) {
+  .audit-name-section {
+    flex-wrap: wrap;
+    max-width: 100%;
+    align-items: flex-start;
+  }
+
+  .audit-name-section > div:first-child {
+    width: 100%;
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .audit-name-section .audit-status-container {
+    width: 100%;
+    justify-content: flex-start;
+    margin-left: 0;
+    margin-right: 0;
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+}
+
+/* Left section: Label + Input + Tag - must stay on one line */
+.audit-name-section > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: nowrap ;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: visible;
+}
+
+/* Ensure the parent container allows proper flex behavior */
+.flex.items-center.justify-between.mb-6.gap-4.audit-name-section,
+.flex.items-center.mb-6.gap-4.flex-nowrap {
+  flex-wrap: nowrap ;
+  overflow: visible;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Audit Status Container - align with tabs, not extreme right */
+.audit-status-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
   flex-shrink: 0;
-  flex-grow: 0;
+  white-space: nowrap;
+  /* Remove the left: 120px positioning that was breaking alignment */
+  position: relative;
+  left: auto ; /* Remove any left positioning */
+}
+
+/* Ensure status container aligns with right edge of tabs */
+.audit-name-section .audit-status-container {
+  margin-left: auto;
+  margin-right: 100px;
 }
 
 /* Style TextField to have only bottom border - remove all other borders */
@@ -3065,20 +3181,44 @@ label:has(input[value="cultural"]:not(:checked)) {
   border-bottom: none;
   box-shadow: none;
   background: transparent;
-  width: auto;
-  max-width: none;
-  min-width: fit-content;
-  box-sizing: content-box;
+  width: 100%;
+  max-width: 300px;
+  min-width: 0;
+  box-sizing: border-box;
   overflow: visible;
-  flex-shrink: 0;
+  flex-shrink: 1;
   text-overflow: clip;
+}
+
+@media (max-width: 768px) {
+  .audit-name-input-wrapper [class*="TextField"],
+  .audit-name-input-wrapper [class*="TextField"] > div,
+  .audit-name-input-wrapper [class*="Input"] {
+    max-width: 100%;
+  }
+
+  .audit-name-input-wrapper input {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .audit-name-section > div:first-child {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .audit-name-section .audit-status-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 /* Style the actual input element inside TextField */
 .audit-name-input-wrapper input {
-  width: 500px;
-  min-width: 500px;
-  max-width: none;
+  width: 100%;
+  min-width: 0;
+  max-width: 468px;
   height: 20px;
   font-family: Inter;
   font-weight: 600;
@@ -3145,6 +3285,16 @@ label:has(input[value="cultural"]:not(:checked)) {
   white-space: nowrap;
 }
 
+/* Disabled state for Previous button in first step - match grey-light pagination style */
+.previous-button-disabled {
+  color: #C4C4C4; /* grey-light from design (#C4C4C4) */
+}
+
+.previous-button-disabled[disabled] {
+  opacity: 1; /* keep full opacity while using grey color */
+  cursor: default;
+}
+
 .previous-icon {
   width: 18px;
   height: 18px;
@@ -3203,9 +3353,891 @@ label:has(input[value="cultural"]:not(:checked)) {
   font-size: 14px;
   line-height: 20px;
   letter-spacing: 0px;
-  color: inherit;
+  color: #0A0704;
   white-space: nowrap;
   display: inline-block;
   vertical-align: middle;
 }
+
+/* Run Audit button styling */
+.run-audit-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: center;
+  border: none;
+  white-space: nowrap;
+}
+
+.run-audit-button [class*="Button"] {
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  column-gap: 16px;
+  white-space: nowrap;
+}
+
+.run-audit-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  object-fit: contain;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 1px;
+}
+
+.run-audit-text {
+  font-family: Inter;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0px;
+  color: inherit;
+  white-space: nowrap;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 0;
+}
+
+/* Audit Configuration Form Styles */
+.audit-config-form {
+  width: 100%;
+  max-width: 100%;
+}
+
+.audit-form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-family: Inter;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  color: #0A0704;
+}
+
+.audit-form-label span {
+  margin-left: 4px;
+}
+
+.auditor-name-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  width: 90px;
+  height: 20px;
+  margin-bottom: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Inter;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0px;
+  color: #0A0704;
+}
+
+.auditor-name-label [class*="Text"],
+.auditor-name-label > * {
+  font-family: Inter ;
+  font-weight: 500 ;
+  font-size: 14px ;
+  line-height: 20px ;
+  letter-spacing: 0px ;
+  color: #0A0704 ;
+  margin: 0 ;
+  padding: 0 ;
+}
+
+.auditor-name-label [class*="Text"] *:not(span) {
+  margin: 0 ;
+  padding: 0 ;
+}
+
+.auditor-name-label span {
+  margin-left: 4px ;
+  color: inherit ;
+}
+
+.auditor-name-label {
+  margin-bottom: 2px;
+}
+
+/* Organisation Name, Audit Objective, Scope of Audit, Evaluation Modules - same styling as Auditor name */
+.organisation-name-label,
+.audit-objective-label,
+.scope-of-audit-label,
+.evaluation-modules-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  min-width: fit-content;
+  height: 20px;
+  margin-bottom: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Inter;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0px;
+  color: #0A0704;
+}
+
+.audit-objective-label {
+  margin-bottom: 6px;
+}
+
+.organisation-name-label [class*="Text"],
+.organisation-name-label > *,
+.audit-objective-label [class*="Text"],
+.audit-objective-label > *,
+.scope-of-audit-label [class*="Text"],
+.scope-of-audit-label > *,
+.evaluation-modules-label [class*="Text"],
+.evaluation-modules-label > * {
+  font-family: Inter ;
+  font-weight: 500 ;
+  font-size: 14px ;
+  line-height: 20px ;
+  letter-spacing: 0px ;
+  color: #0A0704 ;
+  margin: 0 ;
+  padding: 0 ;
+}
+
+.organisation-name-label [class*="Text"] *:not(span),
+.audit-objective-label [class*="Text"] *:not(span),
+.scope-of-audit-label [class*="Text"] *:not(span),
+.evaluation-modules-label [class*="Text"] *:not(span) {
+  margin: 0 ;
+  padding: 0 ;
+}
+
+.organisation-name-label span,
+.audit-objective-label span,
+.scope-of-audit-label span,
+.evaluation-modules-label span {
+  margin-left: 4px ;
+  color: inherit ;
+}
+
+.auditor-name-wrapper,
+.organisation-name-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.auditor-name-wrapper,
+.organisation-name-wrapper {
+  align-items: flex-start;
+}
+
+.organisation-name-wrapper {
+  margin-left: -40px;
+}
+
+@media (max-width: 1024px) {
+  .organisation-name-wrapper {
+    margin-left: 0;
+  }
+}
+
+.auditor-name-wrapper .auditor-name-label,
+.organisation-name-wrapper .organisation-name-label {
+  width: 100%;
+  max-width: 468px;
+  justify-content: flex-start;
+  text-align: left;
+  margin: 0 auto 6px;
+}
+
+.organisation-name-wrapper .organisation-name-label {
+  width: auto;
+  max-width: none;
+  align-self: flex-start;
+  margin: 0 0 6px 0;
+}
+
+.auditor-name-wrapper .auditor-name-label {
+  width: auto;
+  max-width: none;
+}
+
+.audit-form-textfield {
+  width: 100%;
+}
+
+.audit-form-textfield input,
+.audit-form-textfield [class*="TextField"] input,
+.audit-form-textfield [class*="TextField"] input[type="text"],
+.audit-form-textfield input[type="text"] {
+  width: 100%;
+  height: 36px;
+  padding: 8px 12px;
+  font-family: Inter;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  color: #0A0704;
+  background-color: #FFFFFF;
+  border: 1px solid #C4C4C4;
+  border-radius: 8px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+/* Filled field - border stays #C4C4C4, background changes to #F2F2F5 */
+.audit-form-textfield.has-value input,
+.audit-form-textfield.has-value [class*="TextField"] input,
+.audit-form-textfield.has-value [class*="TextField"] input[type="text"],
+.audit-form-textfield.has-value input[type="text"],
+.audit-form-textfield.has-value [class*="TextField"] > input,
+.audit-form-textfield.has-value [class*="TextField"] input[value]:not([value=""]),
+.audit-form-textfield.has-value input[value]:not([value=""]),
+.audit-form-textfield.has-value input:not(:placeholder-shown),
+.audit-form-textfield.has-value [class*="TextField"] input:not(:placeholder-shown) {
+  border: 1px solid #C4C4C4 ;
+  background-color: #F2F2F5 ;
+}
+
+/* Ensure all nested input elements get the grey background when parent has has-value */
+.audit-form-textfield.has-value * input {
+  background-color: #F2F2F5 ;
+  border: 1px solid #C4C4C4 ;
+}
+
+/* Empty field focus state - white background */
+.audit-form-textfield input:focus,
+.audit-form-textfield [class*="TextField"] input:focus {
+  border: 1px solid #644FC1;
+  background-color: #FFFFFF;
+  box-shadow: 0 0 0 2px rgba(100, 79, 193, 0.1);
+}
+
+/* Filled field focus state - grey background */
+.audit-form-textfield.has-value input:focus,
+.audit-form-textfield.has-value [class*="TextField"] input:focus,
+.audit-form-textfield.has-value [class*="TextField"] input[type="text"]:focus,
+.audit-form-textfield.has-value input[type="text"]:focus {
+  border: 1px solid #644FC1 ;
+  background-color: #F2F2F5 ;
+  box-shadow: 0 0 0 2px rgba(100, 79, 193, 0.1);
+}
+
+/* Specific styles for auditor name field to match design */
+.auditor-name-textfield,
+.auditor-name-textfield [class*="TextField"],
+.auditor-name-textfield [class*="TextField"] > div {
+  width: 468px;
+  max-width: 100%;
+  margin: 6px 0 0 0;
+}
+
+.auditor-name-textfield input,
+.auditor-name-textfield [class*="TextField"] input,
+.auditor-name-textfield [class*="TextField"] input[type="text"],
+.auditor-name-textfield input[type="text"],
+.auditor-name-textfield [class*="TextField"] > input {
+  width: 468px;
+  min-height: 36px;
+  padding: 8px 12px;
+  font-family: Inter;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0px;
+  color: #0A0704;
+  background-color: #F2F2F5;
+  border: 1px solid #C4C4C4;
+  border-radius: 8px;
+  outline: none;
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+.auditor-name-textfield [class*="TextField"]:focus,
+.auditor-name-textfield [class*="TextField"]:focus-within,
+.auditor-name-textfield input:focus,
+.auditor-name-textfield [class*="TextField"] input:focus {
+  border-color: #C4C4C4;
+  box-shadow: none;
+  outline: none;
+}
+
+/* Specific styles for organisation name field */
+.organisation-name-textfield,
+.organisation-name-textfield [class*="TextField"],
+.organisation-name-textfield [class*="TextField"] > div {
+  width: 100%;
+  max-width: 460px;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  box-sizing: border-box;
+  margin: 6px 0 0 0;
+}
+
+.organisation-name-textfield input,
+.organisation-name-textfield [class*="TextField"] input,
+.organisation-name-textfield [class*="TextField"] input[type="text"],
+.organisation-name-textfield input[type="text"] {
+  width: 100%;
+  max-width: 460px;
+  min-width: 0;
+  padding: 8px 12px;
+  min-height: 36px;
+  background-color: #F2F2F5;
+  border: 1px solid #C4C4C4;
+  border-radius: 8px;
+  outline: none;
+  box-sizing: border-box;
+  font-family: Inter;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0px;
+  color: #0A0704;
+  vertical-align: middle;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .audit-config-form .auditor-name-wrapper,
+  .audit-config-form .organisation-name-wrapper {
+    width: 100%;
+    min-width: 100%;
+    margin-left: 0;
+  }
+
+  .audit-config-form .auditor-name-textfield,
+  .audit-config-form .auditor-name-textfield [class*="TextField"],
+  .audit-config-form .auditor-name-textfield [class*="TextField"] > div,
+  .audit-config-form .organisation-name-textfield,
+  .audit-config-form .organisation-name-textfield [class*="TextField"],
+  .audit-config-form .organisation-name-textfield [class*="TextField"] > div {
+    width: 100%;
+    max-width: 100%;
+    margin: 6px 0 0 0;
+  }
+
+  .audit-config-form .auditor-name-textfield input,
+  .audit-config-form .auditor-name-textfield [class*="TextField"] input,
+  .audit-config-form .auditor-name-textfield [class*="TextField"] input[type="text"],
+  .audit-config-form .auditor-name-textfield input[type="text"],
+  .audit-config-form .organisation-name-textfield input,
+  .audit-config-form .organisation-name-textfield [class*="TextField"] input,
+  .audit-config-form .organisation-name-textfield [class*="TextField"] input[type="text"],
+  .audit-config-form .organisation-name-textfield input[type="text"] {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .audit-config-form .audit-form-textfield,
+  .audit-config-form .audit-form-textarea {
+    width: 100%;
+  }
+}
+
+.organisation-name-textfield [class*="TextField"]:focus,
+.organisation-name-textfield [class*="TextField"]:focus-within,
+.organisation-name-textfield input:focus,
+.organisation-name-textfield [class*="TextField"] input:focus {
+  border-color: #C4C4C4;
+  box-shadow: none;
+  outline: none;
+}
+
+.audit-form-textarea {
+  width: 100%;
+  margin-top: 6px;
+  background-color: #FFFFFF;
+  border: 1px solid #C4C4C4;
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-sizing: border-box;
+}
+
+/* Reduce width of Audit Objective textarea */
+.audit-objective-textarea {
+  width: 1000px;
+  max-width: 100%;
+}
+
+.audit-objective-textarea textarea,
+.audit-objective-textarea [class*="TextField"] textarea {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Reduce width of Scope of Audit textarea */
+.scope-of-audit-textarea {
+  width: 1002px;
+  max-width: 100%;
+}
+
+.scope-of-audit-textarea textarea,
+.scope-of-audit-textarea [class*="TextField"] textarea {
+  width: 100%;
+  max-width: 100%;
+}
+
+.audit-form-textarea [class*="TextField"],
+.audit-form-textarea [class*="TextField"] > div {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.audit-form-textarea textarea,
+.audit-form-textarea [class*="TextField"] textarea {
+  width: 100%;
+  min-height: 116px;
+  padding: 0;
+  font-family: Inter;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0;
+  color: #0A0704;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.audit-form-textarea textarea:focus,
+.audit-form-textarea [class*="TextField"] textarea:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Evaluation Module Cards */
+.evaluation-module-card {
+  display: block;
+  width: 326px;
+  min-width: 240px;
+  height: 90px;
+  min-height: 80px;
+  flex: 1 1 0;
+  padding: 12px 16px;
+  background-color: #FFFFFF;
+  border: 1px solid #C4C4C4;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.evaluation-module-card:hover {
+  border-color: #999999;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.evaluation-module-checkbox {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  margin-top: 2px;
+  cursor: pointer;
+  accent-color: #644FC1;
+  flex-shrink: 0;
+}
+
+.evaluation-module-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-width: 240px;
+  max-width: 321.33px;
+}
+
+.evaluation-module-dropdown {
+  width: 326px;
+  min-width: 240px;
+}
+
+/* Mode of Evaluation dropdown - match Scope of Audit width */
+.mode-of-evaluation-dropdown {
+  width: 1000px;
+  max-width: 100%;
+}
+
+.evaluation-module-select-wrapper {
+  width: 100%;
+  display: block;
+  margin-top: 12px;
+  margin-bottom: 0;
+  clear: both;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+.evaluation-module-select-wrapper::before {
+  content: '';
+  display: block;
+  clear: both;
+}
+
+.evaluation-module-select {
+  width: 100%;
+  margin-top: 0;
+  margin-bottom: 0;
+  display: block;
+  position: relative ;
+  top: auto ;
+  left: auto ;
+  right: auto ;
+  bottom: auto ;
+  float: none ;
+}
+
+.evaluation-module-select > div {
+  width: 100% ;
+  position: relative ;
+  top: auto ;
+  left: auto ;
+  right: auto ;
+  bottom: auto ;
+  float: none ;
+}
+
+.evaluation-module-select [class*="Select"] {
+  width: 100% ;
+  position: relative ;
+  z-index: 1;
+  top: auto ;
+  left: auto ;
+  right: auto ;
+  bottom: auto ;
+  float: none ;
+  transform: none ;
+}
+
+.evaluation-module-select [class*="Select"] * {
+  position: relative ;
+}
+
+.evaluation-module-select [class*="Select"],
+.evaluation-module-select select {
+  width: 100%;
+  height: 90px;
+  min-height: 80px;
+  padding: 8px 12px;
+  font-family: Inter;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  color: #0A0704;
+  background-color: #FFFFFF;
+  border: 1px solid #C4C4C4;
+  border-radius: 4px;
+  outline: none;
+  box-sizing: border-box;
+  display: block;
+  position: relative ;
+  top: auto ;
+  left: auto ;
+  right: auto ;
+  bottom: auto ;
+  float: none ;
+  transform: none ;
+}
+
+.evaluation-module-select [class*="Select"]:focus,
+.evaluation-module-select select:focus {
+  border-color: #644FC1;
+  box-shadow: 0 0 0 2px rgba(100, 79, 193, 0.1);
+}
+
+/* Mode of Evaluation Select */
+.audit-form-select {
+  width: 100%;
+  max-width: 400px;
+}
+
+.audit-form-select [class*="Select"],
+.audit-form-select select {
+  width: 100%;
+  height: 40px;
+  padding: 8px 12px;
+  font-family: Inter;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  color: #0A0704;
+  background-color: #FFFFFF;
+  border: 1px solid #C4C4C4;
+  border-radius: 4px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.audit-form-select [class*="Select"]:focus,
+.audit-form-select select:focus {
+  border-color: #644FC1;
+  box-shadow: 0 0 0 2px rgba(100, 79, 193, 0.1);
+}
+
+/* Test Input Buttons Styling */
+.test-input-buttons-container {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+}
+
+.test-input-button {
+  width: 106px;
+  height: 32px;
+  padding: 0;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.test-input-button [class*="Button"] {
+  width: 100%;
+  height: 100%;
+  min-width: 106px;
+  min-height: 32px;
+  padding: 8px 12px;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  box-sizing: border-box;
+  border: 1px solid #E5E7EB;
+  background-color: white;
+}
+
+.test-input-button-selected [class*="Button"] {
+  background-color: #644FC1 ;
+  color: white;
+  border-color: #644FC1 ;
+}
+
+.test-input-button-selected [class*="Button"]:hover {
+  background-color: #644FC1 ;
+  color: white;
+  border-color: #644FC1 ;
+}
+
+.test-input-button-selected [class*="Button"] svg,
+.test-input-button-selected [class*="Button"] path,
+.test-input-button-selected [class*="Button"] svg path {
+  color: white;
+  stroke: white;
+  fill: none;
+}
+
+/* Select Prompt Library Heading Styling */
+.select-prompt-library-heading {
+  width: 168px;
+  height: 20px;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 20px;
+  letter-spacing: 0%;
+  color: #0A0704;
+  margin-bottom: 8px;
+}
+
+.select-prompt-library-heading [class*="Text"] {
+  width: 168px;
+  height: 20px;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 20px;
+  letter-spacing: 0%;
+  color: #0A0704;
+  margin-bottom: 8px;
+}
+
+.select-prompt-library-subtitle {
+  width: 261px;
+  height: 20px;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0%;
+  color: #6D7175;
+  margin-bottom: 8px;
+}
+
+/* Ensure inner Text component inherits */
+.select-prompt-library-subtitle [class*="Text"] {
+  width: 261px;
+  height: 20px;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0%;
+  color: #6D7175;
+  margin-bottom: 8px;
+}
+
+/* Enter Your Own Test Cases Heading Styling */
+.enter-test-cases-heading {
+  margin-bottom: 8px;
+}
+
+.enter-test-cases-heading [class*="Text"] {
+  margin-bottom: 8px;
+}
+
+.test-cases-label {
+  margin-bottom: 8px;
+}
+
+.test-cases-textarea-container {
+  width: 100%;
+  min-height: 191px;
+  border: none;
+  border-radius: 8px;
+  background-color: #FFFFFF;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  margin-left: -11px; /* Nudge textarea slightly left to align with label text */
+}
+
+.test-cases-textarea-container [class*="TextField"] {
+  width: 1000px;
+  height: 100%;
+}
+
+.test-cases-textarea-container textarea {
+  width: 100%;
+  min-height: 120px;
+  border: none;
+  box-shadow: none;
+  resize: none;
+  padding: 0;
+}
+
+
+.test-cases-dropzone-container {
+  width: 1000px;
+}
+
+/* Increase gap between section title and Paste Text / Upload File buttons */
+.enter-test-cases-heading {
+  margin-bottom: 15px;
+  display: block;
+}
+
+/* Increase gap between 'Test Cases' heading and DataTable in Audit Results */
+.audit-results-test-cases-heading {
+  margin-bottom: 24px;
+  display: block;
+}
+
+/* Audit Overview details */
+.audit-overview-section {
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.audit-overview-section > [class*="Text"]:first-child {
+  margin-bottom: 16px;
+  display: block;
+}
+
+.audit-overview-section .mb-4 {
+  margin-bottom: 16px;
+}
+
+.audit-overview-summary-text,
+.audit-overview-summary-text[class*="Text"] {
+  width: 231px;
+  min-height: 92px;
+  display: block;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  line-height: 28px;
+  font-weight: 500;
+  color: #60646C;
+  white-space: pre-line;
+}
+
+.audit-overview-summary-text br,
+.audit-overview-summary-text[class*="Text"] br {
+  display: block;
+  margin-bottom: 8px;
+  content: "";
+}
+
+.audit-overview-highlight {
+  color: #0A0704;
+  font-weight: 600;
+}
+
+.datatable-text-wrap {
+  display: block;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  word-break: break-word;
+}
+
+.test-cases-table table th {
+  white-space: normal;
+  vertical-align: top;
+  background-color: #F5F2FF;
+}
+
+.test-cases-table table td {
+  white-space: normal;
+  vertical-align: top;
+}
+
+.test-cases-table table td [class*="Text"] {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+@media (min-width: 1024px) {
+  /* Align Audit Results DataTable to the right with reduced width */
+  .audit-overview-section {
+    max-width: 720px;
+  }
+
+  .test-cases-table {
+    max-width: 1000px;
+    /* Keep original left alignment; just reduce width from the right */
+  }
+
+  /* Match width of TextField and DropZone with Test Cases table */
+  .test-cases-textarea-container,
+  .test-cases-dropzone-container {
+    max-width: 1000px;
+  }
+}
+
 
