@@ -56,8 +56,11 @@ const NewAuditPage = () => {
   const [privacySecuritySubmodules, setPrivacySecuritySubmodules] = useState<string>('');
   const [modeOfEvaluation, setModeOfEvaluation] = useState<string>('');
 
-  // Evaluation modules loaded from USI GraphQL API
-  const [submoduleOptions, setSubmoduleOptions] = useState<SelectOption[]>([]);
+  // Evaluation modules loaded from USI GraphQL API, grouped by backend category key
+  // e.g. { bias_fairness: [...], hallucination: [...], privacy_security: [...] }
+  const [moduleOptionsByCategory, setModuleOptionsByCategory] = useState<
+    Record<string, SelectOption[]>
+  >({});
   const [isLoadingModules, setIsLoadingModules] = useState<boolean>(false);
   const [modulesError, setModulesError] = useState<string | null>(null);
 
@@ -106,16 +109,20 @@ const NewAuditPage = () => {
         const modulesData = json?.data?.modules ?? {};
 
         // Traverse all task types (e.g., text_generation, translation),
-        // then all categories (e.g., bias_fairness, robustness),
-        // then their metrics, without hard-coding any names.
-        const options: SelectOption[] = [];
+        // then all categories (e.g., bias_fairness, hallucination),
+        // then their metrics, and group options by category key.
+        const byCategory: Record<string, SelectOption[]> = {};
 
         Object.values(modulesData || {}).forEach((taskType: any) => {
           if (!taskType || typeof taskType !== 'object') return;
 
-          Object.values(taskType).forEach((category: any) => {
+          Object.entries(taskType).forEach(([categoryKey, category]: [string, any]) => {
             const metrics = category?.metrics;
             if (!metrics || typeof metrics !== 'object') return;
+
+            if (!byCategory[categoryKey]) {
+              byCategory[categoryKey] = [];
+            }
 
             Object.entries(metrics).forEach(
               ([metricKey, metric]: [string, any]) => {
@@ -130,7 +137,7 @@ const NewAuditPage = () => {
                   sectorValue?.metric_display_name ||
                   metricKey.replace(/_/g, ' ');
 
-                options.push({
+                byCategory[categoryKey].push({
                   value: metricKey,
                   label: toTitleCase(labelRaw),
                 });
@@ -139,7 +146,7 @@ const NewAuditPage = () => {
           });
         });
 
-        setSubmoduleOptions(options);
+        setModuleOptionsByCategory(byCategory);
       } catch (error: any) {
         console.error('Failed to load evaluation modules', error);
         setModulesError('Failed to load evaluation modules');
@@ -721,7 +728,7 @@ const NewAuditPage = () => {
                             name="biasFairnessSubmodules"
                             label="Select sub-modules from dropdown"
                             labelHidden
-                            options={submoduleOptions}
+                            options={moduleOptionsByCategory['bias_fairness'] ?? []}
                             value={biasFairnessSubmodules}
                             onChange={(value) => setBiasFairnessSubmodules(value)}
                             placeholder="Select sub-modules from dropdown"
@@ -754,7 +761,7 @@ const NewAuditPage = () => {
                             name="hallucinationSubmodules"
                             label="Select sub-modules from dropdown"
                             labelHidden
-                            options={submoduleOptions}
+                            options={moduleOptionsByCategory['hallucination'] ?? []}
                             value={hallucinationSubmodules}
                             onChange={(value) => setHallucinationSubmodules(value)}
                             placeholder="Select sub-modules from dropdown"
@@ -787,7 +794,7 @@ const NewAuditPage = () => {
                             name="privacySecuritySubmodules"
                             label="Select sub-modules from dropdown"
                             labelHidden
-                            options={submoduleOptions}
+                            options={moduleOptionsByCategory['privacy_security'] ?? []}
                             value={privacySecuritySubmodules}
                             onChange={(value) => setPrivacySecuritySubmodules(value)}
                             placeholder="Select sub-modules from dropdown"
