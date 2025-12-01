@@ -1351,7 +1351,11 @@ html.mobile-menu-open .breadcrumbs-ml {
     -webkit-overflow-scrolling: touch;
     width: 100%;
     box-sizing: border-box;
-    padding: 0.25rem 0.75rem;
+    /* Slightly lower the text inside the breadcrumb bar on mobile */
+    padding-top: 0.35rem;
+    padding-bottom: 0.15rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
   }
 
   .breadcrumbs-inner ol,
@@ -1396,6 +1400,9 @@ html.mobile-menu-open .breadcrumbs-ml {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    /* Nudge Prompt Libraries text slightly downward only for the last crumb */
+    position: relative;
+    top: 1px;
   }
 }
 
@@ -2459,7 +2466,7 @@ html.mobile-menu-open .breadcrumbs-ml {
   /* BreadCrumbs sticky behavior is already handled by general mobile styles above */
   /* Ensure audit page content is responsive */
   .audit-content {
-    padding: 1rem ;
+    padding: 1rem;
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
@@ -2467,26 +2474,34 @@ html.mobile-menu-open .breadcrumbs-ml {
 
   /* Make audit name section responsive */
   .audit-name-section {
-    flex-wrap: wrap ;
-    gap: 1rem;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 0.75rem;
+    align-items: flex-start;
   }
 
   .audit-name-section > div:first-child {
-    flex-wrap: wrap ;
+    flex-direction: column;
+    align-items: flex-start;
     width: 100%;
+    row-gap: 8px;
   }
 
   .audit-status-container {
     width: 100%;
     justify-content: flex-start;
-    margin-left: 0 ;
-    margin-right: 0 ;
+    align-items: flex-start;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    margin-left: 0;
+    margin-right: 0;
   }
 
   /* Make tabs responsive */
   .tabs-container {
-    width: 100% ;
-    max-width: 100% ;
+    width: 100%;
+    max-width: 100%;
     flex-wrap: wrap;
   }
 
@@ -2494,7 +2509,7 @@ html.mobile-menu-open .breadcrumbs-ml {
     flex: 1 1 auto;
     min-width: 0;
     max-width: 100%;
-    width: auto ;
+    width: auto;
   }
 
   /* Ensure footer is responsive on audit pages */
@@ -2507,18 +2522,38 @@ html.mobile-menu-open .breadcrumbs-ml {
   .audit-options-container,
   .evaluation-modules-label + .flex,
   .test-input-buttons-container {
-    flex-wrap: wrap ;
+    flex-wrap: wrap;
   }
 
+  /* Make all audit cards / dropdowns / tables full-width on mobile */
   .evaluation-module-wrapper,
+  .evaluation-module-card,
+  .evaluation-module-dropdown,
+  .mode-of-evaluation-dropdown,
+  .audit-name-input-wrapper,
+  .audit-objective-textarea,
+  .scope-of-audit-textarea,
   .test-cases-table,
-  .mode-of-evaluation-dropdown {
-    width: 100% ;
-    max-width: 100% ;
+  .test-cases-textarea-container,
+  .test-cases-dropzone-container,
+  .audit-overview-section {
+    width: 100%;
+    max-width: 100%;
   }
 
-  .evaluation-module-dropdown {
-    width: 100% ;
+  /* Reset desktop-specific offsets that break on mobile */
+  .audit-tag {
+    margin-left: 0;
+  }
+
+  .audit-name-input-wrapper input {
+    max-width: 100%;
+  }
+
+  /* Let long text areas grow vertically instead of horizontally */
+  .audit-form-textarea textarea,
+  .audit-form-textarea [class*="TextField"] textarea {
+    max-width: 100%;
   }
 }
 

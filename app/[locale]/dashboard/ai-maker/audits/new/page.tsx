@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button, Tag, Text, Icon, TextField, Label, Select, DataTable, DropZone, Card, ProgressBar } from 'opub-ui';
 import type { ColumnDef } from '@tanstack/react-table';
 import Image from 'next/image';
@@ -20,8 +20,20 @@ import {
 } from '@tabler/icons-react';
 import BreadCrumbs from '@/components/Breadcrumbs';
 import WelcomeSection from '../../../components/WelcomeSection';
+import { toTitleCase } from '@/lib/utils';
 
 type AuditType = 'technical' | 'domain' | 'cultural';
+
+type SelectOption = { value: string; label: string };
+
+// We call USI GraphQL like:
+// { modules(limit: 50) }
+// where `modules` returns a JSON blob shaped like the example you shared.
+const EVALUATION_MODULES_QUERY = `
+  query EvaluationModules($limit: Int!) {
+    modules(limit: $limit)
+  }
+`;
 
 const NewAuditPage = () => {
   const [auditType, setAuditType] = useState<AuditType>('technical');
@@ -44,18 +56,100 @@ const NewAuditPage = () => {
   const [privacySecuritySubmodules, setPrivacySecuritySubmodules] = useState<string>('');
   const [modeOfEvaluation, setModeOfEvaluation] = useState<string>('');
 
+  // Evaluation modules loaded from USI GraphQL API
+  const [submoduleOptions, setSubmoduleOptions] = useState<SelectOption[]>([]);
+  const [isLoadingModules, setIsLoadingModules] = useState<boolean>(false);
+  const [modulesError, setModulesError] = useState<string | null>(null);
+
   // Test Cases state
   const [selectedPromptLibraries, setSelectedPromptLibraries] = useState<string[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [pastedTestCases, setPastedTestCases] = useState('');
   const [testInputMode, setTestInputMode] = useState<'paste' | 'upload'>('paste');
 
-  // Sub-module options (placeholder - adjust as needed)
-  const submoduleOptions = [
-    { value: 'option1', label: 'Option 1' },
-    { value: 'option2', label: 'Option 2' },
-    { value: 'option3', label: 'Option 3' },
-  ];
+  // Load evaluation modules from USI GraphQL API
+  useEffect(() => {
+    const endpoint = process.env.NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT;
+    if (!endpoint) {
+      // Fail silently in UI but log for developers
+      console.warn('NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT is not set');
+      return;
+    }
+
+    const fetchEvaluationModules = async () => {
+      try {
+        setIsLoadingModules(true);
+        setModulesError(null);
+
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: EVALUATION_MODULES_QUERY,
+            variables: { limit: 50 },
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const json = await response.json();
+
+        if (json.errors?.length) {
+          console.error('GraphQL errors while fetching evaluation modules', json.errors);
+          throw new Error('GraphQL error');
+        }
+
+        const modulesData = json?.data?.modules ?? {};
+
+        // Traverse all task types (e.g., text_generation, translation),
+        // then all categories (e.g., bias_fairness, robustness),
+        // then their metrics, without hard-coding any names.
+        const options: SelectOption[] = [];
+
+        Object.values(modulesData || {}).forEach((taskType: any) => {
+          if (!taskType || typeof taskType !== 'object') return;
+
+          Object.values(taskType).forEach((category: any) => {
+            const metrics = category?.metrics;
+            if (!metrics || typeof metrics !== 'object') return;
+
+            Object.entries(metrics).forEach(
+              ([metricKey, metric]: [string, any]) => {
+                const sectors = metric?.tools?.deepeval?.sectors;
+                const sectorValue =
+                  sectors?.healthcare ??
+                  (sectors && Object.values(sectors)[0]) ??
+                  {};
+
+                const labelRaw =
+                  sectorValue?.template_display_name ||
+                  sectorValue?.metric_display_name ||
+                  metricKey.replace(/_/g, ' ');
+
+                options.push({
+                  value: metricKey,
+                  label: toTitleCase(labelRaw),
+                });
+              }
+            );
+          });
+        });
+
+        setSubmoduleOptions(options);
+      } catch (error: any) {
+        console.error('Failed to load evaluation modules', error);
+        setModulesError('Failed to load evaluation modules');
+      } finally {
+        setIsLoadingModules(false);
+      }
+    };
+
+    fetchEvaluationModules();
+  }, []);
 
   // Mode of evaluation options
   const modeOfEvaluationOptions = [
