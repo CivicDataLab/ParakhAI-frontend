@@ -219,7 +219,6 @@ const NewAuditPage = () => {
   const modeOfEvaluationOptions = [
     { value: 'automated', label: 'Automated' },
     { value: 'manual', label: 'Manual' },
-    { value: 'hybrid', label: 'Hybrid' },
   ];
 
   // Prompt libraries data
