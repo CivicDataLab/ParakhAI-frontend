@@ -155,7 +155,10 @@ const NewAuditPage = () => {
         // Traverse all task types (e.g., text_generation, translation),
         // then all categories (e.g., bias_fairness, hallucination),
         // then their metrics, and group options by category key.
+        // We also de‑duplicate metrics per category so we don't show
+        // "Gender Bias" (or any other metric) multiple times.
         const byCategory: Record<string, SelectOption[]> = {};
+        const seenByCategory: Record<string, Set<string>> = {};
 
         Object.values(modulesData || {}).forEach((taskType: any) => {
           if (!taskType || typeof taskType !== 'object') return;
@@ -167,9 +170,17 @@ const NewAuditPage = () => {
             if (!byCategory[categoryKey]) {
               byCategory[categoryKey] = [];
             }
+            if (!seenByCategory[categoryKey]) {
+              seenByCategory[categoryKey] = new Set<string>();
+            }
 
             Object.entries(metrics).forEach(
               ([metricKey, metric]: [string, any]) => {
+                // Skip this metric if we've already added it once for this category
+                if (seenByCategory[categoryKey].has(metricKey)) {
+                  return;
+                }
+
                 const sectors = metric?.tools?.deepeval?.sectors;
                 const sectorValue =
                   sectors?.healthcare ??
@@ -185,6 +196,8 @@ const NewAuditPage = () => {
                   value: metricKey,
                   label: toTitleCase(labelRaw),
                 });
+
+                seenByCategory[categoryKey].add(metricKey);
               }
             );
           });
