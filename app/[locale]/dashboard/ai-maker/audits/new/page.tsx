@@ -35,6 +35,41 @@ const EVALUATION_MODULES_QUERY = `
   }
 `;
 
+// Mutation to request an audit run from the backend
+const REQUEST_AUDIT_MUTATION = `
+  mutation RequestAudit($input: RequestAuditInput!) {
+    requestAudit(input: $input) {
+      success
+      message
+      audit {
+        id
+        name
+        status
+        modules
+        metrics
+        modelId
+        test_dataset_ids
+        configuration
+        judge_model
+        judge_config
+        findings
+        recommendations
+        error_message
+        error_details
+        total_tests
+        passed_tests
+        failed_tests
+        skipped_tests
+        overall_score
+        created_at
+        started_at
+        completed_at
+        updated_at
+      }
+    }
+  }
+`;
+
 const NewAuditPage = () => {
   const [auditType, setAuditType] = useState<AuditType>('technical');
   const [activeTab, setActiveTab] = useState<'config' | 'test' | 'results'>('config');
@@ -69,6 +104,15 @@ const NewAuditPage = () => {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [pastedTestCases, setPastedTestCases] = useState('');
   const [testInputMode, setTestInputMode] = useState<'paste' | 'upload'>('paste');
+
+  // Backend audit run state
+  const [isRequestingAudit, setIsRequestingAudit] = useState(false);
+  const [auditError, setAuditError] = useState<string | null>(null);
+  const [auditOverview, setAuditOverview] = useState<{
+    auditId: string | null;
+    auditTime: string | null;
+    durationSeconds: number | null;
+  } | null>(null);
 
   // Load evaluation modules from USI GraphQL API
   useEffect(() => {
@@ -305,6 +349,137 @@ const NewAuditPage = () => {
       riskSeverity: 'No risk',
     },
   ];
+
+  /**
+   * Helper to collect selected modules & metrics based on UI state
+   */
+  const buildModulesAndMetrics = () => {
+    const modules: string[] = [];
+    if (biasFairness) modules.push('bias_fairness');
+    if (hallucination) modules.push('hallucination');
+    if (privacySecurity) modules.push('privacy_security');
+
+    const metrics = [
+      biasFairnessSubmodules,
+      hallucinationSubmodules,
+      privacySecuritySubmodules,
+    ].filter(Boolean) as string[];
+
+    return { modules, metrics };
+  };
+
+  /**
+   * Call backend GraphQL API to request an audit run.
+   * Uses current form values and selected modules/metrics.
+   */
+  const handleRunAudit = async () => {
+    const endpoint = process.env.NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT;
+    if (!endpoint) {
+      console.warn('NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT is not set');
+      setAuditError('Audit backend URL is not configured.');
+      return;
+    }
+
+    const { modules, metrics } = buildModulesAndMetrics();
+
+    // Build configuration payload from UI state (kept generic, backend can choose what to use)
+    const configuration: any = {
+      auditType,
+      auditorName,
+      organisationName,
+      auditObjective,
+      scopeOfAudit,
+      modeOfEvaluation,
+      testInputMode,
+      selectedPromptLibraries,
+      uploadedFilesCount: uploadedFiles.length,
+      pastedTestCasesLength: pastedTestCases.length,
+    };
+
+    // Model ID can come from an env variable; backend fills the rest automatically
+    const modelId = process.env.NEXT_PUBLIC_AUDIT_MODEL_ID;
+
+    const input: any = {
+      name: auditName,
+      modules,
+      metrics,
+      test_dataset_ids: [], // can be wired to real dataset ids later
+      configuration,
+    };
+
+    if (modelId) {
+      input.modelId = modelId;
+    }
+
+    // Move user into the Audit Results tab and show loading state
+    setActiveTab('results');
+    setAuditOverview(null);
+    setIsRequestingAudit(true);
+    setAuditError(null);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: REQUEST_AUDIT_MUTATION,
+          variables: { input },
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.errors) {
+        console.error('GraphQL Errors while requesting audit:', result.errors);
+        setAuditError('Failed to start audit. Please try again.');
+        return;
+      }
+
+      const payload = result?.data?.requestAudit;
+      if (!payload) {
+        setAuditError('Audit response was empty.');
+        return;
+      }
+
+      const audit = payload.audit || {};
+
+      const started = audit.started_at ? new Date(audit.started_at) : null;
+      const completed = audit.completed_at ? new Date(audit.completed_at) : null;
+      const created = audit.created_at ? new Date(audit.created_at) : null;
+
+      const timeSource = completed || started || created;
+
+      let durationSeconds: number | null = null;
+      if (started && completed) {
+        durationSeconds = Math.round(
+          (completed.getTime() - started.getTime()) / 1000
+        );
+      }
+
+      const formattedTime =
+        timeSource?.toLocaleString(undefined, {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+        }) || null;
+
+      setAuditOverview({
+        auditId: audit.id ?? null,
+        auditTime: formattedTime,
+        durationSeconds,
+      });
+    } catch (error) {
+      console.error('Network or fetch error while requesting audit:', error);
+      setAuditError('Network error while starting audit.');
+    } finally {
+      setIsRequestingAudit(false);
+    }
+  };
 
   const testCasesColumns: ColumnDef<TestCase>[] = [
     {
@@ -947,10 +1122,13 @@ const NewAuditPage = () => {
                 </Button>
                 <Button
                   kind="primary"
-                  onClick={() => setActiveTab('results')}
+                  onClick={handleRunAudit}
+                  disabled={isRequestingAudit}
                   className="run-audit-button"
                 >
-                  <span className="run-audit-text">Run Audit</span>
+                  <span className="run-audit-text">
+                    {isRequestingAudit ? 'Running…' : 'Run Audit'}
+                  </span>
                   <Image
                     src="/images/icons/circle-arrow-right.png"
                     alt="Circle arrow right"
@@ -971,10 +1149,47 @@ const NewAuditPage = () => {
                   Audit Overview
                 </Text>
                 <Text variant="bodySm" className="audit-overview-summary-text">
-                  Audit time: <span className="audit-overview-highlight">12 Sep 2025, 11:40 p.m</span><br />
-                  Audit ID: <span className="audit-overview-highlight">dfrtxeg34-tech</span><br />
-                  Duration: <span className="audit-overview-highlight">1004 s</span>
+                  {isRequestingAudit ? (
+                    <>
+                      <span className="audit-overview-highlight">
+                        Running audit…
+                      </span>
+                      <br />
+                      This may take a few moments.
+                    </>
+                  ) : auditOverview ? (
+                    <>
+                      Audit time:{' '}
+                      <span className="audit-overview-highlight">
+                        {auditOverview.auditTime ?? 'N/A'}
+                      </span>
+                      <br />
+                      Audit ID:{' '}
+                      <span className="audit-overview-highlight">
+                        {auditOverview.auditId ?? 'N/A'}
+                      </span>
+                      <br />
+                      Duration:{' '}
+                      <span className="audit-overview-highlight">
+                        {auditOverview.durationSeconds != null
+                          ? `${auditOverview.durationSeconds} s`
+                          : 'N/A'}
+                      </span>
+                    </>
+                  ) : (
+                    'Run the audit to see results.'
+                  )}
                 </Text>
+                {isRequestingAudit && !auditError && (
+                  <div className="mt-3 max-w-xs">
+                    <ProgressBar value={60} max={100} size="small" />
+                  </div>
+                )}
+                {auditError && (
+                  <Text variant="bodySm" className="text-red-600 mt-2">
+                    {auditError}
+                  </Text>
+                )}
               </div>
 
               {/* Test Cases Table */}
@@ -1009,10 +1224,13 @@ const NewAuditPage = () => {
                 </Button>
                 <Button
                   kind="primary"
-                  onClick={() => setActiveTab('results')}
+                  onClick={handleRunAudit}
+                  disabled={isRequestingAudit}
                   className="run-audit-button"
                 >
-                  <span className="run-audit-text">Run Audit</span>
+                  <span className="run-audit-text">
+                    {isRequestingAudit ? 'Running…' : 'Run Audit'}
+                  </span>
                   <Image
                     src="/images/icons/circle-arrow-right.png"
                     alt="Circle arrow right"

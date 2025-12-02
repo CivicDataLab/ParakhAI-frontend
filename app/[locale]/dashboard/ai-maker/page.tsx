@@ -207,7 +207,7 @@ const AIMakerDashboard = () => {
         data={[
           { href: '/', label: 'Home' },
           { href: '/dashboard', label: 'User Dashboard' },
-          { href: '#', label: 'AI Maker' },
+          { href: '/dashboard/ai-maker', label: 'AI Maker Dashboard' },
         ]}
       />
 

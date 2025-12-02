@@ -2502,14 +2502,74 @@ html.mobile-menu-open .breadcrumbs-ml {
   .tabs-container {
     width: 100%;
     max-width: 100%;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    /* No horizontal scroll needed if all three tabs share the width equally */
+    overflow-x: visible;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    /* Match desktop border + rounding without fixing absolute pixel width */
+    border-top: 2px solid #F2F2F5;
+    border-left: 2px solid #F2F2F5;
+    border-right: 2px solid #F2F2F5;
+    border-radius: 16px 16px 0 0;
+    box-sizing: border-box;
+  }
+
+  .tabs-container::-webkit-scrollbar {
+    display: none;
   }
 
   .audit-config-tab {
-    flex: 1 1 auto;
+    /* Make all three tabs share equal width on mobile */
+    flex: 1 1 33.3333%;
     min-width: 0;
-    max-width: 100%;
-    width: auto;
+    max-width: 33.3333%;
+    width: 33.3333%;
+    flex-shrink: 1;
+    /* Keep text on a single line to avoid height jumps */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Ensure all tabs have the same height */
+    height: 52px;
+    min-height: 52px;
+    max-height: 52px;
+    text-align: center;
+  }
+
+  /* Rounded corners for first/last tabs on mobile, like desktop */
+  .tabs-container > .audit-config-tab:first-child:not(.audit-config-tab-active) {
+    border-top-left-radius: 16px;
+  }
+
+  .tabs-container > .audit-config-tab:first-child.audit-config-tab-active {
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+  }
+
+  .tabs-container > .audit-config-tab:last-child {
+    border-top-right-radius: 16px;
+  }
+
+  .tabs-container > .audit-config-tab:last-child.audit-config-tab-active {
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+  }
+
+  /* Middle tab (Test Cases) rounded when active, like desktop */
+  .tabs-container > .audit-config-tab:not(:first-child):not(:last-child).audit-config-tab-active {
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+  }
+
+  /* Give the first tab a bit more breathing room from the rounded edge */
+  .tabs-container > .audit-config-tab:first-child {
+    padding-left: 70px;
+    padding-right: 70px;
   }
 
   /* Ensure footer is responsive on audit pages */
@@ -2744,116 +2804,119 @@ html.mobile-menu-open .breadcrumbs-ml {
   margin-left: 4px;
 }
 
-/* Tabs container - ensure it doesn't clip children */
-.tabs-container {
-  position: relative;
-  overflow: visible;
-  display: flex;
-  gap: 0;
-  width: 996px;
-  max-width: 996px;
-  border-top: 2px solid #F2F2F5;
-  border-left: 2px solid #F2F2F5;
-  border-right: 2px solid #F2F2F5;
-  border-radius: 16px 16px 0 0;
-  box-sizing: border-box;
-}
+/* Desktop-only tab styles - wrapped in media query to not affect mobile */
+@media (min-width: 1024px) {
+  /* Tabs container - ensure it doesn't clip children */
+  .tabs-container {
+    position: relative;
+    overflow: visible;
+    display: flex;
+    gap: 0;
+    width: 996px;
+    max-width: 996px;
+    border-top: 2px solid #F2F2F5;
+    border-left: 2px solid #F2F2F5;
+    border-right: 2px solid #F2F2F5;
+    border-radius: 16px 16px 0 0;
+    box-sizing: border-box;
+  }
 
-/* Audit Configuration tab styling */
-.audit-config-tab {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  width: 332px;
-  min-width: 332px;
-  max-width: 332px;
-  flex: 0 0 332px;
-  height: 52px;
-  min-height: 52px;
-  max-height: 52px;
-  border-radius: 0;
-  padding: 16px;
-  margin: 0;
-  border: none;
-  border-bottom: 2px solid #F2F2F5;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  position: relative;
-  box-sizing: border-box;
-  overflow: visible;
-  background-color: transparent;
-}
+  /* Audit Configuration tab styling */
+  .audit-config-tab {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 332px;
+    min-width: 332px;
+    max-width: 332px;
+    flex: 0 0 332px;
+    height: 52px;
+    min-height: 52px;
+    max-height: 52px;
+    border-radius: 0;
+    padding: 16px;
+    margin: 0;
+    border: none;
+    border-bottom: 2px solid #F2F2F5;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    position: relative;
+    box-sizing: border-box;
+    overflow: visible;
+    background-color: transparent;
+  }
 
-/* First tab - left border radius when not active */
-.tabs-container > .audit-config-tab:first-child:not(.audit-config-tab-active) {
-  border-top-left-radius: 16px;
-}
+  /* First tab - left border radius when not active */
+  .tabs-container > .audit-config-tab:first-child:not(.audit-config-tab-active) {
+    border-top-left-radius: 16px;
+  }
 
-/* First tab - both sides rounded when active */
-.tabs-container > .audit-config-tab:first-child.audit-config-tab-active {
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-}
+  /* First tab - both sides rounded when active */
+  .tabs-container > .audit-config-tab:first-child.audit-config-tab-active {
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+  }
 
-/* Middle tabs - both sides rounded when active */
-.tabs-container > .audit-config-tab:not(:first-child):not(:last-child).audit-config-tab-active {
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-}
+  /* Middle tabs - both sides rounded when active */
+  .tabs-container > .audit-config-tab:not(:first-child):not(:last-child).audit-config-tab-active {
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+  }
 
-/* Last tab - right border radius */
-.tabs-container > .audit-config-tab:last-child {
-  border-top-right-radius: 16px;
-}
+  /* Last tab - right border radius */
+  .tabs-container > .audit-config-tab:last-child {
+    border-top-right-radius: 16px;
+  }
 
-/* Last tab - both sides rounded when active */
-.tabs-container > .audit-config-tab:last-child.audit-config-tab-active {
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-}
+  /* Last tab - both sides rounded when active */
+  .tabs-container > .audit-config-tab:last-child.audit-config-tab-active {
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+  }
 
-/* Override any conflicting styles */
-button.audit-config-tab {
-  width: 332px;
-  min-width: 332px;
-  max-width: 332px;
-  height: 52px;
-  min-height: 52px;
-  max-height: 52px;
-  padding: 16px;
-  position: relative;
-  overflow: visible;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-bottom: 2px solid #F2F2F5;
-  border-radius: 0;
-}
+  /* Override any conflicting styles */
+  button.audit-config-tab {
+    width: 332px;
+    min-width: 332px;
+    max-width: 332px;
+    height: 52px;
+    min-height: 52px;
+    max-height: 52px;
+    padding: 16px;
+    position: relative;
+    overflow: visible;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-bottom: 2px solid #F2F2F5;
+    border-radius: 0;
+  }
 
-button.audit-config-tab:first-child:not(.audit-config-tab-active) {
-  border-top-left-radius: 16px;
-}
+  button.audit-config-tab:first-child:not(.audit-config-tab-active) {
+    border-top-left-radius: 16px;
+  }
 
-button.audit-config-tab:first-child.audit-config-tab-active {
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-}
+  button.audit-config-tab:first-child.audit-config-tab-active {
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+  }
 
-button.audit-config-tab:not(:first-child):not(:last-child).audit-config-tab-active {
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-}
+  button.audit-config-tab:not(:first-child):not(:last-child).audit-config-tab-active {
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+  }
 
-button.audit-config-tab:last-child {
-  border-top-right-radius: 16px;
-}
+  button.audit-config-tab:last-child {
+    border-top-right-radius: 16px;
+  }
 
-button.audit-config-tab:last-child.audit-config-tab-active {
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
+  button.audit-config-tab:last-child.audit-config-tab-active {
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+  }
 }
 
 .audit-config-tab.bg-transparent {

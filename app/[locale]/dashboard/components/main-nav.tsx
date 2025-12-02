@@ -11,16 +11,10 @@ import { Icons } from '@/components/icons';
 import { ProfileMenu } from '@/components/ProfileMenu';
 import MobileNav from './mobile-nav';
 
-const aiMakerBaseUrl = process.env.NEXT_PUBLIC_AI_MAKER_URL;
-
 const buildNavigationLinks = () => {
-  const aiMakerLink = aiMakerBaseUrl
-    ? `${aiMakerBaseUrl.replace(/\/$/, '')}/organization`
-    : '/dashboard/ai-maker';
-
   return [
     { label: 'Models', href: '/models' },
-    { label: 'AI Makers', href: aiMakerLink },
+    { label: 'AI Makers', href: '#' },
     { label: 'Auditors', href: '/auditors' },
     { label: 'Resources', href: '/resources' },
     { label: 'Dashboard', href: '/dashboard' },
