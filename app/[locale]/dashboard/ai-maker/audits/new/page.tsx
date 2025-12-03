@@ -77,6 +77,18 @@ const NewAuditPage = () => {
   const modelName = 'Region-al';
   const modelVersion = 'Ver. 1.2.1';
   const isAutoSaved = true;
+  
+  // Mobile detection for inline styles
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 1023);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Form state (no default filled values)
   const [auditorName, setAuditorName] = useState('');
@@ -586,7 +598,10 @@ const NewAuditPage = () => {
           </div>
 
           {/* Audit Name, Tag, and Status Section */}
-          <div className="flex items-center justify-between mb-6 gap-4 audit-name-section">
+          <div 
+            className="flex items-center justify-between mb-6 gap-4 audit-name-section"
+            style={isMobile ? { marginBottom: '0.125rem', gap: '0.125rem' } : undefined}
+          >
             {/* Left side: Label + Input + Tag */}
             <div className="flex items-center gap-4 flex-nowrap min-w-0 flex-1">
               <Label htmlFor="auditName" className="audit-name-label flex-shrink-0 whitespace-nowrap">
@@ -614,7 +629,10 @@ const NewAuditPage = () => {
             </div>
 
             {/* Right side: Status */}
-            <div className="flex items-center gap-4 audit-status-container flex-shrink-0">
+            <div 
+              className="flex items-center gap-4 audit-status-container flex-shrink-0"
+              style={isMobile ? { gap: '0.125rem', marginTop: 0 } : undefined}
+            >
               {isAutoSaved && (
                 <div className="flex items-center audit-auto-saved-wrapper">
                   <Text className="audit-auto-saved">
@@ -646,7 +664,7 @@ const NewAuditPage = () => {
           </div>
 
           {/* Tabs */}
-          <div className="mb-8">
+          <div className="mb-8 max-[1023px]:mb-4 max-[640px]:mb-2">
             <div className="flex gap-6 tabs-container">
               <button
                 onClick={() => setActiveTab('config')}
@@ -889,7 +907,7 @@ const NewAuditPage = () => {
                         Evaluation Modules<span className="text-red-500">*</span>
                       </Text>
                     </Label>
-                    <div className="flex flex-row gap-4 mt-4">
+                    <div className="flex flex-row gap-4 mt-4 evaluation-modules-row">
                       {/* Bias and Fairness Card with Dropdown */}
                       <div className="flex flex-col gap-2 evaluation-module-wrapper">
                         <label className="evaluation-module-card">

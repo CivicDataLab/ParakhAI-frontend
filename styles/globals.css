@@ -27,6 +27,98 @@
   --line-height-40: 40px;
 }
 
+/* Mobile spacing overrides using Tailwind's layer system */
+@layer utilities {
+  @media (max-width: 1023px) {
+    /* Target audit-name-section with mb-6 class */
+    .audit-content .flex.items-center.justify-between.mb-6.gap-4.audit-name-section {
+      margin-bottom: 0.5rem;
+      gap: 0.5rem;
+    }
+    
+    /* Target the next sibling div with mb-8 */
+    .audit-content .flex.items-center.justify-between.mb-6.gap-4.audit-name-section + div.mb-8 {
+      margin-top: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    
+    /* Target tabs container */
+    .audit-content div.mb-8.tabs-container {
+      margin-top: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    
+    /* Target audit-status-container */
+    .audit-content .flex.items-center.gap-4.audit-status-container {
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+    }
+
+    /* Additional selectors for coverage */
+    .audit-content div.audit-name-section.mb-6,
+    .audit-content div[class*="audit-name-section"][class*="mb-6"] {
+      margin-bottom: 0.5rem;
+    }
+
+    .audit-content .audit-name-section.mb-6 + div.mb-8,
+    .audit-content .audit-name-section.mb-6 ~ div.mb-8 {
+      margin-top: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .audit-content .audit-name-section.gap-4,
+    .audit-content div[class*="audit-name-section"][class*="gap-4"] {
+      gap: 0.5rem;
+    }
+
+    .audit-content .audit-status-container.gap-4,
+    .audit-content div[class*="audit-status-container"][class*="gap-4"] {
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+    }
+  }
+  
+  @media (max-width: 640px) {
+    /* More aggressive overrides for very small screens */
+    .audit-content .flex.items-center.justify-between.mb-6.gap-4.audit-name-section {
+      margin-bottom: 0.25rem;
+      gap: 0.5rem;
+    }
+    
+    .audit-content .flex.items-center.justify-between.mb-6.gap-4.audit-name-section + div.mb-8 {
+      margin-top: 0.25rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .audit-content div.mb-8.tabs-container {
+      margin-top: 0.25rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .audit-content .flex.items-center.gap-4.audit-status-container {
+      gap: 0.5rem;
+      margin-top: 0.125rem;
+    }
+
+    /* Additional selectors for coverage */
+    .audit-content div.audit-name-section.mb-6,
+    .audit-content div[class*="audit-name-section"][class*="mb-"] {
+      margin-bottom: 0.25rem;
+    }
+
+    .audit-content .audit-name-section.mb-6 + div.mb-8,
+    .audit-content .audit-name-section.mb-6 ~ div.mb-8 {
+      margin-top: 0.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .audit-content .audit-status-container.gap-4 {
+      gap: 0.5rem;
+      margin-top: 0.125rem;
+    }
+  }
+}
+
 /* (Legacy prompt-card mobile tweaks removed; consolidated rules live later) */
 /* (More legacy mobile footer tweaks removed to avoid duplication) */
 /* (Older ultra-compact footer block removed; behavior covered by later rules) */
@@ -1070,6 +1162,7 @@ html.mobile-menu-open .breadcrumbs-ml {
   text-align: center;
   margin-top: 5rem;
   padding: 20px;
+
   flex-grow: 1;
 }
 
@@ -1872,13 +1965,13 @@ html.mobile-menu-open .breadcrumbs-ml {
   }
 
   /* Ensure dashboard layout containers are visible */
-  div.min-h-screen,
+  /* div.min-h-screen,
   div[class*="min-h-screen"],
   div.flex.flex-col,
   div.flex-1 {
     background-color: white ;
     min-height: 100vh ;
-  }
+  } */
 
   /* Make nav sticky on mobile - ensure it stays at top when scrolling */
   nav.bg-primary-purple,
@@ -2476,7 +2569,7 @@ html.mobile-menu-open .breadcrumbs-ml {
   .audit-name-section {
     flex-direction: column;
     flex-wrap: nowrap;
-    gap: 0.75rem;
+    gap: 0.125rem;
     align-items: flex-start;
   }
 
@@ -2485,6 +2578,7 @@ html.mobile-menu-open .breadcrumbs-ml {
     align-items: flex-start;
     width: 100%;
     row-gap: 8px;
+    margin-bottom: 0;
   }
 
   .audit-status-container {
@@ -2496,6 +2590,7 @@ html.mobile-menu-open .breadcrumbs-ml {
     gap: 4px 12px;
     margin-left: 0;
     margin-right: 0;
+    margin-top: 0;
   }
 
   /* Make tabs responsive */
@@ -2580,9 +2675,17 @@ html.mobile-menu-open .breadcrumbs-ml {
 
   /* Stack wide horizontal groups on small screens to avoid overflow on Audit page */
   .audit-options-container,
-  .evaluation-modules-label + .flex,
+  .evaluation-modules-row,
   .test-input-buttons-container {
     flex-wrap: wrap;
+  }
+
+  /* Stack Evaluation Module cards vertically on mobile, in order:
+     Bias and Fairness → its dropdown → Hallucination → its dropdown → Privacy & Security → its dropdown */
+  .evaluation-modules-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
   }
 
   /* Make all audit cards / dropdowns / tables full-width on mobile */
@@ -2593,12 +2696,36 @@ html.mobile-menu-open .breadcrumbs-ml {
   .audit-name-input-wrapper,
   .audit-objective-textarea,
   .scope-of-audit-textarea,
-  .test-cases-table,
   .test-cases-textarea-container,
   .test-cases-dropzone-container,
   .audit-overview-section {
     width: 100%;
     max-width: 100%;
+  }
+
+  /* Ensure the inner Select / input inside evaluation dropdowns also stretches on mobile */
+  .evaluation-module-dropdown select,
+  .evaluation-module-dropdown [class*="Select"],
+  .evaluation-module-dropdown [class*="TextField"],
+  .mode-of-evaluation-dropdown select,
+  .mode-of-evaluation-dropdown [class*="Select"],
+  .mode-of-evaluation-dropdown [class*="TextField"] {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Make Test Cases DataTable responsive on mobile:
+     - container scrolls horizontally if needed
+     - table keeps a readable min-width instead of squishing columns */
+  .test-cases-table {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .test-cases-table table {
+    width: 100%;
+    min-width: 640px;
   }
 
   /* Reset desktop-specific offsets that break on mobile */
@@ -4338,4 +4465,530 @@ label:has(input[value="cultural"]:not(:checked)) {
   }
 }
 
+/* Mobile spacing optimizations - using specificity instead of !important */
+@media (max-width: 1023px) {
+  /* Reduce main content wrapper padding with higher specificity */
+  .main-content-wrapper.main-content-wrapper {
+    padding-top: 16px;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  /* Reduce gap in main content wrapper */
+  .main-content-wrapper.flex.flex-1.gap-8 {
+    gap: 0.5rem;
+  }
+
+  /* Reduce audit content padding */
+  .audit-content.audit-content {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  /* Reduce section margins with specific selectors */
+  .audit-content .section-margin-bottom {
+    margin-bottom: 24px;
+  }
+
+  /* Target mb-8 classes specifically */
+  .audit-content > div.mb-8,
+  .audit-content div.mb-8 {
+    margin-bottom: 1rem;
+  }
+
+  /* Target mb-6 classes specifically */
+  .audit-content > div.mb-6,
+  .audit-content div.mb-6 {
+    margin-bottom: 0.75rem;
+  }
+
+  /* Reduce gap-8 spacing */
+  .audit-content .flex.gap-8,
+  .audit-content div.gap-8 {
+    gap: 0.5rem;
+  }
+
+  /* Reduce gap-6 spacing */
+  .audit-content .flex.gap-6,
+  .audit-content div.gap-6 {
+    gap: 0.5rem;
+  }
+
+  /* Reduce gap-4 spacing */
+  .audit-content .flex.gap-4 {
+    gap: 0.5rem;
+  }
+
+  /* Reduce space-y-8 vertical spacing */
+  .audit-content .space-y-8 > * + * {
+    margin-top: 1rem;
+  }
+
+  /* Welcome section adjustments */
+  .main-content-wrapper .welcome-section {
+    width: 100%;
+    margin-bottom: 1rem;
+    max-width: 100%;
+  }
+
+  /* Model name container spacing */
+  .audit-content .model-name-container {
+    margin-bottom: 0.5rem;
+  }
+
+  /* Tabs container margin */
+  .audit-content .tabs-container {
+    margin-bottom: 1rem;
+  }
+
+  /* Audit name section spacing */
+  .audit-content .audit-name-section {
+    margin-bottom: 0.75rem;
+    gap: 0.125rem;
+  }
+
+  /* Audit config form spacing */
+  .audit-content .audit-config-form {
+    margin-top: 1rem;
+  }
+
+  /* Reduce spacing in form sections */
+  .audit-content .audit-config-form > div.mb-6 {
+    margin-bottom: 0.75rem;
+  }
+
+  /* Test cases section spacing */
+  .audit-content .test-cases-table {
+    margin-bottom: 1rem;
+  }
+
+  /* Navigation buttons container */
+  .audit-content .flex.items-center.justify-center.gap-6.pt-8 {
+    padding-top: 1rem;
+    gap: 1rem;
+  }
+
+  /* Target specific Tailwind utility classes */
+  .audit-content [class*="mb-8"] {
+    margin-bottom: 1rem;
+  }
+
+  .audit-content [class*="mb-6"] {
+    margin-bottom: 0.75rem;
+  }
+
+  .audit-content [class*="gap-8"] {
+    gap: 0.5rem;
+  }
+
+  .audit-content [class*="gap-6"] {
+    gap: 0.5rem;
+  }
+
+  /* Reduce padding in specific sections */
+  .audit-content .p-10 {
+    padding: 0.75rem;
+  }
+}
+
+/* Extra small screens - even tighter spacing */
+@media (max-width: 640px) {
+  /* Further reduce main wrapper padding */
+  .main-content-wrapper.main-content-wrapper {
+    padding-top: 12px;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  /* Tighter audit content padding */
+  .audit-content.audit-content {
+    padding: 0.5rem;
+  }
+
+  /* Minimal margins for all sections */
+  .audit-content > div[class*="mb-"] {
+    margin-bottom: 0.75rem;
+  }
+
+  /* Reduce all gaps further */
+  .audit-content .flex[class*="gap-"] {
+    gap: 0.5rem;
+  }
+
+  /* Compact form spacing */
+  .audit-content .audit-config-form > div {
+    margin-bottom: 0.75rem;
+  }
+
+  /* Compact tabs */
+  .audit-content .tabs-container {
+    margin-bottom: 0.75rem;
+  }
+
+  /* Compact navigation buttons */
+  .audit-content .flex.items-center.justify-center {
+    padding-top: 0.75rem;
+    gap: 0.75rem;
+  }
+
+  /* Reduce breadcrumb padding */
+  .breadcrumbs-inner.breadcrumbs-inner {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+}
+
+/* Mobile spacing optimizations - targeting Tailwind utilities directly */
+@media (max-width: 1023px) {
+  /* Target audit-name-section and reduce its margin-bottom */
+  .audit-content .audit-name-section.mb-6,
+  .audit-content .audit-name-section[class*="mb-6"],
+  .audit-content div.audit-name-section.mb-6 {
+    margin-bottom: 0.5rem;
+  }
+
+  /* Target the gap between audit-name-section and tabs */
+  .audit-content .audit-name-section + div,
+  .audit-content .audit-name-section ~ div {
+    margin-top: 0.5rem;
+  }
+
+  /* Specifically target the tabs container that comes after audit-name-section */
+  .audit-content .audit-name-section + .mb-8,
+  .audit-content .audit-name-section ~ .mb-8,
+  .audit-content .audit-name-section + div.mb-8 {
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Reduce spacing in audit-name-section itself */
+  .audit-content .audit-name-section > div:first-child {
+    margin-bottom: 0;
+  }
+
+  /* Target audit-status-container spacing */
+  .audit-content .audit-status-container {
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+  }
+
+  /* Reduce gap in audit-name-section flex container */
+  .audit-content .audit-name-section.gap-4,
+  .audit-content .audit-name-section[class*="gap-4"] {
+    gap: 0.5rem;
+  }
+
+  /* Target the div that contains "Audit auto-saved" */
+  .audit-content .audit-status-container .audit-auto-saved-wrapper {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  /* Reduce spacing between model name and audit name section */
+  .audit-content .model-name-container + div,
+  .audit-content .model-name-container ~ div {
+    margin-top: 0.5rem;
+  }
+
+  /* Target any mb-6 that comes after model-name-container */
+  .audit-content .model-name-container + .mb-6,
+  .audit-content .model-name-container ~ .mb-6 {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Most aggressive - targets the exact structure */
+  /* Target the parent flex container */
+  .audit-content.flex.flex-1.gap-8 {
+    gap: 0.5rem;
+  }
+
+  /* Target the audit content padding */
+  .audit-content.p-10 {
+    padding: 0.5rem;
+  }
+
+  /* Remove all bottom margins from audit-name-section */
+  .audit-content > div.audit-name-section,
+  .audit-content > div.audit-name-section.mb-6 {
+    margin-bottom: 0.25rem;
+  }
+
+  /* Remove top margin from tabs container */
+  .audit-content > div.tabs-container,
+  .audit-content > div.mb-8.tabs-container {
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Compact the audit-status-container */
+  .audit-content .audit-status-container.flex.items-center.gap-4 {
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+  }
+}
+
+/* Extra small screens - even tighter spacing */
+@media (max-width: 640px) {
+  /* Aggressively reduce spacing after audit name section */
+  .audit-content .audit-name-section.mb-6,
+  .audit-content .audit-name-section[class*="mb-"],
+  .audit-content div.audit-name-section {
+    margin-bottom: 0.25rem;
+  }
+
+  /* Remove any top margin from elements after audit-name-section */
+  .audit-content .audit-name-section + *,
+  .audit-content .audit-name-section ~ * {
+    margin-top: 0.25rem;
+  }
+
+  /* Specifically target tabs container */
+  .audit-content .tabs-container {
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Reduce spacing in audit-status-container */
+  .audit-content .audit-status-container {
+    margin-top: 0.25rem;
+    gap: 0.5rem;
+  }
+
+  /* Target the flex container inside audit-name-section */
+  .audit-content .audit-name-section > div:first-child {
+    margin-bottom: 0;
+    gap: 0.5rem;
+  }
+
+  /* Reduce spacing between model name and audit name */
+  .audit-content .model-name-container {
+    margin-bottom: 0.25rem;
+  }
+
+  .audit-content .model-name-container + * {
+    margin-top: 0.25rem;
+  }
+
+  /* Most aggressive - targets the exact structure */
+  /* Target the parent flex container */
+  .audit-content.flex.flex-1.gap-8 {
+    gap: 0.5rem;
+  }
+
+  /* Target the audit content padding */
+  .audit-content.p-10 {
+    padding: 0.5rem;
+  }
+
+  /* Remove all bottom margins from audit-name-section */
+  .audit-content > div.audit-name-section,
+  .audit-content > div.audit-name-section.mb-6 {
+    margin-bottom: 0.25rem;
+  }
+
+  /* Remove top margin from tabs container */
+  .audit-content > div.tabs-container,
+  .audit-content > div.mb-8.tabs-container {
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Compact the audit-status-container */
+  .audit-content .audit-status-container.flex.items-center.gap-4 {
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+  }
+}
+
+/* Mobile spacing fixes - targeting exact Tailwind utility class combinations */
+@media (max-width: 1023px) {
+  /* Target audit-name-section with mb-6 class - use attribute selector for exact match */
+  .audit-content div.audit-name-section.mb-6,
+  .audit-content div[class*="audit-name-section"][class*="mb-6"],
+  .audit-content .flex.items-center.justify-between.mb-6.gap-4.audit-name-section {
+    margin-bottom: 0.5rem;
+  }
+
+  /* Target the mb-8 div that comes after audit-name-section */
+  .audit-content .audit-name-section.mb-6 + div.mb-8,
+  .audit-content .audit-name-section.mb-6 ~ div.mb-8,
+  .audit-content div[class*="audit-name-section"] + div[class*="mb-8"],
+  .audit-content div[class*="audit-name-section"] ~ div[class*="mb-8"] {
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Target tabs container specifically */
+  .audit-content div.mb-8.tabs-container,
+  .audit-content div[class*="mb-8"][class*="tabs-container"] {
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Reduce gap in audit-name-section */
+  .audit-content .audit-name-section.gap-4,
+  .audit-content div[class*="audit-name-section"][class*="gap-4"],
+  .audit-content .flex.items-center.justify-between.gap-4.audit-name-section {
+    gap: 0.5rem;
+  }
+
+  /* Target audit-status-container gap */
+  .audit-content .audit-status-container.gap-4,
+  .audit-content div[class*="audit-status-container"][class*="gap-4"],
+  .audit-content .flex.items-center.gap-4.audit-status-container {
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+  }
+
+  /* Target the div with pt-8 that contains navigation buttons */
+  .audit-content .flex.items-center.justify-center.gap-6.pt-8,
+  .audit-content div[class*="pt-8"][class*="gap-6"] {
+    padding-top: 1rem;
+    gap: 1rem;
+  }
+
+  /* Most specific - matches exact structure from DevTools */
+  /* Target the exact class combination shown in breadcrumb */
+  .audit-content .flex.items-center.justify-between.mb-6.gap-4.audit-name-section {
+    margin-bottom: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  /* Target the next sibling div with mb-8 */
+  .audit-content .flex.items-center.justify-between.mb-6.gap-4.audit-name-section + div.mb-8 {
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Target tabs container */
+  .audit-content div.mb-8:has(.tabs-container),
+  .audit-content div.mb-8 .tabs-container {
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Target audit-status-container */
+  .audit-content .flex.items-center.gap-4.audit-status-container {
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+  }
+
+  /* Alternative approach - use :where() to reduce specificity conflicts */
+  .audit-content :where(.audit-name-section.mb-6) {
+    margin-bottom: 0.5rem;
+  }
+
+  .audit-content :where(.audit-name-section.mb-6) + :where(div.mb-8) {
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .audit-content :where(.tabs-container.mb-8) {
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .audit-content :where(.audit-status-container.gap-4) {
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+  }
+}
+
+/* Extra small screens - more aggressive overrides */
+@media (max-width: 640px) {
+  /* More aggressive overrides for very small screens */
+  .audit-content div.audit-name-section.mb-6,
+  .audit-content div[class*="audit-name-section"][class*="mb-"],
+  .audit-content .flex.items-center.justify-between.mb-6.gap-4.audit-name-section {
+    margin-bottom: 0.25rem;
+  }
+
+  .audit-content .audit-name-section.mb-6 + div.mb-8,
+  .audit-content .audit-name-section.mb-6 ~ div.mb-8 {
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .audit-content div.mb-8.tabs-container {
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .audit-content .audit-status-container.gap-4 {
+    gap: 0.5rem;
+    margin-top: 0.125rem;
+  }
+
+  /* Most specific for extra small screens */
+  .audit-content .flex.items-center.justify-between.mb-6.gap-4.audit-name-section {
+    margin-bottom: 0.25rem;
+    gap: 0.5rem;
+  }
+
+  .audit-content .flex.items-center.justify-between.mb-6.gap-4.audit-name-section + div.mb-8 {
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .audit-content .flex.items-center.gap-4.audit-status-container {
+    gap: 0.5rem;
+    margin-top: 0.125rem;
+  }
+}
+
+/* Fix Technical Audit tag visibility on mobile - keep desktop styling intact */
+@media (max-width: 1023px) {
+  /* Override the negative margin that pushes tag off-screen on mobile */
+  .audit-content .audit-tag {
+    margin-left: 0; /* Remove -170px on mobile only */
+  }
+
+  /* Nudge Cancel button slightly to the right on mobile only */
+  .audit-content .cancel-audit-button {
+    margin-left: 0.5rem;
+  }
+
+  /* Ensure tag wrapper is visible and not clipped, and add vertical breathing room */
+  .audit-content .tag-wrapper {
+    display: inline-flex;
+    visibility: visible;
+    opacity: 1;
+    overflow: visible;
+    /* Vertical space between tag and \"Audit auto-saved\" on mobile only */
+    margin-bottom: 1.5rem;
+  }
+
+  /* Ensure parent container doesn't clip the tag */
+  .audit-content .audit-name-section > div:first-child {
+    overflow: visible;
+  }
+
+  /* Ensure the tag itself is visible */
+  .audit-content .audit-tag,
+  .audit-content .audit-tag span,
+  .audit-content .audit-tag [class*=\"Tag\"] {
+    display: inline-flex;
+    visibility: visible;
+    opacity: 1;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 640px) {
+  /* Ensure tag is visible on very small screens too */
+  .audit-content .audit-tag {
+    margin-left: 0;
+  }
+  .audit-content .cancel-audit-button {
+    margin-left: 0.5rem;
+  }
+  /* Slightly tighter vertical spacing on very small screens */
+  .audit-content .tag-wrapper {
+    margin-bottom: 1.5rem;
+  }
+}
 
