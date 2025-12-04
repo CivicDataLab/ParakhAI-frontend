@@ -93,7 +93,6 @@ export function useAppSession(): AppSession {
         name: decoded?.name || decoded?.preferred_username || null,
       };
     } catch (error) {
-      console.warn('Failed to decode access token:', error);
       return { email: null, name: null };
     }
   }, [accessToken]);
@@ -129,52 +128,6 @@ export function useAppSession(): AppSession {
       }
     : null;
 
-  // Debug logging - remove in production
-  React.useEffect(() => {
-    console.group('🔐 Session Debug');
-    console.log('Status:', status);
-    console.log('Access Token:', accessToken ? `${accessToken.substring(0, 30)}...` : '❌ Missing');
-    console.log('ID Token:', idToken ? `${idToken.substring(0, 30)}...` : '❌ Missing');
-    console.log('Roles:', roles.length > 0 ? roles : '❌ No roles');
-    
-    // Decode token to show what's inside
-    if (accessToken) {
-      try {
-        const decoded = jwtDecode(accessToken) as any;
-        console.log('📄 Decoded Access Token:', {
-          email: decoded?.email || '❌ No email in token',
-          name: decoded?.name || decoded?.preferred_username || '❌ No name in token',
-          sub: decoded?.sub || '❌ No sub in token',
-          realm_access: decoded?.realm_access || '❌ No realm_access',
-          exp: decoded?.exp ? new Date(decoded.exp * 1000).toISOString() : '❌ No exp',
-        });
-      } catch (error) {
-        console.error('Failed to decode token:', error);
-      }
-    }
-    
-    console.log('👤 User Details (Final):', {
-      id: user?.id || '❌ Missing',
-      name: user?.name || '❌ Missing',
-      email: user?.email || '❌ Missing',
-      username: user?.username || '❌ Missing',
-      roles: user?.roles || [],
-      emailSource: user?.email ? 
-        (me?.email ? 'Backend (me)' : decodedEmail ? 'Decoded Token' : 'Session') : 
-        'None',
-    });
-    
-    console.log('📋 Raw Session Object:', {
-      hasAccessToken: !!(session as any)?.access_token,
-      hasIdToken: !!(session as any)?.id_token,
-      sessionUserEmail: session?.user?.email,
-      sessionUserName: session?.user?.name,
-      sessionRoles: (session as any)?.roles,
-    });
-    
-    console.log('💾 Backend User Details (me):', me || '❌ Not fetched yet');
-    console.groupEnd();
-  }, [status, accessToken, idToken, roles, user, session, me, decodedEmail, decodedName]);
 
   return {
     status,

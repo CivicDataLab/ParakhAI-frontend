@@ -160,28 +160,6 @@ const NewAuditPage = () => {
   // GraphQL API hook for authenticated requests
   const { request, isAuthenticated, isLoading: isSessionLoading, accessToken } = useGraphQL();
   
-  // Get full session data for debugging
-  const sessionData = useAppSession();
-
-  // Debug logging - check browser console for detailed logs
-  useEffect(() => {
-    console.group('🔍 Audit Page Debug');
-    console.log('Authentication Status:', {
-      isAuthenticated,
-      isSessionLoading,
-      hasAccessToken: !!accessToken,
-      accessTokenPreview: accessToken ? `${accessToken.substring(0, 30)}...` : '❌ Missing',
-    });
-    console.log('User Details:', {
-      name: sessionData.user?.name || '❌ Missing',
-      email: sessionData.user?.email || '❌ Missing',
-      id: sessionData.user?.id || '❌ Missing',
-      roles: sessionData.user?.roles || [],
-    });
-    console.log('Full Session Data:', sessionData);
-    console.groupEnd();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, isSessionLoading, accessToken, sessionData.user?.email, sessionData.user?.name]); // More specific dependencies to prevent excessive logging
 
   // Helper function to map module name keys to display names
   const getModuleDisplayName = (moduleName: string): string => {
@@ -195,15 +173,31 @@ const NewAuditPage = () => {
 
   // Track if modules have been fetched to prevent duplicate calls
   const modulesFetchedRef = useRef(false);
+  const isFetchingRef = useRef(false);
+  const lastModelTypeRef = useRef<string | null>(null);
 
   // Load evaluation modules from GraphQL API using modulesByModelType
   useEffect(() => {
-    // Prevent duplicate calls
-    if (!isAuthenticated || isSessionLoading || modulesFetchedRef.current) {
+    // Reset flags if modelType changed
+    if (lastModelTypeRef.current !== null && lastModelTypeRef.current !== modelType) {
+      modulesFetchedRef.current = false;
+      isFetchingRef.current = false;
+    }
+    lastModelTypeRef.current = modelType;
+
+    // Prevent duplicate calls - check multiple conditions
+    if (
+      !isAuthenticated || 
+      isSessionLoading || 
+      modulesFetchedRef.current || 
+      isFetchingRef.current ||
+      isLoadingModules
+    ) {
       return;
     }
 
-    // Mark as fetching to prevent duplicate calls
+    // Mark as fetching IMMEDIATELY to prevent any race conditions
+    isFetchingRef.current = true;
     modulesFetchedRef.current = true;
 
     const fetchModules = async () => {
@@ -233,23 +227,25 @@ const NewAuditPage = () => {
         }
         setSelectedModules(initialSelected);
       } catch (error: any) {
-        console.error('Failed to load modules', error);
-        setModulesError('Failed to load evaluation modules. Please ensure you are logged in.');
-        // Reset ref on error so it can retry
-        modulesFetchedRef.current = false;
+        
+        // Check if it's a connection error
+        if (error?.message?.includes('Failed to fetch') || error?.message?.includes('ERR_CONNECTION_REFUSED') || error?.message?.includes('Backend server')) {
+          setModulesError('Backend server is not available. Please check if the GraphQL server is running on port 9001.');
+          // Don't reset refs on connection error - prevent retry spam
+        } else {
+          setModulesError('Failed to load evaluation modules. Please ensure you are logged in.');
+          // Reset refs on other errors so it can retry
+          modulesFetchedRef.current = false;
+        }
       } finally {
         setIsLoadingModules(false);
+        isFetchingRef.current = false;
       }
     };
 
     fetchModules();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modelType, isAuthenticated, isSessionLoading]); // Removed 'request' - it's now memoized and stable
-
-  // Reset fetch flag when modelType changes
-  useEffect(() => {
-    modulesFetchedRef.current = false;
-  }, [modelType]);
 
   // Mode of evaluation options
   const modeOfEvaluationOptions = [
@@ -407,7 +403,6 @@ const NewAuditPage = () => {
   // Fetch metrics for a specific module using metricsByModelType
   const fetchMetricsForModule = async (moduleName: string): Promise<SelectOption[]> => {
     if (!isAuthenticated) {
-      console.warn('User not authenticated, cannot fetch metrics');
       return [];
     }
 
@@ -432,7 +427,6 @@ const NewAuditPage = () => {
         label: metric.displayName || toTitleCase(metric.name.replace(/_/g, ' ')),
       }));
     } catch (error: any) {
-      console.error('Failed to load metrics for module', moduleName, error);
       return [];
     }
   };
@@ -506,23 +500,10 @@ const NewAuditPage = () => {
 
     try {
       // Use authenticated GraphQL request - access token is automatically included
-      console.log('🚀 Requesting Audit with Access Token:', {
-        hasAccessToken: !!accessToken,
-        tokenPreview: accessToken ? `${accessToken.substring(0, 30)}...` : '❌ Missing',
-        input: {
-          name: input.name,
-          modules: input.modules,
-          metrics: input.metrics,
-          modelId: input.modelId,
-        },
-      });
-      
       const result = await request<{ requestAudit: { success: boolean; message: string; audit: any } }>(
         REQUEST_AUDIT_MUTATION,
         { input }
       );
-      
-      console.log('✅ Audit Request Successful:', result);
 
       const payload = result?.requestAudit;
       if (!payload) {
@@ -561,7 +542,6 @@ const NewAuditPage = () => {
         durationSeconds,
       });
     } catch (error) {
-      console.error('Network or fetch error while requesting audit:', error);
       setAuditError('Network error while starting audit.');
     } finally {
       setIsRequestingAudit(false);

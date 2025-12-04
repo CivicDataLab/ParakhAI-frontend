@@ -38,15 +38,6 @@ export function createGraphQLClient(accessToken: string | null): GraphQLClient {
   // Add Authorization header if access token is available
   if (accessToken) {
     headers['Authorization'] = `Bearer ${accessToken}`;
-    // Debug logging - remove in production
-    console.log('🔑 Sending Access Token to Backend:', {
-      endpoint,
-      tokenPreview: `${accessToken.substring(0, 20)}...${accessToken.substring(accessToken.length - 10)}`,
-      tokenLength: accessToken.length,
-      hasAuthHeader: !!headers['Authorization'],
-    });
-  } else {
-    console.warn('⚠️ No Access Token Available - Request will be unauthenticated');
   }
 
   return new GraphQLClient(endpoint, {
@@ -108,20 +99,15 @@ export function useGraphQL() {
       throw new Error('User is not authenticated. Please log in.');
     }
 
-    // Debug logging - remove in production
-    console.log('📡 Making GraphQL Request:', {
-      queryName: query.split('query')[1]?.split('(')[0]?.trim() || query.split('mutation')[1]?.split('(')[0]?.trim() || 'Unknown',
-      variables,
-      hasAccessToken: !!accessToken,
-      tokenPreview: accessToken ? `${accessToken.substring(0, 20)}...` : '❌ Missing',
-    });
-
     try {
       const result = await graphqlRequest<T>(query, variables, accessToken);
-      console.log('✅ GraphQL Request Success:', result);
       return result;
-    } catch (error) {
-      console.error('❌ GraphQL Request Failed:', error);
+    } catch (error: any) {
+      // More specific error handling
+      const errorMessage = error?.message || 'Unknown error';
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('ERR_CONNECTION_REFUSED')) {
+        throw new Error('Backend server is not available. Please check if the GraphQL server is running.');
+      }
       throw error;
     }
   }, [accessToken, status]); // Only recreate when accessToken or status changes
