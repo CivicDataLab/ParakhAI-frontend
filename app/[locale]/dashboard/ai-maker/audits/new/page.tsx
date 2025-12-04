@@ -23,7 +23,6 @@ import BreadCrumbs from '@/components/Breadcrumbs';
 import WelcomeSection from '../../../components/WelcomeSection';
 import { toTitleCase } from '@/lib/utils';
 import { useGraphQL } from '@/lib/api';
-import { useAppSession } from '@/lib/session';
 
 type AuditType = 'technical' | 'domain' | 'cultural';
 
