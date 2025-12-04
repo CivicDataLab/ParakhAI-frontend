@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Button, Tag, Text, Icon, TextField, Label, Select, DataTable, DropZone, ProgressBar } from 'opub-ui';
 import { BarChart } from 'opub-ui/viz';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -180,7 +180,8 @@ const NewAuditPage = () => {
     });
     console.log('Full Session Data:', sessionData);
     console.groupEnd();
-  }, [isAuthenticated, isSessionLoading, accessToken, sessionData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, isSessionLoading, accessToken, sessionData.user?.email, sessionData.user?.name]); // More specific dependencies to prevent excessive logging
 
   // Helper function to map module name keys to display names
   const getModuleDisplayName = (moduleName: string): string => {
@@ -192,11 +193,18 @@ const NewAuditPage = () => {
     return nameMap[moduleName] || toTitleCase(moduleName.replace(/_/g, ' '));
   };
 
+  // Track if modules have been fetched to prevent duplicate calls
+  const modulesFetchedRef = useRef(false);
+
   // Load evaluation modules from GraphQL API using modulesByModelType
   useEffect(() => {
-    if (!isAuthenticated || isSessionLoading) {
+    // Prevent duplicate calls
+    if (!isAuthenticated || isSessionLoading || modulesFetchedRef.current) {
       return;
     }
+
+    // Mark as fetching to prevent duplicate calls
+    modulesFetchedRef.current = true;
 
     const fetchModules = async () => {
       try {
@@ -227,13 +235,21 @@ const NewAuditPage = () => {
       } catch (error: any) {
         console.error('Failed to load modules', error);
         setModulesError('Failed to load evaluation modules. Please ensure you are logged in.');
+        // Reset ref on error so it can retry
+        modulesFetchedRef.current = false;
       } finally {
         setIsLoadingModules(false);
       }
     };
 
     fetchModules();
-  }, [modelType, request, isAuthenticated, isSessionLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modelType, isAuthenticated, isSessionLoading]); // Removed 'request' - it's now memoized and stable
+
+  // Reset fetch flag when modelType changes
+  useEffect(() => {
+    modulesFetchedRef.current = false;
+  }, [modelType]);
 
   // Mode of evaluation options
   const modeOfEvaluationOptions = [

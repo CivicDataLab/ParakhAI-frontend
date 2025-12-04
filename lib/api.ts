@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { GraphQLClient } from 'graphql-request';
 import { useAppSession } from './session';
 
@@ -94,7 +95,8 @@ export async function graphqlRequest<T = any>(
 export function useGraphQL() {
   const { accessToken, status } = useAppSession();
 
-  const request = async <T = any>(
+  // Memoize request function to prevent unnecessary re-renders
+  const request = React.useCallback(async <T = any>(
     query: string,
     variables: Record<string, any> = {}
   ): Promise<T> => {
@@ -122,7 +124,7 @@ export function useGraphQL() {
       console.error('❌ GraphQL Request Failed:', error);
       throw error;
     }
-  };
+  }, [accessToken, status]); // Only recreate when accessToken or status changes
 
   return {
     request,
