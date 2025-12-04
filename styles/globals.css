@@ -4388,6 +4388,102 @@ label:has(input[value="cultural"]:not(:checked)) {
   margin-bottom: 24px;
 }
 
+/* Audit Results - Summary + Module charts */
+.audit-results-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.audit-summary-card {
+  width: 100%;
+  max-width: 1004px;
+  min-height: 180px;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid #C4B8F3;
+  background-color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+}
+
+.audit-summary-card > * {
+  display: block;
+  width: 100%;
+}
+
+.audit-summary-content {
+  margin-top: 16px;
+}
+
+.audit-summary-legend {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.legend-item::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  margin-right: 4px;
+}
+
+.legend-low::before {
+  background-color: #10B981;
+}
+
+.legend-medium::before {
+  background-color: #FBBF24;
+}
+
+.legend-high::before {
+  background-color: #EF4444;
+}
+
+.audit-modules-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.audit-module-card {
+  width: 78%;
+  height: 270px;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid #C4B8F3;
+  background-color: #FFFFFF;
+  box-sizing: border-box;
+}
+
+/* Add spacing between Module cards and Test Cases table */
+.test-cases-table {
+  margin-top: 110px;
+}
+
+.audit-module-chart {
+  margin-top: 8px;
+  width: 250px;
+  height: 150px;
+  overflow: hidden;
+}
+
+@media (max-width: 1023px) {
+  .audit-modules-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .audit-modules-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+
 .audit-overview-section > [class*="Text"]:first-child {
   margin-bottom: 16px;
   display: block;

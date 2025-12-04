@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Button, Tag, Text, Icon, TextField, Label, Select, DataTable, DropZone, Card, ProgressBar } from 'opub-ui';
+import { Button, Tag, Text, Icon, TextField, Label, Select, DataTable, DropZone, ProgressBar } from 'opub-ui';
+import { BarChart } from 'opub-ui/viz';
 import type { ColumnDef } from '@tanstack/react-table';
 import Image from 'next/image';
 import {
@@ -26,12 +27,34 @@ type AuditType = 'technical' | 'domain' | 'cultural';
 
 type SelectOption = { value: string; label: string };
 
-// We call USI GraphQL like:
-// { modules(limit: 50) }
-// where `modules` returns a JSON blob shaped like the example you shared.
-const EVALUATION_MODULES_QUERY = `
-  query EvaluationModules($limit: Int!) {
-    modules(limit: $limit)
+// GraphQL queries for dynamic modules and metrics
+const MODULES_BY_MODEL_TYPE_QUERY = `
+  query ModulesByModelType($modelType: String!) {
+    modulesByModelType(modelType: $modelType) {
+      name
+      displayName
+      description
+      metrics {
+        name
+        displayName
+        description
+      }
+    }
+  }
+`;
+
+const METRICS_BY_MODEL_TYPE_QUERY = `
+  query MetricsByModelType($modelType: String!) {
+    metricsByModelType(modelType: $modelType) {
+      name
+      displayName
+      description
+      metrics {
+        name
+        displayName
+        description
+      }
+    }
   }
 `;
 
@@ -76,6 +99,7 @@ const NewAuditPage = () => {
   const [auditName, setAuditName] = useState('Untitled Audit - 20 March 2023 - 10:30AM');
   const modelName = 'Region-al';
   const modelVersion = 'Ver. 1.2.1';
+  const modelType = 'Region-al Ver 1.2.1'; // Full model type for GraphQL queries
   const isAutoSaved = true;
   
   // Mobile detection for inline styles
@@ -95,19 +119,24 @@ const NewAuditPage = () => {
   const [organisationName, setOrganisationName] = useState('');
   const [auditObjective, setAuditObjective] = useState('');
   const [scopeOfAudit, setScopeOfAudit] = useState('');
-  const [biasFairness, setBiasFairness] = useState(false);
-  const [hallucination, setHallucination] = useState(false);
-  const [privacySecurity, setPrivacySecurity] = useState(false);
-  const [biasFairnessSubmodules, setBiasFairnessSubmodules] = useState<string>('');
-  const [hallucinationSubmodules, setHallucinationSubmodules] = useState<string>('');
-  const [privacySecuritySubmodules, setPrivacySecuritySubmodules] = useState<string>('');
   const [modeOfEvaluation, setModeOfEvaluation] = useState<string>('');
 
-  // Evaluation modules loaded from USI GraphQL API, grouped by backend category key
-  // e.g. { bias_fairness: [...], hallucination: [...], privacy_security: [...] }
-  const [moduleOptionsByCategory, setModuleOptionsByCategory] = useState<
-    Record<string, SelectOption[]>
-  >({});
+  // Dynamic modules state - stores modules fetched from API
+  type Module = {
+    name: string;
+    displayName: string;
+    description: string;
+    metrics: Array<{
+      name: string;
+      displayName: string;
+      description: string;
+    }>;
+  };
+
+  const [modules, setModules] = useState<Module[]>([]);
+  const [selectedModules, setSelectedModules] = useState<Record<string, boolean>>({});
+  const [selectedMetrics, setSelectedMetrics] = useState<Record<string, string>>({});
+  const [moduleMetricsOptions, setModuleMetricsOptions] = useState<Record<string, SelectOption[]>>({});
   const [isLoadingModules, setIsLoadingModules] = useState<boolean>(false);
   const [modulesError, setModulesError] = useState<string | null>(null);
 
@@ -126,16 +155,25 @@ const NewAuditPage = () => {
     durationSeconds: number | null;
   } | null>(null);
 
-  // Load evaluation modules from USI GraphQL API
+  // Helper function to map module name keys to display names
+  const getModuleDisplayName = (moduleName: string): string => {
+    const nameMap: Record<string, string> = {
+      bias_fairness: 'Bias and Fairness',
+      hallucination: 'Hallucination',
+      privacy_security: 'Privacy and Security',
+    };
+    return nameMap[moduleName] || toTitleCase(moduleName.replace(/_/g, ' '));
+  };
+
+  // Load evaluation modules from GraphQL API using modulesByModelType
   useEffect(() => {
     const endpoint = process.env.NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT;
     if (!endpoint) {
-      // Fail silently in UI but log for developers
       console.warn('NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT is not set');
       return;
     }
 
-    const fetchEvaluationModules = async () => {
+    const fetchModules = async () => {
       try {
         setIsLoadingModules(true);
         setModulesError(null);
@@ -146,8 +184,8 @@ const NewAuditPage = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            query: EVALUATION_MODULES_QUERY,
-            variables: { limit: 50 },
+            query: MODULES_BY_MODEL_TYPE_QUERY,
+            variables: { modelType },
           }),
         });
 
@@ -158,74 +196,35 @@ const NewAuditPage = () => {
         const json = await response.json();
 
         if (json.errors?.length) {
-          console.error('GraphQL errors while fetching evaluation modules', json.errors);
+          console.error('GraphQL errors while fetching modules', json.errors);
           throw new Error('GraphQL error');
         }
 
-        const modulesData = json?.data?.modules ?? {};
+        const modulesData = Array.isArray(json?.data?.modulesByModelType) 
+          ? json.data.modulesByModelType 
+          : [];
+        setModules(modulesData);
 
-        // Traverse all task types (e.g., text_generation, translation),
-        // then all categories (e.g., bias_fairness, hallucination),
-        // then their metrics, and group options by category key.
-        // We also de‑duplicate metrics per category so we don't show
-        // "Gender Bias" (or any other metric) multiple times.
-        const byCategory: Record<string, SelectOption[]> = {};
-        const seenByCategory: Record<string, Set<string>> = {};
-
-        Object.values(modulesData || {}).forEach((taskType: any) => {
-          if (!taskType || typeof taskType !== 'object') return;
-
-          Object.entries(taskType).forEach(([categoryKey, category]: [string, any]) => {
-            const metrics = category?.metrics;
-            if (!metrics || typeof metrics !== 'object') return;
-
-            if (!byCategory[categoryKey]) {
-              byCategory[categoryKey] = [];
+        // Initialize selected modules state
+        const initialSelected: Record<string, boolean> = {};
+        if (Array.isArray(modulesData)) {
+          modulesData.forEach((module: Module) => {
+            if (module?.name) {
+              initialSelected[module.name] = false;
             }
-            if (!seenByCategory[categoryKey]) {
-              seenByCategory[categoryKey] = new Set<string>();
-            }
-
-            Object.entries(metrics).forEach(
-              ([metricKey, metric]: [string, any]) => {
-                // Skip this metric if we've already added it once for this category
-                if (seenByCategory[categoryKey].has(metricKey)) {
-                  return;
-                }
-
-                const sectors = metric?.tools?.deepeval?.sectors;
-                const sectorValue =
-                  sectors?.healthcare ??
-                  (sectors && Object.values(sectors)[0]) ??
-                  {};
-
-                const labelRaw =
-                  sectorValue?.template_display_name ||
-                  sectorValue?.metric_display_name ||
-                  metricKey.replace(/_/g, ' ');
-
-                byCategory[categoryKey].push({
-                  value: metricKey,
-                  label: toTitleCase(labelRaw),
-                });
-
-                seenByCategory[categoryKey].add(metricKey);
-              }
-            );
           });
-        });
-
-        setModuleOptionsByCategory(byCategory);
+        }
+        setSelectedModules(initialSelected);
       } catch (error: any) {
-        console.error('Failed to load evaluation modules', error);
+        console.error('Failed to load modules', error);
         setModulesError('Failed to load evaluation modules');
       } finally {
         setIsLoadingModules(false);
       }
     };
 
-    fetchEvaluationModules();
-  }, []);
+    fetchModules();
+  }, [modelType]);
 
   // Mode of evaluation options
   const modeOfEvaluationOptions = [
@@ -329,6 +328,7 @@ const NewAuditPage = () => {
     evaluationModule: string;
     evaluationMetric: string;
     riskSeverity: 'High' | 'Medium' | 'Low' | 'No risk';
+    reason: string;
   };
 
   const testCasesData: TestCase[] = [
@@ -339,6 +339,7 @@ const NewAuditPage = () => {
       evaluationModule: 'Bias and Fairness',
       evaluationMetric: 'Economic',
       riskSeverity: 'High',
+      reason: 'Reason placeholder for economic bias and fairness case.',
     },
     {
       id: '2',
@@ -347,6 +348,7 @@ const NewAuditPage = () => {
       evaluationModule: 'Bias and Fairness',
       evaluationMetric: 'Gender',
       riskSeverity: 'Medium',
+      reason: 'Reason placeholder for gender bias and fairness case.',
     },
     {
       id: '3',
@@ -355,6 +357,7 @@ const NewAuditPage = () => {
       evaluationModule: 'Hallucination',
       evaluationMetric: 'Misinformation',
       riskSeverity: 'High',
+      reason: 'Reason placeholder for hallucination misinformation case.',
     },
     {
       id: '4',
@@ -363,6 +366,7 @@ const NewAuditPage = () => {
       evaluationModule: 'Bias and Fairness',
       evaluationMetric: 'Gender',
       riskSeverity: 'Low',
+      reason: 'Reason placeholder for low-risk gender bias case.',
     },
     {
       id: '5',
@@ -371,25 +375,78 @@ const NewAuditPage = () => {
       evaluationModule: 'Hallucination',
       evaluationMetric: 'Misinformation',
       riskSeverity: 'No risk',
+      reason: 'Reason placeholder for no-risk hallucination case.',
     },
   ];
+
+  // Fetch metrics for a specific module using metricsByModelType
+  const fetchMetricsForModule = async (moduleName: string): Promise<SelectOption[]> => {
+    const endpoint = process.env.NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT;
+    if (!endpoint) {
+      console.warn('NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT is not set');
+      return [];
+    }
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: METRICS_BY_MODEL_TYPE_QUERY,
+          variables: { modelType },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const json = await response.json();
+
+      if (json.errors?.length) {
+        console.error('GraphQL errors while fetching metrics', json.errors);
+        return [];
+      }
+
+      const metricsData = json?.data?.metricsByModelType || [];
+      
+      // Find metrics for the specific module
+      const moduleMetrics = metricsData.find((m: any) => m.name === moduleName);
+      if (!moduleMetrics || !moduleMetrics.metrics) {
+        return [];
+      }
+
+      // Convert to SelectOption format
+      return moduleMetrics.metrics.map((metric: any) => ({
+        value: metric.name,
+        label: metric.displayName || toTitleCase(metric.name.replace(/_/g, ' ')),
+      }));
+    } catch (error: any) {
+      console.error('Failed to load metrics for module', moduleName, error);
+      return [];
+    }
+  };
 
   /**
    * Helper to collect selected modules & metrics based on UI state
    */
   const buildModulesAndMetrics = () => {
-    const modules: string[] = [];
-    if (biasFairness) modules.push('bias_fairness');
-    if (hallucination) modules.push('hallucination');
-    if (privacySecurity) modules.push('privacy_security');
+    const selectedModuleNames: string[] = [];
+    const selectedMetricNames: string[] = [];
 
-    const metrics = [
-      biasFairnessSubmodules,
-      hallucinationSubmodules,
-      privacySecuritySubmodules,
-    ].filter(Boolean) as string[];
+    Object.entries(selectedModules).forEach(([moduleName, isSelected]) => {
+      if (isSelected) {
+        selectedModuleNames.push(moduleName);
+        const metric = selectedMetrics[moduleName];
+        if (metric) {
+          selectedMetricNames.push(metric);
+        }
+      }
+    });
 
-    return { modules, metrics };
+    return { modules: selectedModuleNames, metrics: selectedMetricNames };
   };
 
   /**
@@ -555,6 +612,14 @@ const NewAuditPage = () => {
           </Tag>
         );
       },
+    },
+    {
+      accessorKey: 'reason',
+      header: 'Reason',
+      enableSorting: false,
+      cell: ({ getValue }) => (
+        <Text className="datatable-text-wrap">{getValue<string>()}</Text>
+      ),
     },
   ];
 
@@ -907,106 +972,122 @@ const NewAuditPage = () => {
                         Evaluation Modules<span className="text-red-500">*</span>
                       </Text>
                     </Label>
-                    <div className="flex flex-row gap-4 mt-4 evaluation-modules-row">
-                      {/* Bias and Fairness Card with Dropdown */}
-                      <div className="flex flex-col gap-2 evaluation-module-wrapper">
-                        <label className="evaluation-module-card">
-                          <div className="flex items-start gap-4">
-                            <input
-                              type="checkbox"
-                              checked={biasFairness}
-                              onChange={(e) => setBiasFairness(e.target.checked)}
-                              className="evaluation-module-checkbox"
-                            />
-                            <div className="flex-1 flex flex-col">
-                              <Text variant="bodyMd" fontWeight="semibold" className="text-gray-900 mb-1">
-                                Bias and Fairness
-                              </Text>
-                              <Text variant="bodySm" className="text-gray-600">
-                                Checks whether model perpetuates stereotypes
-                              </Text>
-                            </div>
-                          </div>
-                        </label>
-                        <div className="evaluation-module-dropdown">
-                          <Select
-                            name="biasFairnessSubmodules"
-                            label="Select sub-modules from dropdown"
-                            labelHidden
-                            options={moduleOptionsByCategory['bias_fairness'] ?? []}
-                            value={biasFairnessSubmodules}
-                            onChange={(value) => setBiasFairnessSubmodules(value)}
-                            placeholder="Select sub-modules from dropdown"
-                          />
-                        </div>
+                    {isLoadingModules ? (
+                      <div className="mt-4">
+                        <Text variant="bodySm" className="text-gray-600">
+                          Loading modules...
+                        </Text>
                       </div>
+                    ) : modulesError ? (
+                      <div className="mt-4">
+                        <Text variant="bodySm" className="text-red-600">
+                          {modulesError}
+                        </Text>
+                      </div>
+                    ) : modules.length === 0 ? (
+                      <div className="mt-4">
+                        <Text variant="bodySm" className="text-gray-600">
+                          No modules available for this model type.
+                        </Text>
+                      </div>
+                    ) : (
+                      <div className="flex flex-row gap-4 mt-4 evaluation-modules-row">
+                        {modules.filter((module) => module?.name).map((module) => {
+                          const moduleKey = module.name;
+                          const isSelected = selectedModules[moduleKey] || false;
+                          const selectedMetric = selectedMetrics[moduleKey] || '';
+                          
+                          // Get metrics options for this module - use fetched metrics if available, otherwise use module data
+                          const metricOptions: SelectOption[] = 
+                            moduleMetricsOptions[moduleKey]?.length > 0
+                              ? moduleMetricsOptions[moduleKey]
+                              : Array.isArray(module.metrics)
+                                ? module.metrics.map((metric) => ({
+                                    value: metric?.name || '',
+                                    label: metric?.displayName || toTitleCase((metric?.name || '').replace(/_/g, ' ')),
+                                  })).filter((opt) => opt.value) // Filter out invalid options
+                                : [];
 
-                      {/* Hallucination Card with Dropdown */}
-                      <div className="flex flex-col gap-2 evaluation-module-wrapper">
-                        <label className="evaluation-module-card">
-                          <div className="flex items-start gap-4">
-                            <input
-                              type="checkbox"
-                              checked={hallucination}
-                              onChange={(e) => setHallucination(e.target.checked)}
-                              className="evaluation-module-checkbox"
-                            />
-                            <div className="flex-1 flex flex-col">
-                              <Text variant="bodyMd" fontWeight="semibold" className="text-gray-900 mb-1">
-                                Hallucination
-                              </Text>
-                              <Text variant="bodySm" className="text-gray-600">
-                                Detects false or unsafe outputs
-                              </Text>
+                          return (
+                            <div key={moduleKey} className="flex flex-col gap-2 evaluation-module-wrapper">
+                              <label className="evaluation-module-card">
+                                <div className="flex items-start gap-4">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={async (e) => {
+                                      const isChecked = e.target.checked;
+                                      setSelectedModules((prev) => ({
+                                        ...prev,
+                                        [moduleKey]: isChecked,
+                                      }));
+                                      
+                                      if (isChecked) {
+                                        // If module has no metrics in its data, fetch from API
+                                        if ((!module.metrics || module.metrics.length === 0) && !moduleMetricsOptions[moduleKey]) {
+                                          const fetchedMetrics = await fetchMetricsForModule(moduleKey);
+                                          if (fetchedMetrics.length > 0) {
+                                            setModuleMetricsOptions((prev) => ({
+                                              ...prev,
+                                              [moduleKey]: fetchedMetrics,
+                                            }));
+                                          }
+                                        }
+                                      } else {
+                                        // Clear selected metric when module is unchecked
+                                        setSelectedMetrics((prev) => {
+                                          const updated = { ...prev };
+                                          delete updated[moduleKey];
+                                          return updated;
+                                        });
+                                      }
+                                    }}
+                                    className="evaluation-module-checkbox"
+                                  />
+                                  <div className="flex-1 flex flex-col">
+                                    <Text variant="bodyMd" fontWeight="semibold" className="text-gray-900 mb-1">
+                                      {getModuleDisplayName(moduleKey)}
+                                    </Text>
+                                    <Text variant="bodySm" className="text-gray-600">
+                                      {module.description || module.displayName || 'No description available'}
+                                    </Text>
+                                  </div>
+                                </div>
+                              </label>
+                              {isSelected && (
+                                <div className="evaluation-module-dropdown">
+                                  <Select
+                                    name={`${moduleKey}-metrics`}
+                                    label="Select sub-modules from dropdown"
+                                    labelHidden
+                                    options={metricOptions}
+                                    value={selectedMetric}
+                                    onChange={async (value) => {
+                                      setSelectedMetrics((prev) => ({
+                                        ...prev,
+                                        [moduleKey]: value,
+                                      }));
+                                      // If no metrics in module data, try fetching from API
+                                      if (metricOptions.length === 0 && value && !moduleMetricsOptions[moduleKey]) {
+                                        const fetchedMetrics = await fetchMetricsForModule(moduleKey);
+                                        if (fetchedMetrics.length > 0) {
+                                          setModuleMetricsOptions((prev) => ({
+                                            ...prev,
+                                            [moduleKey]: fetchedMetrics,
+                                          }));
+                                        }
+                                      }
+                                    }}
+                                    placeholder="Select sub-modules from dropdown"
+                                  />
+                                </div>
+                              )}
                             </div>
-                          </div>
-                        </label>
-                        <div className="evaluation-module-dropdown">
-                          <Select
-                            name="hallucinationSubmodules"
-                            label="Select sub-modules from dropdown"
-                            labelHidden
-                            options={moduleOptionsByCategory['hallucination'] ?? []}
-                            value={hallucinationSubmodules}
-                            onChange={(value) => setHallucinationSubmodules(value)}
-                            placeholder="Select sub-modules from dropdown"
-                          />
-                        </div>
+                          );
+                        })}
                       </div>
-
-                      {/* Privacy and Security Card with Dropdown */}
-                      <div className="flex flex-col gap-2 evaluation-module-wrapper">
-                        <label className="evaluation-module-card">
-                          <div className="flex items-start gap-4">
-                            <input
-                              type="checkbox"
-                              checked={privacySecurity}
-                              onChange={(e) => setPrivacySecurity(e.target.checked)}
-                              className="evaluation-module-checkbox"
-                            />
-                            <div className="flex-1 flex flex-col">
-                              <Text variant="bodyMd" fontWeight="semibold" className="text-gray-900 mb-1">
-                                Privacy and Security
-                              </Text>
-                              <Text variant="bodySm" className="text-gray-600">
-                                Ensures personal data is not exposed
-                              </Text>
-                            </div>
-                          </div>
-                        </label>
-                        <div className="evaluation-module-dropdown">
-                          <Select
-                            name="privacySecuritySubmodules"
-                            label="Select sub-modules from dropdown"
-                            labelHidden
-                            options={moduleOptionsByCategory['privacy_security'] ?? []}
-                            value={privacySecuritySubmodules}
-                            onChange={(value) => setPrivacySecuritySubmodules(value)}
-                            placeholder="Select sub-modules from dropdown"
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    )}
+                  </div>
 
                     {/* Mode of Evaluation Section */}
                     <div className="mb-6 mt-6">
@@ -1030,7 +1111,6 @@ const NewAuditPage = () => {
                       </div>
                     </div>
                   </div>
-                </div>
               )}
             </div>
           )}
@@ -1220,6 +1300,77 @@ const NewAuditPage = () => {
                     {auditError}
                   </Text>
                 )}
+              </div>
+
+              {/* Static Audit Summary + Module charts */}
+              <div className="audit-results-cards">
+                <div className="audit-summary-card">
+                  <Text variant="headingMd" className="mb-1">
+                    Audit Summary
+                  </Text>
+                  <Text variant="bodySm" className="mb-4">
+                    Total Issues Identified: 40
+                  </Text>
+                  <ProgressBar value={40} max={40} color="success" />
+                  <div className="audit-summary-legend">
+                    <span className="legend-item legend-low">Low (13)</span>
+                    <span className="legend-item legend-medium">Medium (24)</span>
+                    <span className="legend-item legend-high">High (3)</span>
+                  </div>
+                </div>
+
+                <div className="audit-modules-grid">
+                  {[1, 2, 3].map((index) => (
+                    <div key={index} className="audit-module-card">
+                      <Text variant="headingSm" className="mb-1">
+                        Module
+                      </Text>
+                      <Text variant="bodySm" className="mb-2">
+                        Issues Identified: 40
+                      </Text>
+                      <div className="audit-module-chart">
+                        <BarChart
+                          options={{
+                            grid: { left: 40, right: 16, top: 16, bottom: 30 },
+                            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                            legend: { bottom: 0 },
+                            xAxis: {
+                              type: 'value',
+                              boundaryGap: [0, 0.01],
+                            },
+                            yAxis: {
+                              type: 'category',
+                              data: ['Module 4', 'Module 3', 'Module 2', 'Module 1'],
+                            },
+                            series: [
+                              {
+                                name: 'Low',
+                                type: 'bar',
+                                stack: 'issues',
+                                itemStyle: { color: '#10B981' },
+                                data: [3, 5, 4, 6],
+                              },
+                              {
+                                name: 'Medium',
+                                type: 'bar',
+                                stack: 'issues',
+                                itemStyle: { color: '#FBBF24' },
+                                data: [4, 6, 7, 5],
+                              },
+                              {
+                                name: 'High',
+                                type: 'bar',
+                                stack: 'issues',
+                                itemStyle: { color: '#EF4444' },
+                                data: [1, 2, 3, 1],
+                              },
+                            ],
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Test Cases Table */}
