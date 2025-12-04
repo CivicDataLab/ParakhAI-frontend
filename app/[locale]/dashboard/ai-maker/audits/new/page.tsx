@@ -22,6 +22,7 @@ import {
 import BreadCrumbs from '@/components/Breadcrumbs';
 import WelcomeSection from '../../../components/WelcomeSection';
 import { toTitleCase } from '@/lib/utils';
+import { useGraphQL } from '@/lib/api';
 
 type AuditType = 'technical' | 'domain' | 'cultural';
 
@@ -155,6 +156,9 @@ const NewAuditPage = () => {
     durationSeconds: number | null;
   } | null>(null);
 
+  // GraphQL API hook for authenticated requests
+  const { request, isAuthenticated, isLoading: isSessionLoading } = useGraphQL();
+
   // Helper function to map module name keys to display names
   const getModuleDisplayName = (moduleName: string): string => {
     const nameMap: Record<string, string> = {
@@ -167,9 +171,7 @@ const NewAuditPage = () => {
 
   // Load evaluation modules from GraphQL API using modulesByModelType
   useEffect(() => {
-    const endpoint = process.env.NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT;
-    if (!endpoint) {
-      console.warn('NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT is not set');
+    if (!isAuthenticated || isSessionLoading) {
       return;
     }
 
@@ -178,30 +180,14 @@ const NewAuditPage = () => {
         setIsLoadingModules(true);
         setModulesError(null);
 
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            query: MODULES_BY_MODEL_TYPE_QUERY,
-            variables: { modelType },
-          }),
-        });
+        // Use authenticated GraphQL request - access token is automatically included
+        const data = await request<{ modulesByModelType: Module[] }>(
+          MODULES_BY_MODEL_TYPE_QUERY,
+          { modelType }
+        );
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        const json = await response.json();
-
-        if (json.errors?.length) {
-          console.error('GraphQL errors while fetching modules', json.errors);
-          throw new Error('GraphQL error');
-        }
-
-        const modulesData = Array.isArray(json?.data?.modulesByModelType) 
-          ? json.data.modulesByModelType 
+        const modulesData = Array.isArray(data?.modulesByModelType) 
+          ? data.modulesByModelType 
           : [];
         setModules(modulesData);
 
@@ -217,14 +203,14 @@ const NewAuditPage = () => {
         setSelectedModules(initialSelected);
       } catch (error: any) {
         console.error('Failed to load modules', error);
-        setModulesError('Failed to load evaluation modules');
+        setModulesError('Failed to load evaluation modules. Please ensure you are logged in.');
       } finally {
         setIsLoadingModules(false);
       }
     };
 
     fetchModules();
-  }, [modelType]);
+  }, [modelType, request, isAuthenticated, isSessionLoading]);
 
   // Mode of evaluation options
   const modeOfEvaluationOptions = [
@@ -381,36 +367,19 @@ const NewAuditPage = () => {
 
   // Fetch metrics for a specific module using metricsByModelType
   const fetchMetricsForModule = async (moduleName: string): Promise<SelectOption[]> => {
-    const endpoint = process.env.NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT;
-    if (!endpoint) {
-      console.warn('NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT is not set');
+    if (!isAuthenticated) {
+      console.warn('User not authenticated, cannot fetch metrics');
       return [];
     }
 
     try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: METRICS_BY_MODEL_TYPE_QUERY,
-          variables: { modelType },
-        }),
-      });
+      // Use authenticated GraphQL request - access token is automatically included
+      const data = await request<{ metricsByModelType: Array<{ name: string; metrics: Array<{ name: string; displayName?: string }> }> }>(
+        METRICS_BY_MODEL_TYPE_QUERY,
+        { modelType }
+      );
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const json = await response.json();
-
-      if (json.errors?.length) {
-        console.error('GraphQL errors while fetching metrics', json.errors);
-        return [];
-      }
-
-      const metricsData = json?.data?.metricsByModelType || [];
+      const metricsData = data?.metricsByModelType || [];
       
       // Find metrics for the specific module
       const moduleMetrics = metricsData.find((m: any) => m.name === moduleName);
@@ -454,10 +423,8 @@ const NewAuditPage = () => {
    * Uses current form values and selected modules/metrics.
    */
   const handleRunAudit = async () => {
-    const endpoint = process.env.NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT;
-    if (!endpoint) {
-      console.warn('NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT is not set');
-      setAuditError('Audit backend URL is not configured.');
+    if (!isAuthenticated) {
+      setAuditError('Please log in to run an audit.');
       return;
     }
 
@@ -499,26 +466,13 @@ const NewAuditPage = () => {
     setAuditError(null);
 
     try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: REQUEST_AUDIT_MUTATION,
-          variables: { input },
-        }),
-      });
+      // Use authenticated GraphQL request - access token is automatically included
+      const result = await request<{ requestAudit: { success: boolean; message: string; audit: any } }>(
+        REQUEST_AUDIT_MUTATION,
+        { input }
+      );
 
-      const result = await response.json();
-
-      if (result.errors) {
-        console.error('GraphQL Errors while requesting audit:', result.errors);
-        setAuditError('Failed to start audit. Please try again.');
-        return;
-      }
-
-      const payload = result?.data?.requestAudit;
+      const payload = result?.requestAudit;
       if (!payload) {
         setAuditError('Audit response was empty.');
         return;
