@@ -1,0 +1,21 @@
+// config/codegen.ts
+import type { CodegenConfig } from '@graphql-codegen/cli';
+
+const config: CodegenConfig = {
+  // Where to fetch the GraphQL schema from.
+  // Uses your existing env var; will use fallback during backend integration
+  schema: process.env.NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT || 'http://localhost:9001/graphql',
+
+  // Where to look for GraphQL operations (queries/mutations) in your code
+  documents: ['app/**/*.{ts,tsx}'],
+
+  // Where to put generated types & helpers
+  generates: {
+    './generated/': {
+      preset: 'client',   // uses @graphql-codegen/client-preset
+      plugins: [],        // no extra plugins needed with this preset
+    },
+  },
+};
+
+export default config;
