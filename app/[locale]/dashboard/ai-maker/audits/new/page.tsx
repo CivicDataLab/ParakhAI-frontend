@@ -23,6 +23,7 @@ import BreadCrumbs from '@/components/Breadcrumbs';
 import WelcomeSection from '../../../components/WelcomeSection';
 import { toTitleCase } from '@/lib/utils';
 import { useGraphQL } from '@/lib/api';
+import { useAppSession } from '@/lib/session';
 
 type AuditType = 'technical' | 'domain' | 'cultural';
 
@@ -157,7 +158,29 @@ const NewAuditPage = () => {
   } | null>(null);
 
   // GraphQL API hook for authenticated requests
-  const { request, isAuthenticated, isLoading: isSessionLoading } = useGraphQL();
+  const { request, isAuthenticated, isLoading: isSessionLoading, accessToken } = useGraphQL();
+  
+  // Get full session data for debugging
+  const sessionData = useAppSession();
+
+  // Debug logging - check browser console for detailed logs
+  useEffect(() => {
+    console.group('🔍 Audit Page Debug');
+    console.log('Authentication Status:', {
+      isAuthenticated,
+      isSessionLoading,
+      hasAccessToken: !!accessToken,
+      accessTokenPreview: accessToken ? `${accessToken.substring(0, 30)}...` : '❌ Missing',
+    });
+    console.log('User Details:', {
+      name: sessionData.user?.name || '❌ Missing',
+      email: sessionData.user?.email || '❌ Missing',
+      id: sessionData.user?.id || '❌ Missing',
+      roles: sessionData.user?.roles || [],
+    });
+    console.log('Full Session Data:', sessionData);
+    console.groupEnd();
+  }, [isAuthenticated, isSessionLoading, accessToken, sessionData]);
 
   // Helper function to map module name keys to display names
   const getModuleDisplayName = (moduleName: string): string => {
@@ -467,10 +490,23 @@ const NewAuditPage = () => {
 
     try {
       // Use authenticated GraphQL request - access token is automatically included
+      console.log('🚀 Requesting Audit with Access Token:', {
+        hasAccessToken: !!accessToken,
+        tokenPreview: accessToken ? `${accessToken.substring(0, 30)}...` : '❌ Missing',
+        input: {
+          name: input.name,
+          modules: input.modules,
+          metrics: input.metrics,
+          modelId: input.modelId,
+        },
+      });
+      
       const result = await request<{ requestAudit: { success: boolean; message: string; audit: any } }>(
         REQUEST_AUDIT_MUTATION,
         { input }
       );
+      
+      console.log('✅ Audit Request Successful:', result);
 
       const payload = result?.requestAudit;
       if (!payload) {
