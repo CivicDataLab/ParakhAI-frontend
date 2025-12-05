@@ -1,8 +1,11 @@
 'use client';
 
 import { signIn, signOut, useSession } from "next-auth/react";
-import MainNav from "@/app/[locale]/dashboard/components/main-nav";
-import MainFooter from "@/app/[locale]/dashboard/components/main-footer";
+import dynamic from 'next/dynamic';
+
+// Dynamically import components that use opub-ui to avoid SSR issues
+const MainNav = dynamic(() => import("@/app/[locale]/dashboard/components/main-nav"), { ssr: false });
+const MainFooter = dynamic(() => import("@/app/[locale]/dashboard/components/main-footer"), { ssr: false });
 
 export default function Home() {
   const { data: session, status } = useSession();
