@@ -1,6 +1,6 @@
+import { jwtDecode } from "jwt-decode";
 import NextAuth from "next-auth";
 import KeycloakProvider from "next-auth/providers/keycloak";
-import { jwtDecode } from "jwt-decode";
 
 // Extend NextAuth types
 declare module "next-auth" {
@@ -40,6 +40,16 @@ const handler = NextAuth({
         token.id_token = account.id_token;
         token.expires_at = account.expires_at;
         token.refresh_token = account.refresh_token;
+        
+        // Debug: Log what we're saving
+        console.log('🔑 Saved tokens:', {
+          hasAccessToken: !!token.access_token,
+          hasIdToken: !!token.id_token,
+          tokenPreview: token.access_token ? `${token.access_token.substring(0, 20)}...` : 'Missing',
+          decodedEmail: token.decoded?.email,
+          decodedName: token.decoded?.name,
+          roles: token.decoded?.realm_access?.roles ?? [],
+        });
       }
       
       // Always return token (persist it across requests)
@@ -47,28 +57,26 @@ const handler = NextAuth({
     },
     async session({ session, token }) {
       // Add tokens and roles to session object
-      if (token.access_token) {
-        session.access_token = token.access_token;
-      }
-      if (token.id_token) {
-        session.id_token = token.id_token;
-      }
-      if (token.decoded) {
-        session.roles = (token.decoded as any)?.realm_access?.roles as string[] ?? [];
-      }
-      if (token.error) {
-        session.error = token.error as string;
-      }
+      // Debug: Log what we're adding to session
+      console.log('📋 Session Callback - Adding to session:', {
+        hasAccessToken: !!token.access_token,
+        hasIdToken: !!token.id_token,
+        tokenPreview: token.access_token ? `${token.access_token.substring(0, 20)}...` : 'Missing',
+        sessionEmail: session.user?.email,
+        tokenDecodedEmail: token.decoded?.email,
+      });
+      
+      session.access_token = token.access_token;
+      session.id_token = token.id_token;
+      session.roles = token.decoded?.realm_access?.roles ?? [];
+      session.error = token.error;
       
       // Use email from decoded token if available (more reliable than session.user.email)
-      if (session.user && token.decoded) {
-        const decoded = token.decoded as any;
-        if (decoded.email && !session.user.email) {
-          session.user.email = decoded.email;
-        }
-        if (decoded.name && !session.user.name) {
-          session.user.name = decoded.name;
-        }
+      if (token.decoded?.email && session.user) {
+        session.user.email = token.decoded.email;
+      }
+      if (token.decoded?.name && session.user) {
+        session.user.name = token.decoded.name;
       }
       
       return session;

@@ -127,6 +127,8 @@ export const Pagination: React.FC<PaginationProps> = ({
       <Text variant="bodySm">{label}</Text>
       <div className={styles.SelectWrapper}>
         <Select
+          name="page-size"
+          label="Page size"
           key={`select-${selectValue}`}
           labelHidden
           className={styles.PageSizeSelect}
