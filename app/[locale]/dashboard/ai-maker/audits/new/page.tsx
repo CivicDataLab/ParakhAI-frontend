@@ -30,18 +30,12 @@ type SelectOption = { value: string; label: string };
 
 // GraphQL queries for dynamic modules and metrics
 const MODULES_BY_MODEL_TYPE_QUERY = `
-  query ModulesByModelType($modelType: String!) {
-    modulesByModelType(modelType: $modelType) {
-      name
-      displayName
-      description
-      metrics {
-        name
-        displayName
-        description
-      }
-    }
+  query GetModulesByModelType($modelType: String!) {
+  modulesByModelType(modelType: $modelType) {
+    name
+    displayName
   }
+}
 `;
 
 const METRICS_BY_MODEL_TYPE_QUERY = `
@@ -72,23 +66,23 @@ const REQUEST_AUDIT_MUTATION = `
         modules
         metrics
         modelId
-        test_dataset_ids
+        testDatasetIds
         configuration
-        judge_model
-        judge_config
+        judgeModel
+        judgeConfig
         findings
         recommendations
-        error_message
-        error_details
-        total_tests
-        passed_tests
-        failed_tests
-        skipped_tests
-        overall_score
-        created_at
-        started_at
-        completed_at
-        updated_at
+        errorMessage
+        errorDetails
+        totalTests
+        passedTests
+        failedTests
+        skippedTests
+        overallScore
+        createdAt
+        startedAt
+        completedAt
+        updatedAt
       }
     }
   }
@@ -100,7 +94,7 @@ const NewAuditPage = () => {
   const [auditName, setAuditName] = useState('Untitled Audit - 20 March 2023 - 10:30AM');
   const modelName = 'Region-al';
   const modelVersion = 'Ver. 1.2.1';
-  const modelType = 'Region-al Ver 1.2.1'; // Full model type for GraphQL queries
+  const modelType = 'TEXT_GENERATION'; // Full model type for GraphQL queries
   const isAutoSaved = true;
   
   // Mobile detection for inline styles
@@ -483,7 +477,7 @@ const NewAuditPage = () => {
       name: auditName,
       modules,
       metrics,
-      test_dataset_ids: [], // can be wired to real dataset ids later
+      testDatasetIds: [], // can be wired to real dataset ids later
       configuration,
     };
 
