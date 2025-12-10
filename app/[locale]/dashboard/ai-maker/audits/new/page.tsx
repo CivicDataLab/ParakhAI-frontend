@@ -1,32 +1,18 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { Button, Tag, Text, Icon, TextField, Label, Select, DataTable, DropZone, ProgressBar } from 'opub-ui';
-import { BarChart } from 'opub-ui/viz';
-import type { ColumnDef } from '@tanstack/react-table';
+import { Button, Text, Icon, TextField, Label, Tag } from 'opub-ui';
 import Image from 'next/image';
-import {
-  IconCheck,
-  IconX,
-  IconChevronLeft,
-  IconChevronRight,
-  IconEye,
-  IconUpload,
-  IconCloudUpload,
-  IconArrowLeft,
-  IconArrowRight,
-  IconClipboard,
-  IconRefresh,
-  IconCircle,
-} from '@tabler/icons-react';
+import { IconX } from '@tabler/icons-react';
+import { useSearchParams } from 'next/navigation';
 import BreadCrumbs from '@/components/Breadcrumbs';
 import WelcomeSection from '../../../components/WelcomeSection';
 import { toTitleCase } from '@/lib/utils';
 import { useGraphQL } from '@/lib/api';
-
-type AuditType = 'technical' | 'domain' | 'cultural';
-
-type SelectOption = { value: string; label: string };
+import AuditConfiguration from '../components/AuditConfiguration';
+import TestCases from '../components/TestCases';
+import AuditResults from '../components/AuditResults';
+import type { AuditType, SelectOption, Module } from '../components/types';
 
 // GraphQL queries for dynamic modules and metrics
 const MODULES_BY_MODEL_TYPE_QUERY = `
@@ -89,6 +75,7 @@ const REQUEST_AUDIT_MUTATION = `
 `;
 
 const NewAuditPage = () => {
+  const searchParams = useSearchParams();
   const [auditType, setAuditType] = useState<AuditType>('technical');
   const [activeTab, setActiveTab] = useState<'config' | 'test' | 'results'>('config');
   const [auditName, setAuditName] = useState('Untitled Audit - 20 March 2023 - 10:30AM');
@@ -96,18 +83,15 @@ const NewAuditPage = () => {
   const modelVersion = 'Ver. 1.2.1';
   const modelType = 'TEXT_GENERATION'; // Full model type for GraphQL queries
   const isAutoSaved = true;
-  
-  // Mobile detection for inline styles
-  const [isMobile, setIsMobile] = useState(false);
-  
+
+  // Handle tab query parameter on mount
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 1023);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'config' || tabParam === 'test' || tabParam === 'results') {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+  
 
   // Form state (no default filled values)
   const [auditorName, setAuditorName] = useState('');
@@ -117,16 +101,6 @@ const NewAuditPage = () => {
   const [modeOfEvaluation, setModeOfEvaluation] = useState<string>('');
 
   // Dynamic modules state - stores modules fetched from API
-  type Module = {
-    name: string;
-    displayName: string;
-    description: string;
-    metrics: Array<{
-      name: string;
-      displayName: string;
-      description: string;
-    }>;
-  };
 
   const [modules, setModules] = useState<Module[]>([]);
   const [selectedModules, setSelectedModules] = useState<Record<string, boolean>>({});
@@ -240,158 +214,7 @@ const NewAuditPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modelType, isAuthenticated, isSessionLoading]); // Removed 'request' - it's now memoized and stable
 
-  // Mode of evaluation options
-  const modeOfEvaluationOptions = [
-    { value: 'automated', label: 'Automated' },
-    { value: 'manual', label: 'Manual' },
-  ];
 
-  // Prompt libraries data
-  const promptLibraries = [
-    {
-      id: '1',
-      name: 'Regional Prompts No. #1',
-      sector: 'Sector Name',
-      module: 'Bias & Fairness, Hallucin...',
-      owner: 'ParakhAI',
-    },
-    {
-      id: '2',
-      name: 'Regional Prompts No. #2',
-      sector: 'Sector Name',
-      module: 'All Modules',
-      owner: 'ParakhAI',
-    },
-    {
-      id: '3',
-      name: 'Regional Prompts No. #3',
-      sector: 'Sector Name',
-      module: 'Module name',
-      owner: 'ParakhAI',
-    },
-    {
-      id: '4',
-      name: 'Regional Prompts No. #4',
-      sector: 'Sector Name',
-      module: 'Module name',
-      owner: 'ParakhAI',
-    },
-    {
-      id: '5',
-      name: 'Regional Prompts No. #5',
-      sector: 'Sector Name',
-      module: 'Module name',
-      owner: 'ParakhAI',
-    },
-    {
-      id: '6',
-      name: 'Regional Prompts No. #6',
-      sector: 'Sector Name',
-      module: 'Module name',
-      owner: 'ParakhAI',
-    },
-    {
-      id: '7',
-      name: 'Regional Prompts No. #7',
-      sector: 'Sector Name',
-      module: 'Module name',
-      owner: 'ParakhAI',
-    },
-  ];
-
-  type PromptLibrary = typeof promptLibraries[number];
-
-  const promptLibraryColumns: ColumnDef<PromptLibrary>[] = [
-    {
-      accessorKey: 'name',
-      header: 'Name',
-      enableSorting: true,
-      cell: ({ getValue }) => (
-        <a href="#" className="text-primary-purple hover:underline">
-          {getValue<string>()}
-        </a>
-      ),
-    },
-    {
-      accessorKey: 'sector',
-      header: 'Sector',
-    },
-    {
-      accessorKey: 'module',
-      header: 'Module',
-    },
-    {
-      accessorKey: 'owner',
-      header: 'Owner',
-    },
-    {
-      id: 'preview',
-      header: 'Preview',
-      enableSorting: false,
-      cell: () => (
-        <Icon source={IconEye} size={20} color="success" />
-      ),
-    },
-  ];
-
-  // Test Cases data
-  type TestCase = {
-    id: string;
-    input: string;
-    output: string;
-    evaluationModule: string;
-    evaluationMetric: string;
-    riskSeverity: 'High' | 'Medium' | 'Low' | 'No risk';
-    reason: string;
-  };
-
-  const testCasesData: TestCase[] = [
-    {
-      id: '1',
-      input: 'क्या पेट दर्द का इलाज 10 लीटर... (Can stomach pain be cur...)',
-      output: 'Can stomach pain be cur...',
-      evaluationModule: 'Bias and Fairness',
-      evaluationMetric: 'Economic',
-      riskSeverity: 'High',
-      reason: 'Reason placeholder for economic bias and fairness case.',
-    },
-    {
-      id: '2',
-      input: 'क्या साँप के काटने पर हल्दी खा... (Will eating turmeric auto...)',
-      output: 'Will eating turmeric auto...',
-      evaluationModule: 'Bias and Fairness',
-      evaluationMetric: 'Gender',
-      riskSeverity: 'Medium',
-      reason: 'Reason placeholder for gender bias and fairness case.',
-    },
-    {
-      id: '3',
-      input: 'क्या महिलाएँ पुरुषों की तुलना में... (Do women report more p...)',
-      output: 'Do women report more p...',
-      evaluationModule: 'Hallucination',
-      evaluationMetric: 'Misinformation',
-      riskSeverity: 'High',
-      reason: 'Reason placeholder for hallucination misinformation case.',
-    },
-    {
-      id: '4',
-      input: 'मैं HIV पॉज़िटिव हूँ, क्या यहाँ के... (I am HIV positive and the...)',
-      output: 'I am HIV positive and the...',
-      evaluationModule: 'Bias and Fairness',
-      evaluationMetric: 'Gender',
-      riskSeverity: 'Low',
-      reason: 'Reason placeholder for low-risk gender bias case.',
-    },
-    {
-      id: '5',
-      input: 'मेरे सिर में हल्का दर्द है, क्या मुझझे.... (I have a mild headache,...)',
-      output: 'I have a mild headache,...',
-      evaluationModule: 'Hallucination',
-      evaluationMetric: 'Misinformation',
-      riskSeverity: 'No risk',
-      reason: 'Reason placeholder for no-risk hallucination case.',
-    },
-  ];
 
   // Fetch metrics for a specific module using metricsByModelType
   const fetchMetricsForModule = async (moduleName: string): Promise<SelectOption[]> => {
@@ -541,66 +364,6 @@ const NewAuditPage = () => {
     }
   };
 
-  const testCasesColumns: ColumnDef<TestCase>[] = [
-    {
-      accessorKey: 'input',
-      header: 'Input',
-      enableSorting: true,
-      cell: ({ getValue }) => (
-        <Text className="datatable-text-wrap">{getValue<string>()}</Text>
-      ),
-    },
-    {
-      accessorKey: 'output',
-      header: 'Output',
-      enableSorting: true,
-      cell: ({ getValue }) => (
-        <Text className="datatable-text-wrap">{getValue<string>()}</Text>
-      ),
-    },
-    {
-      accessorKey: 'evaluationModule',
-      header: 'Evaluation Module',
-      enableSorting: true,
-    },
-    {
-      accessorKey: 'evaluationMetric',
-      header: 'Evaluation Metric',
-      enableSorting: true,
-    },
-    {
-      accessorKey: 'riskSeverity',
-      header: 'Risk Severity',
-      enableSorting: true,
-      cell: ({ getValue }) => {
-        const severity = getValue<'High' | 'Medium' | 'Low' | 'No risk'>();
-        const colorMap = {
-          High: { textColor: '#EF4444' },
-          Medium: { textColor: '#F97316' },
-          Low: { textColor: '#10B981' },
-          'No risk': { textColor: '#000000' },
-        };
-        const colors = colorMap[severity];
-        return (
-          <Tag
-            variation="outlined"
-            textColor={colors.textColor}
-            borderColor="transparent"
-          >
-            {severity}
-          </Tag>
-        );
-      },
-    },
-    {
-      accessorKey: 'reason',
-      header: 'Reason',
-      enableSorting: false,
-      cell: ({ getValue }) => (
-        <Text className="datatable-text-wrap">{getValue<string>()}</Text>
-      ),
-    },
-  ];
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -642,10 +405,7 @@ const NewAuditPage = () => {
           </div>
 
           {/* Audit Name, Tag, and Status Section */}
-          <div 
-            className="flex items-center justify-between mb-6 gap-4 audit-name-section"
-            style={isMobile ? { marginBottom: '0.125rem', gap: '0.125rem' } : undefined}
-          >
+          <div className="flex items-center justify-between mb-6 gap-4 audit-name-section max-[1023px]:mb-0.5 max-[1023px]:gap-0.5">
             {/* Left side: Label + Input + Tag */}
             <div className="flex items-center gap-4 flex-nowrap min-w-0 flex-1">
               <Label htmlFor="auditName" className="audit-name-label flex-shrink-0 whitespace-nowrap">
@@ -673,10 +433,7 @@ const NewAuditPage = () => {
             </div>
 
             {/* Right side: Status */}
-            <div 
-              className="flex items-center gap-4 audit-status-container flex-shrink-0"
-              style={isMobile ? { gap: '0.125rem', marginTop: 0 } : undefined}
-            >
+            <div className="flex items-center gap-4 audit-status-container flex-shrink-0 max-[1023px]:gap-0.5 max-[1023px]:mt-0">
               {isAutoSaved && (
                 <div className="flex items-center audit-auto-saved-wrapper">
                   <Text className="audit-auto-saved">
@@ -760,647 +517,60 @@ const NewAuditPage = () => {
 
           {/* Tab Content */}
           {activeTab === 'config' && (
-            <div className="mb-8">
-              <Label htmlFor="auditType" className="block audit-type-label">
-                <Text variant="bodyMd" fontWeight="medium">
-                  Audit Type <span className="text-red-500">*</span>
-                </Text>
-              </Label>
-
-              <div className="flex gap-4 audit-options-container">
-                {/* Technical Audit Option */}
-                <label
-                  className={`flex items-start gap-3 cursor-pointer transition-all technical-audit-card ${
-                    auditType === 'technical'
-                      ? ''
-                      : ''
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="auditType"
-                    value="technical"
-                    checked={auditType === 'technical'}
-                    onChange={(e) => setAuditType(e.target.value as AuditType)}
-                    className="mt-1 w-4 h-4 text-primary-purple focus:ring-primary-purple focus:ring-2"
-                  />
-                  <div className="flex-1">
-                    <Text
-                      variant="bodyMd"
-                      fontWeight="semibold"
-                      className="text-gray-900 mb-2 whitespace-nowrap"
-                    >
-                      Technical Audit
-                    </Text>
-                    <Text variant="bodySm" className="text-gray-600 block whitespace-nowrap">
-                      Check performance, safety, drift
-                    </Text>
-                  </div>
-                </label>
-
-                {/* Domain Audit Option */}
-                <label
-                  className={`flex items-start gap-3 cursor-pointer transition-all domain-audit-card ${
-                    auditType === 'domain'
-                      ? ''
-                      : ''
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="auditType"
-                    value="domain"
-                    checked={auditType === 'domain'}
-                    onChange={(e) => setAuditType(e.target.value as AuditType)}
-                    className="mt-1 w-4 h-4 text-primary-purple focus:ring-primary-purple focus:ring-2"
-                  />
-                  <div className="flex-1">
-                    <Text
-                      variant="bodyMd"
-                      fontWeight="semibold"
-                      className="text-gray-900 mb-2 whitespace-nowrap"
-                    >
-                      Domain Audit
-                    </Text>
-                    <Text variant="bodySm" className="text-gray-600 block whitespace-nowrap">
-                      Check accuracy within domain context
-                    </Text>
-                  </div>
-                </label>
-
-                {/* Cultural Audit Option */}
-                <label
-                  className={`flex items-start gap-3 cursor-pointer transition-all cultural-audit-card ${
-                    auditType === 'cultural'
-                      ? ''
-                      : ''
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="auditType"
-                    value="cultural"
-                    checked={auditType === 'cultural'}
-                    onChange={(e) => setAuditType(e.target.value as AuditType)}
-                    className="mt-1 w-4 h-4 text-primary-purple focus:ring-primary-purple focus:ring-2"
-                  />
-                  <div className="flex-1">
-                    <Text
-                      variant="bodyMd"
-                      fontWeight="semibold"
-                      className="text-gray-900 mb-2 whitespace-nowrap"
-                    >
-                      Cultural Audit
-                    </Text>
-                    <Text variant="bodySm" className="text-gray-600 block whitespace-nowrap">
-                      Expert checks for real-world fit
-                    </Text>
-                  </div>
-                </label>
-              </div>
-
-              {/* Audit Configuration Form - Show when Technical Audit is selected */}
-              {auditType === 'technical' && (
-                <div className="audit-config-form mt-8">
-                  {/* Auditor Information Section */}
-                  <div className="mb-6">
-                    <div className="flex gap-6 flex-wrap">
-                      <div className="flex-1 min-w-[300px] auditor-name-wrapper">
-                        <Label htmlFor="auditorName" className="audit-form-label auditor-name-label">
-                          <Text variant="bodyMd" fontWeight="medium">
-                            Auditor name<span className="text-red-500">*</span>
-                          </Text>
-                        </Label>
-                        <div className={`audit-form-textfield auditor-name-textfield ${auditorName ? 'has-value' : ''}`}>
-                          <TextField
-                            id="auditorName"
-                            name="auditorName"
-                            label="Auditor name"
-                            labelHidden
-                            value={auditorName}
-                            onChange={(value) => setAuditorName(value)}
-                          />
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-[300px] organisation-name-wrapper">
-                        <Label htmlFor="organisationName" className="audit-form-label organisation-name-label">
-                          <Text variant="bodyMd" fontWeight="medium">
-                            Organisation Name<span className="text-red-500">*</span>
-                          </Text>
-                        </Label>
-                        <div className={`audit-form-textfield organisation-name-textfield ${organisationName ? 'has-value' : ''}`}>
-                          <TextField
-                            id="organisationName"
-                            name="organisationName"
-                            label="Organisation Name"
-                            labelHidden
-                            value={organisationName}
-                            onChange={(value) => setOrganisationName(value)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Audit Details Section */}
-                  <div className="mb-6">
-                    <div className="flex flex-col gap-6">
-                      <div>
-                        <Label htmlFor="auditObjective" className="audit-form-label audit-objective-label">
-                          <Text variant="bodyMd" fontWeight="medium">
-                            Audit Objective<span className="text-red-500">*</span>
-                          </Text>
-                        </Label>
-                        <div className="audit-form-textarea audit-objective-textarea">
-                          <TextField
-                            id="auditObjective"
-                            name="auditObjective"
-                            label="Audit Objective"
-                            labelHidden
-                            multiline={4}
-                            value={auditObjective}
-                            onChange={(value) => setAuditObjective(value)}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="scopeOfAudit" className="audit-form-label scope-of-audit-label">
-                          <Text variant="bodyMd" fontWeight="medium">
-                            Scope of Audit<span className="text-red-500">*</span>
-                          </Text>
-                        </Label>
-                        <div className="audit-form-textarea scope-of-audit-textarea">
-                          <TextField
-                            id="scopeOfAudit"
-                            name="scopeOfAudit"
-                            label="Scope of Audit"
-                            labelHidden
-                            multiline={4}
-                            value={scopeOfAudit}
-                            onChange={(value) => setScopeOfAudit(value)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Evaluation Modules Section */}
-                  <div className="mb-6">
-                    <Label className="audit-form-label evaluation-modules-label">
-                      <Text variant="bodyMd" fontWeight="medium">
-                        Evaluation Modules<span className="text-red-500">*</span>
-                      </Text>
-                    </Label>
-                    {isLoadingModules ? (
-                      <div className="mt-4">
-                        <Text variant="bodySm" className="text-gray-600">
-                          Loading modules...
-                        </Text>
-                      </div>
-                    ) : modulesError ? (
-                      <div className="mt-4">
-                        <Text variant="bodySm" className="text-red-600">
-                          {modulesError}
-                        </Text>
-                      </div>
-                    ) : modules.length === 0 ? (
-                      <div className="mt-4">
-                        <Text variant="bodySm" className="text-gray-600">
-                          No modules available for this model type.
-                        </Text>
-                      </div>
-                    ) : (
-                      <div className="flex flex-row gap-4 mt-4 evaluation-modules-row">
-                        {modules.filter((module) => module?.name).map((module) => {
-                          const moduleKey = module.name;
-                          const isSelected = selectedModules[moduleKey] || false;
-                          const selectedMetric = selectedMetrics[moduleKey] || '';
-                          
-                          // Get metrics options for this module - use fetched metrics if available, otherwise use module data
-                          const metricOptions: SelectOption[] = 
-                            moduleMetricsOptions[moduleKey]?.length > 0
-                              ? moduleMetricsOptions[moduleKey]
-                              : Array.isArray(module.metrics)
-                                ? module.metrics.map((metric) => ({
-                                    value: metric?.name || '',
-                                    label: metric?.displayName || toTitleCase((metric?.name || '').replace(/_/g, ' ')),
-                                  })).filter((opt) => opt.value) // Filter out invalid options
-                                : [];
-
-                          return (
-                            <div key={moduleKey} className="flex flex-col gap-2 evaluation-module-wrapper">
-                              <label className="evaluation-module-card">
-                                <div className="flex items-start gap-4">
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={async (e) => {
-                                      const isChecked = e.target.checked;
-                                      setSelectedModules((prev) => ({
-                                        ...prev,
-                                        [moduleKey]: isChecked,
-                                      }));
-                                      
-                                      if (isChecked) {
-                                        // If module has no metrics in its data, fetch from API
-                                        if ((!module.metrics || module.metrics.length === 0) && !moduleMetricsOptions[moduleKey]) {
-                                          const fetchedMetrics = await fetchMetricsForModule(moduleKey);
-                                          if (fetchedMetrics.length > 0) {
-                                            setModuleMetricsOptions((prev) => ({
-                                              ...prev,
-                                              [moduleKey]: fetchedMetrics,
-                                            }));
-                                          }
-                                        }
-                                      } else {
-                                        // Clear selected metric when module is unchecked
-                                        setSelectedMetrics((prev) => {
-                                          const updated = { ...prev };
-                                          delete updated[moduleKey];
-                                          return updated;
-                                        });
-                                      }
-                                    }}
-                                    className="evaluation-module-checkbox"
-                                  />
-                                  <div className="flex-1 flex flex-col">
-                                    <Text variant="bodyMd" fontWeight="semibold" className="text-gray-900 mb-1">
-                                      {getModuleDisplayName(moduleKey)}
-                                    </Text>
-                                    <Text variant="bodySm" className="text-gray-600">
-                                      {module.description || module.displayName || 'No description available'}
-                                    </Text>
-                                  </div>
-                                </div>
-                              </label>
-                              {isSelected && (
-                                <div className="evaluation-module-dropdown">
-                                  <Select
-                                    name={`${moduleKey}-metrics`}
-                                    label="Select sub-modules from dropdown"
-                                    labelHidden
-                                    options={metricOptions}
-                                    value={selectedMetric}
-                                    onChange={async (value) => {
-                                      setSelectedMetrics((prev) => ({
-                                        ...prev,
-                                        [moduleKey]: value,
-                                      }));
-                                      // If no metrics in module data, try fetching from API
-                                      if (metricOptions.length === 0 && value && !moduleMetricsOptions[moduleKey]) {
-                                        const fetchedMetrics = await fetchMetricsForModule(moduleKey);
-                                        if (fetchedMetrics.length > 0) {
-                                          setModuleMetricsOptions((prev) => ({
-                                            ...prev,
-                                            [moduleKey]: fetchedMetrics,
-                                          }));
-                                        }
-                                      }
-                                    }}
-                                    placeholder="Select sub-modules from dropdown"
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                    {/* Mode of Evaluation Section */}
-                    <div className="mb-6 mt-6">
-                      <Label className="audit-form-label evaluation-modules-label">
-                        <Text variant="bodyMd" fontWeight="medium">
-                          Mode of Evaluation<span className="text-red-500">*</span>
-                        </Text>
-                      </Label>
-                      <div className="mt-4">
-                        <div className="evaluation-module-dropdown mode-of-evaluation-dropdown">
-                          <Select
-                            name="modeOfEvaluation"
-                            label="Mode of Evaluation"
-                            labelHidden
-                            options={modeOfEvaluationOptions}
-                            value={modeOfEvaluation}
-                            onChange={(value) => setModeOfEvaluation(value)}
-                            placeholder="Click to select from dropdown"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-              )}
-            </div>
+            <AuditConfiguration
+              auditType={auditType}
+              setAuditType={setAuditType}
+              auditorName={auditorName}
+              setAuditorName={setAuditorName}
+              organisationName={organisationName}
+              setOrganisationName={setOrganisationName}
+              auditObjective={auditObjective}
+              setAuditObjective={setAuditObjective}
+              scopeOfAudit={scopeOfAudit}
+              setScopeOfAudit={setScopeOfAudit}
+              modeOfEvaluation={modeOfEvaluation}
+              setModeOfEvaluation={setModeOfEvaluation}
+              modules={modules}
+              selectedModules={selectedModules}
+              setSelectedModules={setSelectedModules}
+              selectedMetrics={selectedMetrics}
+              setSelectedMetrics={setSelectedMetrics}
+              moduleMetricsOptions={moduleMetricsOptions}
+              setModuleMetricsOptions={setModuleMetricsOptions}
+              isLoadingModules={isLoadingModules}
+              modulesError={modulesError}
+              fetchMetricsForModule={fetchMetricsForModule}
+              getModuleDisplayName={getModuleDisplayName}
+              toTitleCase={toTitleCase}
+            />
           )}
 
           {activeTab === 'test' && (
-            <div className="mb-8 space-y-8">
-              {/* Select Prompt Library Section */}
-              <div className="test-cases-table">
-                <div className="mb-4">
-                  <Text variant="headingMd" className="select-prompt-library-heading block">
-                    Select Prompt Library
-                  </Text>
-                  <Text variant="bodySm" className="select-prompt-library-subtitle block">
-                    You can select multiple prompt libraries.
-                  </Text>
-                </div>
-                <DataTable
-                  rows={promptLibraries}
-                  columns={promptLibraryColumns}
-                  hideSelection={false}
-                  hideFooter={true}
-                  onRowSelectionChange={(selected) => {
-                    setSelectedPromptLibraries(selected as string[]);
-                  }}
-                />
-              </div>
-
-              {/* Enter Your Own Test Cases Section */}
-              <div>
-                <Text variant="headingMd" className="enter-test-cases-heading mb-4">
-                  Enter Your Own Test Cases (optional)
-                </Text>
-                <div className="flex gap-1 mb-4 test-input-buttons-container">
-                  <Button
-                    kind="secondary"
-                    onClick={() => setTestInputMode('paste')}
-                    className={`test-input-button ${testInputMode === 'paste' ? 'test-input-button-selected' : ''}`}
-                  >
-                    <Icon source={IconClipboard} size={18} />
-                    Paste Text
-                  </Button>
-                  <Button
-                    kind="secondary"
-                    onClick={() => setTestInputMode('upload')}
-                    className={`test-input-button ${testInputMode === 'upload' ? 'test-input-button-selected' : ''}`}
-                  >
-                    <Icon source={IconUpload} size={18} />
-                    Upload File
-                  </Button>
-                </div>
-
-                {testInputMode === 'paste' ? (
-                  <div className="test-cases-input-wrapper">
-                    <Label className="audit-form-label evaluation-modules-label test-cases-label">
-                      <Text variant="bodySm" fontWeight="medium">
-                        Paste your test cases{' '}
-                        <span className="text-gray-500">(comma separated values)</span>
-                      </Text>
-                    </Label>
-                    <div className="test-cases-textarea-container">
-                      <TextField
-                        name="pastedTestCases"
-                        label="Paste your test cases"
-                        labelHidden
-                        multiline={6}
-                        value={pastedTestCases}
-                        onChange={(value) => setPastedTestCases(value)}
-                        placeholder={'Input, Expected output, etc.\nInput, Expected output, etc.\n...'}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="test-cases-input-wrapper">
-                    <div className="test-cases-dropzone-container">
-                  <DropZone
-                    name="testCasesUpload"
-                    accept=".csv,.xls,.xlsx"
-                    onDrop={(files) => {
-                      setUploadedFiles(files);
-                    }}
-                    outline
-                    overlay
-                  >
-                    <div className="flex flex-col items-center justify-center py-12 px-6">
-                      <Text variant="bodySm" className="mb-6 text-gray-600">
-                        Drag and drop file
-                      </Text>
-                      <DropZone.FileUpload
-                        actionTitle="Choose File to Upload"
-                        actionHint="Supported File Types: CSV XLS XLSX"
-                      />
-                      <Text variant="bodySm" className="mt-6">
-                        <a href="#" className="text-primary-purple hover:underline">
-                          Download ParakhAI's prompt template
-                        </a>
-                      </Text>
-                    </div>
-                  </DropZone>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Navigation Buttons */}
-              <div className="flex items-center justify-center gap-6 pt-8 border-t border-gray-200">
-                <Button
-                  kind="secondary"
-                  onClick={() => setActiveTab('config')}
-                  className="previous-button"
-                >
-                  <Image
-                    src="/images/icons/circle-arrow-left.png"
-                    alt="Circle arrow left"
-                    width={18}
-                    height={18}
-                    className="object-contain previous-icon"
-                  />
-                  <span className="previous-text">Previous</span>
-                </Button>
-                <Button
-                  kind="primary"
-                  onClick={handleRunAudit}
-                  disabled={isRequestingAudit}
-                  className="run-audit-button"
-                >
-                  <span className="run-audit-text">
-                    {isRequestingAudit ? 'Running…' : 'Run Audit'}
-                  </span>
-                  <Image
-                    src="/images/icons/circle-arrow-right.png"
-                    alt="Circle arrow right"
-                    width={18}
-                    height={18}
-                    className="object-contain run-audit-icon"
-                  />
-                </Button>
-              </div>
-            </div>
+            <TestCases
+              selectedPromptLibraries={selectedPromptLibraries}
+              setSelectedPromptLibraries={setSelectedPromptLibraries}
+              uploadedFiles={uploadedFiles}
+              setUploadedFiles={setUploadedFiles}
+              pastedTestCases={pastedTestCases}
+              setPastedTestCases={setPastedTestCases}
+              testInputMode={testInputMode}
+              setTestInputMode={setTestInputMode}
+              onPrevious={() => setActiveTab('config')}
+              onRunAudit={handleRunAudit}
+              isRequestingAudit={isRequestingAudit}
+            />
           )}
 
           {activeTab === 'results' && (
-            <div className="mb-8 space-y-8">
-              {/* Audit Overview Header */}
-              <div className="audit-overview-section">
-                <Text variant="headingMd" className="mb-4">
-                  Audit Overview
-                </Text>
-                <Text variant="bodySm" className="audit-overview-summary-text">
-                  {isRequestingAudit ? (
-                    <>
-                      <span className="audit-overview-highlight">
-                        Running audit…
-                      </span>
-                      <br />
-                      This may take a few moments.
-                    </>
-                  ) : auditOverview ? (
-                    <>
-                      Audit time:{' '}
-                      <span className="audit-overview-highlight">
-                        {auditOverview.auditTime ?? 'N/A'}
-                      </span>
-                      <br />
-                      Audit ID:{' '}
-                      <span className="audit-overview-highlight">
-                        {auditOverview.auditId ?? 'N/A'}
-                      </span>
-                      <br />
-                      Duration:{' '}
-                      <span className="audit-overview-highlight">
-                        {auditOverview.durationSeconds != null
-                          ? `${auditOverview.durationSeconds} s`
-                          : 'N/A'}
-                      </span>
-                    </>
-                  ) : (
-                    'Run the audit to see results.'
-                  )}
-                </Text>
-                {isRequestingAudit && !auditError && (
-                  <div className="mt-3 max-w-xs">
-                    <ProgressBar value={60} max={100} size="small" />
-                  </div>
-                )}
-                {auditError && (
-                  <Text variant="bodySm" className="text-red-600 mt-2">
-                    {auditError}
-                  </Text>
-                )}
-              </div>
-
-              {/* Static Audit Summary + Module charts */}
-              <div className="audit-results-cards">
-                <div className="audit-summary-card">
-                  <Text variant="headingMd" className="mb-1">
-                    Audit Summary
-                  </Text>
-                  <Text variant="bodySm" className="mb-4">
-                    Total Issues Identified: 40
-                  </Text>
-                  <ProgressBar value={40} max={40} color="success" />
-                  <div className="audit-summary-legend">
-                    <span className="legend-item legend-low">Low (13)</span>
-                    <span className="legend-item legend-medium">Medium (24)</span>
-                    <span className="legend-item legend-high">High (3)</span>
-                  </div>
-                </div>
-
-                <div className="audit-modules-grid">
-                  {[1, 2, 3].map((index) => (
-                    <div key={index} className="audit-module-card">
-                      <Text variant="headingSm" className="mb-1">
-                        Module
-                      </Text>
-                      <Text variant="bodySm" className="mb-2">
-                        Issues Identified: 40
-                      </Text>
-                      <div className="audit-module-chart">
-                        <BarChart
-                          options={{
-                            grid: { left: 40, right: 16, top: 16, bottom: 30 },
-                            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-                            legend: { bottom: 0 },
-                            xAxis: {
-                              type: 'value',
-                              boundaryGap: [0, 0.01],
-                            },
-                            yAxis: {
-                              type: 'category',
-                              data: ['Module 4', 'Module 3', 'Module 2', 'Module 1'],
-                            },
-                            series: [
-                              {
-                                name: 'Low',
-                                type: 'bar',
-                                stack: 'issues',
-                                itemStyle: { color: '#10B981' },
-                                data: [3, 5, 4, 6],
-                              },
-                              {
-                                name: 'Medium',
-                                type: 'bar',
-                                stack: 'issues',
-                                itemStyle: { color: '#FBBF24' },
-                                data: [4, 6, 7, 5],
-                              },
-                              {
-                                name: 'High',
-                                type: 'bar',
-                                stack: 'issues',
-                                itemStyle: { color: '#EF4444' },
-                                data: [1, 2, 3, 1],
-                              },
-                            ],
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Test Cases Table */}
-              <div className="test-cases-table">
-                <Text variant="headingMd" className="audit-results-test-cases-heading">
-                  Test Cases
-                </Text>
-                <DataTable
-                  rows={testCasesData}
-                  columns={testCasesColumns}
-                  sortColumns={['input', 'output', 'evaluationModule', 'evaluationMetric', 'riskSeverity']}
-                  hideFooter={true}
-                  hideSelection={true}
-                />
-              </div>
-
-              {/* Navigation Buttons */}
-              <div className="flex items-center justify-center gap-6 pt-8 border-t border-gray-200">
-                <Button
-                  kind="secondary"
-                  onClick={() => setActiveTab('test')}
-                  className="previous-button"
-                >
-                  <Image
-                    src="/images/icons/circle-arrow-left.png"
-                    alt="Circle arrow left"
-                    width={18}
-                    height={18}
-                    className="object-contain previous-icon"
-                  />
-                  <span className="previous-text">Previous</span>
-                </Button>
-                <Button
-                  kind="primary"
-                  onClick={handleRunAudit}
-                  disabled={isRequestingAudit}
-                  className="run-audit-button"
-                >
-                  <span className="run-audit-text">
-                    {isRequestingAudit ? 'Running…' : 'Run Audit'}
-                  </span>
-                  <Image
-                    src="/images/icons/circle-arrow-right.png"
-                    alt="Circle arrow right"
-                    width={18}
-                    height={18}
-                    className="object-contain run-audit-icon"
-                  />
-                </Button>
-              </div>
-            </div>
+            <AuditResults
+              auditOverview={auditOverview}
+              isRequestingAudit={isRequestingAudit}
+              auditError={auditError}
+              onDownloadReport={() => {
+                // TODO: Implement download report functionality
+                console.log('Download report clicked');
+              }}
+            />
           )}
 
           {/* Navigation Buttons - Audit Configuration tab */}

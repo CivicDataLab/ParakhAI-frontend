@@ -4269,13 +4269,182 @@ label:has(input[value="cultural"]:not(:checked)) {
   border-color: #644FC1 ;
 }
 
+.test-input-button [class*="Icon"] svg,
+.test-input-button [class*="Icon"] {
+  width: 16px ;
+  height: 16px ;
+}
+
+/* Force icon visibility and color for unselected buttons */
+.test-input-button:not(.test-input-button-selected) [class*="Icon"],
+.test-input-button:not(.test-input-button-selected) [class*="Icon"] svg,
+.test-input-button:not(.test-input-button-selected) [class*="Icon"] svg path,
+.test-input-button:not(.test-input-button-selected) [class*="Button"] [class*="Icon"],
+.test-input-button:not(.test-input-button-selected) [class*="Button"] [class*="Icon"] svg,
+.test-input-button:not(.test-input-button-selected) [class*="Button"] [class*="Icon"] svg path,
+.test-input-button:not(.test-input-button-selected) [class*="Button"] svg,
+.test-input-button:not(.test-input-button-selected) [class*="Button"] svg path,
+.test-input-button:not(.test-input-button-selected) [class*="Button"] path,
+.test-input-button:not(.test-input-button-selected) svg,
+.test-input-button:not(.test-input-button-selected) svg path {
+  color: #644FC1 ;
+  stroke: #644FC1 ;
+  fill: none ;
+  opacity: 1 ;
+  visibility: visible ;
+}
+
+/* Force icon visibility and color for selected buttons */
+.test-input-button-selected [class*="Icon"],
+.test-input-button-selected [class*="Icon"] svg,
+.test-input-button-selected [class*="Icon"] svg path,
+.test-input-button-selected [class*="Button"] [class*="Icon"],
+.test-input-button-selected [class*="Button"] [class*="Icon"] svg,
+.test-input-button-selected [class*="Button"] [class*="Icon"] svg path,
 .test-input-button-selected [class*="Button"] svg,
-.test-input-button-selected [class*="Button"] path,
-.test-input-button-selected [class*="Button"] svg path {
-  color: white;
-  stroke: white;
+.test-input-button-selected [class*="Button"] svg path,
+.test-input-button-selected [class*="Button"] path {
+  color: white ;
+  stroke: white ;
+  fill: none ;
+  opacity: 1 ;
+  visibility: visible ;
+}
+
+/* Ensure the Icon wrapper doesn't hide the svg */
+.test-input-button [class*="Icon"] {
+  display: inline-flex ;
+  align-items: center ;
+  justify-content: center ;
+  width: 16px ;
+  height: 16px ;
+  overflow: visible ;
+}
+
+/* Direct Tabler icon styling for unselected buttons */
+.test-input-button:not(.test-input-button-selected) .test-input-icon {
+  color: #644FC1 ;
+  stroke: #644FC1 ;
+  fill: none ;
+  opacity: 1 ;
+  visibility: visible ;
+}
+
+.test-input-button:not(.test-input-button-selected) .test-input-icon svg {
+  color: #644FC1 ;
+  stroke: #644FC1 ;
+  fill: none ;
+}
+
+/* Direct Tabler icon styling for selected buttons */
+.test-input-button-selected .test-input-icon {
+  color: white ;
+  stroke: white ;
+  fill: none ;
+  opacity: 1 ;
+  visibility: visible ;
+}
+
+.test-input-button-selected .test-input-icon svg {
+  color: white ;
+  stroke: white ;
+  fill: none ;
+}
+
+/* Icon wrapper for upload icon */
+.test-input-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  width: 16px;
+  height: 16px;
+}
+
+/* Upload icon styling */
+.test-input-icon-upload {
+  display: block;
+  width: 16px;
+  height: 16px;
   fill: none;
 }
+
+.test-input-icon-upload svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+}
+
+/* Copy icon styling */
+.test-input-icon-copy {
+  display: block;
+  width: 16px;
+  height: 16px;
+  fill: none;
+}
+
+.test-input-icon-copy svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+}
+
+/* Unselected state - purple */
+.test-input-icon-unselected {
+  color: #644FC1;
+  stroke: #644FC1;
+}
+
+.test-input-icon-unselected svg {
+  color: #644FC1;
+  stroke: #644FC1;
+  fill: none;
+}
+
+/* Selected state - white */
+.test-input-icon-selected {
+  color: #FFFFFF;
+  stroke: #FFFFFF;
+}
+
+.test-input-icon-selected svg {
+  color: #FFFFFF;
+  stroke: #FFFFFF;
+  fill: none;
+}
+
+/* Download Report Button Styling */
+.download-report-button {
+  width: 280px;
+  height: 36px;
+  border-radius: 8px;
+  padding: 8px 16px;
+  background-color: #5746AF;
+  color: white;
+  border: 1px solid #5746AF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Override hover styles - maintain same colors, only cursor changes */
+.download-report-button:hover,
+.download-report-button[class*="Button"]:hover,
+.download-report-button:hover [class*="Button"],
+.download-report-button [class*="Button"]:hover {
+  background-color: #5746AF ;
+  color: white ;
+  border-color: #5746AF ;
+  cursor: pointer;
+}
+
+/* Override text color in child elements on hover */
+.download-report-button:hover *,
+.download-report-button[class*="Button"]:hover *,
+.download-report-button:hover [class*="Button"] *,
+.download-report-button [class*="Button"]:hover * {
+  color: white ;
+}
+
 
 /* Select Prompt Library Heading Styling */
 .select-prompt-library-heading {
@@ -4363,6 +4532,31 @@ label:has(input[value="cultural"]:not(:checked)) {
   box-shadow: none;
   resize: none;
   padding: 0;
+}
+
+.test-cases-format-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  color: #EF4444;
+}
+
+.test-cases-format-warning [class*="Icon"] {
+  color: #EF4444 ;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.test-cases-format-warning-text {
+  color: #EF4444 ;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.test-cases-format-warning strong {
+  color: #EF4444;
+  font-weight: 600;
 }
 
 
@@ -4561,7 +4755,7 @@ label:has(input[value="cultural"]:not(:checked)) {
   }
 }
 
-/* Mobile spacing optimizations - using specificity instead of !important */
+/* Mobile spacing optimizations - using specificity instead of  */
 @media (max-width: 1023px) {
   /* Reduce main content wrapper padding with higher specificity */
   .main-content-wrapper.main-content-wrapper {
