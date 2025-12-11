@@ -249,10 +249,10 @@ const AuditResults: React.FC<AuditResultsProps> = ({
           {isRequestingAudit ? (
             <>
               <span className="audit-overview-highlight">
-                Running audit…
+                Loading…
               </span>
               <br />
-              This may take a few moments.
+              Fetching audit data from backend. This may take a few moments.
             </>
           ) : auditOverview ? (
             <>

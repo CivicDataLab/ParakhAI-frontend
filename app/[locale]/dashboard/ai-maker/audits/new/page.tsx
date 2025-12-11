@@ -308,11 +308,11 @@ const NewAuditPage = () => {
       input.modelId = modelId;
     }
 
-    // Move user into the Audit Results tab and show loading state
+    // Move user into the Audit Results tab and show loading state FIRST
     setActiveTab('results');
     setAuditOverview(null);
-    setIsRequestingAudit(true);
     setAuditError(null);
+    setIsRequestingAudit(true);
 
     try {
       // Use authenticated GraphQL request - access token is automatically included
@@ -324,14 +324,28 @@ const NewAuditPage = () => {
       const payload = result?.requestAudit;
       if (!payload) {
         setAuditError('Audit response was empty.');
+        setIsRequestingAudit(false);
+        return;
+      }
+
+      if (!payload.success) {
+        setAuditError(payload.message || 'Failed to start audit.');
+        setIsRequestingAudit(false);
         return;
       }
 
       const audit = payload.audit || {};
+      
+      if (!audit.id) {
+        setAuditError('Audit ID not found in response.');
+        setIsRequestingAudit(false);
+        return;
+      }
 
-      const started = audit.startedAt ? new Date(audit.startedAt) : null;
-      const completed = audit.completedAt ? new Date(audit.completedAt) : null;
-      const created = audit.createdAt ? new Date(audit.createdAt) : null;
+      // Extract date fields (handle both camelCase and snake_case for compatibility)
+      const started = audit.startedAt ? new Date(audit.startedAt) : (audit.started_at ? new Date(audit.started_at) : null);
+      const completed = audit.completedAt ? new Date(audit.completedAt) : (audit.completed_at ? new Date(audit.completed_at) : null);
+      const created = audit.createdAt ? new Date(audit.createdAt) : (audit.created_at ? new Date(audit.created_at) : null);
 
       const timeSource = completed || started || created;
 
@@ -352,13 +366,16 @@ const NewAuditPage = () => {
           hour12: true,
         }) || null;
 
+      // Set audit overview with fetched data
       setAuditOverview({
-        auditId: audit.id ?? null,
+        auditId: audit.id,
         auditTime: formattedTime,
         durationSeconds,
       });
-    } catch (error) {
-      setAuditError('Network error while starting audit.');
+    } catch (error: any) {
+      console.error('Error running audit:', error);
+      const errorMessage = error?.message || 'Network error while starting audit.';
+      setAuditError(errorMessage);
     } finally {
       setIsRequestingAudit(false);
     }
