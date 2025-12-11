@@ -329,9 +329,9 @@ const NewAuditPage = () => {
 
       const audit = payload.audit || {};
 
-      const started = audit.started_at ? new Date(audit.started_at) : null;
-      const completed = audit.completed_at ? new Date(audit.completed_at) : null;
-      const created = audit.created_at ? new Date(audit.created_at) : null;
+      const started = audit.startedAt ? new Date(audit.startedAt) : null;
+      const completed = audit.completedAt ? new Date(audit.completedAt) : null;
+      const created = audit.createdAt ? new Date(audit.createdAt) : null;
 
       const timeSource = completed || started || created;
 
