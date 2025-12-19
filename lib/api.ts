@@ -12,14 +12,29 @@ import { useAppSession } from './session';
  */
 
 /**
- * Get the GraphQL endpoint URL from environment variables
+ * Get the GraphQL endpoint URL
+ * Calls the backend directly using NEXT_PUBLIC_BACKEND_URL
+ * Note: This requires the backend to have CORS properly configured
  */
 export function getGraphQLEndpoint(): string {
-  const endpoint = process.env.NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT;
-  if (!endpoint) {
-    throw new Error('NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT is not configured');
+  // Use proxy in development, direct URL in production
+  // if (process.env.NODE_ENV === 'development') {
+  //   return '/api/graphql';
+  // }
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  
+  if (!backendUrl) {
+    throw new Error('NEXT_PUBLIC_BACKEND_URL is not configured. Please set it in your .env.local file.');
   }
-  return endpoint;
+  
+  let url = backendUrl.trim();
+  
+  // Ensure URL has a protocol
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = `https://${url}`;
+  }
+  
+  return url;
 }
 
 /**
@@ -62,7 +77,29 @@ export async function graphqlRequest<T = any>(
   accessToken: string | null = null
 ): Promise<T> {
   const client = createGraphQLClient(accessToken);
-  return client.request<T>(query, variables);
+  try {
+    return await client.request<T>(query, variables);
+  } catch (error: any) {
+    // Log the actual endpoint being used for debugging
+    const endpoint = getGraphQLEndpoint();
+    console.error('GraphQL request failed:', {
+      endpoint,
+      error: error?.message,
+      response: error?.response,
+      data: error?.response?.data,
+      errors: error?.response?.errors,
+    });
+    
+    // If there are GraphQL errors in the response, include them
+    if (error?.response?.errors) {
+      const graphqlErrors = error.response.errors.map((e: any) => e.message).join('; ');
+      const enhancedError = new Error(`GraphQL Error: ${graphqlErrors}`);
+      (enhancedError as any).response = error.response;
+      throw enhancedError;
+    }
+    
+    throw error;
+  }
 }
 
 /**
@@ -105,8 +142,9 @@ export function useGraphQL() {
     } catch (error: any) {
       // More specific error handling
       const errorMessage = error?.message || 'Unknown error';
-      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('ERR_CONNECTION_REFUSED')) {
-        throw new Error('Backend server is not available. Please check if the GraphQL server is running.');
+      // Check for CORS errors (shouldn't happen with proxy, but just in case)
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('ERR_CONNECTION_REFUSED') || errorMessage.includes('NetworkError') || errorMessage.includes('CORS')) {
+        throw new Error('Backend server is not available. Please check if the GraphQL server is running and accessible.');
       }
       throw error;
     }

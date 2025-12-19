@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { Button, Text, Icon, TextField, Label, Tag } from 'opub-ui';
+import { Button, Text, Icon, TextField, Label, Tag, Select } from 'opub-ui';
 import Image from 'next/image';
 import { IconX } from '@tabler/icons-react';
 import { useSearchParams } from 'next/navigation';
@@ -24,6 +24,7 @@ const MODULES_BY_MODEL_TYPE_QUERY = `
 }
 `;
 
+
 const METRICS_BY_MODEL_TYPE_QUERY = `
   query MetricsByModelType($modelType: String!) {
     metricsByModelType(modelType: $modelType) {
@@ -35,6 +36,33 @@ const METRICS_BY_MODEL_TYPE_QUERY = `
         displayName
         description
       }
+    }
+  }
+`;
+
+// GraphQL query to fetch AI models
+const AI_MODELS_QUERY = `
+  query GetAIModels(
+    $status: String
+    $modelType: String
+    $provider: String
+    $isPublic: Boolean
+    $limit: Int
+    $offset: Int
+  ) {
+    aiModels(
+      status: $status
+      modelType: $modelType
+      provider: $provider
+      isPublic: $isPublic
+      limit: $limit
+      offset: $offset
+    ) {
+      id
+      name
+      displayName
+      version
+      modelType
     }
   }
 `;
@@ -79,10 +107,26 @@ const NewAuditPage = () => {
   const [auditType, setAuditType] = useState<AuditType>('technical');
   const [activeTab, setActiveTab] = useState<'config' | 'test' | 'results'>('config');
   const [auditName, setAuditName] = useState('Untitled Audit - 20 March 2023 - 10:30AM');
-  const modelName = 'Region-al';
-  const modelVersion = 'Ver. 1.2.1';
-  const modelType = 'TEXT_GENERATION'; // Full model type for GraphQL queries
   const isAutoSaved = true;
+
+  // AI Models state
+  const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
+  const [aiModels, setAiModels] = useState<Array<{
+    id: string;
+    name: string;
+    displayName: string;
+    version: string;
+    modelType: string;
+    organization?: string;
+  }>>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [modelsError, setModelsError] = useState<string | null>(null);
+
+  // Computed values from selected model
+  const selectedModel = aiModels.find(m => m.id === selectedModelId);
+  const modelName = selectedModel?.displayName || selectedModel?.name || '';
+  const modelVersion = selectedModel?.version || '';
+  const modelType = selectedModel?.modelType || 'TEXT_GENERATION'; // Full model type for GraphQL queries
 
   // Handle tab query parameter on mount
   useEffect(() => {
@@ -142,6 +186,8 @@ const NewAuditPage = () => {
   const modulesFetchedRef = useRef(false);
   const isFetchingRef = useRef(false);
   const lastModelTypeRef = useRef<string | null>(null);
+  const modelsFetchedRef = useRef(false);
+  const isFetchingModelsRef = useRef(false);
 
   // Load evaluation modules from GraphQL API using modulesByModelType
   useEffect(() => {
@@ -194,13 +240,15 @@ const NewAuditPage = () => {
         }
         setSelectedModules(initialSelected);
       } catch (error: any) {
-        
         // Check if it's a connection error
-        if (error?.message?.includes('Failed to fetch') || error?.message?.includes('ERR_CONNECTION_REFUSED') || error?.message?.includes('Backend server')) {
-          setModulesError('Backend server is not available. Please check if the GraphQL server is running on port 9001.');
+        if (error?.message?.includes('Failed to fetch') || error?.message?.includes('ERR_CONNECTION_REFUSED') || error?.message?.includes('Backend server') || error?.message?.includes('NetworkError')) {
+          // Use the error message which now includes the actual endpoint URL
+          setModulesError(error.message || 'Backend server is not available. Please check your NEXT_PUBLIC_BACKEND_URL configuration.');
           // Don't reset refs on connection error - prevent retry spam
         } else {
-          setModulesError('Failed to load evaluation modules. Please ensure you are logged in.');
+          // Show the actual error message for better debugging
+          const errorMessage = error?.message || error?.response?.errors?.[0]?.message || 'Unknown error';
+          setModulesError(`Failed to load evaluation modules: ${errorMessage}. Please check your authentication and backend configuration.`);
           // Reset refs on other errors so it can retry
           modulesFetchedRef.current = false;
         }
@@ -215,6 +263,71 @@ const NewAuditPage = () => {
   }, [modelType, isAuthenticated, isSessionLoading]); // Removed 'request' - it's now memoized and stable
 
 
+
+  // Fetch AI models from backend
+  const fetchAIModels = async () => {
+    if (!isAuthenticated || isSessionLoading || modelsFetchedRef.current || isFetchingModelsRef.current) {
+      return;
+    }
+
+    isFetchingModelsRef.current = true;
+    modelsFetchedRef.current = true;
+
+    try {
+      setIsLoadingModels(true);
+      setModelsError(null);
+
+      const data = await request<{ aiModels: Array<{
+        id: string;
+        name: string;
+        displayName: string;
+        version: string;
+        modelType: string;
+        organization?: string;
+      }> }>(
+        AI_MODELS_QUERY,
+        {
+          status: null,
+          modelType: null,
+          provider: null,
+          isPublic: null,
+          limit: 50,
+          offset: 0,
+        }
+      );
+
+      const models = data?.aiModels || [];
+      setAiModels(models);
+
+      // Auto-select first model if available and none selected
+      if (models.length > 0 && !selectedModelId) {
+        setSelectedModelId(models[0].id);
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || error?.response?.errors?.[0]?.message || 'Unknown error';
+      setModelsError(`Failed to load AI models: ${errorMessage}. Please check your authentication and backend configuration.`);
+      modelsFetchedRef.current = false; // Allow retry on error
+    } finally {
+      setIsLoadingModels(false);
+      isFetchingModelsRef.current = false;
+    }
+  };
+
+  // Fetch AI models when authenticated
+  useEffect(() => {
+    if (isAuthenticated && !isSessionLoading && !modelsFetchedRef.current && !isFetchingModelsRef.current) {
+      fetchAIModels();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, isSessionLoading]);
+
+  // Reset modules when model changes (so they refetch with new modelType)
+  useEffect(() => {
+    if (selectedModelId) {
+      modulesFetchedRef.current = false;
+      isFetchingRef.current = false;
+    }
+  }, [selectedModelId]);
 
   // Fetch metrics for a specific module using metricsByModelType
   const fetchMetricsForModule = async (moduleName: string): Promise<SelectOption[]> => {
@@ -293,8 +406,14 @@ const NewAuditPage = () => {
       pastedTestCasesLength: pastedTestCases.length,
     };
 
-    // Model ID can come from an env variable; backend fills the rest automatically
-    const modelId = process.env.NEXT_PUBLIC_AUDIT_MODEL_ID;
+    // Use selected model ID, or fallback to environment variable if available
+    const modelId = selectedModelId || process.env.NEXT_PUBLIC_AUDIT_MODEL_ID || null;
+
+    if (!modelId) {
+      setAuditError('Please select an AI model before running the audit.');
+      setIsRequestingAudit(false);
+      return;
+    }
 
     const input: any = {
       name: auditName,
@@ -302,11 +421,8 @@ const NewAuditPage = () => {
       metrics,
       testDatasetIds: [], // can be wired to real dataset ids later
       configuration,
+      modelId,
     };
-
-    if (modelId) {
-      input.modelId = modelId;
-    }
 
     // Move user into the Audit Results tab and show loading state FIRST
     setActiveTab('results');
@@ -373,7 +489,6 @@ const NewAuditPage = () => {
         durationSeconds,
       });
     } catch (error: any) {
-      console.error('Error running audit:', error);
       const errorMessage = error?.message || 'Network error while starting audit.';
       setAuditError(errorMessage);
     } finally {
@@ -400,14 +515,48 @@ const NewAuditPage = () => {
         <div className="flex-1 audit-content p-10">
           {/* Model Name and Owner Section */}
           <div className="mb-6">
+            {/* Model Selector */}
+            <div className="mb-4 max-w-md">
+              {isLoadingModels ? (
+                <div>
+                  <Text variant="bodySm" className="text-gray-600">Loading models...</Text>
+                </div>
+              ) : modelsError ? (
+                <div>
+                  <Text variant="bodySm" className="text-red-600">{modelsError}</Text>
+                </div>
+              ) : aiModels.length > 0 ? (
+                <div>
+                  <Select
+                    name="modelSelect"
+                    label="Select AI Model"
+                    options={aiModels.map((model) => ({
+                      value: model.id,
+                      label: `${model.displayName || model.name}${model.version ? ` (${model.version})` : ''}`,
+                    }))}
+                    value={selectedModelId || ''}
+                    onChange={(value) => setSelectedModelId(value)}
+                  />
+                </div>
+              ) : (
+                <div>
+                  <Text variant="bodySm" className="text-gray-600">
+                    No models available. Please check your backend configuration.
+                  </Text>
+                </div>
+              )}
+            </div>
+            
             {/* Single line layout with gap */}
             <div className="flex items-center gap-4 mb-4 model-name-container">
               <Text as="h1" className="model-name-text">
                 {modelName}
               </Text>
-              <Text as="h2" className="model-name-text">
-                {modelVersion}
-              </Text>
+              {modelVersion && (
+                <Text as="h2" className="model-name-text">
+                  {modelVersion}
+                </Text>
+              )}
             </div>
             <div className="flex items-center gap-2 text-gray-600">
               <Text variant="bodyMd">Owner:</Text>
@@ -585,7 +734,6 @@ const NewAuditPage = () => {
               auditError={auditError}
               onDownloadReport={() => {
                 // TODO: Implement download report functionality
-                console.log('Download report clicked');
               }}
             />
           )}

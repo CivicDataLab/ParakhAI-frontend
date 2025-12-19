@@ -45,7 +45,6 @@ const handler = NextAuth({
         console.log('🔑 Saved tokens:', {
           hasAccessToken: !!token.access_token,
           hasIdToken: !!token.id_token,
-          tokenPreview: token.access_token ? `${token.access_token.substring(0, 20)}...` : 'Missing',
           decodedEmail: token.decoded?.email,
           decodedName: token.decoded?.name,
           roles: token.decoded?.realm_access?.roles ?? [],
@@ -61,7 +60,6 @@ const handler = NextAuth({
       console.log('📋 Session Callback - Adding to session:', {
         hasAccessToken: !!token.access_token,
         hasIdToken: !!token.id_token,
-        tokenPreview: token.access_token ? `${token.access_token.substring(0, 20)}...` : 'Missing',
         sessionEmail: session.user?.email,
         tokenDecodedEmail: token.decoded?.email,
       });

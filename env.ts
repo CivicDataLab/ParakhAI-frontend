@@ -10,7 +10,8 @@ export const env = createEnv({
     NEXTAUTH_SECRET: z.string().min(1).default('default-secret'),
     END_SESSION_URL: z.string().url().default('http://localhost:8080/logout'),
     REFRESH_TOKEN_URL: z.string().url().default('http://localhost:8080/token'),
-    // BACKEND_URL: z.string().url().default('http://localhost:8000'),
+    // Backend URL for GraphQL proxy (server-side only, can be different from client-side)
+    BACKEND_URL: z.string().min(1).optional(),
     // SENTRY_FEATURE_ENABLED: z.string().optional(),
     // SENTRY_ORG_NAME: z.string().optional(),
     // SENTRY_PROJECT_NAME: z.string().optional(),
@@ -20,11 +21,14 @@ export const env = createEnv({
   client: {
     NEXT_PUBLIC_GA_ID: z.string().optional(),
     NEXT_PUBLIC_PLATFORM_URL: z.string().url().default('http://localhost:3000'),
+    // Backend URL can be with or without protocol (protocol will be added automatically if missing)
+    NEXT_PUBLIC_BACKEND_URL: z.string().min(1).default('http://localhost:9001/graphql'),
   },
 
   experimental__runtimeEnv: {
     NEXT_PUBLIC_GA_ID: process.env.NEXT_PUBLIC_GA_ID,
     NEXT_PUBLIC_PLATFORM_URL: process.env.NEXT_PUBLIC_PLATFORM_URL,
+    NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL,
   },
   
   skipValidation: process.env.NODE_ENV === 'development' && !process.env.CI,
