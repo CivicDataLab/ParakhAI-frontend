@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signIn, useSession } from 'next-auth/react';
-import { Spinner, Icon } from 'opub-ui';
+import { Spinner, Icon, IconButton } from 'opub-ui';
 
 import { Icons } from '@/components/icons';
 import { ProfileMenu } from '@/components/ProfileMenu';
@@ -15,13 +15,11 @@ const buildNavigationLinks = () => {
   return [
     { label: 'Models', href: '/models' },
     { label: 'AI Makers', href: '#' },
-    { label: 'Auditors', href: '/auditors' },
+    { label: 'Experts', href: '/auditors' },
     { label: 'Resources', href: '/resources' },
     { label: 'Dashboard', href: '/dashboard' },
   ];
 };
-
-const loginButtonClasses = 'login-signup-button';
 
 const MainNav = () => {
   const { data: session, status } = useSession();
@@ -30,9 +28,13 @@ const MainNav = () => {
 
   return (
     <>
-      <nav className="bg-primary-purple relative z-[9999] sticky top-0">
-        <div className="max-w-7xl mx-auto px-12 sm:px-16 lg:px-32">
-          <div className="desktop-nav-container relative flex justify-between items-center h-30 pt-10 pr-10 pb-7 pl-10">
+      <nav className="bg-primaryPurple sticky top-0 z-[99999] overflow-visible">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 overflow-visible">
+          {/* Desktop Navigation Container */}
+          <div className="relative flex justify-between items-center min-h-[120px] pt-4 pr-10 pb-4 pl-0 
+                          lg:min-h-[60px] lg:pt-7 lg:pb-6
+                          sm:h-auto sm:pt-4 sm:pb-4 sm:pl-2 sm:pr-2 sm:justify-start sm:gap-4 overflow-visible">
+            
             {/* Mobile Navigation */}
             <MobileNav 
               navigationLinks={navigationLinks}
@@ -41,21 +43,37 @@ const MainNav = () => {
             />
 
             {/* Logo */}
-            <div className="desktop-nav-logo flex items-center -ml-[270px]">
+            <div className="flex items-center flex-shrink-0 
+                            relative -translate-x-[180px]
+                            md:-translate-x-[184px]
+                            lg:absolute lg:left-[-90px] lg:translate-x-0">
               <Link href="/" className="flex items-center" aria-label="ParakhAI Home">
-                <Image src="/images/logos/parakhai-logo.png" alt="ParakhAI" width={169} height={50}  className="h-[55px] w-[169px] p-[6.53px]" />
+                <div className="relative overflow-hidden 
+                                h-6 w-[100px] 
+                                md:h-7 md:w-[120px] 
+                                lg:h-[55px] lg:w-[165px] lg:p-[6.53px]">
+                  <Image 
+                    src="/images/logos/parakhai-logo.png" 
+                    alt="ParakhAI" 
+                    fill
+                    className="object-contain"
+                    sizes="(max-width: 640px) 100px, (max-width: 1024px) 120px, 165px"
+                  />
+                </div>
               </Link>
             </div>
 
-            {/* Center Section: Search + Navigation Links */}
-            <div className="desktop-nav-center flex items-center gap-6 absolute -right-[116px]">
+            {/* Center Section: Search + Navigation Links - Hidden on mobile, visible on desktop */}
+            <div className="hidden lg:flex items-center gap-6 absolute -right-[116px]">
               {/* Search Icon */}
-              <button
-                type="button"
+              <IconButton
+                icon={Icons.search}
+                size="slim"
+                color="onBgDefault"
                 className="text-white hover:opacity-80 transition-opacity"
               >
-                <Icon source={Icons.search} size={24} color="onBgDefault" />
-              </button>
+                Search
+              </IconButton>
 
               {/* Navigation Links */}
               {navigationLinks.map((link) => {
@@ -75,12 +93,12 @@ const MainNav = () => {
                     target={isExternal ? '_blank' : undefined}
                     rel={isExternal ? 'noopener noreferrer' : undefined}
                     className={`inline-flex items-center h-6 py-[2px] px-[5px] rounded hover:opacity-80 transition-opacity whitespace-nowrap ${
-                      isActive ? 'underline decoration-secondary-green' : ''
+                      isActive ? 'underline decoration-secondaryGreen' : ''
                     }`}
                   >
                     <span 
                       className={`text-base font-semibold leading-6 ${
-                        isActive ? 'text-secondary-green' : 'text-white'
+                        isActive ? 'text-secondaryGreen' : 'text-white'
                       }`}
                     >
                       {link.label}
@@ -90,7 +108,7 @@ const MainNav = () => {
               })}
               
               {/* Profile/Sign In - positioned after navigation links */}
-              <div className="desktop-nav-right flex items-center gap-3 ml-6">
+              <div className="flex items-center gap-3 ml-6">
                 {status === 'loading' ? (
                   <Spinner />
                 ) : session ? (
@@ -102,7 +120,16 @@ const MainNav = () => {
                     contentClassName="profile-popover-content bg-white border border-gray-200 shadow-lg rounded-xl z-[10000]"
                   />
                 ) : (
-              <button onClick={() => signIn('keycloak')} className={loginButtonClasses}>
+                  <button 
+                    onClick={() => signIn('keycloak')} 
+                    className="bg-borderHighlightSubdued text-baseVioletSolid12 
+                               text-base font-semibold uppercase tracking-[0.08em] 
+                               py-3 px-6 rounded-lg border border-transparent 
+                               inline-flex items-center justify-center 
+                               transition-all duration-150 ease
+                               hover:bg-baseVioletSolid4
+                               focus:outline-none focus:ring-2 focus:ring-baseVioletSolid6 focus:ring-offset-0"
+                  >
                     LOGIN / SIGN UP
               </button>
                 )}

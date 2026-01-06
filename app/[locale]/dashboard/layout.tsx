@@ -14,10 +14,10 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <header className="sticky top-0 z-50">
+      <header className="sticky top-0 z-[99999]">
         <MainNav />
       </header>
-      <main className="flex-1">
+      <main className="flex-1 relative z-0">
         {children}
       </main>
       <footer>

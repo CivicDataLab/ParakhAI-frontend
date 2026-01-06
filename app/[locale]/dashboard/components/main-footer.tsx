@@ -29,7 +29,7 @@ const MainFooter = () => {
   ];
   
   return (
-    <div className="bg-primary-purple">
+    <div className="bg-primaryPurple">
       <div className="footer-container w-full max-w-[1440px] mx-auto h-[88px] py-6 px-[112px]">
         <div className="footer-inner flex items-center justify-between h-full">
           {/* Left: Footer Links */}
@@ -73,7 +73,7 @@ const MainFooter = () => {
                   href={item.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-10 h-10 p-2 rounded-[20px] flex items-center justify-center hover:opacity-80 transition-opacity bg-secondary-green"
+                  className="w-10 h-10 p-2 rounded-[20px] flex items-center justify-center hover:opacity-80 transition-opacity bg-secondaryGreen"
                 >
                   <Icon
                     className="text-black"

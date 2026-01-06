@@ -18,7 +18,7 @@ type TestCase = {
   reason: string;
 };
 
-interface AuditResultsProps {
+interface EvaluationSummaryProps {
   auditOverview: {
     auditId: string | null;
     auditTime: string | null;
@@ -48,7 +48,7 @@ const GET_AUDIT_RESULTS_QUERY = `
   }
 `;
 
-const AuditResults: React.FC<AuditResultsProps> = ({
+const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
   auditOverview,
   isRequestingAudit,
   auditError,
@@ -243,7 +243,7 @@ const AuditResults: React.FC<AuditResultsProps> = ({
       {/* Audit Overview Header */}
       <div className="audit-overview-section">
         <Text variant="headingMd" className="mb-4">
-          Audit Overview
+          Evaluation Overview
         </Text>
         <Text variant="bodySm" className="audit-overview-summary-text">
           {isRequestingAudit ? (
@@ -293,7 +293,7 @@ const AuditResults: React.FC<AuditResultsProps> = ({
       <div className="audit-results-cards">
         <div className="audit-summary-card">
           <Text variant="headingMd" className="mb-1">
-            Audit Summary
+            Evaluation Summary
           </Text>
           <Text variant="bodySm" className="mb-4">
             Total Issues Identified: 40
@@ -415,5 +415,5 @@ const AuditResults: React.FC<AuditResultsProps> = ({
   );
 };
 
-export default AuditResults;
+export default EvaluationSummary;
 
