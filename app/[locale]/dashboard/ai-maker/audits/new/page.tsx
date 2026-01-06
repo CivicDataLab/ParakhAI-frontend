@@ -9,9 +9,9 @@ import BreadCrumbs from '@/components/Breadcrumbs';
 import WelcomeSection from '../../../components/WelcomeSection';
 import { toTitleCase } from '@/lib/utils';
 import { useGraphQL } from '@/lib/api';
-import AuditConfiguration from '../components/AuditConfiguration';
+import EvaluationConfiguration from '../components/EvaluationConfiguration';
 import TestCases from '../components/TestCases';
-import AuditResults from '../components/AuditResults';
+import EvaluationSummary from '../components/EvaluationSummary';
 import type { AuditType, SelectOption, Module } from '../components/types';
 
 // GraphQL queries for dynamic modules and metrics
@@ -106,7 +106,7 @@ const NewAuditPage = () => {
   const searchParams = useSearchParams();
   const [auditType, setAuditType] = useState<AuditType>('technical');
   const [activeTab, setActiveTab] = useState<'config' | 'test' | 'results'>('config');
-  const [auditName, setAuditName] = useState('Untitled Audit - 20 March 2023 - 10:30AM');
+  const [auditName, setAuditName] = useState('Untitled Evaluation - 20 March 2023 - 10:30AM');
   const isAutoSaved = true;
 
   // AI Models state
@@ -414,14 +414,27 @@ const NewAuditPage = () => {
       setIsRequestingAudit(false);
       return;
     }
+   
+    let customTestInputs: string | null = null;
+
+    if (testInputMode === 'paste' && pastedTestCases.trim()) {
+      
+      customTestInputs = pastedTestCases.trim();
+    } else if (testInputMode === 'upload' && uploadedFiles.length > 0) {
+      const fileData = uploadedFiles.map((file) => ({
+        filename: file.name,
+      }));
+      customTestInputs = JSON.stringify(fileData);
+    }
 
     const input: any = {
       name: auditName,
       modules,
       metrics,
-      testDatasetIds: [], // can be wired to real dataset ids later
+      testDatasetIds: [], 
+      customTestInputs: customTestInputs || null, 
       configuration,
-      modelId,
+      modelId
     };
 
     // Move user into the Audit Results tab and show loading state FIRST
@@ -504,15 +517,16 @@ const NewAuditPage = () => {
           { href: '/', label: 'Home' },
           { href: '/dashboard', label: 'User Dashboard' },
           { href: '/dashboard/ai-maker', label: 'AI Maker Dashboard' },
-          { href: '#', label: 'New Audit' },
+          { href: '#', label: 'New Evaluation' },
         ]}
       />
 
-      {/* Match Prompt Libraries / AI Maker layout so sticky nav + breadcrumbs behave the same on mobile */}
-      <div className="flex flex-1 gap-8 px-8 main-content-wrapper">
-        <WelcomeSection />
+      {/* Match AI Maker dashboard layout so sticky nav + breadcrumbs behave the same on all screens */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 overflow-x-visible">
+        <div className="flex flex-1 flex-col lg:flex-row gap-6 md:gap-8 lg:-ml-[120px] xl:-ml-[130px] main-content-wrapper">
+          <WelcomeSection />
 
-        <div className="flex-1 audit-content p-10">
+          <div className="flex-1 audit-content p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0 bg-white">
           {/* Model Name and Owner Section */}
           <div className="mb-6">
             {/* Model Selector */}
@@ -574,14 +588,14 @@ const NewAuditPage = () => {
           <div className="flex items-center justify-between mb-6 gap-4 audit-name-section max-[1023px]:mb-0.5 max-[1023px]:gap-0.5">
             {/* Left side: Label + Input + Tag */}
             <div className="flex items-center gap-4 flex-nowrap min-w-0 flex-1">
-              <Label htmlFor="auditName" className="audit-name-label flex-shrink-0 whitespace-nowrap">
-                Audit Name
+              <Label htmlFor="evaluationName" className="audit-name-label flex-shrink-0 whitespace-nowrap">
+                Evaluation Name
               </Label>
               <div className="audit-name-input-wrapper flex-1 min-w-0">
                 <TextField
                   id="auditName"
-                  name="auditName"
-                  label="Audit Name"
+                  name="evaluationName"
+                  label="Evaluation Name"
                   labelHidden
                   value={auditName}
                   onChange={(value) => setAuditName(value)}
@@ -590,10 +604,10 @@ const NewAuditPage = () => {
               <div className="tag-wrapper audit-tag flex-shrink-0">
                 <Tag variation="filled" fillColor="#E2F5C4" textColor="#0A0704">
                   {auditType === 'technical'
-                    ? 'Technical Audit'
+                    ? 'Technical Evaluation'
                     : auditType === 'domain'
-                      ? 'Domain Audit'
-                      : 'Cultural Audit'}
+                      ? 'Domain Evaluation'
+                      : 'Cultural Evaluation'}
                 </Tag>
               </div>
             </div>
@@ -601,9 +615,9 @@ const NewAuditPage = () => {
             {/* Right side: Status */}
             <div className="flex items-center gap-4 audit-status-container flex-shrink-0 max-[1023px]:gap-0.5 max-[1023px]:mt-0">
               {isAutoSaved && (
-                <div className="flex items-center audit-auto-saved-wrapper">
+                <div className="flex items-center gap-3 lg:-translate-x-8 xl:-translate-x-10">
                   <Text className="audit-auto-saved">
-                    Audit auto-saved
+                    Evaluation auto-saved
                   </Text>
                   <Image
                     src="/images/icons/circle-check.png"
@@ -622,9 +636,9 @@ const NewAuditPage = () => {
                     window.history.back();
                   }
                 }}
-                className="cancel-audit-button"
+                className="cancel-audit-button max-[640px]:ml-4"
               >
-                Cancel Audit
+                Cancel Evaluation
                 <Icon source={IconX} size={18} />
               </Button>
             </div>
@@ -645,7 +659,7 @@ const NewAuditPage = () => {
                   variant="bodyMd"
                   className={activeTab === 'config' ? 'text-gray-900 font-semibold' : 'text-gray-600'}
                 >
-                  Audit Configuration
+                  Evaluation Configuration
                 </Text>
               </button>
               <button
@@ -675,7 +689,7 @@ const NewAuditPage = () => {
                   variant="bodyMd"
                   className={activeTab === 'results' ? 'text-gray-900 font-semibold' : 'text-gray-600'}
                 >
-                  Audit Results
+                  Evaluation Summary
                 </Text>
               </button>
             </div>
@@ -683,7 +697,7 @@ const NewAuditPage = () => {
 
           {/* Tab Content */}
           {activeTab === 'config' && (
-            <AuditConfiguration
+            <EvaluationConfiguration
               auditType={auditType}
               setAuditType={setAuditType}
               auditorName={auditorName}
@@ -728,7 +742,7 @@ const NewAuditPage = () => {
           )}
 
           {activeTab === 'results' && (
-            <AuditResults
+            <EvaluationSummary
               auditOverview={auditOverview}
               isRequestingAudit={isRequestingAudit}
               auditError={auditError}
@@ -773,9 +787,10 @@ const NewAuditPage = () => {
               </Button>
             </div>
           )}
+          </div>
         </div>
       </div>
-    </div>
+      </div>
   );
 };
 

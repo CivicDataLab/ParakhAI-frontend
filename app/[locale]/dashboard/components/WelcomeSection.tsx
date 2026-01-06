@@ -15,10 +15,10 @@ type BaseNavItem = {
 
 const baseNavItems: BaseNavItem[] = [
   { icon: '/images/icons/home-2.png', label: 'Home', isImage: true, path: '/dashboard/ai-maker' },
-  { icon: '/images/icons/bulb.png', label: 'Models', isImage: true },
-  { icon: '/images/icons/report-analytics.png', label: 'Audits', isImage: true, path: '/dashboard/ai-maker/audits/new' },
+  { icon: '/images/icons/topology-star-ring.png', label: 'Models', isImage: true },
+  { icon: '/images/icons/report-analytics.png', label: 'Evaluations', isImage: true, path: '/dashboard/ai-maker/audits/new' },
   { icon: '/images/icons/messages.png', label: 'Prompt Libraries', isImage: true, path: '/dashboard/ai-maker/prompt-libraries' },
-  { icon: '/images/icons/users-group.png', label: 'Members & Auditors', isImage: true },
+  { icon: '/images/icons/users-group.png', label: 'Members & Experts', isImage: true },
   { icon: '/images/icons/settings.png', label: 'Settings', isImage: true },
 ];
 
@@ -80,9 +80,9 @@ const WelcomeSection = () => {
   }, [navItems, normalizedPath]);
 
   return (
-    <div className="welcome-section">
+    <div className="welcome-section mt-6">
       {/* Welcome Section */}
-      <div className="text-center">
+      <div className="text-center sm:pt-4 md:pt-0">
         {/* Logo */}
         <div className="mb-2 flex justify-center">
           <div className="cdl-logo-container">
@@ -97,7 +97,7 @@ const WelcomeSection = () => {
         </div>
         
         {/* Welcome Text */}
-        <p className="welcome-text">
+        <p className="welcome-text sm:pt-4 md:pt-0">
           Welcome, CivicDataLab
         </p>
         
@@ -116,7 +116,7 @@ const WelcomeSection = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="space-y-2">
+      <nav className="space-y-2 overflow-visible">
         {navItems.map((item) => {
           const isActive = selectedItem === item.label;
           return (
@@ -129,10 +129,10 @@ const WelcomeSection = () => {
                 }
                 setSelectedItem(item.label);
               }}
-              className={`w-full px-3 py-2 text-left transition whitespace-nowrap block nav-item-link ${
+              className={`py-2 text-left transition whitespace-nowrap block nav-item-link ${
                 isActive
-                  ? 'font-semibold bg-primary-purple text-white rounded-lg'
-                  : 'hover:bg-gray-100 rounded-md text-[#60646C] font-medium'
+                  ? 'font-semibold bg-primaryPurple text-white rounded-lg -mx-3 w-[calc(100%+24px)] px-6'
+                  : 'hover:bg-gray-100 rounded-md text-[#60646C] font-medium px-3 w-full'
               }`}
             >
               <span className="mr-2.5 inline-block">

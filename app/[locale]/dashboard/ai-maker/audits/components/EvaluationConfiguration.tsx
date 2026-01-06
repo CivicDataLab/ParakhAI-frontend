@@ -17,7 +17,7 @@ type Module = {
   }>;
 };
 
-interface AuditConfigurationProps {
+interface EvaluationConfigurationProps {
   auditType: AuditType;
   setAuditType: (type: AuditType) => void;
   auditorName: string;
@@ -44,7 +44,7 @@ interface AuditConfigurationProps {
   toTitleCase: (str: string) => string;
 }
 
-const AuditConfiguration: React.FC<AuditConfigurationProps> = ({
+const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
   auditType,
   setAuditType,
   auditorName,
@@ -79,7 +79,7 @@ const AuditConfiguration: React.FC<AuditConfigurationProps> = ({
     <div className="mb-8">
       <Label htmlFor="auditType" className="block audit-type-label">
         <Text variant="bodyMd" fontWeight="medium">
-          Audit Type <span className="text-red-500">*</span>
+          Evaluation Type <span className="text-red-500">*</span>
         </Text>
       </Label>
 
@@ -104,7 +104,7 @@ const AuditConfiguration: React.FC<AuditConfigurationProps> = ({
               fontWeight="semibold"
               className="text-gray-900 mb-2 whitespace-nowrap"
             >
-              Technical Audit
+              Technical Evaluation
             </Text>
             <Text variant="bodySm" className="text-gray-600 block whitespace-nowrap">
               Check performance, safety, drift
@@ -132,7 +132,7 @@ const AuditConfiguration: React.FC<AuditConfigurationProps> = ({
               fontWeight="semibold"
               className="text-gray-900 mb-2 whitespace-nowrap"
             >
-              Domain Audit
+              Domain Evaluation
             </Text>
             <Text variant="bodySm" className="text-gray-600 block whitespace-nowrap">
               Check accuracy within domain context
@@ -160,7 +160,7 @@ const AuditConfiguration: React.FC<AuditConfigurationProps> = ({
               fontWeight="semibold"
               className="text-gray-900 mb-2 whitespace-nowrap"
             >
-              Cultural Audit
+              Cultural Evaluation
             </Text>
             <Text variant="bodySm" className="text-gray-600 block whitespace-nowrap">
               Expert checks for real-world fit
@@ -178,7 +178,7 @@ const AuditConfiguration: React.FC<AuditConfigurationProps> = ({
               <div className="flex-1 min-w-[300px] auditor-name-wrapper">
                 <Label htmlFor="auditorName" className="audit-form-label auditor-name-label">
                   <Text variant="bodyMd" fontWeight="medium">
-                    Auditor name<span className="text-red-500">*</span>
+                    Expert name<span className="text-red-500">*</span>
                   </Text>
                 </Label>
                 <div className={`audit-form-textfield auditor-name-textfield ${auditorName ? 'has-value' : ''}`}>
@@ -218,7 +218,7 @@ const AuditConfiguration: React.FC<AuditConfigurationProps> = ({
               <div>
                 <Label htmlFor="auditObjective" className="audit-form-label audit-objective-label">
                   <Text variant="bodyMd" fontWeight="medium">
-                    Audit Objective<span className="text-red-500">*</span>
+                    Evaluation Objective<span className="text-red-500">*</span>
                   </Text>
                 </Label>
                 <div className="audit-form-textarea audit-objective-textarea">
@@ -236,7 +236,7 @@ const AuditConfiguration: React.FC<AuditConfigurationProps> = ({
               <div>
                 <Label htmlFor="scopeOfAudit" className="audit-form-label scope-of-audit-label">
                   <Text variant="bodyMd" fontWeight="medium">
-                    Scope of Audit<span className="text-red-500">*</span>
+                    Scope of Evaluation<span className="text-red-500">*</span>
                   </Text>
                 </Label>
                 <div className="audit-form-textarea scope-of-audit-textarea">
@@ -405,5 +405,5 @@ const AuditConfiguration: React.FC<AuditConfigurationProps> = ({
   );
 };
 
-export default AuditConfiguration;
+export default EvaluationConfiguration;
 

@@ -1,31 +1,9 @@
-@import "tailwindcss";
-
-/* Import your design tokens first - these are your source of truth */
-@import url('./tokens/_variables.css');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 @import url('opub-ui/dist/assets/styles.css');
+@import url('./tokens/_variables.css');
 
-/* Map CSS variables to Tailwind v4 utilities */
-@theme {
-  /* Colors - reference from variables.css */
-  --color-primary-purple: var(--purple-primary-color);
-  --color-secondary-green: var(--green-secondary-color);
-  --color-login-bg: var(--border-highlight-subdued);
-  --color-login-hover: var(--base-violet-solid-4);
-  --color-login-text: var(--base-violet-solid-12);
-  --color-login-focus-ring: var(--base-violet-solid-6);
-  
-  /* Spacing */
-  --spacing-7: var(--space-7);
-  --spacing-30: var(--header-height);
-  --spacing-256: 256px;
-  --spacing-592: 592px;
-  
-  /* Font sizes */
-  --font-size-32: 32px;
-  
-  /* Line heights */
-  --line-height-40: 40px;
-}
 
 /* Mobile spacing overrides using Tailwind's layer system */
 @layer utilities {
@@ -398,7 +376,18 @@ html.mobile-menu-open .breadcrumbs-ml {
   gap: 0;
   flex-shrink: 0;
   align-self: flex-start;
+  overflow: visible;
 }
+
+/* Ensure selected nav item extends to both edges */
+.welcome-section nav .nav-item-link.bg-primaryPurple {
+  margin-left: -12px;
+  margin-right: -12px;
+  width: calc(100% + 24px);
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
 
 /* CDL Logo container */
 .cdl-logo-container {
@@ -1963,58 +1952,6 @@ html.mobile-menu-open .breadcrumbs-ml {
     background-color: white;
     display: block ;
   }
-
-  /* Ensure dashboard layout containers are visible */
-  /* div.min-h-screen,
-  div[class*="min-h-screen"],
-  div.flex.flex-col,
-  div.flex-1 {
-    background-color: white ;
-    min-height: 100vh ;
-  } */
-
-  /* Make nav sticky on mobile - ensure it stays at top when scrolling */
-  nav.bg-primary-purple,
-  nav[class*="bg-primary-purple"],
-  nav.bg-primary-purple.sticky,
-  nav.sticky {
-    position: sticky ;
-    top: 0 ;
-    z-index: 9999 ;
-    width: 100% ;
-  }
-  
-  /* Responsive nav container padding */
-  nav.bg-primary-purple > div,
-  nav[class*="bg-primary-purple"] > div {
-    padding-left: 1rem ;
-    padding-right: 1rem ;
-  }
-  
-  /* Remove any gap between nav and breadcrumb */
-  nav.bg-primary-purple + .breadcrumbs-wrap,
-  nav[class*="bg-primary-purple"] + .breadcrumbs-wrap {
-    margin-top: 0 ;
-  }
-  
-  /* Breadcrumbs - Make sticky just below nav on mobile (reduce white gap) */
-  .breadcrumbs-wrap {
-    position: sticky ;
-    top: 3.5rem ; /* slightly closer to nav to remove extra white space */
-    z-index: 10 ;
-    width: 100% ;
-    background-color: var(--green-secondary-color) ;
-  }
-  
-  /* Ensure breadcrumbs inner has proper padding and vertical centering on mobile */
-  .breadcrumbs-inner {
-    padding-left: 1rem ;
-    padding-right: 1rem ;
-    padding-top: 0.25rem ;   /* center text vertically */
-    padding-bottom: 0.25rem ;
-    width: 100% ;
-    box-sizing: border-box ;
-  }
   
   /* Fix breadcrumb truncation - all links should truncate with ellipsis */
   .breadcrumbs-inner .breadcrumb-link-item,
@@ -2456,9 +2393,8 @@ html.mobile-menu-open .breadcrumbs-ml {
 
   /* AI Maker page responsive styles */
   .ai-maker-container {
-    padding-left: 1rem ;     
+    /* Removed padding-left and overflow-x to allow Tailwind classes to work */
     padding-right: 1rem ;    
-    overflow-x: hidden ;
     min-height: 100vh ;
     background-color: white ;
     display: flex ;
@@ -2765,6 +2701,7 @@ html.mobile-menu-open .breadcrumbs-ml {
     display: flex ;
   }
 
+
   /* AI Maker page - ensure desktop layout is preserved */
   .ai-maker-container > div:first-child {
     display: block ; /* Show sidebar on desktop */
@@ -2773,6 +2710,8 @@ html.mobile-menu-open .breadcrumbs-ml {
   .ai-maker-container > div:last-child {
     padding: 2.5rem ; /* Restore desktop padding */
   }
+
+  /* Removed padding-left rules - using Tailwind classes directly */
 
   .section-title-margin {
     flex-direction: row ;
@@ -2849,12 +2788,6 @@ html.mobile-menu-open .breadcrumbs-ml {
 }
 
 /* Reduce gap between text and icon for Audit auto-saved */
-.audit-auto-saved-wrapper {
-  gap: 0px;
-  display: flex;
-  align-items: center;
-}
-
 .audit-auto-saved-wrapper img {
   margin-left: -4px;
 }
@@ -2862,7 +2795,8 @@ html.mobile-menu-open .breadcrumbs-ml {
 
 /* Cancel Audit button styling - Body/Medium/Medium */
 .cancel-audit-button {
-  width: 86px;
+  width: auto;
+  min-width: 86px;
   height: 20px;
   display: flex;
   align-items: center;
@@ -2892,7 +2826,8 @@ html.mobile-menu-open .breadcrumbs-ml {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  width: 86px;
+  width: auto;
+  min-width: 86px;
   height: 20px;
   font-family: Inter;
   font-weight: 500;
@@ -4975,6 +4910,7 @@ label:has(input[value="cultural"]:not(:checked)) {
   .audit-content .audit-status-container .audit-auto-saved-wrapper {
     margin-top: 0;
     margin-bottom: 0;
+    margin-left: -8px !important;
   }
 
   /* Reduce spacing between model name and audit name section */

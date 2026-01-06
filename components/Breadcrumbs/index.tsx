@@ -24,26 +24,60 @@ const BreadCrumbs: React.FC<BreadCrumbsProps> = ({ data }) => {
     return match ? `/${match[1]}` : '';
   }, [pathname]);
 
+  // Truncate breadcrumbs only if there are more than 3 items, but only on small/medium screens
+  // On desktop (lg+), show all items without truncation
+  const shouldTruncate = data.length > 3;
+  const displayData = useMemo(() => {
+    // Don't truncate on desktop - show all items
+    // Truncation will be handled via CSS on smaller screens
+    return data;
+  }, [data]);
+  
+  // For small/medium screens: show truncated version
+  const displayDataTruncated = useMemo(() => {
+    if (!shouldTruncate) return data;
+    
+    // Show first item, ellipsis, and last 2 items
+    return [
+      data[0], // First item (usually "Home")
+      { href: '#', label: '...' }, // Ellipsis
+      ...data.slice(-2), // Last 2 items
+    ];
+  }, [data, shouldTruncate]);
+
+  // Helper function to truncate text for small screens (more than 60 characters)
+  const truncateTextForSmallScreen = (text: string): string => {
+    if (text.length > 60) {
+      return text.substring(0, 57) + '...';
+    }
+    return text;
+  };
+
   return (
-    <div className="breadcrumbs-wrap border-b sticky top-30 z-10 flex items-center bg-secondary-green">
-      <div className="breadcrumbs-inner w-full max-w-7xl mx-auto h-8 py-1 px-10">
-      <Breadcrumb className="mx-1 breadcrumbs-ml -ml-30">
-        <BreadcrumbList className="">
-          {data.map((item, index) => {
-            // Don't add locale prefix if href is '#' or starts with http/https
-            const href = item.href === '#' || item.href.startsWith('http://') || item.href.startsWith('https://')
-              ? item.href
-              : `${localePrefix}${item.href}`;
-            
-            return (
-              <React.Fragment key={index}>
-                  {index === data.length - 1 ? (
+        <div className="breadcrumbs-wrap border-b sticky !top-[120px] z-[99998] flex items-center bg-secondaryGreen sm:!top-[120px] md:!top-[120px] lg:!top-[60px] overflow-visible">
+          <div className="breadcrumbs-inner w-full max-w-7xl mx-auto h-8 py-1 px-4 sm:px-6 md:px-8 lg:pl-[calc(2.5rem+40px)] lg:pr-10 overflow-visible">
+          <Breadcrumb className="mx-1 breadcrumbs-ml lg:-translate-x-32 xl:-translate-x-32 2xl:-translate-x-32">
+          <BreadcrumbList className="flex flex-wrap items-center gap-1 sm:gap-2">
+            {/* Desktop: Show all items - hidden on small/medium, visible on lg+ */}
+            {displayData.map((item, index) => {
+              // Don't add locale prefix if href is '#' or starts with http/https
+              const href = item.href === '#' || item.href.startsWith('http://') || item.href.startsWith('https://')
+                ? item.href
+                : `${localePrefix}${item.href}`;
+              
+              const isLastItem = index === displayData.length - 1;
+              
+              return (
+                <span key={`desktop-${index}`} className="hidden lg:contents">
+                  {isLastItem ? (
                     <BreadcrumbItem>
                       <BreadcrumbPage
                         title={item.label}
                         className="text-gray-800 breadcrumb-item breadcrumb-last-item"
                       >
-                        <span className="font-bold" title={item.label}>{item.label}</span>
+                        <span className="font-bold text-base" title={item.label}>
+                          {item.label}
+                        </span>
                       </BreadcrumbPage>
                     </BreadcrumbItem>
                   ) : (
@@ -53,16 +87,67 @@ const BreadCrumbs: React.FC<BreadCrumbsProps> = ({ data }) => {
                         title={item.label}
                         className="text-gray-600 hover:text-gray-800 breadcrumb-item breadcrumb-link-item"
                       >
-                        <span title={item.label}>{item.label}</span>
+                        <span className="text-base" title={item.label}>
+                          {item.label}
+                        </span>
                       </BreadcrumbLink>
                     </BreadcrumbItem>
                   )}
-                {index < data.length - 1 && <BreadcrumbSeparator />}
-              </React.Fragment>
-            );
-          })}
-        </BreadcrumbList>
-      </Breadcrumb>
+                  {index < displayData.length - 1 && <BreadcrumbSeparator />}
+                </span>
+              );
+            })}
+            
+            {/* Small/Medium screens: Show truncated version - visible on small/medium, hidden on lg+ */}
+            {displayDataTruncated.map((item, index) => {
+              // Don't add locale prefix if href is '#' or starts with http/https
+              const href = item.href === '#' || item.href.startsWith('http://') || item.href.startsWith('https://')
+                ? item.href
+                : `${localePrefix}${item.href}`;
+              
+              const isEllipsis = item.label === '...';
+              const isLastItem = index === displayDataTruncated.length - 1;
+              
+              return (
+                <span key={`mobile-${index}`} className="contents lg:hidden">
+                  {isLastItem ? (
+                    <BreadcrumbItem>
+                      <BreadcrumbPage
+                        title={item.label}
+                        className="text-gray-800 breadcrumb-item breadcrumb-last-item"
+                      >
+                        <span className="font-bold text-sm sm:text-base truncate max-w-[200px] sm:max-w-none" title={item.label}>
+                          <span className="sm:hidden">{truncateTextForSmallScreen(item.label)}</span>
+                          <span className="hidden sm:inline">{item.label}</span>
+                        </span>
+                      </BreadcrumbPage>
+                    </BreadcrumbItem>
+                  ) : isEllipsis ? (
+                    <BreadcrumbItem>
+                      <span className="text-gray-600 breadcrumb-item text-sm sm:text-base">
+                        {item.label}
+                      </span>
+                    </BreadcrumbItem>
+                  ) : (
+                    <BreadcrumbItem>
+                      <BreadcrumbLink
+                        href={href}
+                        title={item.label}
+                        className="text-gray-600 hover:text-gray-800 breadcrumb-item breadcrumb-link-item"
+                      >
+                        <span className="text-sm sm:text-base truncate max-w-[120px] sm:max-w-[200px] md:max-w-none" title={item.label}>
+                          <span className="sm:hidden">{truncateTextForSmallScreen(item.label)}</span>
+                          <span className="hidden sm:inline">{item.label}</span>
+                        </span>
+                      </BreadcrumbLink>
+                    </BreadcrumbItem>
+                  )}
+                  {index < displayDataTruncated.length - 1 && <BreadcrumbSeparator />}
+                </span>
+              );
+            })}
+          </BreadcrumbList>
+        </Breadcrumb>
       </div>
     </div>
   );

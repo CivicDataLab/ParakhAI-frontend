@@ -4,7 +4,7 @@ import type { CodegenConfig } from '@graphql-codegen/cli';
 const config: CodegenConfig = {
   // Where to fetch the GraphQL schema from.
   // Uses your existing env var; will use fallback during backend integration
-  schema: process.env.NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT || 'http://localhost:9001/graphql',
+  schema: 'https://dev.api.parakh.civicdataspace.in/graphql/',
 
   // Where to look for GraphQL operations (queries/mutations) in your code
   documents: ['app/**/*.{ts,tsx}'],

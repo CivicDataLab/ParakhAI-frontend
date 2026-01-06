@@ -128,7 +128,7 @@ const AIMakerDashboard = () => {
       cell: (info) => `ID #${info.getValue()}`,
     }),
     columnHelper.accessor('auditType', {
-      header: 'Audit Type',
+      header: 'Evaluation Type',
     }),
     columnHelper.accessor('testResult', {
       header: 'Test Result',
@@ -202,7 +202,7 @@ const AIMakerDashboard = () => {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-white overflow-x-visible">
       <BreadCrumbs
         data={[
           { href: '/', label: 'Home' },
@@ -212,19 +212,20 @@ const AIMakerDashboard = () => {
       />
 
       {/* Sidebar and Content Layout */}
-      <div className="flex flex-1 gap-8 px-8 main-content-wrapper ai-maker-container">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 overflow-x-visible">
+        <div className="flex flex-1 flex-col lg:flex-row gap-6 md:gap-8 lg:-ml-[120px] xl:-ml-[130px]">
         {/* Sidebar */}
         <WelcomeSection />
 
         {/* Main Content */}
-        <div className="flex-1 bg-gray-50 p-10">
+        <div className="flex-1 bg-gray-50 p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0">
           {/* Header with Title */}
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-gray-900 overview-heading">Overview</h1>
           </div>
 
           {/* Metrics */}
-          <div className="grid grid-cols-4 gap-4 mb-12 metrics-grid">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 sm:mb-10 lg:mb-12">
             {metrics.map((m) => (
               <div key={m.label} className="metric-card">
                 <p className="metric-card-label">{m.label}</p>
@@ -251,7 +252,7 @@ const AIMakerDashboard = () => {
               )}
             </div>
             {hasModels ? (
-              <div className="grid grid-cols-2 gap-6 models-grid">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {models.map((model) => {
                   // Card metadata (top row inside card)
                   const metadataContent = [
@@ -352,6 +353,7 @@ const AIMakerDashboard = () => {
               />
             </div>
           )}
+        </div>
         </div>
       </div>
     </div>
