@@ -89,16 +89,22 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
 
   // Fetch audit results when auditId is available
   useEffect(() => {
-    const fetchAuditResults = async () => {
-      const auditId = auditOverview?.auditId;
-      
-      // Early return conditions
-      if (!auditId || !isAuthenticated || isRequestingAudit) {
-        return;
-      }
+    const auditId = auditOverview?.auditId;
+    
+    // Early return conditions
+    if (!auditId || !isAuthenticated || isRequestingAudit) {
+      return;
+    }
 
-      // Prevent duplicate calls: check if already fetching or already fetched this auditId
-      if (isFetchingRef.current || lastFetchedAuditIdRef.current === auditId) {
+    // Prevent duplicate calls: check if already fetching or already fetched this auditId
+    if (isFetchingRef.current || lastFetchedAuditIdRef.current === auditId) {
+      return;
+    }
+
+    // Add setTimeout to wait for async audit results to be ready
+    const timeoutId = setTimeout(async () => {
+      // Double-check conditions after timeout (auditId might have changed)
+      if (!auditOverview?.auditId || auditOverview.auditId !== auditId) {
         return;
       }
 
@@ -170,9 +176,12 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
           setIsLoadingResults(false);
         }
       }
-    };
+    }, 10000); // Wait 10 seconds for audit results to be ready asynchronously
 
-    fetchAuditResults();
+    // Cleanup timeout on unmount or when dependencies change
+    return () => {
+      clearTimeout(timeoutId);
+    };
     // Only depend on auditId and auth status, not request function
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auditOverview?.auditId, isAuthenticated, isRequestingAudit]);

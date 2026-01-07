@@ -93,10 +93,6 @@ const REQUEST_AUDIT_MUTATION = `
         failedTests
         skippedTests
         overallScore
-        createdAt
-        startedAt
-        completedAt
-        updatedAt
       }
     }
   }
@@ -290,7 +286,7 @@ const NewAuditPage = () => {
           status: null,
           modelType: null,
           provider: null,
-          isPublic: null,
+          isPublic: true,
           limit: 50,
           offset: 0,
         }
@@ -501,6 +497,61 @@ const NewAuditPage = () => {
         auditTime: formattedTime,
         durationSeconds,
       });
+
+      // Refetch audit after 10 seconds to get updated duration from asynchronous processing
+      setTimeout(async () => {
+        try {
+          const refetchResult = await request<{ audit: { id: string; startedAt: string | null; completedAt: string | null; createdAt: string | null } }>(
+            `
+              query GetAuditById($auditId: ID!) {
+                audit(auditId: $auditId) {
+                  id
+                  startedAt
+                  completedAt
+                  createdAt
+                }
+              }
+            `,
+            { auditId: audit.id }
+          );
+
+          const refetchedAudit = refetchResult?.audit;
+          if (refetchedAudit && refetchedAudit.id === audit.id) {
+            const started = refetchedAudit.startedAt ? new Date(refetchedAudit.startedAt) : null;
+            const completed = refetchedAudit.completedAt ? new Date(refetchedAudit.completedAt) : null;
+            const created = refetchedAudit.createdAt ? new Date(refetchedAudit.createdAt) : null;
+
+            const timeSource = completed || started || created;
+
+            let updatedDurationSeconds: number | null = null;
+            if (started && completed) {
+              updatedDurationSeconds = Math.round(
+                (completed.getTime() - started.getTime()) / 1000
+              );
+            }
+
+            const updatedFormattedTime =
+              timeSource?.toLocaleString(undefined, {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true,
+              }) || null;
+
+            // Update audit overview with new duration
+            setAuditOverview({
+              auditId: refetchedAudit.id,
+              auditTime: updatedFormattedTime,
+              durationSeconds: updatedDurationSeconds,
+            });
+          }
+        } catch (error: any) {
+          console.error('Error refetching audit duration:', error);
+          // Silently fail - don't show error to user for this background refetch
+        }
+      }, 10000); // Wait 10 seconds for asynchronous audit processing
     } catch (error: any) {
       const errorMessage = error?.message || 'Network error while starting audit.';
       setAuditError(errorMessage);
