@@ -1,0 +1,59 @@
+'use client';
+
+import { signIn, useSession } from 'next-auth/react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { Button } from 'opub-ui';
+
+const HeroSection = () => {
+  const router = useRouter();
+  const { data: session } = useSession();
+
+  const handleGetStarted = () => {
+    if (session) {
+      router.push('/dashboard');
+    } else {
+      signIn('keycloak');
+    }
+  };
+
+  return (
+    <section className="relative bg-[#E8E0F5] py-16 md:py-20 lg:py-24 overflow-hidden">
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <Image
+          src="/images/home/Hero BG.png"
+          alt="Hero Background"
+          fill
+          className="object-cover opacity-20"
+          priority
+        />
+      </div>
+
+      <div className="container mx-auto px-4 md:px-8 lg:px-12 relative z-10">
+        <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+            Build AI that's trustworthy
+            <br />
+            <span className="text-[#6849EE]">from day one.</span>
+          </h1>
+          
+          <p className="text-base md:text-lg text-gray-700 mb-8 max-w-2xl">
+            Catch <strong>biases</strong> lurking in your AI model and build <strong>trust</strong> with ParakhAI's
+            automated evaluation pipelines and expert-led evaluations.
+          </p>
+
+          <Button
+            kind="primary"
+            onClick={handleGetStarted}
+            className="bg-[#6849EE] hover:bg-[#5538CC] text-white px-8 py-3 rounded-lg font-semibold"
+          >
+            Get Started →
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default HeroSection;
