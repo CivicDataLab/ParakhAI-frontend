@@ -53,22 +53,22 @@ const GetStartedSection = () => {
           {steps.map((step, index) => (
             <div key={index} className="flex flex-col gap-3 items-start">
               {/* Icon */}
-              <div className="w-32 h-32 bg-[#E8E0F5] rounded-lg flex items-center justify-center p-2">
+              <div className="w-32 h-32 rounded-lg flex items-start ">
                 <Image
                   src={step.icon}
                   alt={step.title}
-                  width={64}
-                  height={64}
+                  width={128}
+                  height={128}
                   className="object-contain"
                 />
               </div>
 
               {/* Step Content */}
               <div className="flex flex-col gap-2">
-                <Text variant="headingMd" fontWeight="semibold" className="text-gray-900">
+                <Text variant="headingLg" fontWeight="semibold" className="text-gray-900">
                   {step.title}
                 </Text>
-                <Text variant="bodyMd" className="text-gray-600 leading-relaxed text-sm">
+                <Text variant="bodyMd" className="text-gray-600 leading-relaxed text-md">
                   {step.description}
                 </Text>
               </div>
@@ -79,7 +79,7 @@ const GetStartedSection = () => {
         {/* CTA Button */}
         
         <div className="flex justify-center">
-          <Button onClick={handleGetStarted} kind="primary" className=" bg-secondary-green text-basePureBlack">Get Started →</Button>
+          <Button onClick={handleGetStarted} kind="primary" className="bg-secondary-green text-basePureBlack px-8 py-3 rounded-lg font-semibold">Get Started →</Button>
         </div>
       </div>
     </section>

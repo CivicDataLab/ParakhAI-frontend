@@ -62,40 +62,38 @@ const HowItWorksSection = () => {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="flex flex-row gap-12 lg:gap-16 items-start"
+              className="flex flex-row gap-12 lg:gap-16 items-center"
             >
-              {/* Feature Image - Always on Left (1/3 viewport) */}
-              <div className="flex-shrink-0 w-[33vw] max-w-[400px] min-w-[300px] h-[280px] lg:h-[320px] relative rounded-xl overflow-hidden bg-white border border-gray-200 shadow-sm">
-                <Image
-                  src={feature.image}
-                  alt={feature.title}
-                  fill
-                  className="object-contain p-5"
-                />
-              </div>
 
-              {/* Content */}
-              <div className="flex flex-col gap-3 flex-1">
+              <div className="flex flex-col gap-4 flex-1">
                 <Text
-                  variant="headingLg"
+                  variant="headingXl"
                   fontWeight="bold"
                   className="text-gray-900"
                 >
                   {feature.title}
                 </Text>
-                <Text variant="bodyMd" className="text-gray-600">
+                <Text variant="bodyLg" className="text-gray-600">
                   {feature.subtitle}
                 </Text>
-                <ul className="mt-2 space-y-2">
+                <ul className="mt-2 space-y-3">
                   {feature.points.map((point, pointIndex) => (
                     <li key={pointIndex} className="flex items-start gap-2">
                       <span className="text-[#6849EE] mt-1">•</span>
-                      <Text variant="bodyMd" className="text-gray-700">
+                      <Text variant="bodyLg" className="text-gray-700">
                         {point}
                       </Text>
                     </li>
                   ))}
                 </ul>
+              </div>
+              <div className="flex-shrink-0 w-[33vw] max-w-[612px] min-w-[400px] h-[320px] lg:h-[440px] relative rounded-xl overflow-hidden bg-white">
+                <Image
+                  src={feature.image}
+                  alt={feature.title}
+                  fill
+                  className="object-contain"
+                />
               </div>
             </div>
           ))}

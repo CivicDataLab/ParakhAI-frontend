@@ -18,14 +18,14 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative bg-[#E8E0F5] py-16 md:py-20 lg:py-24 overflow-hidden">
+    <section className="relative py-16 md:py-20 lg:py-24 overflow-hidden">
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <Image
           src="/images/home/Hero BG.png"
           alt="Hero Background"
           fill
-          className="object-cover opacity-20"
+          className="object-cover"
           priority
         />
       </div>
