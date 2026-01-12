@@ -26,29 +26,39 @@ const features = [
   },
 ];
 
-const FeatureCard = ({ feature, index, isExpanded, cardRef, onToggle }: any) => {
+interface FeatureCardProps {
+  feature: (typeof features)[0];
+  index: number;
+  isExpanded: boolean;
+  cardRef: (el: HTMLDivElement | null) => void;
+  onToggle: () => void;
+}
+
+const FeatureCard = ({ feature, index, isExpanded, cardRef, onToggle }: FeatureCardProps) => {
   return (
     <div ref={cardRef} className="mb-4">
       <motion.div
         className={`rounded-2xl overflow-hidden border transition-colors duration-300 cursor-pointer ${
           isExpanded
-            ? 'bg-purple-50 border-purple-200 shadow-lg'
-            : 'bg-white border-gray-200'
+            ? 'bg-[#F8F7FF] border-[#E8E4FF] shadow-md'
+            : 'bg-white border-gray-200 hover:border-gray-300'
         }`}
         onClick={onToggle}
       >
         {/* Header - Always Visible */}
-        <div className="p-6">
+        <div className="p-5 md:p-6">
           <h3
-            className={`text-xl font-bold transition-colors duration-300 ${
-              isExpanded ? 'text-gray-900' : 'text-gray-700'
+            className={`text-base md:text-lg font-bold transition-colors duration-300 ${
+              isExpanded ? 'text-gray-900' : 'text-gray-800'
             }`}
           >
             {feature.title}
           </h3>
           <p
-            className={`text-sm mt-1 transition-colors duration-300 ${
-              isExpanded ? 'text-purple-600' : 'text-gray-500'
+            className={`text-sm mt-1 transition-all duration-300 ${
+              isExpanded 
+                ? 'text-[#6849EE] underline underline-offset-2' 
+                : 'text-[#6849EE]'
             }`}
           >
             {feature.subtitle}
@@ -84,9 +94,9 @@ const FeatureCard = ({ feature, index, isExpanded, cardRef, onToggle }: any) => 
 
 const HowItWorksSection = () => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const cardRefs = useRef([]);
-  const containerRef = useRef(null);
-  const sectionRef = useRef(null);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
   const lastScrollY = useRef(0);
   const isTransitioning = useRef(false);
 
@@ -140,14 +150,17 @@ const HowItWorksSection = () => {
   }, [activeIndex]);
 
   return (
-    <div ref={sectionRef} className="bg-white py-20 min-h-screen">
-      <div className="container mx-auto px-4 md:px-8">
+    <section ref={sectionRef} className="bg-white py-12 md:py-16 lg:py-20">
+      <div className="container mx-auto px-4 md:px-8 lg:px-12">
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
           <div className="lg:w-[35%] lg:sticky lg:top-32 lg:self-start lg:h-fit">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 
+              className="font-bold text-gray-900 mb-6"
+              style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', lineHeight: 1.1 }}
+            >
               ParakhAI helps you catch biases early.
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-base md:text-lg text-gray-600 leading-relaxed">
               Test your AI during development and early deployment to identify
               biases and risks, so that your users get trustworthy AI.
             </p>
@@ -160,14 +173,14 @@ const HowItWorksSection = () => {
                 feature={feature}
                 index={index}
                 isExpanded={activeIndex === index}
-                cardRef={(el) => (cardRefs.current[index] = el)}
+                cardRef={(el: HTMLDivElement | null) => { cardRefs.current[index] = el; }}
                 onToggle={() => setActiveIndex(index)}
               />
             ))}
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 
