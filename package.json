@@ -45,9 +45,9 @@
     "next-usequerystate": "^1.17.2",
     "opub-ui": "^0.4.26",
     "postcss": "^8.5.6",
-    "react": "^18.2.0",
+    "react": "18.2.0",
     "react-aria": "3.22.0",
-    "react-dom": "^18.2.0",
+    "react-dom": "18.2.0",
     "react-markdown": "^10.1.0",
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
@@ -55,6 +55,10 @@
     "usehooks-ts": "^2.13.0",
     "zod": "^3.25.76",
     "zustand": "^4.3.8"
+  },
+   "overrides": {
+    "react-leaflet": "4.2.1",
+    "@react-leaflet/core": "2.1.0"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^5.0.7",

@@ -1,8 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    optimizePackageImports: ['opub-ui', 'echarts', 'lucide-react'],
-  },
+  productionBrowserSourceMaps: true,
+  transpilePackages: ['opub-ui'],
+  swcMinify: false,
+  // experimental: {
+  //   optimizePackageImports: ['opub-ui','echarts', 'lucide-react'],
+  // },
   images: {
     remotePatterns: [
       {
