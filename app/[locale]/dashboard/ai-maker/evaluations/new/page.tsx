@@ -1,19 +1,19 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
-import { Button, Text, Icon, TextField, Label, Tag, Select } from 'opub-ui';
-import Image from 'next/image';
-import { IconX } from '@tabler/icons-react';
-import { useSearchParams } from 'next/navigation';
 import BreadCrumbs from '@/components/Breadcrumbs';
-import WelcomeSection from '../../../components/WelcomeSection';
-import { toTitleCase } from '@/lib/utils';
 import { useGraphQL } from '@/lib/api';
+import { toTitleCase } from '@/lib/utils';
+import { IconX } from '@tabler/icons-react';
+import Image from 'next/image';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { Button, Icon, Label, Select, Tag, Text, TextField } from 'opub-ui';
+import { useEffect, useRef, useState } from 'react';
+import WelcomeSection from '../../../components/WelcomeSection';
 import EvaluationConfiguration from '../components/EvaluationConfiguration';
-import TestCases from '../components/TestCases';
-import ManualTestCases from '../components/ManualTestCases';
 import EvaluationSummary from '../components/EvaluationSummary';
-import type { AuditType, SelectOption, Module } from '../components/types';
+import ManualTestCases from '../components/ManualTestCases';
+import TestCases from '../components/TestCases';
+import type { AuditType, Module, SelectOption } from '../components/types';
 
 // GraphQL queries for dynamic modules and metrics
 const MODULES_BY_MODEL_TYPE_QUERY = `
@@ -101,6 +101,9 @@ const REQUEST_AUDIT_MUTATION = `
 
 const NewAuditPage = () => {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const params = useParams();
+  const locale = params?.locale || 'en';
   const [auditType, setAuditType] = useState<AuditType>('technical');
   const [activeTab, setActiveTab] = useState<'config' | 'test' | 'results'>('config');
   const [auditName, setAuditName] = useState('Untitled Evaluation - 20 March 2023 - 10:30AM');
@@ -499,6 +502,11 @@ const NewAuditPage = () => {
         durationSeconds,
       });
 
+      // Redirect to the audit detail page with the audit ID in URL
+      // This prevents re-triggering the audit on page reload
+      router.push(`/${locale}/dashboard/ai-maker/evaluations/${audit.id}`);
+      return; // Exit early - the detail page will handle polling
+
       // Poll for audit completion instead of fixed setTimeout
       const pollInterval = 15000; // Poll every 15 seconds
       const maxPollTime = 300000; // Maximum 5 minutes
@@ -596,9 +604,10 @@ const NewAuditPage = () => {
     <div className="flex flex-col min-h-screen bg-white">
       <BreadCrumbs
         data={[
-          { href: '/', label: 'Home' },
-          { href: '/dashboard', label: 'User Dashboard' },
-          { href: '/dashboard/ai-maker', label: 'AI Maker Dashboard' },
+          { href: `/${locale}`, label: 'Home' },
+          { href: `/${locale}/dashboard`, label: 'User Dashboard' },
+          { href: `/${locale}/dashboard/ai-maker`, label: 'AI Maker Dashboard' },
+          { href: `/${locale}/dashboard/ai-maker/evaluations`, label: 'Evaluations' },
           { href: '#', label: 'New Evaluation' },
         ]}
       />

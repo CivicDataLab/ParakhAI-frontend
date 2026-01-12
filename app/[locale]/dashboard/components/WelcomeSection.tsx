@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect, useMemo } from 'react';
 import { Divider } from 'opub-ui';
+import { useEffect, useMemo, useState } from 'react';
 
 type BaseNavItem = {
   icon: string;
@@ -16,7 +16,7 @@ type BaseNavItem = {
 const baseNavItems: BaseNavItem[] = [
   { icon: '/images/icons/home-2.png', label: 'Home', isImage: true, path: '/dashboard/ai-maker' },
   { icon: '/images/icons/topology-star-ring.png', label: 'Models', isImage: true },
-  { icon: '/images/icons/report-analytics.png', label: 'Evaluations', isImage: true, path: '/dashboard/ai-maker/audits/new' },
+  { icon: '/images/icons/report-analytics.png', label: 'Evaluations', isImage: true, path: '/dashboard/ai-maker/evaluations' },
   { icon: '/images/icons/messages.png', label: 'Prompt Libraries', isImage: true, path: '/dashboard/ai-maker/prompt-libraries' },
   { icon: '/images/icons/users-group.png', label: 'Members & Experts', isImage: true },
   { icon: '/images/icons/settings.png', label: 'Settings', isImage: true },

@@ -1,31 +1,17 @@
 'use client';
 
-import React from 'react';
-import { 
-  Card, 
-  Button, 
-  Avatar, 
-  Tag, 
-  DataTable, 
-  ProgressBar, 
-  Text, 
-  Icon, 
-  Badge, 
-  Divider 
-} from 'opub-ui';
-import { 
-  IconCalendar, 
-  IconUsers, 
-  IconPlus, 
-  IconCheck, 
-  IconTool,
-  IconMoodSad 
-} from '@tabler/icons-react';
+import BreadCrumbs from '@/components/Breadcrumbs';
+import { Icons } from '@/components/icons';
 import { createColumnHelper } from '@tanstack/react-table';
 import Link from 'next/link';
-import BreadCrumbs from '@/components/Breadcrumbs';
+import { useParams } from 'next/navigation';
+import {
+  Button,
+  Card,
+  DataTable,
+  Text,
+} from 'opub-ui';
 import WelcomeSection from '../components/WelcomeSection';
-import { Icons } from '@/components/icons';
 
 // Define audit data type
 type Audit = {
@@ -48,6 +34,8 @@ type Model = {
 };
 
 const AIMakerDashboard = () => {
+  const params = useParams();
+  const locale = params?.locale || 'en';
   const aiMakerBaseUrl = process.env.NEXT_PUBLIC_AI_MAKER_URL || 'https://dev.civicdataspace.in/dashboard';
   const addModelUrl = aiMakerBaseUrl.replace(/\/$/, '');
 
@@ -336,12 +324,14 @@ const AIMakerDashboard = () => {
           </div>
 
           {/* Audits Table Section */}
-          {hasModels && (
-            <div className="audits-section">
-              <div className="flex justify-between items-center mb-4">
-                <Text variant="headingLg" as="h2">Last 10 Audits</Text>
-                <a href="/audits" className="text-blue-600">See All</a>
-              </div>
+          <div className="audits-section">
+            <div className="flex justify-between items-center mb-4">
+              <Text variant="headingLg" as="h2">Recent Evaluations</Text>
+              <Link href={`/${locale}/dashboard/ai-maker/evaluations`} className="text-blue-600 hover:underline">
+                See All
+              </Link>
+            </div>
+            {hasModels ? (
               <DataTable
                 rows={auditData}
                 columns={columns}
@@ -351,8 +341,17 @@ const AIMakerDashboard = () => {
                 hideSelection={true}
                 hideFooter={true}
               />
-            </div>
-          )}
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 bg-gray-50 rounded-lg">
+                <Text variant="bodySm" className="text-gray-600 mb-4">
+                  No evaluations yet. Start by running your first evaluation.
+                </Text>
+                <Link href={`/${locale}/dashboard/ai-maker/evaluations/new`}>
+                  <Button kind="primary">Start New Evaluation</Button>
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
         </div>
       </div>
