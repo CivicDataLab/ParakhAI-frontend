@@ -121,10 +121,10 @@ const AIMakerDashboard = () => {
       ),
     }),
     columnHelper.accessor('auditTime', {
-      header: 'Audit Time',
+      header: 'Evaluation Time',
     }),
     columnHelper.accessor('auditId', {
-      header: 'Audit ID',
+      header: 'Evaluation ID',
       cell: (info) => `ID #${info.getValue()}`,
     }),
     columnHelper.accessor('auditType', {

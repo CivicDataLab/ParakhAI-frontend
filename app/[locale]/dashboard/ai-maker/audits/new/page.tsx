@@ -11,6 +11,7 @@ import { toTitleCase } from '@/lib/utils';
 import { useGraphQL } from '@/lib/api';
 import EvaluationConfiguration from '../components/EvaluationConfiguration';
 import TestCases from '../components/TestCases';
+import ManualTestCases from '../components/ManualTestCases';
 import EvaluationSummary from '../components/EvaluationSummary';
 import type { AuditType, SelectOption, Module } from '../components/types';
 
@@ -498,10 +499,21 @@ const NewAuditPage = () => {
         durationSeconds,
       });
 
-      // Refetch audit after 10 seconds to get updated duration from asynchronous processing
-      setTimeout(async () => {
+      // Poll for audit completion instead of fixed setTimeout
+      const pollInterval = 15000; // Poll every 15 seconds
+      const maxPollTime = 300000; // Maximum 5 minutes
+      const startTime = Date.now();
+      let pollTimeoutId: NodeJS.Timeout | null = null;
+      
+      const pollForCompletion = async () => {
         try {
-          const refetchResult = await request<{ audit: { id: string; startedAt: string | null; completedAt: string | null; createdAt: string | null } }>(
+          const refetchResult  = await request<{ audit: { 
+            id: string; 
+            startedAt: string | null; 
+            completedAt: string | null; 
+            createdAt: string | null;
+            status?: string;
+          } }>(
             `
               query GetAuditById($auditId: ID!) {
                 audit(auditId: $auditId) {
@@ -509,6 +521,7 @@ const NewAuditPage = () => {
                   startedAt
                   completedAt
                   createdAt
+                  status
                 }
               }
             `,
@@ -516,6 +529,10 @@ const NewAuditPage = () => {
           );
 
           const refetchedAudit = refetchResult?.audit;
+          
+          if(refetchedAudit) {
+
+          }
           if (refetchedAudit && refetchedAudit.id === audit.id) {
             const started = refetchedAudit.startedAt ? new Date(refetchedAudit.startedAt) : null;
             const completed = refetchedAudit.completedAt ? new Date(refetchedAudit.completedAt) : null;
@@ -546,12 +563,26 @@ const NewAuditPage = () => {
               auditTime: updatedFormattedTime,
               durationSeconds: updatedDurationSeconds,
             });
+
+            // Check if audit is completed
+            const isCompleted = completed !== null || refetchedAudit.status === 'COMPLETED' || refetchedAudit.status === 'completed';
+            
+            // Continue polling if not completed and within max time
+            if (!isCompleted && (Date.now() - startTime) < maxPollTime) {
+              pollTimeoutId = setTimeout(pollForCompletion, pollInterval);
+            }
           }
         } catch (error: any) {
-          console.error('Error refetching audit duration:', error);
-          // Silently fail - don't show error to user for this background refetch
+          console.error('Error polling audit status:', error);
+          // Continue polling on error (might be temporary) if within max time
+          if ((Date.now() - startTime) < maxPollTime) {
+            pollTimeoutId = setTimeout(pollForCompletion, pollInterval);
+          }
         }
-      }, 10000); // Wait 10 seconds for asynchronous audit processing
+      };
+
+      // Start polling after initial delay
+      pollTimeoutId = setTimeout(pollForCompletion, pollInterval);
     } catch (error: any) {
       const errorMessage = error?.message || 'Network error while starting audit.';
       setAuditError(errorMessage);
@@ -777,19 +808,27 @@ const NewAuditPage = () => {
           )}
 
           {activeTab === 'test' && (
-            <TestCases
-              selectedPromptLibraries={selectedPromptLibraries}
-              setSelectedPromptLibraries={setSelectedPromptLibraries}
-              uploadedFiles={uploadedFiles}
-              setUploadedFiles={setUploadedFiles}
-              pastedTestCases={pastedTestCases}
-              setPastedTestCases={setPastedTestCases}
-              testInputMode={testInputMode}
-              setTestInputMode={setTestInputMode}
-              onPrevious={() => setActiveTab('config')}
-              onRunAudit={handleRunAudit}
-              isRequestingAudit={isRequestingAudit}
-            />
+            modeOfEvaluation === 'manual' ? (
+              <ManualTestCases
+                onPrevious={() => setActiveTab('config')}
+                onRunAudit={handleRunAudit}
+                isRequestingAudit={isRequestingAudit}
+              />
+            ) : (
+              <TestCases
+                selectedPromptLibraries={selectedPromptLibraries}
+                setSelectedPromptLibraries={setSelectedPromptLibraries}
+                uploadedFiles={uploadedFiles}
+                setUploadedFiles={setUploadedFiles}
+                pastedTestCases={pastedTestCases}
+                setPastedTestCases={setPastedTestCases}
+                testInputMode={testInputMode}
+                setTestInputMode={setTestInputMode}
+                onPrevious={() => setActiveTab('config')}
+                onRunAudit={handleRunAudit}
+                isRequestingAudit={isRequestingAudit}
+              />
+            )
           )}
 
           {activeTab === 'results' && (

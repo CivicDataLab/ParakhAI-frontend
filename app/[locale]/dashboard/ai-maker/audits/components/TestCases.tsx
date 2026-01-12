@@ -267,7 +267,7 @@ const TestCases: React.FC<TestCasesProps> = ({
           className="run-audit-button"
         >
           <span className="run-audit-text">
-            {isRequestingAudit ? 'Running…' : 'Run Audit'}
+            {isRequestingAudit ? 'Running…' : 'Run Evaluation'}
           </span>
           <Image
             src="/images/icons/circle-arrow-right.png"

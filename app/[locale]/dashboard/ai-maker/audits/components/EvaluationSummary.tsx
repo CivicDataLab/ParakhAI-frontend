@@ -54,6 +54,9 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
   auditError,
   onDownloadReport,
 }) => {
+  console.log('auditOverview', auditOverview);
+  console.log('isRequestingAudit', isRequestingAudit);
+  console.log('auditError', auditError);
   const pathname = usePathname();
   const { request, isAuthenticated } = useGraphQL();
   
@@ -101,9 +104,14 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
       return;
     }
 
-    // Add setTimeout to wait for async audit results to be ready
-    const timeoutId = setTimeout(async () => {
-      // Double-check conditions after timeout (auditId might have changed)
+    // Poll for audit results instead of fixed setTimeout
+    const pollInterval = 15000; // Poll every 15 seconds
+    const maxPollTime = 300000; // Maximum 5 minutes
+    const startTime = Date.now();
+    let pollTimeoutId: NodeJS.Timeout | null = null;
+
+    const pollForResults = async () => {
+      // Double-check conditions before polling
       if (!auditOverview?.auditId || auditOverview.auditId !== auditId) {
         return;
       }
@@ -117,70 +125,123 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
       const currentAuditId = auditId;
 
       try {
-        const data = await requestRef.current<{ auditResults: Array<{
-          id: string;
-          riskLevel: string;
-          reason: string;
-          task: {
-            moduleDisplayName: string;
-            metricDisplayName: string;
-            test: {
-              testInput: string;
-              actualOutput: string;
-            };
-          };
-        }> }>(
-          GET_AUDIT_RESULTS_QUERY,
+        // First check if audit is completed
+        const auditStatusResult = await requestRef.current<{ audit: { 
+          id: string; 
+          completedAt: string | null;
+          status?: string;
+        } }>(
+          `
+            query GetAuditById($auditId: ID!) {
+              audit(auditId: $auditId) {
+                id
+                completedAt
+                status
+              }
+            }
+          `,
           { auditId: currentAuditId }
         );
 
-        // Only update state if auditId hasn't changed during fetch (prevent race conditions)
-        if (auditOverview?.auditId === currentAuditId && lastFetchedAuditIdRef.current !== currentAuditId) {
-          // Map GraphQL response to TestCase format
-          const mappedResults: TestCase[] = (data?.auditResults || []).map((result) => {
-            // Map riskLevel to riskSeverity
-            const riskLevelMap: Record<string, 'High' | 'Medium' | 'Low' | 'No risk'> = {
-              HIGH: 'High',
-              MEDIUM: 'Medium',
-              LOW: 'Low',
-              NO_RISK: 'No risk',
-              NONE: 'No risk',
+        console.log('auditStatusResuleeeeeeeeeet', auditStatusResult);
+        const auditStatus = auditStatusResult?.audit;
+        const isCompleted = auditStatus?.completedAt !== null || 
+                           auditStatus?.status === 'COMPLETED' || 
+                           auditStatus?.status === 'completed';
+
+        // Only fetch results if audit is completed
+
+        if (isCompleted) {
+          const data = await requestRef.current<{ auditResults: Array<{
+            id: string;
+            riskLevel: string;
+            reason: string;
+            task: {
+              moduleDisplayName: string;
+              metricDisplayName: string;
+              test: {
+                testInput: string;
+                actualOutput: string;
+              };
             };
+          }> }>(
+            GET_AUDIT_RESULTS_QUERY,
+            { auditId: currentAuditId }
+          );
 
-            const riskSeverity = riskLevelMap[result.riskLevel?.toUpperCase()] || 'No risk';
 
-            return {
-              id: result.id,
-              input: result.task?.test?.testInput || '',
-              output: result.task?.test?.actualOutput || '',
-              evaluationModule: result.task?.moduleDisplayName || '',
-              evaluationMetric: result.task?.metricDisplayName || '',
-              riskSeverity,
-              reason: result.reason || '',
-            };
-          });
+          console.log('dataaaaaaaaaaa', data);
+          // Only update state if auditId hasn't changed during fetch (prevent race conditions)
+          if (auditOverview?.auditId === currentAuditId && lastFetchedAuditIdRef.current !== currentAuditId) {
+            // Map GraphQL response to TestCase format
+            const mappedResults: TestCase[] = (data?.auditResults || []).map((result) => {
+              // Map riskLevel to riskSeverity
+              const riskLevelMap: Record<string, 'High' | 'Medium' | 'Low' | 'No risk'> = {
+                HIGH: 'High',
+                MEDIUM: 'Medium',
+                LOW: 'Low',
+                NO_RISK: 'No risk',
+                NONE: 'No risk',
+              };
 
-          setTestCasesData(mappedResults);
-          lastFetchedAuditIdRef.current = currentAuditId;
+              const riskSeverity = riskLevelMap[result.riskLevel?.toUpperCase()] || 'No risk';
+
+              return {
+                id: result.id,
+                input: result.task?.test?.testInput || '',
+                output: result.task?.test?.actualOutput || '',
+                evaluationModule: result.task?.moduleDisplayName || '',
+                evaluationMetric: result.task?.metricDisplayName || '',
+                riskSeverity,
+                reason: result.reason || '',
+              };
+            });
+
+            setTestCasesData(mappedResults);
+            lastFetchedAuditIdRef.current = currentAuditId;
+            isFetchingRef.current = false;
+            setIsLoadingResults(false);
+            return; // Stop polling once we have results
+          }
+        } else {
+          // Audit not completed yet, continue polling if within max time
+          console.log('Continue polling pollTimeoutId', pollTimeoutId);
+          if ((Date.now() - startTime) < maxPollTime) {
+            console.log('Continue polling pollTimeoutId', pollTimeoutId);
+            pollTimeoutId = setTimeout(pollForResults, pollInterval);
+          } else {
+            // Max time reached, stop polling
+            setResultsError('Audit is taking longer than expected. Please refresh the page.');
+            isFetchingRef.current = false;
+            setIsLoadingResults(false);
+          }
+          return;
         }
       } catch (error: any) {
         // Only set error if auditId hasn't changed during fetch
         if (auditOverview?.auditId === currentAuditId) {
-          setResultsError('Failed to load audit results. Please try again.');
-          console.error('Error fetching audit results:', error);
-        }
-      } finally {
-        // Only reset fetching flag if this is still the current auditId
-        if (auditOverview?.auditId === currentAuditId && isFetchingRef.current) {
-          isFetchingRef.current = false;
-          setIsLoadingResults(false);
+          // Continue polling on error (might be temporary) if within max time
+          if ((Date.now() - startTime) < maxPollTime) {
+            pollTimeoutId = setTimeout(pollForResults, pollInterval);
+            console.log('Continue polling pollTimeoutId', pollTimeoutId);
+          } else {
+            setResultsError('Failed to load audit results. Please try again.');
+            console.error('Error fetching audit results:', error);
+            isFetchingRef.current = false;
+            setIsLoadingResults(false);
+          }
         }
       }
-    }, 10000); // Wait 10 seconds for audit results to be ready asynchronously
+    };
+
+    // Start polling after initial delay
+    pollTimeoutId = setTimeout(pollForResults, pollInterval);
 
     // Cleanup timeout on unmount or when dependencies change
     return () => {
-      clearTimeout(timeoutId);
+      if (pollTimeoutId) {
+        clearTimeout(pollTimeoutId);
+      }
     };
     // Only depend on auditId and auth status, not request function
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -265,21 +326,27 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
             </>
           ) : auditOverview ? (
             <>
-              Audit time:{' '}
-              <span className="audit-overview-highlight">
-                {auditOverview.auditTime ?? 'N/A'}
+              <span style={{ whiteSpace: 'nowrap' }}>
+                Evaluation time:{' '}
+                <span className="audit-overview-highlight">
+                  {auditOverview.auditTime ?? 'N/A'}
+                </span>
               </span>
               <br />
-              Audit ID:{' '}
-              <span className="audit-overview-highlight">
-                {auditOverview.auditId ?? 'N/A'}
+              <span style={{ whiteSpace: 'nowrap' }}>
+                Evaluation ID:{' '}
+                <span className="audit-overview-highlight">
+                  {auditOverview.auditId ?? 'N/A'}
+                </span>
               </span>
               <br />
-              Duration:{' '}
-              <span className="audit-overview-highlight">
-                {auditOverview.durationSeconds != null
-                  ? `${auditOverview.durationSeconds} s`
-                  : 'N/A'}
+              <span style={{ whiteSpace: 'nowrap' }}>
+                Duration:{' '}
+                <span className="audit-overview-highlight">
+                  {auditOverview.durationSeconds != null
+                    ? `${auditOverview.durationSeconds} s`
+                    : 'N/A'}
+                </span>
               </span>
             </>
           ) : (
@@ -387,6 +454,7 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
           </Text>
         ) : testCasesData.length > 0 ? (
           <DataTable
+          defaultRowCount={100}
             rows={testCasesData}
             columns={testCasesColumns}
             sortColumns={['input', 'output', 'evaluationModule', 'evaluationMetric', 'riskSeverity']}
@@ -417,7 +485,7 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
           href={newAuditLink}
           className="text-primary-purple hover:underline start-new-audit-link"
         >
-          Start a New Audit
+          Start a New Evaluation
         </Link>
       </div>
     </div>
