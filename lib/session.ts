@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
-import { useSession } from 'next-auth/react';
 import { useDashboardStore } from '@/config/store';
 import { jwtDecode } from 'jwt-decode';
+import { useSession } from 'next-auth/react';
+import React from 'react';
 
 type OrgMembership = {
   organization?: {
@@ -59,6 +59,7 @@ export type AppSession = {
   idToken: string | null;
   roles: string[];
   user: AppUser | null;
+  error?: string;
 };
 
 /**
@@ -129,12 +130,16 @@ export function useAppSession(): AppSession {
     : null;
 
 
+  // Get session error if any (e.g., RefreshAccessTokenError)
+  const sessionError = (session as any)?.error;
+
   return {
     status,
     accessToken,
     idToken,
     roles,
     user,
+    error: sessionError,
   };
 }
 

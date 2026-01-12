@@ -15,9 +15,11 @@ declare module "next-auth/jwt" {
     id_token?: string;
     expires_at?: number;
     refresh_token?: string;
+    refresh_token_expires_at?: number;
     decoded?: {
       email?: string;
       name?: string;
+      preferred_username?: string;
       realm_access?: {
         roles?: string[];
       };
