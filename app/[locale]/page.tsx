@@ -27,9 +27,9 @@ export default function Home() {
       <MainNav />
       <main className="flex-1">
         <HeroSection />
-        <SectorsSection />
         <GetStartedSection />
         <HowItWorksSection />
+        <SectorsSection />
       </main>
       <MainFooter />
     </div>
