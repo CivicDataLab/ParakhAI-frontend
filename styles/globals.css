@@ -705,7 +705,6 @@ html.mobile-menu-open .breadcrumbs-ml {
   color: #60646C;                /* body text */
 
   /* Typography per spec */
-  font-family: 'Inter, sans-serif';
   font-size: 14px;
   line-height: 20px;
   font-weight: 500;              /* medium */
@@ -739,7 +738,6 @@ html.mobile-menu-open .breadcrumbs-ml {
 /* Dialog title styling exactly per spec */
 .prompt-dialog-title {
   color: #0A0704;
-  font-family: 'Inter, sans-serif';
   font-size: 20px;
   line-height: 26px;
   font-weight: 700;
@@ -1206,7 +1204,6 @@ html.mobile-menu-open .breadcrumbs-ml {
   width: 224px;
   height: 24px;
   color: #0A0704;
-  font-family: Inter, sans-serif;
   font-size: 16px;
   line-height: 24px;
   font-weight: 600;
@@ -1254,7 +1251,6 @@ html.mobile-menu-open .breadcrumbs-ml {
 
 .prompt-page-title {
   color: #0A0704;
-  font-family: 'Inter, sans-serif';
   font-size: 20px;
   line-height: 26px;
   font-weight: 700;
@@ -1304,7 +1300,6 @@ html.mobile-menu-open .breadcrumbs-ml {
   justify-content: space-between;
   background: #E2F5C4;
   color: #0A0704;
-  font-family: 'Inter, sans-serif';
   font-size: 14px;
   line-height: 20px;
   font-weight: 600;
@@ -1323,7 +1318,6 @@ html.mobile-menu-open .breadcrumbs-ml {
   align-items: center;
   gap: 4px;
   color: #0A0704;
-  font-family: 'Inter, sans-serif';
   font-size: 14px;
   font-weight: 600;
   line-height: 20px;
@@ -1363,7 +1357,6 @@ html.mobile-menu-open .breadcrumbs-ml {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Inter, sans-serif';
   cursor: pointer;
 }
 
@@ -1497,7 +1490,6 @@ html.mobile-menu-open .breadcrumbs-ml {
 
 .prompt-filter-popover-title {
   color: #60646C;
-  font-family: 'Inter, sans-serif';
   font-size: 16px;
   line-height: 24px;
   font-weight: 600;
@@ -1541,7 +1533,6 @@ html.mobile-menu-open .breadcrumbs-ml {
   border: none;
   background: transparent;
   color: #0A0704;
-  font-family: 'Inter, sans-serif';
   font-size: 16px;
   line-height: 20px;
 }
@@ -1580,7 +1571,6 @@ html.mobile-menu-open .breadcrumbs-ml {
   border: none;
   background: transparent;
   color: #644FC1;
-  font-family: 'Inter, sans-serif';
   font-size: 14px;
   line-height: 20px;
   font-weight: 500;
@@ -2730,7 +2720,6 @@ html.mobile-menu-open .breadcrumbs-ml {
 
 /* Audit page specific styles */
 .model-name-text {
-  font-family: Inter;
   font-weight: 700;
   font-size: 20px;
   line-height: 26px;
@@ -2764,7 +2753,6 @@ html.mobile-menu-open .breadcrumbs-ml {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-left: -170px;
 }
 
 .audit-tag span,
@@ -2776,13 +2764,11 @@ html.mobile-menu-open .breadcrumbs-ml {
 
 /* Audit auto-saved text styling - Body/Medium/Medium */
 .audit-auto-saved {
-  font-family: Inter;
   font-weight: 500;
   font-size: 14px;
   line-height: 20px;
   letter-spacing: 0px;
   color: #60646C;
-  width: 116px;
   height: 20px;
   display: inline-block;
 }
@@ -2802,7 +2788,6 @@ html.mobile-menu-open .breadcrumbs-ml {
   align-items: center;
   justify-content: flex-end;
   gap: 0px;
-  font-family: Inter;
   font-weight: 500;
   font-size: 14px;
   line-height: 20px;
@@ -2829,7 +2814,6 @@ html.mobile-menu-open .breadcrumbs-ml {
   width: auto;
   min-width: 86px;
   height: 20px;
-  font-family: Inter;
   font-weight: 500;
   font-size: 14px;
   line-height: 20px;
@@ -2847,7 +2831,6 @@ html.mobile-menu-open .breadcrumbs-ml {
   margin: 0;
   padding: 0;
   gap: 0px;
-  font-family: Inter;
   font-weight: 500;
   font-size: 14px;
   line-height: 20px;
@@ -3005,7 +2988,6 @@ button.audit-config-tab:not(.audit-config-tab-active) {
 .audit-config-tab:not(.audit-config-tab-active) [class*="Text"],
 .audit-config-tab:not(.audit-config-tab-active) [class*="Text"] span,
 .audit-config-tab:not(.audit-config-tab-active) [class*="Text"] > * {
-  font-family: Inter;
   font-weight: 500;
   font-size: 14px;
   line-height: 20px;
@@ -3050,7 +3032,6 @@ button.audit-config-tab:not(.audit-config-tab-active) {
   padding: 0;
   display: block;
   box-sizing: border-box;
-  font-family: Inter;
   font-weight: 500;
   font-size: 14px;
   line-height: 20px;
@@ -3067,7 +3048,6 @@ button.audit-config-tab:not(.audit-config-tab-active) {
 .audit-type-label [class*="Text"],
 .audit-type-label [class*="Text"] *,
 .audit-type-label > * {
-  font-family: Inter ;
   font-weight: 500 ;
   font-size: 14px ;
   line-height: 20px ;
@@ -3204,7 +3184,6 @@ label:has(input[value="cultural"]:not(:checked)) {
 
 /* Audit Name Label - prevent wrapping */
 .audit-name-label {
-  font-family: Inter;
   font-weight: 400;
   font-size: 14px;
   line-height: 20px;
@@ -3234,7 +3213,6 @@ label:has(input[value="cultural"]:not(:checked)) {
 /* Ensure Audit Name section stays on one line */
 .audit-name-input-wrapper {
   width: 100%;
-  max-width: 468px;
   min-width: 0;
   display: inline-flex;
   flex-direction: column;
@@ -3297,7 +3275,6 @@ label:has(input[value="cultural"]:not(:checked)) {
 .audit-name-section > div:first-child {
   display: flex;
   align-items: center;
-  gap: 16px;
   flex-wrap: nowrap ;
   min-width: 0;
   flex: 1 1 auto;
@@ -3329,7 +3306,6 @@ label:has(input[value="cultural"]:not(:checked)) {
 /* Ensure status container aligns with right edge of tabs */
 .audit-name-section .audit-status-container {
   margin-left: auto;
-  margin-right: 100px;
 }
 
 /* Style TextField to have only bottom border - remove all other borders */
@@ -3342,7 +3318,6 @@ label:has(input[value="cultural"]:not(:checked)) {
   box-shadow: none;
   background: transparent;
   width: 100%;
-  max-width: 300px;
   min-width: 0;
   box-sizing: border-box;
   overflow: visible;
@@ -3378,9 +3353,7 @@ label:has(input[value="cultural"]:not(:checked)) {
 .audit-name-input-wrapper input {
   width: 100%;
   min-width: 0;
-  max-width: 468px;
   height: 20px;
-  font-family: Inter;
   font-weight: 600;
   font-size: 16px;
   line-height: 16px;
@@ -3466,7 +3439,6 @@ label:has(input[value="cultural"]:not(:checked)) {
 }
 
 .previous-text {
-  font-family: Inter;
   font-weight: 500;
   font-size: 14px;
   line-height: 20px;
@@ -3508,7 +3480,6 @@ label:has(input[value="cultural"]:not(:checked)) {
 }
 
 .add-test-cases-text {
-  font-family: Inter;
   font-weight: 500;
   font-size: 14px;
   line-height: 20px;
@@ -3549,7 +3520,6 @@ label:has(input[value="cultural"]:not(:checked)) {
 }
 
 .run-audit-text {
-  font-family: Inter;
   font-weight: 500;
   font-size: 14px;
   line-height: 20px;
@@ -3570,7 +3540,6 @@ label:has(input[value="cultural"]:not(:checked)) {
 .audit-form-label {
   display: block;
   margin-bottom: 8px;
-  font-family: Inter;
   font-weight: 500;
   font-size: 14px;
   line-height: 20px;
@@ -3591,7 +3560,6 @@ label:has(input[value="cultural"]:not(:checked)) {
   margin-bottom: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: Inter;
   font-weight: 500;
   font-size: 14px;
   line-height: 20px;
@@ -3601,7 +3569,6 @@ label:has(input[value="cultural"]:not(:checked)) {
 
 .auditor-name-label [class*="Text"],
 .auditor-name-label > * {
-  font-family: Inter ;
   font-weight: 500 ;
   font-size: 14px ;
   line-height: 20px ;
@@ -3640,7 +3607,6 @@ label:has(input[value="cultural"]:not(:checked)) {
   margin-bottom: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: Inter;
   font-weight: 500;
   font-size: 14px;
   line-height: 20px;
@@ -3660,7 +3626,6 @@ label:has(input[value="cultural"]:not(:checked)) {
 .scope-of-audit-label > *,
 .evaluation-modules-label [class*="Text"],
 .evaluation-modules-label > * {
-  font-family: Inter ;
   font-weight: 500 ;
   font-size: 14px ;
   line-height: 20px ;
@@ -3697,10 +3662,6 @@ label:has(input[value="cultural"]:not(:checked)) {
 .auditor-name-wrapper,
 .organisation-name-wrapper {
   align-items: flex-start;
-}
-
-.organisation-name-wrapper {
-  margin-left: -40px;
 }
 
 @media (max-width: 1024px) {
@@ -3741,7 +3702,6 @@ label:has(input[value="cultural"]:not(:checked)) {
   width: 100%;
   height: 36px;
   padding: 8px 12px;
-  font-family: Inter;
   font-weight: 400;
   font-size: 14px;
   line-height: 20px;
@@ -3808,7 +3768,6 @@ label:has(input[value="cultural"]:not(:checked)) {
   width: 468px;
   min-height: 36px;
   padding: 8px 12px;
-  font-family: Inter;
   font-weight: 400;
   font-style: normal;
   font-size: 14px;
@@ -3862,7 +3821,6 @@ label:has(input[value="cultural"]:not(:checked)) {
   border-radius: 8px;
   outline: none;
   box-sizing: border-box;
-  font-family: Inter;
   font-weight: 400;
   font-style: normal;
   font-size: 14px;
@@ -3969,7 +3927,6 @@ label:has(input[value="cultural"]:not(:checked)) {
   width: 100%;
   min-height: 116px;
   padding: 0;
-  font-family: Inter;
   font-weight: 400;
   font-size: 14px;
   line-height: 20px;
@@ -4102,7 +4059,6 @@ label:has(input[value="cultural"]:not(:checked)) {
   height: 90px;
   min-height: 80px;
   padding: 8px 12px;
-  font-family: Inter;
   font-weight: 400;
   font-size: 14px;
   line-height: 20px;
@@ -4139,7 +4095,6 @@ label:has(input[value="cultural"]:not(:checked)) {
   width: 100%;
   height: 40px;
   padding: 8px 12px;
-  font-family: Inter;
   font-weight: 400;
   font-size: 14px;
   line-height: 20px;
@@ -4385,7 +4340,6 @@ label:has(input[value="cultural"]:not(:checked)) {
 .select-prompt-library-heading {
   width: 168px;
   height: 20px;
-  font-family: Inter, sans-serif;
   font-weight: 600;
   font-size: 16px;
   line-height: 20px;
@@ -4397,7 +4351,6 @@ label:has(input[value="cultural"]:not(:checked)) {
 .select-prompt-library-heading [class*="Text"] {
   width: 168px;
   height: 20px;
-  font-family: Inter, sans-serif;
   font-weight: 600;
   font-size: 16px;
   line-height: 20px;
@@ -4409,7 +4362,6 @@ label:has(input[value="cultural"]:not(:checked)) {
 .select-prompt-library-subtitle {
   width: 261px;
   height: 20px;
-  font-family: Inter, sans-serif;
   font-weight: 400;
   font-size: 14px;
   line-height: 20px;
@@ -4422,7 +4374,6 @@ label:has(input[value="cultural"]:not(:checked)) {
 .select-prompt-library-subtitle [class*="Text"] {
   width: 261px;
   height: 20px;
-  font-family: Inter, sans-serif;
   font-weight: 400;
   font-size: 14px;
   line-height: 20px;
@@ -4627,7 +4578,6 @@ label:has(input[value="cultural"]:not(:checked)) {
   width: 231px;
   min-height: 92px;
   display: block;
-  font-family: Inter, sans-serif;
   font-size: 14px;
   line-height: 28px;
   font-weight: 500;

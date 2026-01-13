@@ -641,6 +641,7 @@ const NewAuditPage = () => {
                     }))}
                     value={selectedModelId || ''}
                     onChange={(value) => setSelectedModelId(value)}
+                    disabled={activeTab !== 'config'}
                   />
                 </div>
               ) : (
@@ -678,11 +679,11 @@ const NewAuditPage = () => {
           {/* Audit Name, Tag, and Status Section */}
           <div className="flex items-center justify-between mb-6 gap-4 audit-name-section max-[1023px]:mb-0.5 max-[1023px]:gap-0.5">
             {/* Left side: Label + Input + Tag */}
-            <div className="flex items-center gap-4 flex-nowrap min-w-0 flex-1">
+            <div className="flex items-center flex-nowrap min-w-0 flex-1 evaluation-name-row">
               <Label htmlFor="evaluationName" className="audit-name-label flex-shrink-0 whitespace-nowrap">
                 Evaluation Name
               </Label>
-              <div className="audit-name-input-wrapper flex-1 min-w-0">
+              <div className="audit-name-input-wrapper flex-1 ml-4 mr-4 max-[1023px]:mr-4 max-[640px]:mr-2 w-full max-w-[380px]">
                 <TextField
                   id="auditName"
                   name="evaluationName"
@@ -692,33 +693,37 @@ const NewAuditPage = () => {
                   onChange={(value) => setAuditName(value)}
                 />
               </div>
-              <div className="tag-wrapper audit-tag flex-shrink-0">
-                <Tag variation="filled" fillColor="#E2F5C4" textColor="#0A0704">
-                  {auditType === 'technical'
-                    ? 'Technical Evaluation'
-                    : auditType === 'domain'
-                      ? 'Domain Evaluation'
-                      : 'Cultural Evaluation'}
-                </Tag>
+              <div className="flex-shrink-0">
+                <div className="tag-wrapper audit-tag">
+                  <Tag variation="filled" fillColor="#E2F5C4" textColor="#0A0704">
+                    {auditType === 'technical'
+                      ? 'Technical Evaluation'
+                      : auditType === 'domain'
+                        ? 'Domain Evaluation'
+                        : 'Cultural Evaluation'}
+                  </Tag>
+                </div>
               </div>
             </div>
 
             {/* Right side: Status */}
-            <div className="flex items-center gap-4 audit-status-container flex-shrink-0 max-[1023px]:gap-0.5 max-[1023px]:mt-0">
-              {isAutoSaved && (
-                <div className="flex items-center gap-3 lg:-translate-x-8 xl:-translate-x-10">
-                  <Text className="audit-auto-saved">
-                    Evaluation auto-saved
-                  </Text>
-                  <Image
-                    src="/images/icons/circle-check.png"
-                    alt="Circle check"
-                    width={18}
-                    height={18}
-                    className="object-contain"
-                  />
-                </div>
-              )}
+            <div className="flex items-center justify-end gap-4 audit-status-container flex-shrink-0 max-[1023px]:gap-0.5 max-[1023px]:mt-0 mr-4">
+              <div className="flex items-center flex-1 lg:ml-4 xl:ml-6">
+                {isAutoSaved && (
+                  <div className="flex items-center">
+                    <Text className="audit-auto-saved">
+                      Auto-saved
+                    </Text>
+                    <Image
+                      src="/images/icons/circle-check.png"
+                      alt="Circle check"
+                      width={18}
+                      height={18}
+                      className="object-contain flex-shrink-0 ml-1"
+                    />
+                  </div>
+                )}
+              </div>
               <Button
                 kind="tertiary"
                 variant="critical"
@@ -727,7 +732,7 @@ const NewAuditPage = () => {
                     window.history.back();
                   }
                 }}
-                className="cancel-audit-button max-[640px]:ml-4"
+                className="cancel-audit-button flex-shrink-0 max-[640px]:ml-4"
               >
                 Cancel Evaluation
                 <Icon source={IconX} size={18} />
@@ -737,7 +742,7 @@ const NewAuditPage = () => {
 
           {/* Tabs */}
           <div className="mb-8 max-[1023px]:mb-4 max-[640px]:mb-2">
-            <div className="flex gap-6 tabs-container">
+            <div className="flex gap-6 max-[1023px]:gap-0 tabs-container">
               <button
                 onClick={() => setActiveTab('config')}
                 className={`audit-config-tab ${

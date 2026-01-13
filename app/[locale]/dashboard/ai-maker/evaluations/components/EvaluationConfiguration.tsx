@@ -192,7 +192,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                   />
                 </div>
               </div>
-              <div className="flex-1 min-w-[300px] organisation-name-wrapper">
+              <div className="flex-1 min-w-[300px] organisation-name-wrapper ml-12">
                 <Label htmlFor="organisationName" className="audit-form-label organisation-name-label">
                   <Text variant="bodyMd" fontWeight="medium">
                     Organisation Name<span className="text-red-500">*</span>
