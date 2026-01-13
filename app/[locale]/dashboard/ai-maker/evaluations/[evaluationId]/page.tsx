@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import BreadCrumbs from '@/components/Breadcrumbs';
-import { useGraphQL } from '@/lib/api';
-import type { ColumnDef } from '@tanstack/react-table';
-import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
-import { Button, DataTable, ProgressBar, Tag, Text } from 'opub-ui';
-import { useEffect, useRef, useState } from 'react';
-import WelcomeSection from '../../../components/WelcomeSection';
+import BreadCrumbs from "@/components/Breadcrumbs";
+import { useGraphQL } from "@/lib/api";
+import type { ColumnDef } from "@tanstack/react-table";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { Button, DataTable, ProgressBar, Tag, Text } from "opub-ui";
+import { useEffect, useRef, useState } from "react";
+import WelcomeSection from "../../../components/WelcomeSection";
 
 // GraphQL query to fetch audit details
 const GET_AUDIT_QUERY = `
@@ -85,7 +85,7 @@ type TestCase = {
   output: string;
   evaluationModule: string;
   evaluationMetric: string;
-  riskSeverity: 'High' | 'Medium' | 'Low' | 'No risk';
+  riskSeverity: "High" | "Medium" | "Low" | "No risk";
   reason: string;
 };
 
@@ -93,10 +93,14 @@ const EvaluationDetailPage = () => {
   const params = useParams();
   const router = useRouter();
   const evaluationId = params?.evaluationId as string;
-  const locale = params?.locale || 'en';
-  
-  const { request, isAuthenticated, isLoading: isSessionLoading } = useGraphQL();
-  
+  const locale = params?.locale || "en";
+
+  const {
+    request,
+    isAuthenticated,
+    isLoading: isSessionLoading,
+  } = useGraphQL();
+
   const [audit, setAudit] = useState<Audit | null>(null);
   const [testCasesData, setTestCasesData] = useState<TestCase[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -111,7 +115,8 @@ const EvaluationDetailPage = () => {
   // Fetch audit details
   useEffect(() => {
     if (!isAuthenticated || isSessionLoading || !evaluationId) return;
-    if (isFetchingRef.current || lastFetchedAuditIdRef.current === evaluationId) return;
+    if (isFetchingRef.current || lastFetchedAuditIdRef.current === evaluationId)
+      return;
 
     isFetchingRef.current = true;
 
@@ -120,10 +125,12 @@ const EvaluationDetailPage = () => {
         setIsLoading(true);
         setError(null);
 
-        const data = await request<{ audit: Audit }>(GET_AUDIT_QUERY, { auditId: evaluationId });
-        
+        const data = await request<{ audit: Audit }>(GET_AUDIT_QUERY, {
+          auditId: evaluationId,
+        });
+
         if (!data?.audit) {
-          setError('Evaluation not found');
+          setError("Evaluation not found");
           return;
         }
 
@@ -131,15 +138,18 @@ const EvaluationDetailPage = () => {
         lastFetchedAuditIdRef.current = evaluationId;
 
         // If audit is completed, fetch results
-        if (data.audit.status === 'COMPLETED' || data.audit.completedAt) {
+        if (data.audit.status === "COMPLETED" || data.audit.completedAt) {
           await fetchResults();
-        } else if (data.audit.status === 'RUNNING' || data.audit.status === 'PENDING') {
+        } else if (
+          data.audit.status === "RUNNING" ||
+          data.audit.status === "PENDING"
+        ) {
           // Poll for completion
           startPolling();
         }
       } catch (err: any) {
-        console.error('Error fetching audit:', err);
-        setError(err?.message || 'Failed to load evaluation');
+        console.error("Error fetching audit:", err);
+        setError(err?.message || "Failed to load evaluation");
       } finally {
         setIsLoading(false);
         isFetchingRef.current = false;
@@ -155,45 +165,53 @@ const EvaluationDetailPage = () => {
       setIsLoadingResults(true);
       setResultsError(null);
 
-      const data = await request<{ auditResults: Array<{
-        id: string;
-        riskLevel: string;
-        reason: string;
-        task: {
-          moduleDisplayName: string;
-          metricDisplayName: string;
-          test: {
-            testInput: string;
-            actualOutput: string;
+      const data = await request<{
+        auditResults: Array<{
+          id: string;
+          riskLevel: string;
+          reason: string;
+          task: {
+            moduleDisplayName: string;
+            metricDisplayName: string;
+            test: {
+              testInput: string;
+              actualOutput: string;
+            };
           };
-        };
-      }> }>(GET_AUDIT_RESULTS_QUERY, { auditId: evaluationId });
+        }>;
+      }>(GET_AUDIT_RESULTS_QUERY, { auditId: evaluationId });
 
       // Map GraphQL response to TestCase format
-      const mappedResults: TestCase[] = (data?.auditResults || []).map((result) => {
-        const riskLevelMap: Record<string, 'High' | 'Medium' | 'Low' | 'No risk'> = {
-          HIGH: 'High',
-          MEDIUM: 'Medium',
-          LOW: 'Low',
-          NO_RISK: 'No risk',
-          NONE: 'No risk',
-        };
+      const mappedResults: TestCase[] = (data?.auditResults || []).map(
+        (result) => {
+          const riskLevelMap: Record<
+            string,
+            "High" | "Medium" | "Low" | "No risk"
+          > = {
+            HIGH: "High",
+            MEDIUM: "Medium",
+            LOW: "Low",
+            NO_RISK: "No risk",
+            NONE: "No risk",
+          };
 
-        return {
-          id: result.id,
-          input: result.task?.test?.testInput || '',
-          output: result.task?.test?.actualOutput || '',
-          evaluationModule: result.task?.moduleDisplayName || '',
-          evaluationMetric: result.task?.metricDisplayName || '',
-          riskSeverity: riskLevelMap[result.riskLevel?.toUpperCase()] || 'No risk',
-          reason: result.reason || '',
-        };
-      });
+          return {
+            id: result.id,
+            input: result.task?.test?.testInput || "",
+            output: result.task?.test?.actualOutput || "",
+            evaluationModule: result.task?.moduleDisplayName || "",
+            evaluationMetric: result.task?.metricDisplayName || "",
+            riskSeverity:
+              riskLevelMap[result.riskLevel?.toUpperCase()] || "No risk",
+            reason: result.reason || "",
+          };
+        }
+      );
 
       setTestCasesData(mappedResults);
     } catch (err: any) {
-      console.error('Error fetching results:', err);
-      setResultsError(err?.message || 'Failed to load results');
+      console.error("Error fetching results:", err);
+      setResultsError(err?.message || "Failed to load results");
     } finally {
       setIsLoadingResults(false);
     }
@@ -209,24 +227,26 @@ const EvaluationDetailPage = () => {
       if (Date.now() - startTime > maxPollTime) return;
 
       try {
-        const data = await request<{ audit: Audit }>(GET_AUDIT_QUERY, { auditId: evaluationId });
-        
+        const data = await request<{ audit: Audit }>(GET_AUDIT_QUERY, {
+          auditId: evaluationId,
+        });
+
         if (data?.audit) {
           setAudit(data.audit);
-          
-          if (data.audit.status === 'COMPLETED' || data.audit.completedAt) {
+
+          if (data.audit.status === "COMPLETED" || data.audit.completedAt) {
             await fetchResults();
             return;
           }
-          
-          if (data.audit.status === 'FAILED' || data.audit.status === 'ERROR') {
+
+          if (data.audit.status === "FAILED" || data.audit.status === "ERROR") {
             return;
           }
         }
 
         setTimeout(poll, pollInterval);
       } catch (err) {
-        console.error('Polling error:', err);
+        console.error("Polling error:", err);
         setTimeout(poll, pollInterval);
       }
     };
@@ -236,14 +256,14 @@ const EvaluationDetailPage = () => {
 
   // Format date for display
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return '--';
+    if (!dateString) return "--";
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -259,71 +279,75 @@ const EvaluationDetailPage = () => {
   // Get status tag color
   const getStatusColor = (status: string) => {
     switch (status?.toUpperCase()) {
-      case 'COMPLETED':
-        return { fillColor: '#E2F5C4', textColor: '#166534' };
-      case 'RUNNING':
-        return { fillColor: '#FEF3C7', textColor: '#92400E' };
-      case 'PENDING':
-        return { fillColor: '#E0E7FF', textColor: '#3730A3' };
-      case 'FAILED':
-      case 'ERROR':
-        return { fillColor: '#FEE2E2', textColor: '#DC2626' };
+      case "COMPLETED":
+        return { fillColor: "#E2F5C4", textColor: "#166534" };
+      case "RUNNING":
+        return { fillColor: "#FEF3C7", textColor: "#92400E" };
+      case "PENDING":
+        return { fillColor: "#E0E7FF", textColor: "#3730A3" };
+      case "FAILED":
+      case "ERROR":
+        return { fillColor: "#FEE2E2", textColor: "#DC2626" };
       default:
-        return { fillColor: '#F3F4F6', textColor: '#374151' };
+        return { fillColor: "#F3F4F6", textColor: "#374151" };
     }
   };
 
   // Test cases table columns
   const testCasesColumns: ColumnDef<TestCase>[] = [
     {
-      accessorKey: 'input',
-      header: 'Input',
+      accessorKey: "input",
+      header: "Input",
       enableSorting: true,
       cell: ({ getValue }) => (
         <Text className="datatable-text-wrap">{getValue<string>()}</Text>
       ),
     },
     {
-      accessorKey: 'output',
-      header: 'Output',
+      accessorKey: "output",
+      header: "Output",
       enableSorting: true,
       cell: ({ getValue }) => (
         <Text className="datatable-text-wrap">{getValue<string>()}</Text>
       ),
     },
     {
-      accessorKey: 'evaluationModule',
-      header: 'Evaluation Module',
+      accessorKey: "evaluationModule",
+      header: "Evaluation Module",
       enableSorting: true,
     },
     {
-      accessorKey: 'evaluationMetric',
-      header: 'Evaluation Metric',
+      accessorKey: "evaluationMetric",
+      header: "Evaluation Metric",
       enableSorting: true,
     },
     {
-      accessorKey: 'riskSeverity',
-      header: 'Risk Severity',
+      accessorKey: "riskSeverity",
+      header: "Risk Severity",
       enableSorting: true,
       cell: ({ getValue }) => {
-        const severity = getValue<'High' | 'Medium' | 'Low' | 'No risk'>();
+        const severity = getValue<"High" | "Medium" | "Low" | "No risk">();
         const colorMap = {
-          High: { textColor: '#EF4444' },
-          Medium: { textColor: '#F97316' },
-          Low: { textColor: '#10B981' },
-          'No risk': { textColor: '#000000' },
+          High: { textColor: "#EF4444" },
+          Medium: { textColor: "#F97316" },
+          Low: { textColor: "#10B981" },
+          "No risk": { textColor: "#000000" },
         };
         const colors = colorMap[severity];
         return (
-          <Tag variation="outlined" textColor={colors.textColor} borderColor="transparent">
+          <Tag
+            variation="outlined"
+            textColor={colors.textColor}
+            borderColor="transparent"
+          >
             {severity}
           </Tag>
         );
       },
     },
     {
-      accessorKey: 'reason',
-      header: 'Reason',
+      accessorKey: "reason",
+      header: "Reason",
       enableSorting: false,
       cell: ({ getValue }) => (
         <Text className="datatable-text-wrap">{getValue<string>()}</Text>
@@ -337,11 +361,17 @@ const EvaluationDetailPage = () => {
       <div className="flex flex-col min-h-screen bg-white">
         <BreadCrumbs
           data={[
-            { href: `/${locale}`, label: 'Home' },
-            { href: `/${locale}/dashboard`, label: 'User Dashboard' },
-            { href: `/${locale}/dashboard/ai-maker`, label: 'AI Maker Dashboard' },
-            { href: `/${locale}/dashboard/ai-maker/evaluations`, label: 'Evaluations' },
-            { href: '#', label: 'Loading...' },
+            { href: `/${locale}`, label: "Home" },
+            { href: `/${locale}/dashboard`, label: "User Dashboard" },
+            {
+              href: `/${locale}/dashboard/ai-maker`,
+              label: "AI Maker Dashboard",
+            },
+            {
+              href: `/${locale}/dashboard/ai-maker/evaluations`,
+              label: "Evaluations",
+            },
+            { href: "#", label: "Loading..." },
           ]}
         />
         <div className="flex items-center justify-center flex-1">
@@ -362,19 +392,30 @@ const EvaluationDetailPage = () => {
       <div className="flex flex-col min-h-screen bg-white">
         <BreadCrumbs
           data={[
-            { href: `/${locale}`, label: 'Home' },
-            { href: `/${locale}/dashboard`, label: 'User Dashboard' },
-            { href: `/${locale}/dashboard/ai-maker`, label: 'AI Maker Dashboard' },
-            { href: `/${locale}/dashboard/ai-maker/evaluations`, label: 'Evaluations' },
-            { href: '#', label: 'Error' },
+            { href: `/${locale}`, label: "Home" },
+            { href: `/${locale}/dashboard`, label: "User Dashboard" },
+            {
+              href: `/${locale}/dashboard/ai-maker`,
+              label: "AI Maker Dashboard",
+            },
+            {
+              href: `/${locale}/dashboard/ai-maker/evaluations`,
+              label: "Evaluations",
+            },
+            { href: "#", label: "Error" },
           ]}
         />
         <div className="flex items-center justify-center flex-1">
           <div className="flex flex-col items-center">
             <Text variant="bodyMd" className="text-red-600 mb-4">
-              {error || 'Evaluation not found'}
+              {error || "Evaluation not found"}
             </Text>
-            <Button kind="secondary" onClick={() => router.push(`/${locale}/dashboard/ai-maker/evaluations`)}>
+            <Button
+              kind="secondary"
+              onClick={() =>
+                router.push(`/${locale}/dashboard/ai-maker/evaluations`)
+              }
+            >
               Back to Evaluations
             </Button>
           </div>
@@ -385,17 +426,26 @@ const EvaluationDetailPage = () => {
 
   const statusColors = getStatusColor(audit.status);
   const duration = getDuration();
-  const isRunning = audit.status === 'RUNNING' || audit.status === 'PENDING';
+  const isRunning = audit.status === "RUNNING" || audit.status === "PENDING";
 
   return (
     <div className="flex flex-col min-h-screen bg-white overflow-x-visible">
       <BreadCrumbs
         data={[
-          { href: `/${locale}`, label: 'Home' },
-          { href: `/${locale}/dashboard`, label: 'User Dashboard' },
-          { href: `/${locale}/dashboard/ai-maker`, label: 'AI Maker Dashboard' },
-          { href: `/${locale}/dashboard/ai-maker/evaluations`, label: 'Evaluations' },
-          { href: '#', label: audit.name || `Evaluation #${audit.id.slice(0, 8)}` },
+          { href: `/${locale}`, label: "Home" },
+          { href: `/${locale}/dashboard`, label: "User Dashboard" },
+          {
+            href: `/${locale}/dashboard/ai-maker`,
+            label: "AI Maker Dashboard",
+          },
+          {
+            href: `/${locale}/dashboard/ai-maker/evaluations`,
+            label: "Evaluations",
+          },
+          {
+            href: "#",
+            label: audit.name || `Evaluation #${audit.id.slice(0, 8)}`,
+          },
         ]}
       />
 
@@ -410,7 +460,11 @@ const EvaluationDetailPage = () => {
                 <Text variant="headingLg" as="h1" fontWeight="bold">
                   {audit.name || `Evaluation #${audit.id.slice(0, 8)}`}
                 </Text>
-                <Tag variation="filled" fillColor={statusColors.fillColor} textColor={statusColors.textColor}>
+                <Tag
+                  variation="filled"
+                  fillColor={statusColors.fillColor}
+                  textColor={statusColors.textColor}
+                >
                   {audit.status}
                 </Tag>
               </div>
@@ -430,7 +484,8 @@ const EvaluationDetailPage = () => {
                 <div className="flex items-center gap-3">
                   <ProgressBar value={60} max={100} size="small" />
                   <Text variant="bodySm" className="text-yellow-800">
-                    Evaluation is in progress. Results will appear automatically when complete.
+                    Evaluation is in progress. Results will appear automatically
+                    when complete.
                   </Text>
                 </div>
               </div>
@@ -452,70 +507,122 @@ const EvaluationDetailPage = () => {
               </Text>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <Text variant="bodySm" className="text-gray-500">Evaluation ID</Text>
-                  <Text variant="bodyMd" fontWeight="medium">{audit.id}</Text>
+                  <Text variant="bodySm" className="text-gray-500">
+                    Evaluation ID
+                  </Text>
+                  <Text variant="bodyMd" fontWeight="medium">
+                    {audit.id}
+                  </Text>
                 </div>
                 <div>
-                  <Text variant="bodySm" className="text-gray-500">Model</Text>
-                  <Text variant="bodyMd" fontWeight="medium">{audit.modelName || audit.modelId || '--'}</Text>
+                  <Text variant="bodySm" className="text-gray-500">
+                    Model
+                  </Text>
+                  <Text variant="bodyMd" fontWeight="medium">
+                    {audit.modelName || audit.modelId || "--"}
+                  </Text>
                 </div>
                 <div>
-                  <Text variant="bodySm" className="text-gray-500">Created</Text>
-                  <Text variant="bodyMd" fontWeight="medium">{formatDate(audit.createdAt)}</Text>
+                  <Text variant="bodySm" className="text-gray-500">
+                    Created
+                  </Text>
+                  <Text variant="bodyMd" fontWeight="medium">
+                    {formatDate(audit.createdAt)}
+                  </Text>
                 </div>
                 <div>
-                  <Text variant="bodySm" className="text-gray-500">Completed</Text>
-                  <Text variant="bodyMd" fontWeight="medium">{formatDate(audit.completedAt)}</Text>
+                  <Text variant="bodySm" className="text-gray-500">
+                    Completed
+                  </Text>
+                  <Text variant="bodyMd" fontWeight="medium">
+                    {formatDate(audit.completedAt)}
+                  </Text>
                 </div>
                 {duration && (
                   <div>
-                    <Text variant="bodySm" className="text-gray-500">Duration</Text>
-                    <Text variant="bodyMd" fontWeight="medium">{duration}</Text>
+                    <Text variant="bodySm" className="text-gray-500">
+                      Duration
+                    </Text>
+                    <Text variant="bodyMd" fontWeight="medium">
+                      {duration}
+                    </Text>
                   </div>
                 )}
                 <div>
-                  <Text variant="bodySm" className="text-gray-500">Modules</Text>
+                  <Text variant="bodySm" className="text-gray-500">
+                    Modules
+                  </Text>
                   <Text variant="bodyMd" fontWeight="medium">
-                    {audit.modules?.join(', ') || '--'}
+                    {audit.modules?.join(", ") || "--"}
                   </Text>
                 </div>
               </div>
             </div>
 
             {/* Test Results Summary */}
-            {(audit.status === 'COMPLETED' || audit.completedAt) && (
+            {(audit.status === "COMPLETED" || audit.completedAt) && (
               <div className="mb-8 p-6 bg-white rounded-lg border border-gray-200">
                 <Text variant="headingMd" className="mb-4">
                   Results Summary
                 </Text>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <div className="p-4 bg-gray-50 rounded-lg text-center">
-                    <Text variant="headingLg" fontWeight="bold">{audit.totalTests || 0}</Text>
-                    <Text variant="bodySm" className="text-gray-500">Total Tests</Text>
+                    <Text variant="headingLg" fontWeight="bold">
+                      {audit.totalTests || 0}
+                    </Text>
+                    <Text variant="bodySm" className="text-gray-500">
+                      Total Tests
+                    </Text>
                   </div>
                   <div className="p-4 bg-green-50 rounded-lg text-center">
-                    <Text variant="headingLg" fontWeight="bold" className="text-green-600">
+                    <Text
+                      variant="headingLg"
+                      fontWeight="bold"
+                      className="text-green-600"
+                    >
                       {audit.passedTests || 0}
                     </Text>
-                    <Text variant="bodySm" className="text-gray-500">Passed</Text>
+                    <Text variant="bodySm" className="text-gray-500">
+                      Passed
+                    </Text>
                   </div>
                   <div className="p-4 bg-red-50 rounded-lg text-center">
-                    <Text variant="headingLg" fontWeight="bold" className="text-red-600">
+                    <Text
+                      variant="headingLg"
+                      fontWeight="bold"
+                      className="text-red-600"
+                    >
                       {audit.failedTests || 0}
                     </Text>
-                    <Text variant="bodySm" className="text-gray-500">Failed</Text>
+                    <Text variant="bodySm" className="text-gray-500">
+                      Failed
+                    </Text>
                   </div>
                   <div className="p-4 bg-yellow-50 rounded-lg text-center">
-                    <Text variant="headingLg" fontWeight="bold" className="text-yellow-600">
+                    <Text
+                      variant="headingLg"
+                      fontWeight="bold"
+                      className="text-yellow-600"
+                    >
                       {audit.skippedTests || 0}
                     </Text>
-                    <Text variant="bodySm" className="text-gray-500">Skipped</Text>
+                    <Text variant="bodySm" className="text-gray-500">
+                      Skipped
+                    </Text>
                   </div>
                   <div className="p-4 bg-blue-50 rounded-lg text-center">
-                    <Text variant="headingLg" fontWeight="bold" className="text-blue-600">
-                      {audit.overallScore !== null ? `${audit.overallScore.toFixed(1)}%` : '--'}
+                    <Text
+                      variant="headingLg"
+                      fontWeight="bold"
+                      className="text-blue-600"
+                    >
+                      {audit.overallScore !== null
+                        ? `${audit.overallScore.toFixed(1)}%`
+                        : "--"}
                     </Text>
-                    <Text variant="bodySm" className="text-gray-500">Score</Text>
+                    <Text variant="bodySm" className="text-gray-500">
+                      Score
+                    </Text>
                   </div>
                 </div>
               </div>
@@ -526,7 +633,7 @@ const EvaluationDetailPage = () => {
               <Text variant="headingMd" className="mb-4">
                 Test Cases
               </Text>
-              
+
               {isLoadingResults ? (
                 <div className="flex items-center justify-center py-8">
                   <ProgressBar value={50} max={100} size="small" />
@@ -543,7 +650,14 @@ const EvaluationDetailPage = () => {
                   defaultRowCount={100}
                   rows={testCasesData}
                   columns={testCasesColumns}
-                  sortColumns={['input', 'output', 'evaluationModule', 'evaluationMetric', 'riskSeverity']}
+                  truncate={true}
+                  sortColumns={[
+                    "input",
+                    "output",
+                    "evaluationModule",
+                    "evaluationMetric",
+                    "riskSeverity",
+                  ]}
                   hideFooter={true}
                   hideSelection={true}
                 />

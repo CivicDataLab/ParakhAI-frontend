@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState, useRef } from 'react';
-import { Button, Tag, Text, ProgressBar, DataTable } from 'opub-ui';
-import { BarChart } from 'opub-ui/viz';
-import type { ColumnDef } from '@tanstack/react-table';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useGraphQL } from '@/lib/api';
+import React, { useEffect, useState, useRef } from "react";
+import { Button, Tag, Text, ProgressBar, DataTable } from "opub-ui";
+import { BarChart } from "opub-ui/viz";
+import type { ColumnDef } from "@tanstack/react-table";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useGraphQL } from "@/lib/api";
 
 type TestCase = {
   id: string;
@@ -14,7 +14,7 @@ type TestCase = {
   output: string;
   evaluationModule: string;
   evaluationMetric: string;
-  riskSeverity: 'High' | 'Medium' | 'Low' | 'No risk';
+  riskSeverity: "High" | "Medium" | "Low" | "No risk";
   reason: string;
 };
 
@@ -54,14 +54,12 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
   auditError,
   onDownloadReport,
 }) => {
-  console.log('auditOverview', auditOverview);
-  console.log('isRequestingAudit', isRequestingAudit);
-  console.log('auditError', auditError);
   const pathname = usePathname();
   const { request, isAuthenticated } = useGraphQL();
-  
+
   // Get the base path and construct the new audit link with tab parameter
-  const basePath = pathname?.replace(/\/[^/]+$/, '') || '/dashboard/ai-maker/audits';
+  const basePath =
+    pathname?.replace(/\/[^/]+$/, "") || "/dashboard/ai-maker/audits";
   const newAuditLink = `${basePath}/new?tab=config`;
 
   // State for audit results data
@@ -93,7 +91,7 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
   // Fetch audit results when auditId is available
   useEffect(() => {
     const auditId = auditOverview?.auditId;
-    
+
     // Early return conditions
     if (!auditId || !isAuthenticated || isRequestingAudit) {
       return;
@@ -126,11 +124,13 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
 
       try {
         // First check if audit is completed
-        const auditStatusResult = await requestRef.current<{ audit: { 
-          id: string; 
-          completedAt: string | null;
-          status?: string;
-        } }>(
+        const auditStatusResult = await requestRef.current<{
+          audit: {
+            id: string;
+            completedAt: string | null;
+            status?: string;
+          };
+        }>(
           `
             query GetAuditById($auditId: ID!) {
               audit(auditId: $auditId) {
@@ -143,59 +143,65 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
           { auditId: currentAuditId }
         );
 
-        console.log('auditStatusResuleeeeeeeeeet', auditStatusResult);
         const auditStatus = auditStatusResult?.audit;
-        const isCompleted = auditStatus?.completedAt !== null || 
-                           auditStatus?.status === 'COMPLETED' || 
-                           auditStatus?.status === 'completed';
+        const isCompleted =
+          auditStatus?.completedAt !== null ||
+          auditStatus?.status === "COMPLETED" ||
+          auditStatus?.status === "completed";
 
         // Only fetch results if audit is completed
 
         if (isCompleted) {
-          const data = await requestRef.current<{ auditResults: Array<{
-            id: string;
-            riskLevel: string;
-            reason: string;
-            task: {
-              moduleDisplayName: string;
-              metricDisplayName: string;
-              test: {
-                testInput: string;
-                actualOutput: string;
+          const data = await requestRef.current<{
+            auditResults: Array<{
+              id: string;
+              riskLevel: string;
+              reason: string;
+              task: {
+                moduleDisplayName: string;
+                metricDisplayName: string;
+                test: {
+                  testInput: string;
+                  actualOutput: string;
+                };
               };
-            };
-          }> }>(
-            GET_AUDIT_RESULTS_QUERY,
-            { auditId: currentAuditId }
-          );
+            }>;
+          }>(GET_AUDIT_RESULTS_QUERY, { auditId: currentAuditId });
 
-
-          console.log('dataaaaaaaaaaa', data);
           // Only update state if auditId hasn't changed during fetch (prevent race conditions)
-          if (auditOverview?.auditId === currentAuditId && lastFetchedAuditIdRef.current !== currentAuditId) {
+          if (
+            auditOverview?.auditId === currentAuditId &&
+            lastFetchedAuditIdRef.current !== currentAuditId
+          ) {
             // Map GraphQL response to TestCase format
-            const mappedResults: TestCase[] = (data?.auditResults || []).map((result) => {
-              // Map riskLevel to riskSeverity
-              const riskLevelMap: Record<string, 'High' | 'Medium' | 'Low' | 'No risk'> = {
-                HIGH: 'High',
-                MEDIUM: 'Medium',
-                LOW: 'Low',
-                NO_RISK: 'No risk',
-                NONE: 'No risk',
-              };
+            const mappedResults: TestCase[] = (data?.auditResults || []).map(
+              (result) => {
+                // Map riskLevel to riskSeverity
+                const riskLevelMap: Record<
+                  string,
+                  "High" | "Medium" | "Low" | "No risk"
+                > = {
+                  HIGH: "High",
+                  MEDIUM: "Medium",
+                  LOW: "Low",
+                  NO_RISK: "No risk",
+                  NONE: "No risk",
+                };
 
-              const riskSeverity = riskLevelMap[result.riskLevel?.toUpperCase()] || 'No risk';
+                const riskSeverity =
+                  riskLevelMap[result.riskLevel?.toUpperCase()] || "No risk";
 
-              return {
-                id: result.id,
-                input: result.task?.test?.testInput || '',
-                output: result.task?.test?.actualOutput || '',
-                evaluationModule: result.task?.moduleDisplayName || '',
-                evaluationMetric: result.task?.metricDisplayName || '',
-                riskSeverity,
-                reason: result.reason || '',
-              };
-            });
+                return {
+                  id: result.id,
+                  input: result.task?.test?.testInput || "",
+                  output: result.task?.test?.actualOutput || "",
+                  evaluationModule: result.task?.moduleDisplayName || "",
+                  evaluationMetric: result.task?.metricDisplayName || "",
+                  riskSeverity,
+                  reason: result.reason || "",
+                };
+              }
+            );
 
             setTestCasesData(mappedResults);
             lastFetchedAuditIdRef.current = currentAuditId;
@@ -205,13 +211,13 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
           }
         } else {
           // Audit not completed yet, continue polling if within max time
-          console.log('Continue polling pollTimeoutId', pollTimeoutId);
-          if ((Date.now() - startTime) < maxPollTime) {
-            console.log('Continue polling pollTimeoutId', pollTimeoutId);
+          if (Date.now() - startTime < maxPollTime) {
             pollTimeoutId = setTimeout(pollForResults, pollInterval);
           } else {
             // Max time reached, stop polling
-            setResultsError('Audit is taking longer than expected. Please refresh the page.');
+            setResultsError(
+              "Audit is taking longer than expected. Please refresh the page."
+            );
             isFetchingRef.current = false;
             setIsLoadingResults(false);
           }
@@ -221,12 +227,11 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
         // Only set error if auditId hasn't changed during fetch
         if (auditOverview?.auditId === currentAuditId) {
           // Continue polling on error (might be temporary) if within max time
-          if ((Date.now() - startTime) < maxPollTime) {
+          if (Date.now() - startTime < maxPollTime) {
             pollTimeoutId = setTimeout(pollForResults, pollInterval);
-            console.log('Continue polling pollTimeoutId', pollTimeoutId);
           } else {
-            setResultsError('Failed to load audit results. Please try again.');
-            console.error('Error fetching audit results:', error);
+            setResultsError("Failed to load audit results. Please try again.");
+            console.error("Error fetching audit results:", error);
             isFetchingRef.current = false;
             setIsLoadingResults(false);
           }
@@ -249,42 +254,42 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
 
   const testCasesColumns: ColumnDef<TestCase>[] = [
     {
-      accessorKey: 'input',
-      header: 'Input',
+      accessorKey: "input",
+      header: "Input",
       enableSorting: true,
       cell: ({ getValue }) => (
         <Text className="datatable-text-wrap">{getValue<string>()}</Text>
       ),
     },
     {
-      accessorKey: 'output',
-      header: 'Output',
+      accessorKey: "output",
+      header: "Output",
       enableSorting: true,
       cell: ({ getValue }) => (
         <Text className="datatable-text-wrap">{getValue<string>()}</Text>
       ),
     },
     {
-      accessorKey: 'evaluationModule',
-      header: 'Evaluation Module',
+      accessorKey: "evaluationModule",
+      header: "Evaluation Module",
       enableSorting: true,
     },
     {
-      accessorKey: 'evaluationMetric',
-      header: 'Evaluation Metric',
+      accessorKey: "evaluationMetric",
+      header: "Evaluation Metric",
       enableSorting: true,
     },
     {
-      accessorKey: 'riskSeverity',
-      header: 'Risk Severity',
+      accessorKey: "riskSeverity",
+      header: "Risk Severity",
       enableSorting: true,
       cell: ({ getValue }) => {
-        const severity = getValue<'High' | 'Medium' | 'Low' | 'No risk'>();
+        const severity = getValue<"High" | "Medium" | "Low" | "No risk">();
         const colorMap = {
-          High: { textColor: '#EF4444' },
-          Medium: { textColor: '#F97316' },
-          Low: { textColor: '#10B981' },
-          'No risk': { textColor: '#000000' },
+          High: { textColor: "#EF4444" },
+          Medium: { textColor: "#F97316" },
+          Low: { textColor: "#10B981" },
+          "No risk": { textColor: "#000000" },
         };
         const colors = colorMap[severity];
         return (
@@ -299,8 +304,8 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
       },
     },
     {
-      accessorKey: 'reason',
-      header: 'Reason',
+      accessorKey: "reason",
+      header: "Reason",
       enableSorting: false,
       cell: ({ getValue }) => (
         <Text className="datatable-text-wrap">{getValue<string>()}</Text>
@@ -318,39 +323,37 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
         <Text variant="bodySm" className="audit-overview-summary-text">
           {isRequestingAudit ? (
             <>
-              <span className="audit-overview-highlight">
-                Loading…
-              </span>
+              <span className="audit-overview-highlight">Loading…</span>
               <br />
               Fetching audit data from backend. This may take a few moments.
             </>
           ) : auditOverview ? (
             <>
-              <span style={{ whiteSpace: 'nowrap' }}>
-                Evaluation time:{' '}
+              <span style={{ whiteSpace: "nowrap" }}>
+                Evaluation time:{" "}
                 <span className="audit-overview-highlight">
-                  {auditOverview.auditTime ?? 'N/A'}
+                  {auditOverview.auditTime ?? "N/A"}
                 </span>
               </span>
               <br />
-              <span style={{ whiteSpace: 'nowrap' }}>
-                Evaluation ID:{' '}
+              <span style={{ whiteSpace: "nowrap" }}>
+                Evaluation ID:{" "}
                 <span className="audit-overview-highlight">
-                  {auditOverview.auditId ?? 'N/A'}
+                  {auditOverview.auditId ?? "N/A"}
                 </span>
               </span>
               <br />
-              <span style={{ whiteSpace: 'nowrap' }}>
-                Duration:{' '}
+              <span style={{ whiteSpace: "nowrap" }}>
+                Duration:{" "}
                 <span className="audit-overview-highlight">
                   {auditOverview.durationSeconds != null
                     ? `${auditOverview.durationSeconds} s`
-                    : 'N/A'}
+                    : "N/A"}
                 </span>
               </span>
             </>
           ) : (
-            'Run the audit to see results.'
+            "Run the audit to see results."
           )}
         </Text>
         {isRequestingAudit && !auditError && (
@@ -395,36 +398,39 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
                 <BarChart
                   options={{
                     grid: { left: 40, right: 16, top: 16, bottom: 30 },
-                    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                    tooltip: {
+                      trigger: "axis",
+                      axisPointer: { type: "shadow" },
+                    },
                     legend: { bottom: 0 },
                     xAxis: {
-                      type: 'value',
+                      type: "value",
                       boundaryGap: [0, 0.01],
                     },
                     yAxis: {
-                      type: 'category',
-                      data: ['Module 4', 'Module 3', 'Module 2', 'Module 1'],
+                      type: "category",
+                      data: ["Module 4", "Module 3", "Module 2", "Module 1"],
                     },
                     series: [
                       {
-                        name: 'Low',
-                        type: 'bar',
-                        stack: 'issues',
-                        itemStyle: { color: '#10B981' },
+                        name: "Low",
+                        type: "bar",
+                        stack: "issues",
+                        itemStyle: { color: "#10B981" },
                         data: [3, 5, 4, 6],
                       },
                       {
-                        name: 'Medium',
-                        type: 'bar',
-                        stack: 'issues',
-                        itemStyle: { color: '#FBBF24' },
+                        name: "Medium",
+                        type: "bar",
+                        stack: "issues",
+                        itemStyle: { color: "#FBBF24" },
                         data: [4, 6, 7, 5],
                       },
                       {
-                        name: 'High',
-                        type: 'bar',
-                        stack: 'issues',
-                        itemStyle: { color: '#EF4444' },
+                        name: "High",
+                        type: "bar",
+                        stack: "issues",
+                        itemStyle: { color: "#EF4444" },
                         data: [1, 2, 3, 1],
                       },
                     ],
@@ -454,10 +460,18 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
           </Text>
         ) : testCasesData.length > 0 ? (
           <DataTable
-          defaultRowCount={100}
+            defaultRowCount={100}
             rows={testCasesData}
+            hoverable={true}
             columns={testCasesColumns}
-            sortColumns={['input', 'output', 'evaluationModule', 'evaluationMetric', 'riskSeverity']}
+            truncate={true}
+            sortColumns={[
+              "input",
+              "output",
+              "evaluationModule",
+              "evaluationMetric",
+              "riskSeverity",
+            ]}
             hideFooter={true}
             hideSelection={true}
           />
@@ -493,4 +507,3 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
 };
 
 export default EvaluationSummary;
-

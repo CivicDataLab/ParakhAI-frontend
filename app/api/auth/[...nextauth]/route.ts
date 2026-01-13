@@ -59,11 +59,6 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
 
     const newDecoded = jwtDecode(refreshedTokens.access_token);
 
-    console.log("Token refreshed successfully:", {
-      expiresIn: refreshedTokens.expires_in,
-      refreshExpiresIn: refreshedTokens.refresh_expires_in,
-    });
-
     return {
       ...token,
       access_token: refreshedTokens.access_token,
@@ -105,15 +100,9 @@ const handler = NextAuth({
         token.refresh_token = account.refresh_token;
         // Store refresh token expiry if available (Keycloak provides this)
         token.refresh_token_expires_at = account.refresh_expires_in
-          ? Math.floor(Date.now() / 1000) + (account.refresh_expires_in as number)
+          ? Math.floor(Date.now() / 1000) +
+            (account.refresh_expires_in as number)
           : undefined;
-
-        console.log("Initial sign-in - tokens saved:", {
-          hasAccessToken: !!token.access_token,
-          hasIdToken: !!token.id_token,
-          expiresAt: new Date((token.expires_at ?? 0) * 1000).toISOString(),
-          decodedEmail: token.decoded?.email,
-        });
 
         return token;
       }
@@ -129,7 +118,10 @@ const handler = NextAuth({
       }
 
       // Check if refresh token has also expired
-      if (token.refresh_token_expires_at && now >= token.refresh_token_expires_at) {
+      if (
+        token.refresh_token_expires_at &&
+        now >= token.refresh_token_expires_at
+      ) {
         console.log("Refresh token expired, user needs to re-authenticate");
         return {
           ...token,
