@@ -230,7 +230,7 @@ const NewAuditPage = () => {
 
   // Test Cases state
   const [selectedPromptLibraries, setSelectedPromptLibraries] = useState<
-    string[]
+    any[]
   >([]);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [pastedTestCases, setPastedTestCases] = useState("");
@@ -699,7 +699,7 @@ const NewAuditPage = () => {
       name: auditName,
       modules,
       metrics,
-      testDatasetIds: [],
+      testDatasetIds: selectedPromptLibraries.map((item: any) => String(item.id)),
       customTestInputs: customTestInputs || null,
       configuration,
       modelId,

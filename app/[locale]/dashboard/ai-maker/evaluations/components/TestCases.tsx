@@ -1,36 +1,34 @@
 "use client";
 
-import React from "react";
-import {
-  Button,
-  Text,
-  TextField,
-  Label,
-  DataTable,
-  DropZone,
-  Icon,
-} from "opub-ui";
+import { Icons } from "@/components/icons";
+import { useGraphQL } from "@/lib/api";
+import { IconCopy, IconEye, IconUpload } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import Image from "next/image";
 import {
-  IconClipboard,
-  IconEye,
-  IconCopy,
-  IconUpload,
-} from "@tabler/icons-react";
-import { Icons } from "@/components/icons";
+  Button,
+  DataTable,
+  DropZone,
+  Icon,
+  Label,
+  Text,
+  TextField,
+} from "opub-ui";
+import React, { useEffect, useState } from "react";
 
-type PromptLibrary = {
+type PromptDataset = {
   id: string;
-  name: string;
-  sector: string;
-  module: string;
-  owner: string;
+  title: string;
+  description?: string;
+  taskType?: string;
+  domain?: string;
+  resourceCount: number;
+  promptFormat?: string;
 };
 
 interface TestCasesProps {
-  selectedPromptLibraries: string[];
-  setSelectedPromptLibraries: (selected: string[]) => void;
+  selectedPromptLibraries: any[];
+  setSelectedPromptLibraries: (selected: any[]) => void;
   uploadedFiles: File[];
   setUploadedFiles: (files: File[]) => void;
   pastedTestCases: string;
@@ -41,6 +39,27 @@ interface TestCasesProps {
   onRunAudit: () => void;
   isRequestingAudit: boolean;
 }
+
+const PROMPT_DATASETS_QUERY = `
+  query GetPromptDatasets($limit: Int, $isPublic: Boolean) {
+    promptDatasets(limit: $limit, isPublic: $isPublic) {
+      id
+      title
+      description
+      promptMetadata {
+        taskType
+        domain
+        targetLanguages
+      }
+      resources {
+        id
+        name
+        promptFormat
+        promptCount
+      }
+    }
+  }
+`;
 
 const TestCases: React.FC<TestCasesProps> = ({
   selectedPromptLibraries,
@@ -55,6 +74,11 @@ const TestCases: React.FC<TestCasesProps> = ({
   onRunAudit,
   isRequestingAudit,
 }) => {
+  const { request, isAuthenticated } = useGraphQL();
+  const [promptDatasets, setPromptDatasets] = useState<PromptDataset[]>([]);
+  const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
+  const [datasetsError, setDatasetsError] = useState<string | null>(null);
+
   // Validation: Check if at least one test case source is provided
   const hasPromptLibraries = selectedPromptLibraries.length > 0;
   const hasCustomTestCases =
@@ -62,64 +86,67 @@ const TestCases: React.FC<TestCasesProps> = ({
     (testInputMode === "upload" && uploadedFiles.length > 0);
   const hasTestCases = hasPromptLibraries || hasCustomTestCases;
   const validationError = !hasTestCases
-    ? "Please select at least one prompt library or provide custom test cases (paste text or upload file)"
+    ? "Please select at least one prompt dataset or provide custom test cases (paste text or upload file)"
     : undefined;
-  // Prompt libraries data
-  const promptLibraries: PromptLibrary[] = [
-    {
-      id: "1",
-      name: "Regional Prompts No. #1",
-      sector: "Sector Name",
-      module: "Bias & Fairness, Hallucin...",
-      owner: "ParakhAI",
-    },
-    {
-      id: "2",
-      name: "Regional Prompts No. #2",
-      sector: "Sector Name",
-      module: "All Modules",
-      owner: "ParakhAI",
-    },
-    {
-      id: "3",
-      name: "Regional Prompts No. #3",
-      sector: "Sector Name",
-      module: "Module name",
-      owner: "ParakhAI",
-    },
-    {
-      id: "4",
-      name: "Regional Prompts No. #4",
-      sector: "Sector Name",
-      module: "Module name",
-      owner: "ParakhAI",
-    },
-    {
-      id: "5",
-      name: "Regional Prompts No. #5",
-      sector: "Sector Name",
-      module: "Module name",
-      owner: "ParakhAI",
-    },
-    {
-      id: "6",
-      name: "Regional Prompts No. #6",
-      sector: "Sector Name",
-      module: "Module name",
-      owner: "ParakhAI",
-    },
-    {
-      id: "7",
-      name: "Regional Prompts No. #7",
-      sector: "Sector Name",
-      module: "Module name",
-      owner: "ParakhAI",
-    },
-  ];
 
-  const promptLibraryColumns: ColumnDef<PromptLibrary>[] = [
+  // Fetch prompt datasets from DataSpace
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const fetchPromptDatasets = async () => {
+      try {
+        setIsLoadingDatasets(true);
+        setDatasetsError(null);
+
+        const data = await request<{
+          promptDatasets: Array<{
+            id: string;
+            title: string;
+            description?: string;
+            promptMetadata?: {
+              taskType?: string;
+              domain?: string;
+              targetLanguages?: string[];
+            };
+            resources: Array<{
+              id: string;
+              name: string;
+              promptFormat?: string;
+              promptCount?: number;
+            }>;
+          }>;
+        }>(PROMPT_DATASETS_QUERY, {
+          limit: 50,
+          isPublic: true,
+        });
+
+        const datasets = data?.promptDatasets || [];
+        const formatted: PromptDataset[] = datasets.map((ds) => ({
+          id: ds.id,
+          title: ds.title,
+          description: ds.description,
+          taskType: ds.promptMetadata?.taskType,
+          domain: ds.promptMetadata?.domain,
+          resourceCount: ds.resources?.length || 0,
+          promptFormat: ds.resources?.[0]?.promptFormat,
+        }));
+
+        setPromptDatasets(formatted);
+      } catch (error: any) {
+        const errorMessage = error?.message || 'Failed to load prompt datasets';
+        setDatasetsError(errorMessage);
+        console.error('Error fetching prompt datasets:', error);
+      } finally {
+        setIsLoadingDatasets(false);
+      }
+    };
+
+    fetchPromptDatasets();
+  }, [isAuthenticated, request]);
+
+  const promptDatasetColumns: ColumnDef<PromptDataset>[] = [
     {
-      accessorKey: "name",
+      accessorKey: "title",
       header: "Name",
       enableSorting: true,
       cell: ({ getValue }) => (
@@ -129,16 +156,33 @@ const TestCases: React.FC<TestCasesProps> = ({
       ),
     },
     {
-      accessorKey: "sector",
-      header: "Sector",
+      accessorKey: "taskType",
+      header: "Task Type",
+      cell: ({ getValue }) => {
+        const value = getValue<string>();
+        return value ? value.replace(/_/g, " ") : "-";
+      },
     },
     {
-      accessorKey: "module",
-      header: "Module",
+      accessorKey: "domain",
+      header: "Domain",
+      cell: ({ getValue }) => {
+        const value = getValue<string>();
+        return value || "-";
+      },
     },
     {
-      accessorKey: "owner",
-      header: "Owner",
+      accessorKey: "promptFormat",
+      header: "Format",
+      cell: ({ getValue }) => {
+        const value = getValue<string>();
+        return value ? value.replace(/_/g, " ") : "-";
+      },
+    },
+    {
+      accessorKey: "resourceCount",
+      header: "Files",
+      cell: ({ getValue }) => getValue<number>(),
     },
     {
       id: "preview",
@@ -149,32 +193,52 @@ const TestCases: React.FC<TestCasesProps> = ({
   ];
 
   return (
-  <div className="mb-8 space-y-8">
-      {/* Select Prompt Library Section */}
+    <div className="mb-8 space-y-8">
+      {/* Select Prompt Dataset Section */}
       <div className="test-cases-table mt-6">
         <div className="mb-4">
           <Text
             variant="headingMd"
             className="select-prompt-library-heading block"
           >
-            Select Prompt Library
+            Select Prompt Dataset
           </Text>
           <Text
             variant="bodySm"
             className="select-prompt-library-subtitle block whitespace-nowrap"
           >
-            You can select multiple prompt libraries.
+            You can select multiple prompt datasets from DataSpace.
           </Text>
         </div>
-        <DataTable
-          rows={promptLibraries}
-          columns={promptLibraryColumns}
-          hideSelection={false}
-          hideFooter={true}
-          onRowSelectionChange={(selected) => {
-            setSelectedPromptLibraries(selected as string[]);
-          }}
-        />
+        {isLoadingDatasets ? (
+          <div className="py-8 text-center">
+            <Text variant="bodySm" className="text-gray-600">
+              Loading prompt datasets...
+            </Text>
+          </div>
+        ) : datasetsError ? (
+          <div className="py-8 text-center">
+            <Text variant="bodySm" className="text-red-600">
+              {datasetsError}
+            </Text>
+          </div>
+        ) : promptDatasets.length === 0 ? (
+          <div className="py-8 text-center">
+            <Text variant="bodySm" className="text-gray-600">
+              No prompt datasets available. Please create prompt datasets in DataSpace first.
+            </Text>
+          </div>
+        ) : (
+          <DataTable
+            rows={promptDatasets}
+            columns={promptDatasetColumns}
+            hideSelection={false}
+            hideFooter={true}
+            onRowSelectionChange={(selected) => {
+              setSelectedPromptLibraries(selected as string[]);
+            }}
+          />
+        )}
       </div>
 
       {/* Enter Your Own Test Cases Section */}
