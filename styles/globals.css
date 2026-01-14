@@ -4318,7 +4318,6 @@ label:has(input[value="cultural"]:not(:checked)) {
 .test-input-buttons-container {
   display: flex;
   flex-direction: row;
-  gap: 4px;
 }
 
 .test-input-button {
@@ -4749,11 +4748,6 @@ label:has(input[value="cultural"]:not(:checked)) {
   box-sizing: border-box;
 }
 
-/* Add spacing between Module cards and Test Cases table */
-.test-cases-table {
-  margin-top: 110px;
-}
-
 .audit-module-chart {
   margin-top: 8px;
   width: 250px;
@@ -4922,10 +4916,7 @@ label:has(input[value="cultural"]:not(:checked)) {
     margin-bottom: 0.5rem;
   }
 
-  /* Tabs container margin */
-  .audit-content .tabs-container {
-    margin-bottom: 1rem;
-  }
+  /* Tabs container margin - handled by component-level classes now */
 
   /* Audit name section spacing */
   .audit-content .audit-name-section {
@@ -5007,10 +4998,7 @@ label:has(input[value="cultural"]:not(:checked)) {
     margin-bottom: 0.75rem;
   }
 
-  /* Compact tabs */
-  .audit-content .tabs-container {
-    margin-bottom: 0.75rem;
-  }
+  /* Compact tabs - spacing handled by component-level classes */
 
   /* Compact navigation buttons */
   .audit-content .flex.items-center.justify-center {
@@ -5102,12 +5090,7 @@ label:has(input[value="cultural"]:not(:checked)) {
     margin-bottom: 0.25rem;
   }
 
-  /* Remove top margin from tabs container */
-  .audit-content > div.tabs-container,
-  .audit-content > div.mb-8.tabs-container {
-    margin-top: 0.25rem;
-    margin-bottom: 0.5rem;
-  }
+  /* Remove top margin from tabs container - handled by component */
 
   /* Compact the audit-status-container */
   .audit-content .audit-status-container.flex.items-center.gap-4 {
@@ -5131,11 +5114,7 @@ label:has(input[value="cultural"]:not(:checked)) {
     margin-top: 0.25rem;
   }
 
-  /* Specifically target tabs container */
-  .audit-content .tabs-container {
-    margin-top: 0.25rem;
-    margin-bottom: 0.5rem;
-  }
+  /* Specifically target tabs container - handled by component */
 
   /* Reduce spacing in audit-status-container */
   .audit-content .audit-status-container {
@@ -5303,10 +5282,7 @@ label:has(input[value="cultural"]:not(:checked)) {
     margin-bottom: 0.5rem;
   }
 
-  .audit-content div.mb-8.tabs-container {
-    margin-top: 0.25rem;
-    margin-bottom: 0.5rem;
-  }
+  /* Tabs container spacing for extra small screens - handled by component */
 
   .audit-content .audit-status-container.gap-4 {
     gap: 0.5rem;

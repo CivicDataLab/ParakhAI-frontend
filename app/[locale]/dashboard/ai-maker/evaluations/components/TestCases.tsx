@@ -149,9 +149,9 @@ const TestCases: React.FC<TestCasesProps> = ({
   ];
 
   return (
-    <div className="mb-8 space-y-8">
+  <div className="mb-8 space-y-8">
       {/* Select Prompt Library Section */}
-      <div className="test-cases-table">
+      <div className="test-cases-table mt-6">
         <div className="mb-4">
           <Text
             variant="headingMd"
@@ -161,7 +161,7 @@ const TestCases: React.FC<TestCasesProps> = ({
           </Text>
           <Text
             variant="bodySm"
-            className="select-prompt-library-subtitle block"
+            className="select-prompt-library-subtitle block whitespace-nowrap"
           >
             You can select multiple prompt libraries.
           </Text>
@@ -180,9 +180,9 @@ const TestCases: React.FC<TestCasesProps> = ({
       {/* Enter Your Own Test Cases Section */}
       <div>
         <Text variant="headingMd" className="enter-test-cases-heading mb-4">
-          Enter Your Own Test Cases (optional)
+          Enter Your Own Test Cases (Optional)
         </Text>
-        <div className="flex gap-1 mb-4 test-input-buttons-container">
+        <div className="flex gap-6 mb-4 test-input-buttons-container">
           <Button
             kind="secondary"
             onClick={() => setTestInputMode("paste")}
@@ -199,6 +199,7 @@ const TestCases: React.FC<TestCasesProps> = ({
           <Button
             kind="secondary"
             onClick={() => setTestInputMode("upload")}
+            disabled
             className={`test-input-button ${testInputMode === "upload" ? "test-input-button-selected" : ""}`}
           >
             <span className="test-input-icon-wrapper">

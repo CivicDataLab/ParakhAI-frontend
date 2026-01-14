@@ -36,7 +36,7 @@ const UserDashboard = () => {
         data={[
           { href: '/', label: 'Home' },
           {
-            href: '#',
+            href: '/dashboard',
             label: 'User Dashboard',
           },
         ]}

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Divider } from 'opub-ui';
 import { useEffect, useMemo, useState } from 'react';
+import { useAppSession } from '@/lib/session';
 
 type BaseNavItem = {
   icon: string;
@@ -24,6 +25,7 @@ const baseNavItems: BaseNavItem[] = [
 
 const WelcomeSection = () => {
   const pathname = usePathname();
+  const { user } = useAppSession();
 
   const normalizedPath = useMemo(() => {
     if (!pathname) return '/';
@@ -98,7 +100,7 @@ const WelcomeSection = () => {
         
         {/* Welcome Text */}
         <p className="welcome-text sm:pt-4 md:pt-0">
-          Welcome, CivicDataLab
+          Welcome, {user?.name || 'CivicDataLab'}
         </p>
         
         {/* Switch Roles Button */}
