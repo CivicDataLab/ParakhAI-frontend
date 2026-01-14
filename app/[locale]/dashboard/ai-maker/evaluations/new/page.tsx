@@ -913,331 +913,329 @@ const NewAuditPage = () => {
           <WelcomeSection />
 
           <div className="flex-1 audit-content p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0 bg-white">
-{/* Model Name and Owner Section */}
-<div className="mb-6">
-  {/* Model Selector */}
-  <div className="mb-4 max-w-md">
-    {isLoadingModels ? (
-      <div>
-        <Text variant="bodySm" className="text-gray-600">
-          Loading models...
-        </Text>
-      </div>
-    ) : modelsError ? (
-      <div>
-        <Text variant="bodySm" className="text-red-600">
-          {modelsError}
-        </Text>
-      </div>
-    ) : aiModels.length > 0 ? (
-      <div>
-        <Select
-          name="modelSelect"
-          label="Select AI Model"
-          options={aiModels.map((model) => ({
-            value: model.id,
-            label: `${model.displayName || model.name}${model.version ? ` (${model.version})` : ""}`,
-          }))}
-          value={selectedModelId || ""}
-          onChange={(value) => setSelectedModelId(value)}
-          disabled={typeof activeTab !== "undefined" && activeTab !== "config"}
-        />
-      </div>
-    ) : (
-      <div>
-        <Text variant="bodySm" className="text-gray-600">
-          No models available. Please check your backend configuration.
-        </Text>
-      </div>
-    )}
-  </div>
+            {/* Model Name and Owner Section */}
+            <div className="mb-6">
+              {/* Model Selector */}
+              <div className="mb-4 max-w-md">
+                {isLoadingModels ? (
+                  <div>
+                    <Text variant="bodySm" className="text-gray-600">
+                      Loading models...
+                    </Text>
+                  </div>
+                ) : modelsError ? (
+                  <div>
+                    <Text variant="bodySm" className="text-red-600">
+                      {modelsError}
+                    </Text>
+                  </div>
+                ) : aiModels.length > 0 ? (
+                  <div>
+                    <Select
+                      name="modelSelect"
+                      label="Select AI Model"
+                      options={aiModels.map((model) => ({
+                        value: model.id,
+                        label: `${model.displayName || model.name}${model.version ? ` (${model.version})` : ""}`,
+                      }))}
+                      value={selectedModelId || ""}
+                      onChange={(value) => setSelectedModelId(value)}
+                      disabled={
+                        typeof activeTab !== "undefined" &&
+                        activeTab !== "config"
+                      }
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <Text variant="bodySm" className="text-gray-600">
+                      No models available. Please check your backend
+                      configuration.
+                    </Text>
+                  </div>
+                )}
+              </div>
 
-  {/* Model Name label + value */}
-  <div className="mb-4 model-name-container">
-    <Text
-      variant="bodySm"
-      className="text-sm leading-5 font-medium text-[#60646C] mb-1 text-right"
-    >
-      Model Name
-    </Text>
-    {/* Single line layout with gap */}
-    <div className="flex items-center gap-4">
-      <Text as="h1" className="model-name-text">
-        {modelName}
-      </Text>
-      {modelVersion && (
-        <Text as="h2" className="model-name-text">
-          {modelVersion}
-        </Text>
-      )}
-    </div>
-  </div>
-  <div className="flex items-center gap-2 text-gray-600">
-    <Text variant="bodyMd">Owner:</Text>
-    <Image
-      src="/images/icons/CDL.png"
-      alt="CDL"
-      width={36}
-      height={36}
-      className="object-contain cdl-logo"
-    />
-  </div>
-</div>
+              {/* Model Name label + value */}
+              <div className="mb-4 model-name-container">
+                <Text
+                  variant="bodySm"
+                  className="text-sm leading-5 font-medium text-[#60646C] mb-1 text-right"
+                >
+                  Model Name
+                </Text>
+                {/* Single line layout with gap */}
+                <div className="flex items-center gap-4">
+                  <Text as="h1" className="model-name-text">
+                    {modelName}
+                  </Text>
+                  {modelVersion && (
+                    <Text as="h2" className="model-name-text">
+                      {modelVersion}
+                    </Text>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-gray-600">
+                <Text variant="bodyMd">Owner:</Text>
+                <Image
+                  src="/images/icons/CDL.png"
+                  alt="CDL"
+                  width={36}
+                  height={36}
+                  className="object-contain cdl-logo"
+                />
+              </div>
+            </div>
 
-{/* Audit Name, Tag, and Status Section */}
-<div className="flex items-center justify-between mb-6 gap-4 audit-name-section max-[1023px]:mb-0.5 max-[1023px]:gap-0.5">
-  {/* Left side: Label + Input + Tag */}
-  <div className="flex items-center gap-4 flex-nowrap min-w-0 flex-1 evaluation-name-row">
-    <Label
-      htmlFor="auditName"
-      className="audit-name-label flex-shrink-0 whitespace-nowrap"
-    >
-      Evaluation Name
-    </Label>
-    <div className="audit-name-input-wrapper flex-1 min-w-0 max-w-[380px]">
-      <TextField
-        id="auditName"
-        name="evaluationName"
-        label="Evaluation Name"
-        labelHidden
-        value={auditName}
-        onChange={(value) => setAuditName(value)}
-      />
-    </div>
-    <div className="flex-shrink-0">
-      <div className="tag-wrapper audit-tag">
-        <Tag
-          variation="filled"
-          fillColor="#E2F5C4"
-          textColor="#0A0704"
-        >
-          {auditType === "technical"
-            ? "Technical Evaluation"
-            : auditType === "domain"
-              ? "Domain Evaluation"
-              : "Cultural Evaluation"}
-        </Tag>
-      </div>
-    </div>
-  </div>
+            {/* Audit Name, Tag, and Status Section */}
+            <div className="flex items-center justify-between mb-6 gap-4 audit-name-section max-[1023px]:mb-0.5 max-[1023px]:gap-0.5">
+              {/* Left side: Label + Input + Tag */}
+              <div className="flex items-center gap-4 flex-nowrap min-w-0 flex-1 evaluation-name-row">
+                <Label
+                  htmlFor="auditName"
+                  className="audit-name-label flex-shrink-0 whitespace-nowrap"
+                >
+                  Evaluation Name
+                </Label>
+                <div className="audit-name-input-wrapper flex-1 min-w-0 max-w-[380px]">
+                  <TextField
+                    id="auditName"
+                    name="evaluationName"
+                    label="Evaluation Name"
+                    labelHidden
+                    value={auditName}
+                    onChange={(value) => setAuditName(value)}
+                  />
+                </div>
+                <div className="flex-shrink-0">
+                  <div className="tag-wrapper audit-tag">
+                    <Tag
+                      variation="filled"
+                      fillColor="#E2F5C4"
+                      textColor="#0A0704"
+                    >
+                      {auditType === "technical"
+                        ? "Technical Evaluation"
+                        : auditType === "domain"
+                          ? "Domain Evaluation"
+                          : "Cultural Evaluation"}
+                    </Tag>
+                  </div>
+                </div>
+              </div>
 
-  {/* Right side: Status */}
-  <div className="flex items-center justify-end gap-4 audit-status-container flex-shrink-0 max-[1023px]:gap-0.5 max-[1023px]:mt-0 mr-4">
-    {isAutoSaved && (
-      <div className="flex items-center gap-1.5 lg:translate-x-0 xl:translate-x-2">
-        <Text className="audit-auto-saved">
-          Auto-saved
-        </Text>
-        <Image
-          src="/images/icons/circle-check.png"
-          alt="Circle check"
-          width={18}
-          height={18}
-          className="object-contain"
-        />
-      </div>
-    )}
-    <Button
-      kind="tertiary"
-      variant="critical"
-      onClick={() => {
-        if (confirm("Are you sure you want to cancel this audit?")) {
-          window.history.back();
-        }
-      }}
-      className="cancel-audit-button flex-shrink-0 max-[640px]:ml-4"
-    >
-      Cancel Evaluation
-      <Icon source={IconX} size={18} />
-    </Button>
-  </div>
-</div>
+              {/* Right side: Status */}
+              <div className="flex items-center justify-end gap-4 audit-status-container flex-shrink-0 max-[1023px]:gap-0.5 max-[1023px]:mt-0 mr-4">
+                {isAutoSaved && (
+                  <div className="flex items-center gap-1.5 lg:translate-x-0 xl:translate-x-2">
+                    <Text className="audit-auto-saved">Auto-saved</Text>
+                    <Image
+                      src="/images/icons/circle-check.png"
+                      alt="Circle check"
+                      width={18}
+                      height={18}
+                      className="object-contain"
+                    />
+                  </div>
+                )}
+                <Button
+                  kind="tertiary"
+                  variant="critical"
+                  onClick={() => {
+                    if (
+                      confirm("Are you sure you want to cancel this audit?")
+                    ) {
+                      window.history.back();
+                    }
+                  }}
+                  className="cancel-audit-button flex-shrink-0 max-[640px]:ml-4"
+                >
+                  Cancel Evaluation
+                  <Icon source={IconX} size={18} />
+                </Button>
+              </div>
+            </div>
 
-{/* Tabs */}
-<div className="mb-4 max-[1023px]:mb-3 max-[640px]:mb-2">
-  <div className="flex gap-6 max-[1023px]:gap-0 tabs-container">
-    <button
-      onClick={() => handleTabChange("config")}
-      className={`audit-config-tab ${
-        activeTab === "config"
-          ? "audit-config-tab-active text-gray-900 font-semibold"
-          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 bg-transparent"
-      }`}
-    >
-      <Text
-        variant="bodyMd"
-        className={
-          activeTab === "config"
-            ? "text-gray-900 font-semibold"
-            : "text-gray-600"
-        }
-      >
-        Evaluation Configuration
-      </Text>
-    </button>
-    <button
-      onClick={() => {
-        if (validateForm()) {
-          handleTabChange("test");
-        }
-      }}
-      className={`audit-config-tab ${
-        activeTab === "test"
-          ? "audit-config-tab-active text-gray-900 font-semibold"
-          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 bg-transparent"
-      }`}
-    >
-      <Text
-        variant="bodyMd"
-        className={
-          activeTab === "test"
-            ? "text-gray-900 font-semibold"
-            : "text-gray-600"
-        }
-      >
-        Test Cases
-      </Text>
-    </button>
-    <button
-      onClick={() => {
-        if (validateCompleteForm()) {
-          handleTabChange("results");
-        } else {
-          // If validation fails, show which tab needs attention
-          if (!validateForm()) {
-            handleTabChange("config");
-          } else if (!validateTestCases()) {
-            handleTabChange("test");
-          }
-        }
-      }}
-      className={`audit-config-tab ${
-        activeTab === "results"
-          ? "audit-config-tab-active text-gray-900 font-semibold"
-          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 bg-transparent"
-      }`}
-    >
-      <Text
-        variant="bodyMd"
-        className={
-          activeTab === "results"
-            ? "text-gray-900 font-semibold"
-            : "text-gray-600"
-        }
-      >
-        Evaluation Summary
-      </Text>
-    </button>
-  </div>
-</div>
+            {/* Tabs */}
+            <div className="mb-4 max-[1023px]:mb-3 max-[640px]:mb-2">
+              <div className="flex gap-6 max-[1023px]:gap-0 tabs-container">
+                <button
+                  onClick={() => handleTabChange("config")}
+                  className={`audit-config-tab ${
+                    activeTab === "config"
+                      ? "audit-config-tab-active text-gray-900 font-semibold"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 bg-transparent"
+                  }`}
+                >
+                  <Text
+                    variant="bodyMd"
+                    className={
+                      activeTab === "config"
+                        ? "text-gray-900 font-semibold"
+                        : "text-gray-600"
+                    }
+                  >
+                    Evaluation Configuration
+                  </Text>
+                </button>
+                <button
+                  onClick={() => {
+                    if (validateForm()) {
+                      handleTabChange("test");
+                    }
+                  }}
+                  className={`audit-config-tab ${
+                    activeTab === "test"
+                      ? "audit-config-tab-active text-gray-900 font-semibold"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 bg-transparent"
+                  }`}
+                >
+                  <Text
+                    variant="bodyMd"
+                    className={
+                      activeTab === "test"
+                        ? "text-gray-900 font-semibold"
+                        : "text-gray-600"
+                    }
+                  >
+                    Test Cases
+                  </Text>
+                </button>
+                <button
+                  onClick={() => {
+                    if (auditOverview?.auditId) {
+                      handleTabChange("results");
+                    }
+                  }}
+                  className={`audit-config-tab ${
+                    activeTab === "results"
+                      ? "audit-config-tab-active text-gray-900 font-semibold"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 bg-transparent"
+                  }`}
+                  disabled={!auditOverview?.auditId}
+                >
+                  <Text
+                    variant="bodyMd"
+                    className={
+                      activeTab === "results"
+                        ? "text-gray-900 font-semibold"
+                        : "text-gray-600"
+                    }
+                  >
+                    Evaluation Summary
+                  </Text>
+                </button>
+              </div>
+            </div>
 
-{/* Tab Content */}
-{activeTab === "config" && (
-  <EvaluationConfiguration
-    auditType={auditType}
-    setAuditType={setAuditType}
-    auditorName={auditorName}
-    setAuditorName={setAuditorName}
-    organisationName={organisationName}
-    setOrganisationName={setOrganisationName}
-    auditObjective={auditObjective}
-    setAuditObjective={setAuditObjective}
-    scopeOfAudit={scopeOfAudit}
-    setScopeOfAudit={setScopeOfAudit}
-    modeOfEvaluation={modeOfEvaluation}
-    setModeOfEvaluation={setModeOfEvaluation}
-    modules={modules}
-    selectedModules={selectedModules}
-    setSelectedModules={setSelectedModules}
-    selectedMetrics={
-      selectedMetrics as Record<string, SelectOption[]>
-    }
-    setSelectedMetrics={setSelectedMetrics}
-    moduleMetricsOptions={moduleMetricsOptions}
-    setModuleMetricsOptions={setModuleMetricsOptions}
-    isLoadingModules={isLoadingModules}
-    modulesError={modulesError}
-    fetchMetricsForModule={fetchMetricsForModule}
-    getModuleDisplayName={getModuleDisplayName}
-    toTitleCase={toTitleCase}
-    validationErrors={validationErrors}
-    setValidationErrors={setValidationErrors}
-  />
-)}
+            {/* Tab Content */}
+            {activeTab === "config" && (
+              <EvaluationConfiguration
+                auditType={auditType}
+                setAuditType={setAuditType}
+                auditorName={auditorName}
+                setAuditorName={setAuditorName}
+                organisationName={organisationName}
+                setOrganisationName={setOrganisationName}
+                auditObjective={auditObjective}
+                setAuditObjective={setAuditObjective}
+                scopeOfAudit={scopeOfAudit}
+                setScopeOfAudit={setScopeOfAudit}
+                modeOfEvaluation={modeOfEvaluation}
+                setModeOfEvaluation={setModeOfEvaluation}
+                modules={modules}
+                selectedModules={selectedModules}
+                setSelectedModules={setSelectedModules}
+                selectedMetrics={
+                  selectedMetrics as Record<string, SelectOption[]>
+                }
+                setSelectedMetrics={setSelectedMetrics}
+                moduleMetricsOptions={moduleMetricsOptions}
+                setModuleMetricsOptions={setModuleMetricsOptions}
+                isLoadingModules={isLoadingModules}
+                modulesError={modulesError}
+                fetchMetricsForModule={fetchMetricsForModule}
+                getModuleDisplayName={getModuleDisplayName}
+                toTitleCase={toTitleCase}
+                validationErrors={validationErrors}
+                setValidationErrors={setValidationErrors}
+              />
+            )}
 
-{activeTab === "test" &&
-  (modeOfEvaluation === "manual" ? (
-    <ManualTestCases
-      onPrevious={() => handleTabChange("config")}
-      onRunAudit={handleRunAudit}
-      isRequestingAudit={isRequestingAudit}
-    />
-  ) : (
-    <TestCases
-      selectedPromptLibraries={selectedPromptLibraries}
-      setSelectedPromptLibraries={setSelectedPromptLibraries}
-      uploadedFiles={uploadedFiles}
-      setUploadedFiles={setUploadedFiles}
-      pastedTestCases={pastedTestCases}
-      setPastedTestCases={setPastedTestCases}
-      testInputMode={testInputMode}
-      setTestInputMode={setTestInputMode}
-      onPrevious={() => handleTabChange("config")}
-      onRunAudit={handleRunAudit}
-      isRequestingAudit={isRequestingAudit}
-    />
-  ))}
+            {activeTab === "test" &&
+              (modeOfEvaluation === "manual" ? (
+                <ManualTestCases
+                  onPrevious={() => handleTabChange("config")}
+                  onRunAudit={handleRunAudit}
+                  isRequestingAudit={isRequestingAudit}
+                />
+              ) : (
+                <TestCases
+                  selectedPromptLibraries={selectedPromptLibraries}
+                  setSelectedPromptLibraries={setSelectedPromptLibraries}
+                  uploadedFiles={uploadedFiles}
+                  setUploadedFiles={setUploadedFiles}
+                  pastedTestCases={pastedTestCases}
+                  setPastedTestCases={setPastedTestCases}
+                  testInputMode={testInputMode}
+                  setTestInputMode={setTestInputMode}
+                  onPrevious={() => handleTabChange("config")}
+                  onRunAudit={handleRunAudit}
+                  isRequestingAudit={isRequestingAudit}
+                />
+              ))}
 
-{activeTab === "results" && (
-  <EvaluationSummary
-    auditOverview={auditOverview}
-    isRequestingAudit={isRequestingAudit}
-    auditError={auditError}
-    onDownloadReport={() => {
-      // TODO: Implement download report functionality
-    }}
-  />
-)}
+            {activeTab === "results" && (
+              <EvaluationSummary
+                auditOverview={auditOverview}
+                isRequestingAudit={isRequestingAudit}
+                auditError={auditError}
+                onDownloadReport={() => {
+                  // TODO: Implement download report functionality
+                }}
+              />
+            )}
 
-{/* Navigation Buttons - Audit Configuration tab */}
-{activeTab === "config" && (
-  <div className="flex items-center justify-center gap-6 pt-8">
-    {/* Disabled Previous button on first step, styled like pagination control */}
-    <Button
-      kind="secondary"
-      disabled
-      className="previous-button previous-button-disabled"
-    >
-      <Image
-        src="/images/icons/circle-arrow-left.png"
-        alt="Circle arrow left"
-        width={18}
-        height={18}
-        className="object-contain previous-icon"
-      />
-      <span className="previous-text">Previous</span>
-    </Button>
+            {/* Navigation Buttons - Audit Configuration tab */}
+            {activeTab === "config" && (
+              <div className="flex items-center justify-center gap-6 pt-8">
+                {/* Disabled Previous button on first step, styled like pagination control */}
+                <Button
+                  kind="secondary"
+                  disabled
+                  className="previous-button previous-button-disabled"
+                >
+                  <Image
+                    src="/images/icons/circle-arrow-left.png"
+                    alt="Circle arrow left"
+                    width={18}
+                    height={18}
+                    className="object-contain previous-icon"
+                  />
+                  <span className="previous-text">Previous</span>
+                </Button>
 
-    <Button
-      kind="secondary"
-      onClick={() => {
-        if (validateForm()) {
-          handleTabChange("test");
-        }
-      }}
-      className="add-test-cases-button"
-    >
-      <span className="add-test-cases-text">Add Test Cases</span>
-      <Image
-        src="/images/icons/circle-arrow-right.png"
-        alt="Circle arrow right"
-        width={18}
-        height={18}
-        className="object-contain add-test-cases-icon"
-      />
-    </Button>
-  </div>
-)}
+                <Button
+                  kind="secondary"
+                  onClick={() => {
+                    if (validateForm()) {
+                      handleTabChange("test");
+                    }
+                  }}
+                  className="add-test-cases-button"
+                >
+                  <span className="add-test-cases-text">Add Test Cases</span>
+                  <Image
+                    src="/images/icons/circle-arrow-right.png"
+                    alt="Circle arrow right"
+                    width={18}
+                    height={18}
+                    className="object-contain add-test-cases-icon"
+                  />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
