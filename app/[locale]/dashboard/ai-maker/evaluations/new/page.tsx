@@ -100,6 +100,38 @@ const REQUEST_AUDIT_MUTATION = `
   }
 `;
 
+const generateDefaultAuditName = () => {
+  const now = new Date();
+
+  const day = now.getDate();
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  const month = monthNames[now.getMonth()];
+  const year = now.getFullYear();
+
+  let hours = now.getHours();
+  const minutes = now.getMinutes().toString().padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+
+  const timeString = `${hours}:${minutes}${ampm}`;
+
+  return `Untitled Evaluation - ${day} ${month} ${year} - ${timeString}`;
+};
+
 const NewAuditPage = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -109,9 +141,7 @@ const NewAuditPage = () => {
   const [activeTab, setActiveTab] = useState<"config" | "test" | "results">(
     "config"
   );
-  const [auditName, setAuditName] = useState(
-    "Untitled Evaluation - 20 March 2023 - 10:30AM"
-  );
+  const [auditName, setAuditName] = useState(generateDefaultAuditName);
   const isAutoSaved = true;
 
   // AI Models state
@@ -216,6 +246,17 @@ const NewAuditPage = () => {
     auditTime: string | null;
     durationSeconds: number | null;
   } | null>(null);
+
+  const scrollToTop = () => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const handleTabChange = (tab: "config" | "test" | "results") => {
+    setActiveTab(tab);
+    scrollToTop();
+  };
 
   // Helper function to map module name keys to display names
   const getModuleDisplayName = (moduleName: string): string => {
@@ -666,6 +707,7 @@ const NewAuditPage = () => {
 
     // Move user into the Audit Results tab and show loading state FIRST
     setActiveTab("results");
+    scrollToTop(); // Scroll to top when switching to results tab
     setAuditOverview(null);
     setAuditError(null);
     setIsRequestingAudit(true);
@@ -851,14 +893,14 @@ const NewAuditPage = () => {
     <div className="flex flex-col min-h-screen bg-white">
       <BreadCrumbs
         data={[
-          { href: `/${locale}`, label: "Home" },
-          { href: `/${locale}/dashboard`, label: "User Dashboard" },
+          { href: "/", label: "Home" },
+          { href: "/dashboard", label: "User Dashboard" },
           {
-            href: `/${locale}/dashboard/ai-maker`,
+            href: "/dashboard/ai-maker",
             label: "AI Maker Dashboard",
           },
           {
-            href: `/${locale}/dashboard/ai-maker/evaluations`,
+            href: "/dashboard/ai-maker/evaluations",
             label: "Evaluations",
           },
           { href: "#", label: "New Evaluation" },
@@ -910,16 +952,25 @@ const NewAuditPage = () => {
     )}
   </div>
 
-  {/* Single line layout with gap */}
-  <div className="flex items-center gap-4 mb-4 model-name-container">
-    <Text as="h1" className="model-name-text">
-      {modelName}
+  {/* Model Name label + value */}
+  <div className="mb-4 model-name-container">
+    <Text
+      variant="bodySm"
+      className="text-sm leading-5 font-medium text-[#60646C] mb-1 text-right"
+    >
+      Model Name
     </Text>
-    {modelVersion && (
-      <Text as="h2" className="model-name-text">
-        {modelVersion}
+    {/* Single line layout with gap */}
+    <div className="flex items-center gap-4">
+      <Text as="h1" className="model-name-text">
+        {modelName}
       </Text>
-    )}
+      {modelVersion && (
+        <Text as="h2" className="model-name-text">
+          {modelVersion}
+        </Text>
+      )}
+    </div>
   </div>
   <div className="flex items-center gap-2 text-gray-600">
     <Text variant="bodyMd">Owner:</Text>
@@ -1003,10 +1054,10 @@ const NewAuditPage = () => {
 </div>
 
 {/* Tabs */}
-<div className="mb-8 max-[1023px]:mb-4 max-[640px]:mb-2">
+<div className="mb-4 max-[1023px]:mb-3 max-[640px]:mb-2">
   <div className="flex gap-6 max-[1023px]:gap-0 tabs-container">
     <button
-      onClick={() => setActiveTab("config")}
+      onClick={() => handleTabChange("config")}
       className={`audit-config-tab ${
         activeTab === "config"
           ? "audit-config-tab-active text-gray-900 font-semibold"
@@ -1027,7 +1078,7 @@ const NewAuditPage = () => {
     <button
       onClick={() => {
         if (validateForm()) {
-          setActiveTab("test");
+          handleTabChange("test");
         }
       }}
       className={`audit-config-tab ${
@@ -1050,13 +1101,13 @@ const NewAuditPage = () => {
     <button
       onClick={() => {
         if (validateCompleteForm()) {
-          setActiveTab("results");
+          handleTabChange("results");
         } else {
           // If validation fails, show which tab needs attention
           if (!validateForm()) {
-            setActiveTab("config");
+            handleTabChange("config");
           } else if (!validateTestCases()) {
-            setActiveTab("test");
+            handleTabChange("test");
           }
         }
       }}
@@ -1117,7 +1168,7 @@ const NewAuditPage = () => {
 {activeTab === "test" &&
   (modeOfEvaluation === "manual" ? (
     <ManualTestCases
-      onPrevious={() => setActiveTab("config")}
+      onPrevious={() => handleTabChange("config")}
       onRunAudit={handleRunAudit}
       isRequestingAudit={isRequestingAudit}
     />
@@ -1131,7 +1182,7 @@ const NewAuditPage = () => {
       setPastedTestCases={setPastedTestCases}
       testInputMode={testInputMode}
       setTestInputMode={setTestInputMode}
-      onPrevious={() => setActiveTab("config")}
+      onPrevious={() => handleTabChange("config")}
       onRunAudit={handleRunAudit}
       isRequestingAudit={isRequestingAudit}
     />
@@ -1171,7 +1222,7 @@ const NewAuditPage = () => {
       kind="secondary"
       onClick={() => {
         if (validateForm()) {
-          setActiveTab("test");
+          handleTabChange("test");
         }
       }}
       className="add-test-cases-button"

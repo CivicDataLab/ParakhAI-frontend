@@ -204,9 +204,9 @@ const AuditsListPage = () => {
     <div className="flex flex-col min-h-screen bg-white overflow-x-visible">
       <BreadCrumbs
         data={[
-          { href: `/${locale}`, label: 'Home' },
-          { href: `/${locale}/dashboard`, label: 'User Dashboard' },
-          { href: `/${locale}/dashboard/ai-maker`, label: 'AI Maker Dashboard' },
+          { href: '/', label: 'Home' },
+          { href: '/dashboard', label: 'User Dashboard' },
+          { href: '/dashboard/ai-maker', label: 'AI Maker Dashboard' },
           { href: '#', label: 'Evaluations' },
         ]}
       />
