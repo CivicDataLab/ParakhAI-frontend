@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import BreadCrumbs from '@/components/Breadcrumbs';
-import { useGraphQL } from '@/lib/api';
-import { createColumnHelper } from '@tanstack/react-table';
-import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
-import { Button, DataTable, ProgressBar, Tag, Text } from 'opub-ui';
-import { useEffect, useState } from 'react';
-import WelcomeSection from '../../components/WelcomeSection';
+import BreadCrumbs from "@/components/Breadcrumbs";
+import { useGraphQL } from "@/lib/api";
+import { createColumnHelper } from "@tanstack/react-table";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { Button, DataTable, ProgressBar, Tag, Text } from "opub-ui";
+import { useEffect, useState } from "react";
+import WelcomeSection from "../../components/WelcomeSection";
 
 // GraphQL query to fetch user's audits
 const AUDITS_QUERY = `
@@ -49,9 +49,13 @@ type Audit = {
 const AuditsListPage = () => {
   const router = useRouter();
   const params = useParams();
-  const locale = params.locale || 'en';
-  const { request, isAuthenticated, isLoading: isSessionLoading } = useGraphQL();
-  
+  const locale = params.locale || "en";
+  const {
+    request,
+    isAuthenticated,
+    isLoading: isSessionLoading,
+  } = useGraphQL();
+
   const [audits, setAudits] = useState<Audit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +68,7 @@ const AuditsListPage = () => {
       try {
         setIsLoading(true);
         setError(null);
-        
+
         const data = await request<{ audits: Audit[] }>(AUDITS_QUERY, {
           status: null,
           limit: 100,
@@ -72,8 +76,8 @@ const AuditsListPage = () => {
 
         setAudits(data?.audits || []);
       } catch (err: any) {
-        console.error('Error fetching audits:', err);
-        setError(err?.message || 'Failed to load audits');
+        console.error("Error fetching audits:", err);
+        setError(err?.message || "Failed to load audits");
       } finally {
         setIsLoading(false);
       }
@@ -87,38 +91,38 @@ const AuditsListPage = () => {
 
   // Format date for display
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return '--';
+    if (!dateString) return "--";
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   // Get status tag color
   const getStatusColor = (status: string) => {
     switch (status?.toUpperCase()) {
-      case 'COMPLETED':
-        return { fillColor: '#E2F5C4', textColor: '#166534' };
-      case 'RUNNING':
-        return { fillColor: '#FEF3C7', textColor: '#92400E' };
-      case 'PENDING':
-        return { fillColor: '#E0E7FF', textColor: '#3730A3' };
-      case 'FAILED':
-      case 'ERROR':
-        return { fillColor: '#FEE2E2', textColor: '#DC2626' };
+      case "COMPLETED":
+        return { fillColor: "#E2F5C4", textColor: "#166534" };
+      case "RUNNING":
+        return { fillColor: "#FEF3C7", textColor: "#92400E" };
+      case "PENDING":
+        return { fillColor: "#E0E7FF", textColor: "#3730A3" };
+      case "FAILED":
+      case "ERROR":
+        return { fillColor: "#FEE2E2", textColor: "#DC2626" };
       default:
-        return { fillColor: '#F3F4F6', textColor: '#374151' };
+        return { fillColor: "#F3F4F6", textColor: "#374151" };
     }
   };
 
   // Define columns
   const columns = [
-    columnHelper.accessor('name', {
-      header: 'Evaluation Name',
+    columnHelper.accessor("name", {
+      header: "Evaluation Name",
       cell: (info) => (
         <Link
           href={`/${locale}/dashboard/ai-maker/evaluations/${info.row.original.id}`}
@@ -128,52 +132,63 @@ const AuditsListPage = () => {
         </Link>
       ),
     }),
-    columnHelper.accessor('status', {
-      header: 'Status',
+    columnHelper.accessor("status", {
+      header: "Status",
       cell: (info) => {
         const status = info.getValue();
         const colors = getStatusColor(status);
         return (
-          <Tag variation="filled" fillColor={colors.fillColor} textColor={colors.textColor}>
-            {status || 'Unknown'}
+          <Tag
+            variation="filled"
+            fillColor={colors.fillColor}
+            textColor={colors.textColor}
+          >
+            {status || "Unknown"}
           </Tag>
         );
       },
     }),
-    columnHelper.accessor('modules', {
-      header: 'Modules',
+    columnHelper.accessor("modules", {
+      header: "Modules",
       cell: (info) => {
         const modules = info.getValue() || [];
         return (
           <Text variant="bodySm">
-            {modules.length > 0 ? modules.join(', ') : '--'}
+            {modules.length > 0 ? modules.join(", ") : "--"}
           </Text>
         );
       },
     }),
-    columnHelper.accessor('totalTests', {
-      header: 'Tests',
+    columnHelper.accessor("totalTests", {
+      header: "Tests",
       cell: (info) => {
         const total = info.getValue() || 0;
         const passed = info.row.original.passedTests || 0;
         const failed = info.row.original.failedTests || 0;
-        
+
         if (total === 0) return <Text variant="bodySm">--</Text>;
-        
+
         return (
           <div className="flex items-center gap-2">
-            <Text variant="bodySm" className="text-green-600">{passed} passed</Text>
-            <Text variant="bodySm" className="text-gray-400">/</Text>
-            <Text variant="bodySm" className="text-red-600">{failed} failed</Text>
+            <Text variant="bodySm" className="text-green-600">
+              {passed} passed
+            </Text>
+            <Text variant="bodySm" className="text-gray-400">
+              /
+            </Text>
+            <Text variant="bodySm" className="text-red-600">
+              {failed} failed
+            </Text>
           </div>
         );
       },
     }),
-    columnHelper.accessor('overallScore', {
-      header: 'Score',
+    columnHelper.accessor("overallScore", {
+      header: "Score",
       cell: (info) => {
         const score = info.getValue();
-        if (score === null || score === undefined) return <Text variant="bodySm">--</Text>;
+        if (score === null || score === undefined)
+          return <Text variant="bodySm">--</Text>;
         return (
           <Text variant="bodySm" fontWeight="semibold">
             {score.toFixed(1)}%
@@ -181,14 +196,14 @@ const AuditsListPage = () => {
         );
       },
     }),
-    columnHelper.accessor('createdAt', {
-      header: 'Created',
+    columnHelper.accessor("createdAt", {
+      header: "Created",
       cell: (info) => (
         <Text variant="bodySm">{formatDate(info.getValue())}</Text>
       ),
     }),
-    columnHelper.accessor('completedAt', {
-      header: 'Completed',
+    columnHelper.accessor("completedAt", {
+      header: "Completed",
       cell: (info) => (
         <Text variant="bodySm">{formatDate(info.getValue())}</Text>
       ),
@@ -204,10 +219,10 @@ const AuditsListPage = () => {
     <div className="flex flex-col min-h-screen bg-white overflow-x-visible">
       <BreadCrumbs
         data={[
-          { href: '/', label: 'Home' },
-          { href: '/dashboard', label: 'User Dashboard' },
-          { href: '/dashboard/ai-maker', label: 'AI Maker Dashboard' },
-          { href: '#', label: 'Evaluations' },
+          { href: "/", label: "Home" },
+          { href: "/dashboard", label: "User Dashboard" },
+          { href: "/dashboard/ai-maker", label: "AI Maker Dashboard" },
+          { href: "#", label: "Evaluations" },
         ]}
       />
 
@@ -239,7 +254,10 @@ const AuditsListPage = () => {
                 <Text variant="bodySm" className="text-red-600 mb-4">
                   {error}
                 </Text>
-                <Button kind="secondary" onClick={() => window.location.reload()}>
+                <Button
+                  kind="secondary"
+                  onClick={() => window.location.reload()}
+                >
                   Retry
                 </Button>
               </div>
@@ -252,7 +270,10 @@ const AuditsListPage = () => {
                   height={70}
                   className="mb-4 opacity-60"
                 />
-                <Text variant="bodyMd" className="text-gray-600 mb-4 text-center">
+                <Text
+                  variant="bodyMd"
+                  className="text-gray-600 mb-4 text-center"
+                >
                   You haven&apos;t run any evaluations yet.
                   <br />
                   Start your first evaluation to see results here.
@@ -266,9 +287,10 @@ const AuditsListPage = () => {
                 rows={audits}
                 columns={columns}
                 hoverable
-                sortColumns={['name', 'status', 'createdAt', 'completedAt']}
+                sortColumns={["name", "status", "createdAt", "completedAt"]}
                 defaultSortDirection="desc"
                 hideSelection
+                truncate
               />
             )}
           </div>
