@@ -197,7 +197,7 @@ const AIMakerDashboard = () => {
       />
 
       {/* Sidebar and Content Layout */}
-      <div className="w-full mx-auto px-4 sm:px-6 lg:px-10 overflow-x-visible">
+      <div className="w-full max-w-7xl  mx-auto px-4 sm:px-6 lg:px-10 overflow-x-visible">
         <div className="flex flex-1 flex-col lg:flex-row gap-6 md:gap-8 lg:-ml-[120px] xl:-ml-[130px]">
           {/* Sidebar */}
           <WelcomeSection />
