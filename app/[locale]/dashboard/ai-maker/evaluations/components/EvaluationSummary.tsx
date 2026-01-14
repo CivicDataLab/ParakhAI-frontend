@@ -257,17 +257,13 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
       accessorKey: "input",
       header: "Input",
       enableSorting: true,
-      cell: ({ getValue }) => (
-        <Text className="datatable-text-wrap">{getValue<string>()}</Text>
-      ),
+      cell: ({ getValue }) => getValue<string>(),
     },
     {
       accessorKey: "output",
       header: "Output",
       enableSorting: true,
-      cell: ({ getValue }) => (
-        <Text className="datatable-text-wrap">{getValue<string>()}</Text>
-      ),
+      cell: ({ getValue }) => getValue<string>(),
     },
     {
       accessorKey: "evaluationModule",
@@ -307,9 +303,7 @@ const EvaluationSummary: React.FC<EvaluationSummaryProps> = ({
       accessorKey: "reason",
       header: "Reason",
       enableSorting: false,
-      cell: ({ getValue }) => (
-        <Text className="datatable-text-wrap">{getValue<string>()}</Text>
-      ),
+      cell: ({ getValue }) => getValue<string>(),
     },
   ];
 

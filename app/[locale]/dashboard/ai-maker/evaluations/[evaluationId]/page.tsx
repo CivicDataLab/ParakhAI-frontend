@@ -299,17 +299,13 @@ const EvaluationDetailPage = () => {
       accessorKey: "input",
       header: "Input",
       enableSorting: true,
-      cell: ({ getValue }) => (
-        <Text className="datatable-text-wrap">{getValue<string>()}</Text>
-      ),
+      cell: ({ getValue }) => getValue<string>(),
     },
     {
       accessorKey: "output",
       header: "Output",
       enableSorting: true,
-      cell: ({ getValue }) => (
-        <Text className="datatable-text-wrap">{getValue<string>()}</Text>
-      ),
+      cell: ({ getValue }) => getValue<string>(),
     },
     {
       accessorKey: "evaluationModule",
@@ -349,9 +345,7 @@ const EvaluationDetailPage = () => {
       accessorKey: "reason",
       header: "Reason",
       enableSorting: false,
-      cell: ({ getValue }) => (
-        <Text className="datatable-text-wrap">{getValue<string>()}</Text>
-      ),
+      cell: ({ getValue }) => getValue<string>(),
     },
   ];
 
@@ -651,6 +645,7 @@ const EvaluationDetailPage = () => {
                   rows={testCasesData}
                   columns={testCasesColumns}
                   truncate={true}
+                  hoverable={true}
                   sortColumns={[
                     "input",
                     "output",
