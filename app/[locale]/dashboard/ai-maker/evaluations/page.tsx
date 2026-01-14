@@ -236,7 +236,7 @@ const AuditsListPage = () => {
               <Text variant="headingLg" as="h1" fontWeight="bold">
                 Evaluations
               </Text>
-              <Button kind="primary" onClick={handleNewAudit}>
+              <Button kind="secondary" onClick={handleNewAudit}>
                 New Evaluation
               </Button>
             </div>

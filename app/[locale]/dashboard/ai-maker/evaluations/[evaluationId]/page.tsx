@@ -5,9 +5,10 @@ import { useGraphQL } from "@/lib/api";
 import type { ColumnDef } from "@tanstack/react-table";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Button, DataTable, ProgressBar, Tag, Text } from "opub-ui";
+import { Button, DataTable, Icon, ProgressBar, Tag, Text } from "opub-ui";
 import { useEffect, useRef, useState } from "react";
 import WelcomeSection from "../../../components/WelcomeSection";
+import { IconDownload, IconPlus } from "@tabler/icons-react";
 
 // GraphQL query to fetch audit details
 const GET_AUDIT_QUERY = `
@@ -464,10 +465,15 @@ const EvaluationDetailPage = () => {
               </div>
               <div className="flex items-center gap-3">
                 <Link href={`/${locale}/dashboard/ai-maker/evaluations`}>
-                  <Button kind="secondary">Back to List</Button>
+                  <Button kind="primary">Back to List</Button>
                 </Link>
                 <Link href={`/${locale}/dashboard/ai-maker/evaluations/new`}>
-                  <Button kind="primary">New Evaluation</Button>
+                  <Button
+                    kind="secondary"
+                    // icon={<Icon source={IconPlus} size={18} />}
+                  >
+                    New Evaluation
+                  </Button>
                 </Link>
               </div>
             </div>
@@ -669,7 +675,11 @@ const EvaluationDetailPage = () => {
 
             {/* Action Buttons */}
             <div className="flex flex-col items-center gap-4 pt-8">
-              <Button kind="primary" onClick={() => {}}>
+              <Button
+                kind="secondary"
+                icon={<Icon source={IconDownload} size={18} />}
+                onClick={() => {}}
+              >
                 Download Report
               </Button>
               <Link
