@@ -209,9 +209,9 @@ const EvaluationDetailPage = () => {
             string,
             "High" | "Medium" | "Low" | "No risk"
           > = {
-            HIGH: "High",
-            MEDIUM: "Medium",
-            LOW: "Low",
+            HIGH_RISK: "High",
+            MEDIUM_RISK: "Medium",
+            LOW_RISK: "Low",
             NO_RISK: "No risk",
             NONE: "No risk",
           };
@@ -344,13 +344,14 @@ const EvaluationDetailPage = () => {
       enableSorting: true,
       cell: ({ getValue }) => {
         const severity = getValue<"High" | "Medium" | "Low" | "No risk">();
+
         const colorMap = {
           High: { textColor: "#EF4444" },
           Medium: { textColor: "#F97316" },
           Low: { textColor: "#10B981" },
           "No risk": { textColor: "#000000" },
         };
-        const colors = colorMap[severity];
+        const colors = colorMap[severity as keyof typeof colorMap];
         return (
           <Tag
             variation="outlined"
