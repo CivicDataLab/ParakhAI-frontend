@@ -470,7 +470,7 @@ const EvaluationDetailPage = () => {
 
           <div className="flex-1 bg-gray-50 p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-4">
                 <Text variant="headingLg" as="h1" fontWeight="bold">
                   {audit.name || `Evaluation #${audit.id.slice(0, 8)}`}
@@ -503,8 +503,8 @@ const EvaluationDetailPage = () => {
             )}
 
             {/* Overview Section */}
-            <div className="mb-8">
-              <div className="bg-white rounded-2xl border border-[#C4B8F3] p-6">
+            <div className="mb-8 bg-white overview-evaluation-section ">
+              <div className="p-6">
                 <div className="mb-5">
                   <Text variant="headingMd" fontWeight="bold">
                     Evaluation Overview
@@ -513,42 +513,80 @@ const EvaluationDetailPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-1">
                   {/* Left Column */}
                   <div className="space-y-1">
+                    <div className="flex flex-col gap-1">
+                      <Text variant="bodyMd" className="text-gray-500">
+                        Evaluation ID :{" "}
+                      </Text>
+                      <Text
+                        variant="headingXl"
+                        className="font-bold text-gray-900"
+                      >
+                        {audit.id}
+                      </Text>
+                    </div>
+                  </div>
+                  {/* Middle Column */}
+
+                  <div className="space-y-1">
                     <div>
-                      <Text variant="bodySm" className="text-gray-500">
-                        Evaluation ID : <span className="text-gray-900">{audit.id}</span>
+                      <Text variant="bodyMd" className="text-gray-500">
+                        Created :{" "}
+                      </Text>
+                      <Text
+                        variant="bodyMd"
+                        className="text-gray-900 font-medium"
+                      >
+                        {formatDate(audit.createdAt)}
+                      </Text>
+                    </div>
+                    <div>
+                      <Text variant="bodyMd" className="text-gray-500">
+                        Completed :{" "}
+                        <Text
+                          variant="bodyMd"
+                          className="text-gray-900 font-medium"
+                        >
+                          {formatDate(audit.completedAt)}
+                        </Text>
                       </Text>
                     </div>
                     {duration && (
                       <div>
-                        <Text variant="bodySm" className="text-gray-500">
-                          Duration : <span className="text-gray-900">{duration}</span>
+                        <Text variant="bodyMd" className="text-gray-500">
+                          Duration :{" "}
+                        </Text>
+                        <Text
+                          variant="bodyMd"
+                          className="text-gray-900 font-medium"
+                        >
+                          {duration}
                         </Text>
                       </div>
                     )}
                   </div>
-                  {/* Middle Column */}
-                  <div className="space-y-1">
-                    <div>
-                      <Text variant="bodySm" className="text-gray-500">
-                        Model : <span className="text-gray-900">{audit.modelName || audit.modelId || "--"}</span>
-                      </Text>
-                    </div>
-                    <div>
-                      <Text variant="bodySm" className="text-gray-500">
-                        Modules : <span className="text-gray-900">{audit.modules?.map(formatModuleName).join(", ") || "--"}</span>
-                      </Text>
-                    </div>
-                  </div>
                   {/* Right Column */}
                   <div className="space-y-1">
                     <div>
-                      <Text variant="bodySm" className="text-gray-500">
-                        Created : <span className="text-gray-900">{formatDate(audit.createdAt)}</span>
+                      <Text variant="bodyMd" className="text-gray-500">
+                        Model :{" "}
+                        <Text
+                          variant="bodyMd"
+                          className="text-gray-900 font-medium"
+                        >
+                          {audit.modelName || audit.modelId || "--"}
+                        </Text>
                       </Text>
                     </div>
                     <div>
-                      <Text variant="bodySm" className="text-gray-500">
-                        Completed : <span className="text-gray-900">{formatDate(audit.completedAt)}</span>
+                      <Text variant="bodyMd" className="text-gray-500">
+                        Modules :{" "}
+                      </Text>
+                      <Text
+                        variant="bodyMd"
+                        className="text-gray-900 font-medium"
+                      >
+                        {audit.modules?.map(formatModuleName).join(", ") ||
+                          "--"}
                       </Text>
                     </div>
                   </div>
@@ -564,12 +602,15 @@ const EvaluationDetailPage = () => {
                     Results Summary
                   </Text>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-5" style={{ gap: '32px' }}>
+                <div
+                  className="grid grid-cols-2 md:grid-cols-4"
+                  style={{ gap: "32px" }}
+                >
                   <div className="p-4 bg-gray-50 rounded-lg text-center">
                     <Text variant="headingLg" fontWeight="bold">
                       {audit.totalTests || 0}
                     </Text>
-                    <Text variant="bodySm" className="text-gray-500">
+                    <Text variant="bodySm" className="pl-1 text-gray-500">
                       Total Tests
                     </Text>
                   </div>
@@ -581,7 +622,7 @@ const EvaluationDetailPage = () => {
                     >
                       {audit.passedTests || 0}
                     </Text>
-                    <Text variant="bodySm" className="text-gray-500">
+                    <Text variant="bodySm" className="pl-1 text-gray-500">
                       Passed
                     </Text>
                   </div>
@@ -593,7 +634,7 @@ const EvaluationDetailPage = () => {
                     >
                       {audit.failedTests || 0}
                     </Text>
-                    <Text variant="bodySm" className="text-gray-500">
+                    <Text variant="bodySm" className="pl-1 text-gray-500">
                       Failed
                     </Text>
                   </div>
@@ -605,11 +646,11 @@ const EvaluationDetailPage = () => {
                     >
                       {audit.skippedTests || 0}
                     </Text>
-                    <Text variant="bodySm" className="text-gray-500">
+                    <Text variant="bodySm" className="pl-1 text-gray-500">
                       Skipped
                     </Text>
                   </div>
-                  <div className="p-4 bg-blue-50 rounded-lg text-center">
+                  {/* <div className="p-4 bg-blue-50 rounded-lg text-center">
                     <Text
                       variant="headingLg"
                       fontWeight="bold"
@@ -619,10 +660,10 @@ const EvaluationDetailPage = () => {
                         ? `${audit.overallScore.toFixed(1)}%`
                         : "--"}
                     </Text>
-                    {/* <Text variant="bodySm" className="text-gray-500">
+                    <Text variant="bodySm" className="text-gray-500">
                       Score
-                    </Text> */}
-                  </div>
+                    </Text>
+                  </div> */}
                 </div>
               </div>
             )}
@@ -648,7 +689,10 @@ const EvaluationDetailPage = () => {
                 </Text>
               ) : isRunning ? (
                 <div className="block">
-                  <Text variant="bodySm" className="text-gray-600 whitespace-nowrap">
+                  <Text
+                    variant="bodySm"
+                    className="text-gray-600 whitespace-nowrap"
+                  >
                     Results will appear here once the evaluation is complete.
                   </Text>
                 </div>
