@@ -9,6 +9,7 @@ import { Button, Card, DataTable, Icon, ProgressBar, Tag, Text } from "opub-ui";
 import { useEffect, useRef, useState } from "react";
 import WelcomeSection from "../../../components/WelcomeSection";
 import { IconDownload, IconPlus } from "@tabler/icons-react";
+import Image from "next/image";
 
 // GraphQL query to fetch audit details
 const GET_AUDIT_QUERY = `
@@ -53,6 +54,17 @@ const GET_AUDIT_RESULTS_QUERY = `
           actualOutput
         }
       }
+    }
+  }
+`;
+
+// GraphQL query to fetch AI model name by ID
+const GET_AI_MODEL_NAME_QUERY = `
+  query GetAiModelName($model_id: ID!) {
+    aiModel(modelId: $model_id) {
+      id
+      name
+      displayName
     }
   }
 `;
@@ -157,6 +169,37 @@ const EvaluationDetailPage = () => {
 
         setAudit(data.audit);
         lastFetchedAuditIdRef.current = evaluationId;
+
+        // If modelName is missing but modelId is present, fetch model details to get display name
+        if (!data.audit.modelName && data.audit.modelId) {
+          try {
+            const modelData = await request<{
+              aiModel: {
+                id: string;
+                name: string | null;
+                displayName: string | null;
+              };
+            }>(GET_AI_MODEL_NAME_QUERY, { model_id: data.audit.modelId });
+
+            if (modelData?.aiModel) {
+              const displayName =
+                modelData.aiModel.displayName ||
+                modelData.aiModel.name ||
+                data.audit.modelId;
+
+              setAudit((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      modelName: displayName,
+                    }
+                  : prev
+              );
+            }
+          } catch (modelErr) {
+            console.error("Error fetching model name:", modelErr);
+          }
+        }
 
         // If audit is completed, fetch results
         if (data.audit.status === "COMPLETED" || data.audit.completedAt) {
@@ -503,6 +546,28 @@ const EvaluationDetailPage = () => {
               </div>
             )}
 
+            <div className="mb-8 bg-white overview-evaluation-section ">
+              <div className="flex p-6 items-center justify-between">
+                <div className="flex flex-col gap-1">
+                  <Text variant="bodyMd" className="text-gray-500">
+                    Model Name :{" "}
+                  </Text>
+                  <Text variant="headingXl" className="font-bold text-gray-900">
+                    {audit.modelName}
+                  </Text>
+                </div>
+                <div className=" rounded-full">
+                  <Image
+                    src="/images/logos/CDL Logo.png"
+                    alt="CivicDataLab Logo"
+                    width={50}
+                    height={50}
+                    className="object-contain rounded-full cdl-round-logo"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Overview Section */}
             <div className="mb-8 bg-white overview-evaluation-section ">
               <div className="p-6">
@@ -567,17 +632,6 @@ const EvaluationDetailPage = () => {
                   </div>
                   {/* Right Column */}
                   <div className="space-y-1">
-                    <div>
-                      <Text variant="bodyMd" className="text-gray-500">
-                        Model :{" "}
-                        <Text
-                          variant="bodyMd"
-                          className="text-gray-900 font-medium"
-                        >
-                          {audit.modelName || audit.modelId || "--"}
-                        </Text>
-                      </Text>
-                    </div>
                     <div>
                       <Text variant="bodyMd" className="text-gray-500">
                         Modules :{" "}
