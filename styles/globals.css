@@ -445,6 +445,12 @@ html.mobile-menu-open .breadcrumbs-ml {
   overflow: visible;
 }
 
+.overview-evaluation-section {
+  background-color: #faf9f9;
+  border-radius: 16px;
+  border: 1px solid rgba(209, 213, 219, 1.4);
+}
+
 /* Ensure selected nav item extends to both edges */
 .welcome-section nav .nav-item-link.bg-primaryPurple {
   margin-left: -12px;
@@ -801,7 +807,7 @@ html.mobile-menu-open .breadcrumbs-ml {
 
 /* Dialog title styling exactly per spec */
 .prompt-dialog-title {
-  color: #0A0704;
+  color: #0a0704;
   font-size: 20px;
   line-height: 26px;
   font-weight: 700;
@@ -1335,7 +1341,7 @@ html.mobile-menu-open .breadcrumbs-ml {
 .welcome-text {
   width: 224px;
   height: 24px;
-  color: #0A0704;
+  color: #0a0704;
   font-size: 16px;
   line-height: 24px;
   font-weight: 600;
@@ -1382,7 +1388,7 @@ html.mobile-menu-open .breadcrumbs-ml {
 }
 
 .prompt-page-title {
-  color: #0A0704;
+  color: #0a0704;
   font-size: 20px;
   line-height: 26px;
   font-weight: 700;
@@ -1430,8 +1436,8 @@ html.mobile-menu-open .breadcrumbs-ml {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #E2F5C4;
-  color: #0A0704;
+  background: #e2f5c4;
+  color: #0a0704;
   font-size: 14px;
   line-height: 20px;
   font-weight: 600;
@@ -1449,7 +1455,7 @@ html.mobile-menu-open .breadcrumbs-ml {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: #0A0704;
+  color: #0a0704;
   font-size: 14px;
   font-weight: 600;
   line-height: 20px;
@@ -1626,7 +1632,7 @@ html.mobile-menu-open .breadcrumbs-ml {
 }
 
 .prompt-filter-popover-title {
-  color: #60646C;
+  color: #60646c;
   font-size: 16px;
   line-height: 24px;
   font-weight: 600;
@@ -1669,7 +1675,7 @@ html.mobile-menu-open .breadcrumbs-ml {
   height: 100%;
   border: none;
   background: transparent;
-  color: #0A0704;
+  color: #0a0704;
   font-size: 16px;
   line-height: 20px;
 }
@@ -1707,7 +1713,7 @@ html.mobile-menu-open .breadcrumbs-ml {
 .prompt-add-filters-link {
   border: none;
   background: transparent;
-  color: #644FC1;
+  color: #644fc1;
   font-size: 14px;
   line-height: 20px;
   font-weight: 500;
@@ -2953,7 +2959,7 @@ html.mobile-menu-open .breadcrumbs-ml {
   font-size: 14px;
   line-height: 20px;
   letter-spacing: 0px;
-  color: #60646C;
+  color: #60646c;
   height: 20px;
   display: inline-block;
 }
@@ -3238,13 +3244,13 @@ button.audit-config-tab:not(.audit-config-tab-active) {
 .audit-type-label [class*="Text"],
 .audit-type-label [class*="Text"] *,
 .audit-type-label > * {
-  font-weight: 500 ;
-  font-size: 14px ;
-  line-height: 20px ;
-  letter-spacing: 0px ;
-  color: #0A0704 ;
-  margin: 0 ;
-  padding: 0 ;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0px;
+  color: #0a0704;
+  margin: 0;
+  padding: 0;
 }
 
 .audit-type-label span {
@@ -3465,7 +3471,7 @@ label:has(input[value="cultural"]:not(:checked)) {
 .audit-name-section > div:first-child {
   display: flex;
   align-items: center;
-  flex-wrap: nowrap ;
+  flex-wrap: nowrap;
   min-width: 0;
   flex: 1 1 auto;
   overflow: visible;
@@ -3759,13 +3765,13 @@ label:has(input[value="cultural"]:not(:checked)) {
 
 .auditor-name-label [class*="Text"],
 .auditor-name-label > * {
-  font-weight: 500 ;
-  font-size: 14px ;
-  line-height: 20px ;
-  letter-spacing: 0px ;
-  color: #0A0704 ;
-  margin: 0 ;
-  padding: 0 ;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0px;
+  color: #0a0704;
+  margin: 0;
+  padding: 0;
 }
 
 .auditor-name-label [class*="Text"] *:not(span) {
@@ -3816,13 +3822,13 @@ label:has(input[value="cultural"]:not(:checked)) {
 .scope-of-audit-label > *,
 .evaluation-modules-label [class*="Text"],
 .evaluation-modules-label > * {
-  font-weight: 500 ;
-  font-size: 14px ;
-  line-height: 20px ;
-  letter-spacing: 0px ;
-  color: #0A0704 ;
-  margin: 0 ;
-  padding: 0 ;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0px;
+  color: #0a0704;
+  margin: 0;
+  padding: 0;
 }
 
 .organisation-name-label [class*="Text"] *:not(span),
