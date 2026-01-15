@@ -199,7 +199,7 @@ const TestCases: React.FC<TestCasesProps> = ({
         <div className="mb-4">
           <Text
             variant="headingMd"
-            className="select-prompt-library-heading block"
+            className="select-prompt-library-heading block whitespace-nowrap"
           >
             Select Prompt Dataset
           </Text>
@@ -296,14 +296,14 @@ const TestCases: React.FC<TestCasesProps> = ({
                   "Input, Expected output, etc.\nInput, Expected output, etc.\n..."
                 }
               />
-              <div className="test-cases-format-warning">
-                <Icon source={Icons.alert} size={16} color="critical" />
+              <div className="flex items-center gap-2 mt-2 text-black [&_svg]:text-black [&_svg]:fill-black [&_svg]:stroke-black">
+                <Icon source={Icons.alert} size={16} className="flex-shrink-0" />
                 <Text
                   variant="bodySm"
-                  className="test-cases-format-warning-text"
+                  className="text-black"
                 >
                   Your test cases should be comma separated values in the format{" "}
-                  <strong>Input</strong>, <strong>Expected output</strong>, etc
+                  <strong className="text-black">Input</strong>, <strong className="text-black">Expected output</strong>, etc
                 </Text>
               </div>
             </div>

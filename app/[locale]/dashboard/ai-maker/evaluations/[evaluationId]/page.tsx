@@ -5,7 +5,7 @@ import { useGraphQL } from "@/lib/api";
 import type { ColumnDef } from "@tanstack/react-table";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Button, DataTable, Icon, ProgressBar, Tag, Text } from "opub-ui";
+import { Button, Card, DataTable, Icon, ProgressBar, Tag, Text } from "opub-ui";
 import { useEffect, useRef, useState } from "react";
 import WelcomeSection from "../../../components/WelcomeSection";
 import { IconDownload, IconPlus } from "@tabler/icons-react";
@@ -88,6 +88,26 @@ type TestCase = {
   evaluationMetric: string;
   riskSeverity: "High" | "Medium" | "Low" | "No risk";
   reason: string;
+};
+
+// Function to transform backend module names to display names
+const formatModuleName = (moduleName: string): string => {
+  const moduleMap: Record<string, string> = {
+    BIAS_FAIRNESS: "Bias and Fairness",
+    HALLUCINATION_MISINFORMATION: "Hallucination and MisInformation",
+    PRIVACY_SAFETY: "Privacy and Safety",
+  };
+
+  // Check if exact match exists
+  if (moduleMap[moduleName]) {
+    return moduleMap[moduleName];
+  }
+
+  // Fallback: convert underscore to space and capitalize words
+  return moduleName
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
 };
 
 const EvaluationDetailPage = () => {
@@ -468,28 +488,10 @@ const EvaluationDetailPage = () => {
                   <Button kind="primary">Back to List</Button>
                 </Link>
                 <Link href={`/${locale}/dashboard/ai-maker/evaluations/new`}>
-                  <Button
-                    kind="secondary"
-                    // icon={<Icon source={IconPlus} size={18} />}
-                  >
-                    New Evaluation
-                  </Button>
+                  <Button kind="secondary">New Evaluation</Button>
                 </Link>
               </div>
             </div>
-
-            {/* Running indicator */}
-            {isRunning && (
-              <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <ProgressBar value={60} max={100} size="small" />
-                  <Text variant="bodySm" className="text-yellow-800">
-                    Evaluation is in progress. Results will appear automatically
-                    when complete.
-                  </Text>
-                </div>
-              </div>
-            )}
 
             {/* Error message */}
             {audit.errorMessage && (
@@ -501,71 +503,68 @@ const EvaluationDetailPage = () => {
             )}
 
             {/* Overview Section */}
-            <div className="mb-8 p-6 bg-white rounded-lg border border-gray-200">
-              <Text variant="headingMd" className="mb-4">
-                Evaluation Overview
-              </Text>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <Text variant="bodySm" className="text-gray-500">
-                    Evaluation ID
-                  </Text>
-                  <Text variant="bodyMd" fontWeight="medium">
-                    {audit.id}
+            <div className="mb-8">
+              <div className="bg-white rounded-2xl border border-[#C4B8F3] p-6">
+                <div className="mb-5">
+                  <Text variant="headingMd" fontWeight="bold">
+                    Evaluation Overview
                   </Text>
                 </div>
-                <div>
-                  <Text variant="bodySm" className="text-gray-500">
-                    Model
-                  </Text>
-                  <Text variant="bodyMd" fontWeight="medium">
-                    {audit.modelName || audit.modelId || "--"}
-                  </Text>
-                </div>
-                <div>
-                  <Text variant="bodySm" className="text-gray-500">
-                    Created
-                  </Text>
-                  <Text variant="bodyMd" fontWeight="medium">
-                    {formatDate(audit.createdAt)}
-                  </Text>
-                </div>
-                <div>
-                  <Text variant="bodySm" className="text-gray-500">
-                    Completed
-                  </Text>
-                  <Text variant="bodyMd" fontWeight="medium">
-                    {formatDate(audit.completedAt)}
-                  </Text>
-                </div>
-                {duration && (
-                  <div>
-                    <Text variant="bodySm" className="text-gray-500">
-                      Duration
-                    </Text>
-                    <Text variant="bodyMd" fontWeight="medium">
-                      {duration}
-                    </Text>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-1">
+                  {/* Left Column */}
+                  <div className="space-y-1">
+                    <div>
+                      <Text variant="bodySm" className="text-gray-500">
+                        Evaluation ID : <span className="text-gray-900">{audit.id}</span>
+                      </Text>
+                    </div>
+                    {duration && (
+                      <div>
+                        <Text variant="bodySm" className="text-gray-500">
+                          Duration : <span className="text-gray-900">{duration}</span>
+                        </Text>
+                      </div>
+                    )}
                   </div>
-                )}
-                <div>
-                  <Text variant="bodySm" className="text-gray-500">
-                    Modules
-                  </Text>
-                  <Text variant="bodyMd" fontWeight="medium">
-                    {audit.modules?.join(", ") || "--"}
-                  </Text>
+                  {/* Middle Column */}
+                  <div className="space-y-1">
+                    <div>
+                      <Text variant="bodySm" className="text-gray-500">
+                        Model : <span className="text-gray-900">{audit.modelName || audit.modelId || "--"}</span>
+                      </Text>
+                    </div>
+                    <div>
+                      <Text variant="bodySm" className="text-gray-500">
+                        Modules : <span className="text-gray-900">{audit.modules?.map(formatModuleName).join(", ") || "--"}</span>
+                      </Text>
+                    </div>
+                  </div>
+                  {/* Right Column */}
+                  <div className="space-y-1">
+                    <div>
+                      <Text variant="bodySm" className="text-gray-500">
+                        Created : <span className="text-gray-900">{formatDate(audit.createdAt)}</span>
+                      </Text>
+                    </div>
+                    <div>
+                      <Text variant="bodySm" className="text-gray-500">
+                        Completed : <span className="text-gray-900">{formatDate(audit.completedAt)}</span>
+                      </Text>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Test Results Summary */}
             {(audit.status === "COMPLETED" || audit.completedAt) && (
-              <div className="mb-8 p-6 bg-white rounded-lg border border-gray-200">
-                <Text variant="headingMd" className="mb-4">
-                  Results Summary
-                </Text>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="mb-8 p-6 bg-white rounded-2xl border border-[#C4B8F3]">
+                <div className="mb-5">
+                  <Text variant="headingMd" fontWeight="bold">
+                    Results Summary
+                  </Text>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-5" style={{ gap: '32px' }}>
                   <div className="p-4 bg-gray-50 rounded-lg text-center">
                     <Text variant="headingLg" fontWeight="bold">
                       {audit.totalTests || 0}
@@ -620,19 +619,21 @@ const EvaluationDetailPage = () => {
                         ? `${audit.overallScore.toFixed(1)}%`
                         : "--"}
                     </Text>
-                    <Text variant="bodySm" className="text-gray-500">
+                    {/* <Text variant="bodySm" className="text-gray-500">
                       Score
-                    </Text>
+                    </Text> */}
                   </div>
                 </div>
               </div>
             )}
 
             {/* Test Cases Table */}
-            <div className="p-6 bg-white rounded-lg border border-gray-200">
-              <Text variant="headingMd" className="mb-4">
-                Test Cases
-              </Text>
+            <div className="p-6 bg-white rounded-2xl border border-[#C4B8F3]">
+              <div className="mb-5">
+                <Text variant="headingMd" fontWeight="bold">
+                  Test Cases
+                </Text>
+              </div>
 
               {isLoadingResults ? (
                 <div className="flex items-center justify-center py-8">
@@ -645,6 +646,12 @@ const EvaluationDetailPage = () => {
                 <Text variant="bodySm" className="text-red-600 py-4">
                   {resultsError}
                 </Text>
+              ) : isRunning ? (
+                <div className="block">
+                  <Text variant="bodySm" className="text-gray-600 whitespace-nowrap">
+                    Results will appear here once the evaluation is complete.
+                  </Text>
+                </div>
               ) : testCasesData.length > 0 ? (
                 <DataTable
                   defaultRowCount={100}
@@ -662,10 +669,6 @@ const EvaluationDetailPage = () => {
                   hideFooter={true}
                   hideSelection={true}
                 />
-              ) : isRunning ? (
-                <Text variant="bodySm" className="py-4 text-gray-600">
-                  Results will appear here once the evaluation is complete.
-                </Text>
               ) : (
                 <Text variant="bodySm" className="py-4 text-gray-600">
                   No test results found.

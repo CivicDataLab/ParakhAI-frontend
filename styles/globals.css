@@ -4629,31 +4629,6 @@ label:has(input[value="cultural"]:not(:checked)) {
   padding: 0;
 }
 
-.test-cases-format-warning {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-top: 8px;
-  color: #ef4444;
-}
-
-.test-cases-format-warning [class*="Icon"] {
-  color: #ef4444;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.test-cases-format-warning-text {
-  color: #ef4444;
-  font-size: 14px;
-  line-height: 20px;
-}
-
-.test-cases-format-warning strong {
-  color: #ef4444;
-  font-weight: 600;
-}
-
 .test-cases-dropzone-container {
   width: 1000px;
 }
