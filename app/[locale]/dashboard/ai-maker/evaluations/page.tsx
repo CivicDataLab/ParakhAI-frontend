@@ -183,19 +183,19 @@ const AuditsListPage = () => {
         );
       },
     }),
-    columnHelper.accessor("overallScore", {
-      header: "Score",
-      cell: (info) => {
-        const score = info.getValue();
-        if (score === null || score === undefined)
-          return <Text variant="bodySm">--</Text>;
-        return (
-          <Text variant="bodySm" fontWeight="semibold">
-            {score.toFixed(1)}%
-          </Text>
-        );
-      },
-    }),
+    // columnHelper.accessor("overallScore", {
+    //   header: "Score",
+    //   cell: (info) => {
+    //     const score = info.getValue();
+    //     if (score === null || score === undefined)
+    //       return <Text variant="bodySm">--</Text>;
+    //     return (
+    //       <Text variant="bodySm" fontWeight="semibold">
+    //         {score.toFixed(1)}%
+    //       </Text>
+    //     );
+    //   },
+    // }),
     columnHelper.accessor("createdAt", {
       header: "Created",
       cell: (info) => (
