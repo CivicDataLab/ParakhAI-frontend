@@ -7,7 +7,17 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Button, DataTable, ProgressBar, Tag, Text } from "opub-ui";
 import { useEffect, useState } from "react";
-import WelcomeSection from "../../components/WelcomeSection";
+import WelcomeSection from "../../../components/WelcomeSection";
+
+const GET_ORG_DETAILS = `
+  query GetOrgDetails($orgId: ID!) {
+    organization(id: $orgId) {
+      id
+      name
+      logoUrl
+    }
+  }
+`;
 
 // GraphQL query to fetch user's audits
 const AUDITS_QUERY = `
@@ -55,6 +65,7 @@ const AuditsListPage = () => {
   } = useGraphQL();
 
   const [audits, setAudits] = useState<Audit[]>([]);
+  const [organization, setOrganization] = useState<{ name: string; logoUrl: string | null } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,12 +78,18 @@ const AuditsListPage = () => {
         setIsLoading(true);
         setError(null);
 
-        const data = await request<{ audits: Audit[] }>(AUDITS_QUERY, {
-          status: null,
-          limit: 100,
-        });
+        const [auditsData, orgData] = await Promise.all([
+          request<{ audits: Audit[] }>(AUDITS_QUERY, {
+            status: null,
+            limit: 100,
+          }, { organization: params.orgId as string }),
+          request(GET_ORG_DETAILS, { orgId: params.orgId })
+        ]);
 
-        setAudits(data?.audits || []);
+        setAudits(auditsData?.audits || []);
+        if (orgData?.organization) {
+          setOrganization(orgData.organization);
+        }
       } catch (err: any) {
         console.error("Error fetching audits:", err);
         setError(err?.message || "Failed to load audits");
@@ -123,7 +140,7 @@ const AuditsListPage = () => {
       header: "Evaluation Name",
       cell: (info) => (
         <Link
-          href={`/${locale}/dashboard/ai-maker/evaluations/${info.row.original.id}`}
+          href={`/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/${info.row.original.id}`}
           className="text-primary-purple hover:underline font-medium"
         >
           {info.getValue() || `Evaluation #${info.row.original.id.slice(0, 8)}`}
@@ -210,7 +227,7 @@ const AuditsListPage = () => {
 
   // Handle new audit button click
   const handleNewAudit = () => {
-    router.push(`/${locale}/dashboard/ai-maker/evaluations/new`);
+    router.push(`/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/new`);
   };
 
   return (
@@ -219,14 +236,15 @@ const AuditsListPage = () => {
         data={[
           { href: "/", label: "Home" },
           { href: "/dashboard", label: "User Dashboard" },
-          { href: "/dashboard/ai-maker", label: "AI Maker Dashboard" },
+          { href: `/${locale}/dashboard/ai-maker`, label: "AI Maker" },
+          { href: `/${locale}/dashboard/ai-maker/${params.orgId}`, label: organization?.name || "Dashboard" },
           { href: "#", label: "Evaluations" },
         ]}
       />
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 overflow-x-visible">
         <div className="flex flex-1 flex-col lg:flex-row gap-6 md:gap-8 lg:-ml-[120px] xl:-ml-[130px]">
-          <WelcomeSection />
+          <WelcomeSection orgName={organization?.name} orgLogo={organization?.logoUrl} />
 
           <div className="flex-1 bg-gray-50 p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0">
             {/* Header */}

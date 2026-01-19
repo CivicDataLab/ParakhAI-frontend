@@ -12,6 +12,14 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'dev.civicdataspace.in',
+      },
+      {
+        protocol: 'https',
+        hostname: 'dev.api.civicdataspace.in',
+      },
     ],
   },
 };

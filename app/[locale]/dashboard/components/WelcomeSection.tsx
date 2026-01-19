@@ -1,11 +1,11 @@
 'use client';
 
+import { useAppSession } from '@/lib/session';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Divider } from 'opub-ui';
 import { useEffect, useMemo, useState } from 'react';
-import { useAppSession } from '@/lib/session';
 
 type BaseNavItem = {
   icon: string;
@@ -23,9 +23,22 @@ const baseNavItems: BaseNavItem[] = [
   { icon: '/images/icons/settings.png', label: 'Settings', isImage: true },
 ];
 
-const WelcomeSection = () => {
+const WelcomeSection = ({ 
+  orgName, 
+  orgLogo 
+}: { 
+  orgName?: string; 
+  orgLogo?: string | null 
+}) => {
   const pathname = usePathname();
   const { user } = useAppSession();
+  const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || "";
+  const [isImageValid, setIsImageValid] = useState(!!orgLogo);
+
+  useEffect(() => {
+    setIsImageValid(!!orgLogo);
+    console.log("DEBUG: WelcomeSection props", { orgName, orgLogo });
+  }, [orgLogo, orgName]);
 
   const normalizedPath = useMemo(() => {
     if (!pathname) return '/';
@@ -63,14 +76,36 @@ const WelcomeSection = () => {
     return validLocales.includes(firstSegment) ? `/${firstSegment}` : '';
   }, [pathname]);
 
+  const orgIdFromPath = useMemo(() => {
+    const parts = normalizedPath.split("/");
+    // index 0 is empty, index 1 is 'dashboard', index 2 is 'ai-maker', index 3 might be [orgId]
+    if (parts[1] === "dashboard" && parts[2] === "ai-maker" && parts[3] && !["ai-models", "evaluations", "prompt-libraries"].includes(parts[3])) {
+      return parts[3];
+    }
+    return null;
+  }, [normalizedPath]);
+
   const navItems = useMemo(
     () =>
-      baseNavItems.map((item) => ({
-        ...item,
-        href: item.path ? `${localePrefix}${item.path}` : '#',
-        path: item.path,
-      })),
-    [localePrefix],
+      baseNavItems.map((item) => {
+        let href = item.path ? `${localePrefix}${item.path}` : "#";
+        
+        if (orgIdFromPath && item.path && item.path.startsWith("/dashboard/ai-maker")) {
+          const pathSuffix = item.path.replace("/dashboard/ai-maker", "");
+          if (pathSuffix === "") {
+            href = `${localePrefix}/dashboard/ai-maker/${orgIdFromPath}`;
+          } else {
+            href = `${localePrefix}/dashboard/ai-maker/${orgIdFromPath}${pathSuffix}`;
+          }
+        }
+
+        return {
+          ...item,
+          href,
+          path: item.path,
+        };
+      }),
+    [localePrefix, orgIdFromPath],
   );
 
   // Set initial selected item based on pathname
@@ -102,19 +137,30 @@ const WelcomeSection = () => {
         {/* Logo */}
         <div className="mb-2 flex justify-center">
           <div className="cdl-logo-container">
-            <Image
-              src="/images/logos/CDL Logo.png"
-              alt="CivicDataLab Logo"
-              width={140}
-              height={140}
-              className="object-contain"
-            />
+            {orgLogo && isImageValid ? (
+              <Image
+                src={`${dataspaceUrl.replace(/\/$/, "")}${orgLogo}`}
+                alt={`${orgName} Logo`}
+                width={140}
+                height={140}
+                onError={() => setIsImageValid(false)}
+                className="object-contain"
+              />
+            ) : (
+              <Image
+                src="/images/logos/parakhai-logo.png"
+                alt="ParakhAI Logo"
+                width={140}
+                height={140}
+                className="object-contain"
+              />
+            )}
           </div>
         </div>
         
         {/* Welcome Text */}
         <p className="welcome-text sm:pt-4 md:pt-0">
-          Welcome, {user?.name || 'CivicDataLab'}
+          Welcome, {user?.name || (orgName ? orgName : 'CivicDataLab')}
         </p>
         
         {/* Switch Roles Button */}

@@ -9,9 +9,20 @@ import {
   IconMinus,
   IconX
 } from '@tabler/icons-react';
+import { useParams } from 'next/navigation';
 import { Button, Card, DataTable, Dialog, Popover, Tag, Text } from 'opub-ui';
 import React from 'react';
-import WelcomeSection from '../../components/WelcomeSection';
+import WelcomeSection from '../../../components/WelcomeSection';
+
+const GET_ORG_DETAILS = `
+  query GetOrgDetails($orgId: ID!) {
+    organization(id: $orgId) {
+      id
+      name
+      logoUrl
+    }
+  }
+`;
 
 type PromptLibrary = {
   id: string;
@@ -118,6 +129,7 @@ const PromptLibrariesPage = () => {
   const SearchIcon = Icons.search;
   const ClearIcon = Icons.cross;
   const { request, isAuthenticated } = useGraphQL();
+  const params = useParams();
 
   const [searchValue, setSearchValue] = React.useState('');
   const [selectedSectors, setSelectedSectors] = React.useState<string[]>([]);
@@ -131,6 +143,7 @@ const PromptLibrariesPage = () => {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [showNotice, setShowNotice] = React.useState(true);
   const [promptLibraries, setPromptLibraries] = React.useState<PromptLibrary[]>([]);
+  const [organization, setOrganization] = React.useState<{ name: string; logoUrl: string | null } | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const handleToggleSelection = (
@@ -151,29 +164,35 @@ const PromptLibrariesPage = () => {
         setIsLoading(true);
         setError(null);
 
-        const data = await request<{
-          promptDatasets: Array<{
-            id: string;
-            title: string;
-            description?: string;
-            promptMetadata?: {
-              taskType?: string;
-              domain?: string;
-              targetLanguages?: string[];
-            };
-            resources: Array<{
+        const [datasetsResponse, orgResponse] = await Promise.all([
+          request<{
+            promptDatasets: Array<{
               id: string;
-              name: string;
-              promptFormat?: string;
-              promptCount?: number;
+              title: string;
+              description?: string;
+              promptMetadata?: {
+                taskType?: string;
+                domain?: string;
+                targetLanguages?: string[];
+              };
+              resources: Array<{
+                id: string;
+                name: string;
+                promptFormat?: string;
+                promptCount?: number;
+              }>;
             }>;
-          }>;
-        }>(PROMPT_DATASETS_QUERY, {
-          limit: 50,
-          isPublic: true,
-        });
+          }>(PROMPT_DATASETS_QUERY, {
+            limit: 50,
+            isPublic: true,
+          }, { organization: params.orgId as string }),
+          request(GET_ORG_DETAILS, { orgId: params.orgId })
+        ]);
 
-        const datasets = data?.promptDatasets || [];
+        const datasets = datasetsResponse?.promptDatasets || [];
+        if (orgResponse?.organization) {
+          setOrganization(orgResponse.organization);
+        }
         const formatted: PromptLibrary[] = datasets.map((ds) => ({
           id: ds.id,
           title: ds.title,
@@ -286,13 +305,14 @@ const PromptLibrariesPage = () => {
         data={[
           { href: '/', label: 'Home' },
           { href: '/dashboard', label: 'User Dashboard' },
-          { href: '/dashboard/ai-maker', label: 'AI Maker Dashboard' },
+          { href: `/${params.locale}/dashboard/ai-maker`, label: 'AI Maker' },
+          { href: `/${params.locale}/dashboard/ai-maker/${params.orgId}`, label: organization?.name || 'Dashboard' },
           { href: '#', label: 'Prompt Libraries' },
         ]}
       />
 
       <div className="flex flex-1 gap-8 px-8 main-content-wrapper">
-        <WelcomeSection />
+        <WelcomeSection orgName={organization?.name} orgLogo={organization?.logoUrl} />
 
         <div className="flex-1 prompt-libraries-content p-10">
           <div className="prompt-page-header">

@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
 import { GraphQLClient } from 'graphql-request';
+import React from 'react';
 import { useAppSession } from './session';
 
 /**
@@ -43,11 +43,15 @@ export function getGraphQLEndpoint(): string {
  * @param accessToken - The Keycloak access token (from useAppSession)
  * @returns Configured GraphQLClient instance
  */
-export function createGraphQLClient(accessToken: string | null): GraphQLClient {
+export function createGraphQLClient(
+  accessToken: string | null,
+  additionalHeaders: Record<string, string> = {}
+): GraphQLClient {
   const endpoint = getGraphQLEndpoint();
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    ...additionalHeaders,
   };
 
   // Add Authorization header if access token is available
@@ -74,9 +78,11 @@ export function createGraphQLClient(accessToken: string | null): GraphQLClient {
 export async function graphqlRequest<T = any>(
   query: string,
   variables: Record<string, any> = {},
-  accessToken: string | null = null
+  accessToken: string | null = null,
+  additionalHeaders: Record<string, string> = {}
 ): Promise<T> {
-  const client = createGraphQLClient(accessToken);
+  const client = createGraphQLClient(accessToken, additionalHeaders);
+
   try {
     return await client.request<T>(query, variables);
   } catch (error: any) {
@@ -126,7 +132,8 @@ export function useGraphQL() {
   // Memoize request function to prevent unnecessary re-renders
   const request = React.useCallback(async <T = any>(
     query: string,
-    variables: Record<string, any> = {}
+    variables: Record<string, any> = {},
+    headers: Record<string, string> = {}
   ): Promise<T> => {
     if (status === 'loading') {
       throw new Error('Session is still loading. Please wait.');
@@ -137,7 +144,7 @@ export function useGraphQL() {
     }
 
     try {
-      const result = await graphqlRequest<T>(query, variables, accessToken);
+      const result = await graphqlRequest<T>(query, variables, accessToken, headers);
       return result;
     } catch (error: any) {
       // More specific error handling
