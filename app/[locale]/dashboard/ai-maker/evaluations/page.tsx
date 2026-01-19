@@ -22,7 +22,6 @@ const AUDITS_QUERY = `
       totalTests
       passedTests
       failedTests
-      overallScore
       createdAt
       startedAt
       completedAt
@@ -40,7 +39,6 @@ type Audit = {
   totalTests: number;
   passedTests: number;
   failedTests: number;
-  overallScore: number | null;
   createdAt: string;
   startedAt: string | null;
   completedAt: string | null;

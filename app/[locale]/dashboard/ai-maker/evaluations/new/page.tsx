@@ -94,7 +94,6 @@ const REQUEST_AUDIT_MUTATION = `
         passedTests
         failedTests
         skippedTests
-        overallScore
       }
     }
   }

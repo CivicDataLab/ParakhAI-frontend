@@ -27,7 +27,6 @@ const GET_AUDIT_QUERY = `
       passedTests
       failedTests
       skippedTests
-      overallScore
       findings
       recommendations
       errorMessage
@@ -82,7 +81,6 @@ type Audit = {
   passedTests: number;
   failedTests: number;
   skippedTests: number;
-  overallScore: number | null;
   findings: any;
   recommendations: any;
   errorMessage: string | null;
