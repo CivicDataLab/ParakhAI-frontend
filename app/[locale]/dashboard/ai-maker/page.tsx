@@ -2,30 +2,38 @@
 
 import BreadCrumbs from "@/components/Breadcrumbs";
 import { Icons } from "@/components/icons";
+import { useGraphQL } from "@/lib/api";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Button, Card, DataTable, Text } from "opub-ui";
+import { useEffect, useState } from "react";
 import WelcomeSection from "../components/WelcomeSection";
 
-// Define audit data type
-type Audit = {
-  model: string;
-  auditTime: string;
-  auditId: string;
-  auditType: string;
-  testResult: string;
-  auditor: string;
+// Define evaluation data type
+type Evaluation = {
+  id: string;
+  name: string;
+  status: string;
+  passedTests: number | null;
+  failedTests: number | null;
+  totalTests: number | null;
+  skippedTests: number | null;
+  createdAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  modelName: string | null;
 };
 
-type Model = {
-  title: string;
-  desc: string;
-  date: string;
-  testCases: string;
-  audits: string;
-  tags: string[];
+type AIModel = {
+  id: string;
+  name: string;
+  displayName: string;
+  description: string;
   version: string;
+  auditCount: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
 const AIMakerDashboard = () => {
@@ -36,60 +44,92 @@ const AIMakerDashboard = () => {
     "https://dev.civicdataspace.in/dashboard";
   const addModelUrl = aiMakerBaseUrl.replace(/\/$/, "");
 
-  const models: Model[] = [];
-  //   {
-  //     title: 'Region-al',
-  //     desc: 'Context-aware translations between regional and less-common languages.',
-  //     date: '21 Sep 2024',
-  //     testCases: '1023 test cases',
-  //     audits: '2 audits',
-  //     tags: ['Translator', 'Low-Resource'],
-  //     version: 'Ver. 1.2.1',
-  //   },
-  //   {
-  //     title: 'LinguaFlow',
-  //     desc: 'Multilingual model for smooth real-time translation across major world languages.',
-  //     date: '21 Sep 2024',
-  //     testCases: '1023 test cases',
-  //     audits: '2 audits',
-  //     tags: ['Translator'],
-  //     version: 'Ver. 1.2.1',
-  //   },
-  //   {
-  //     title: 'Transcend',
-  //     desc: 'High-fidelity translation model for business and legal documentation.',
-  //     date: '21 Sep 2024',
-  //     testCases: '1023 test cases',
-  //     audits: '2 audits',
-  //     tags: ['Translator', 'Technical'],
-  //     version: 'Ver. 1.2.1',
-  //   },
-  //   {
-  //     title: 'Mediscribe',
-  //     desc: 'Language model to interpret clinical text and generate patient-friendly summaries.',
-  //     date: '21 Sep 2024',
-  //     testCases: '1023 test cases',
-  //     audits: '2 audits',
-  //     tags: ['Paraphrase', 'Technical'],
-  //     version: 'Ver. 1.2.1',
-  //   },
-  // ];
+  // GraphQL queries
+  const GET_AI_MODELS = `
+    query GetAIModels($limit: Int) {
+      aiModels(limit: $limit) {
+        id
+        name
+        displayName
+        version
+        description
+        auditCount
+        createdAt
+        updatedAt
+      }
+    }
+  `;
+
+  const GET_EVALUATIONS = `
+    query GetEvaluations($limit: Int) {
+      audits(limit: $limit) {
+        id
+        name
+        status
+        totalTests
+        passedTests
+        failedTests
+        skippedTests
+        createdAt
+        startedAt
+        completedAt
+        modelName
+      }
+    }
+  `;
+
+  // GraphQL hook
+  const { request } = useGraphQL();
+  
+  // State for data and loading
+  const [models, setModels] = useState<AIModel[]>([]);
+  const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch data on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [modelsResponse, evaluationsResponse] = await Promise.all([
+          request(GET_AI_MODELS, { limit: 6 }),
+          request(GET_EVALUATIONS, { limit: 5 })
+        ]);
+
+        const modelsData = modelsResponse?.aiModels || [];
+        const evaluationsData = evaluationsResponse?.audits || [];
+
+        setModels(modelsData);
+        setEvaluations(evaluationsData);
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [request]);
 
   const hasModels = models.length > 0;
+  const hasEvaluations = evaluations.length > 0;
+
+  // Calculate metrics
+  const totalTestCases = evaluations.reduce((sum, evaluation) => sum + (evaluation.totalTests || 0), 0);
+  const totalIssues = evaluations.reduce((sum, evaluation) => sum + (evaluation.failedTests || 0), 0);
 
   const metrics = [
-    { label: "Audit Runs", value: hasModels ? "16" : "--" },
-    { label: "Test Cases", value: hasModels ? "1250" : "--" },
-    { label: "Models Covered", value: hasModels ? "4" : "--" },
-    { label: "Issues Flagged", value: hasModels ? "45" : "--" },
+    { label: "Audit Runs", value: evaluations.length.toString() || "--" },
+    { label: "Test Cases", value: totalTestCases.toString() || "--" },
+    { label: "Models Covered", value: models.length.toString() || "--" },
+    { label: "Issues Flagged", value: totalIssues.toString() || "--" },
   ];
 
   // Create column helper
-  const columnHelper = createColumnHelper<Audit>();
+  const columnHelper = createColumnHelper<Evaluation>();
 
   // Define columns
   const columns = [
-    columnHelper.accessor("model", {
+    columnHelper.accessor("modelName", {
       header: () => (
         <div className="flex items-center gap-2">
           <img
@@ -101,89 +141,55 @@ const AIMakerDashboard = () => {
           <span>Model</span>
         </div>
       ),
-      cell: (info) => (
-        <Link href={`/model/${info.getValue()}`} className="audit-model-link">
-          {info.getValue()}
-        </Link>
-      ),
+      cell: (info) => {
+        const modelName = info.getValue();
+        return modelName ? (
+          <Text variant="bodySm">{modelName}</Text>
+        ) : (
+          <Text variant="bodySm" className="text-gray-500">Unknown Model</Text>
+        );
+      },
     }),
-    columnHelper.accessor("auditTime", {
+    columnHelper.accessor("createdAt", {
       header: "Evaluation Time",
+      cell: (info) => new Date(info.getValue()).toLocaleDateString(),
     }),
-    columnHelper.accessor("auditId", {
+    columnHelper.accessor("id", {
       header: "Evaluation ID",
       cell: (info) => `ID #${info.getValue()}`,
     }),
-    columnHelper.accessor("auditType", {
-      header: "Evaluation Type",
+    columnHelper.accessor("status", {
+      header: "Status",
     }),
-    columnHelper.accessor("testResult", {
+    columnHelper.accessor("totalTests", {
       header: "Test Result",
       cell: (info) => {
+        const total = info.getValue();
+        const row = info.row.original;
+        const passed = row.passedTests;
+        const failed = row.failedTests;
+        
+        if (!total || !passed || !failed) {
+          return <Text variant="bodySm">No data</Text>;
+        }
+        
         return (
           <div className="flex items-center gap-2">
             <div className="test-result-bar">
-              <div className="test-result-pass" />
-              <div className="test-result-fail" />
+              <div 
+                className="test-result-pass" 
+                style={{ width: `${(passed / total) * 100}%` }}
+              />
+              <div 
+                className="test-result-fail" 
+                style={{ width: `${(failed / total) * 100}%` }}
+              />
             </div>
-            <Text variant="bodySm">{info.getValue()} pa...</Text>
+            <Text variant="bodySm">{passed}/{total} passed</Text>
           </div>
         );
       },
     }),
-    columnHelper.accessor("auditor", {
-      header: "Auditor",
-      cell: (info) => (
-        <div className="flex items-center gap-2">
-          <div className="auditor-avatar">{info.getValue()[0]}</div>
-          <Text variant="bodySm">{info.getValue()}</Text>
-        </div>
-      ),
-    }),
-  ];
-
-  // Define audit data
-  const auditData: Audit[] = [
-    {
-      model: "Region-al",
-      auditTime: "25 / 06 / 2021",
-      auditId: "12345",
-      auditType: "Technical",
-      testResult: "120/240",
-      auditor: "Divya",
-    },
-    {
-      model: "LinguaFlow",
-      auditTime: "25 / 06 / 2021",
-      auditId: "12346",
-      auditType: "Technical",
-      testResult: "120/240",
-      auditor: "Divya",
-    },
-    {
-      model: "Transcend",
-      auditTime: "25 / 06 / 2021",
-      auditId: "12347",
-      auditType: "Technical",
-      testResult: "120/240",
-      auditor: "Divya",
-    },
-    {
-      model: "Mediscribe",
-      auditTime: "25 / 06 / 2021",
-      auditId: "12348",
-      auditType: "Technical",
-      testResult: "120/240",
-      auditor: "Divya",
-    },
-    {
-      model: "Region-al",
-      auditTime: "25 / 06 / 2021",
-      auditId: "12349",
-      auditType: "Technical",
-      testResult: "120/240",
-      auditor: "Divya",
-    },
   ];
 
   return (
@@ -242,27 +248,27 @@ const AIMakerDashboard = () => {
                 )}
               </div>
               {hasModels ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 w-full gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {models.map((model) => {
                     // Card metadata (top row inside card)
                     const metadataContent = [
                       {
                         icon: Icons.calendar,
                         label: "Created",
-                        value: model.date,
-                        tooltip: model.date,
+                        value: new Date(model.createdAt).toLocaleDateString(),
+                        tooltip: new Date(model.createdAt).toLocaleDateString(),
                       },
                       {
                         icon: Icons.testPipe,
-                        label: "Test cases",
-                        value: model.testCases,
-                        tooltip: model.testCases,
+                        label: "Evaluations",
+                        value: `${model.auditCount} evaluations`,
+                        tooltip: `${model.auditCount} evaluations`,
                       },
                       {
                         icon: Icons.discountCheck,
-                        label: "Audits",
-                        value: model.audits,
-                        tooltip: model.audits,
+                        label: "Version",
+                        value: model.version || "N/A",
+                        tooltip: model.version || "N/A",
                       },
                     ] as any;
 
@@ -275,23 +281,27 @@ const AIMakerDashboard = () => {
                       },
                     ];
 
-                    const type = model.tags.map((tag) => ({
+                    const type = ["AI Model"].map((tag: string) => ({
                       label: tag,
                       fillColor: "#E2F5C4",
                       borderColor: "#E2F5C4",
                     }));
 
+                    const commonProps = {
+                      title: model.displayName,
+                      description: model.description,
+                      variation: "collapsed" as const,
+                      iconColor: "highlight" as const,
+                      metadataContent,
+                      footerContent,
+                      type,
+                      tag: ["AI Model"],
+                    };
+
                     return (
-                      <div key={model.title} className="model-card">
+                      <div key={model.id} className="w-full">
                         <Card
-                          title={model.title}
-                          description={model.desc}
-                          variation="collapsed"
-                          iconColor="highlight"
-                          metadataContent={metadataContent}
-                          footerContent={footerContent}
-                          type={type}
-                          tag={model.tags}
+                          {...commonProps}
                         />
                       </div>
                     );
@@ -338,12 +348,12 @@ const AIMakerDashboard = () => {
                   See All
                 </Link>
               </div>
-              {hasModels ? (
+              {hasEvaluations ? (
                 <DataTable
-                  rows={auditData}
+                  rows={evaluations}
                   columns={columns}
                   hoverable={true}
-                  sortColumns={["model", "auditTime"]}
+                  sortColumns={["aiModel.displayName", "createdAt"]}
                   defaultSortDirection="asc"
                   hideSelection={true}
                   hideFooter={true}
