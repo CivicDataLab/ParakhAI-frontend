@@ -41,7 +41,7 @@ const METRICS_BY_MODEL_TYPE_QUERY = `
   }
 `;
 
-// GraphQL query to fetch AI models
+// GraphQL query to fetch AI models with their versions
 const AI_MODELS_QUERY = `
   query GetAIModels(
     $status: String
@@ -62,9 +62,14 @@ const AI_MODELS_QUERY = `
       id
       name
       displayName
-      version
       modelType
       isPublic
+      versions {
+        id
+        version
+        isLatest
+        status
+      }
     }
   }
 `;
@@ -82,6 +87,7 @@ const REQUEST_AUDIT_MUTATION = `
         modules
         metrics
         modelId
+        modelVersionId
         testDatasetIds
         configuration
         judgeModel
@@ -148,14 +154,20 @@ const NewAuditPage = () => {
 
   // AI Models state
   const [selectedModelId, setSelectedModelId] = useState<string | null>(urlModelId);
+  const [selectedVersionId, setSelectedVersionId] = useState<number | null>(null);
   const [aiModels, setAiModels] = useState<
     Array<{
       id: string;
       name: string;
       displayName: string;
-      version: string;
       modelType: string;
       organization?: string;
+      versions?: Array<{
+        id: number;
+        version: string;
+        isLatest: boolean;
+        status: string;
+      }>;
     }>
   >([]);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
@@ -164,7 +176,10 @@ const NewAuditPage = () => {
   // Computed values from selected model
   const selectedModel = aiModels.find((m) => m.id === selectedModelId);
   const modelName = selectedModel?.displayName || selectedModel?.name || "";
-  const modelVersion = selectedModel?.version || "";
+  // Get version display from selected version or latest version
+  const selectedVersion = selectedModel?.versions?.find((v) => v.id === selectedVersionId);
+  const latestVersion = selectedModel?.versions?.find((v) => v.isLatest);
+  const modelVersion = selectedVersion?.version || latestVersion?.version || "";
   const modelType = selectedModel?.modelType || "TEXT_GENERATION"; // Full model type for GraphQL queries
 
   // GraphQL API hook for authenticated requests
@@ -711,6 +726,7 @@ const NewAuditPage = () => {
       customTestInputs: customTestInputs || null,
       configuration,
       modelId,
+      modelVersionId: selectedVersionId,
     };
 
     // Move user into the Audit Results tab and show loading state FIRST
@@ -938,21 +954,44 @@ const NewAuditPage = () => {
                     </Text>
                   </div>
                 ) : aiModels.length > 0 ? (
-                  <div>
+                  <div className="flex flex-col gap-4">
                     <Select
                       name="modelSelect"
                       label="Select AI Model"
                       options={aiModels.map((model) => ({
                         value: model.id,
-                        label: `${model.displayName || model.name}${model.version ? ` (${model.version})` : ""}`,
+                        label: model.displayName || model.name,
                       }))}
                       value={selectedModelId || ""}
-                      onChange={(value) => setSelectedModelId(value)}
+                      onChange={(value) => {
+                        setSelectedModelId(value);
+                        // Auto-select latest version when model changes
+                        const model = aiModels.find(m => m.id === value);
+                        const latestVer = model?.versions?.find(v => v.isLatest);
+                        setSelectedVersionId(latestVer?.id || null);
+                      }}
                       disabled={
                         typeof activeTab !== "undefined" &&
                         activeTab !== "config"
                       }
                     />
+                    {/* Version Selector - appears after model selection */}
+                    {selectedModel && selectedModel.versions && selectedModel.versions.length > 0 && (
+                      <Select
+                        name="versionSelect"
+                        label="Select Model Version"
+                        options={selectedModel.versions.map((ver) => ({
+                          value: String(ver.id),
+                          label: `${ver.version}${ver.isLatest ? " (Latest)" : ""}`,
+                        }))}
+                        value={selectedVersionId ? String(selectedVersionId) : ""}
+                        onChange={(value) => setSelectedVersionId(value ? Number(value) : null)}
+                        disabled={
+                          typeof activeTab !== "undefined" &&
+                          activeTab !== "config"
+                        }
+                      />
+                    )}
                   </div>
                 ) : (
                   <div>
