@@ -16,7 +16,7 @@ type BaseNavItem = {
 
 const baseNavItems: BaseNavItem[] = [
   { icon: '/images/icons/home-2.png', label: 'Home', isImage: true, path: '/dashboard/ai-maker' },
-  { icon: '/images/icons/topology-star-ring.png', label: 'Models', isImage: true },
+  { icon: '/images/icons/topology-star-ring.png', label: 'Models', isImage: true, path: '/dashboard/ai-maker/ai-models' },
   { icon: '/images/icons/report-analytics.png', label: 'Evaluations', isImage: true, path: '/dashboard/ai-maker/evaluations' },
   { icon: '/images/icons/messages.png', label: 'Prompt Libraries', isImage: true, path: '/dashboard/ai-maker/prompt-libraries' },
   { icon: '/images/icons/users-group.png', label: 'Members & Experts', isImage: true },
