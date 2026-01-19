@@ -21,7 +21,12 @@ const BreadCrumbs: React.FC<BreadCrumbsProps> = ({ data }) => {
   const localePrefix = useMemo(() => {
     if (!pathname) return '';
     const match = pathname.match(/^\/([^/]+)/);
-    return match ? `/${match[1]}` : '';
+    if (!match) return '';
+    const firstSegment = match[1];
+    // Only treat as locale if it's a valid locale (en, hi, etc.)
+    // With 'as-needed', default locale (en) might not have prefix, so check both
+    const validLocales = ['en', 'hi']; // Match config/locales.ts
+    return validLocales.includes(firstSegment) ? `/${firstSegment}` : '';
   }, [pathname]);
 
   // Truncate breadcrumbs only if there are more than 3 items, but only on small/medium screens
