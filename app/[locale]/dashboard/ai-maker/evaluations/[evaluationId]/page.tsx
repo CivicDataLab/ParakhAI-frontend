@@ -516,9 +516,19 @@ const EvaluationDetailPage = () => {
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-4">
-                <Text variant="headingLg" as="h1" fontWeight="bold">
-                  {audit.name || `Evaluation #${audit.id.slice(0, 8)}`}
-                </Text>
+                <div className="flex flex-row items-end gap-1">
+                  <Text variant="bodyMd" className="text-gray-500">
+                    Evaluation Name :{" "}
+                  </Text>
+                  <Text
+                    variant="headingMd"
+                    as="h4"
+                    fontWeight="semibold"
+                    className="evaluation-name-text"
+                  >
+                    {audit.name || `Evaluation #${audit.id.slice(0, 8)}`}
+                  </Text>
+                </div>
                 <Tag
                   variation="filled"
                   fillColor={statusColors.fillColor}

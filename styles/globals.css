@@ -455,6 +455,10 @@ html.mobile-menu-open .breadcrumbs-ml {
   border: 1px solid #d2d2d5;
 }
 
+.evaluation-name-text {
+  border-bottom: 1px solid #1f1f1f;
+}
+
 /* Ensure selected nav item extends to both edges */
 .welcome-section nav .nav-item-link.bg-primaryPurple {
   margin-left: -12px;

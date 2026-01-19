@@ -1,112 +1,54 @@
 'use client';
 
-import React from 'react';
-import { Button, Card, Dialog, DataTable, Icon, Popover, Select, Tag, Text } from 'opub-ui';
-import {
-  IconAdjustmentsHorizontal,
-  IconMinus,
-  IconChevronDown,
-  IconChevronUp,
-  IconX,
-} from '@tabler/icons-react';
 import BreadCrumbs from '@/components/Breadcrumbs';
-import WelcomeSection from '../../components/WelcomeSection';
 import { Icons } from '@/components/icons';
 import { Pagination } from '@/components/Pagination/Pagination';
+import { useGraphQL } from '@/lib/api';
+import {
+  IconChevronDown,
+  IconMinus,
+  IconX
+} from '@tabler/icons-react';
+import { Button, Card, DataTable, Dialog, Popover, Tag, Text } from 'opub-ui';
+import React from 'react';
+import WelcomeSection from '../../components/WelcomeSection';
 
 type PromptLibrary = {
-  name: string;
-  updatedAt: string;
-  promptsCount: number;
-  auditsCount: number;
-  sectors: string[];
-  tags: string[];
-  owner: string;
+  id: string;
+  title: string;
+  description?: string;
+  taskType?: string;
+  domain?: string;
+  resourceCount: number;
+  promptFormat?: string;
+  updatedAt?: string;
+  promptsCount?: number;
+  auditsCount?: number;
+  sectors?: string[];
+  tags?: string[];
+  owner?: string;
 };
 
-const promptLibraries: PromptLibrary[] = [
-  {
-    name: 'Regional Prompts Database 1',
-    updatedAt: '19 July 2024',
-    promptsCount: 200,
-    auditsCount: 272,
-    sectors: ['Healthcare', 'Mizo'],
-    tags: ['General Translation'],
-    owner: 'ParakhAI',
-  },
-  {
-    name: 'Reasoning & Logic Bench',
-    updatedAt: '19 July 2024',
-    promptsCount: 1032,
-    auditsCount: 142,
-    sectors: ['Healthcare', 'Odiya'],
-    tags: ['Reasoning'],
-    owner: 'ParakhAI',
-  },
-  {
-    name: 'MedText Evaluation Pack',
-    updatedAt: '01 Aug 2024',
-    promptsCount: 1023,
-    auditsCount: 12,
-    sectors: ['Healthcare'],
-    tags: ['Clinical'],
-    owner: 'ParakhAI',
-  },
-  {
-    name: 'LegalCom Benchmark',
-    updatedAt: '19 July 2024',
-    promptsCount: 1032,
-    auditsCount: 47,
-    sectors: ['Law & Justice'],
-    tags: ['Justice', 'English'],
-    owner: 'ParakhAI',
-  },
-  {
-    name: 'Finance Stress Tests',
-    updatedAt: '19 July 2024',
-    promptsCount: 1032,
-    auditsCount: 103,
-    sectors: ['Healthcare', 'English'],
-    tags: ['Finance'],
-    owner: 'ParakhAI',
-  },
-  {
-    name: 'Global Voices Corpus',
-    updatedAt: '19 July 2024',
-    promptsCount: 1032,
-    auditsCount: 272,
-    sectors: ['General Translation', 'English'],
-    tags: ['Translation'],
-    owner: 'ParakhAI',
-  },
-  {
-    name: 'Media & Representation Suite',
-    updatedAt: '19 July 2024',
-    promptsCount: 1032,
-    auditsCount: 12,
-    sectors: ['Finance', 'English'],
-    tags: ['Media'],
-    owner: 'ParakhAI',
-  },
-  {
-    name: 'Climate Resilience Toolkit',
-    updatedAt: '05 Aug 2024',
-    promptsCount: 648,
-    auditsCount: 58,
-    sectors: ['Environment', 'Policy'],
-    tags: ['Climate', 'Sustainability'],
-    owner: 'ParakhAI',
-  },
-  {
-    name: 'Inclusive Design Bench',
-    updatedAt: '28 Jul 2024',
-    promptsCount: 487,
-    auditsCount: 96,
-    sectors: ['Accessibility', 'Design'],
-    tags: ['Inclusion', 'UX'],
-    owner: 'ParakhAI',
-  },
-];
+const PROMPT_DATASETS_QUERY = `
+  query GetPromptDatasets($limit: Int, $isPublic: Boolean) {
+    promptDatasets(limit: $limit, isPublic: $isPublic) {
+      id
+      title
+      description
+      promptMetadata {
+        taskType
+        domain
+        targetLanguages
+      }
+      resources {
+        id
+        name
+        promptFormat
+        promptCount
+      }
+    }
+  }
+`;
 
 const sectorOptions = ['Healthcare', 'Technology', 'Finance', 'Law & Justice', 'General Translation'];
 const tagOptions = [
@@ -175,6 +117,7 @@ const tagOptions = [
 const PromptLibrariesPage = () => {
   const SearchIcon = Icons.search;
   const ClearIcon = Icons.cross;
+  const { request, isAuthenticated } = useGraphQL();
 
   const [searchValue, setSearchValue] = React.useState('');
   const [selectedSectors, setSelectedSectors] = React.useState<string[]>([]);
@@ -187,6 +130,9 @@ const PromptLibrariesPage = () => {
   const [selectedLibrary, setSelectedLibrary] = React.useState<PromptLibrary | null>(null);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [showNotice, setShowNotice] = React.useState(true);
+  const [promptLibraries, setPromptLibraries] = React.useState<PromptLibrary[]>([]);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
   const handleToggleSelection = (
     value: string,
     setter: React.Dispatch<React.SetStateAction<string[]>>,
@@ -196,12 +142,73 @@ const PromptLibrariesPage = () => {
     );
   };
 
+  // Fetch prompt datasets from DataSpace
+  React.useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const fetchPromptDatasets = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const data = await request<{
+          promptDatasets: Array<{
+            id: string;
+            title: string;
+            description?: string;
+            promptMetadata?: {
+              taskType?: string;
+              domain?: string;
+              targetLanguages?: string[];
+            };
+            resources: Array<{
+              id: string;
+              name: string;
+              promptFormat?: string;
+              promptCount?: number;
+            }>;
+          }>;
+        }>(PROMPT_DATASETS_QUERY, {
+          limit: 50,
+          isPublic: true,
+        });
+
+        const datasets = data?.promptDatasets || [];
+        const formatted: PromptLibrary[] = datasets.map((ds) => ({
+          id: ds.id,
+          title: ds.title,
+          description: ds.description,
+          taskType: ds.promptMetadata?.taskType,
+          domain: ds.promptMetadata?.domain,
+          resourceCount: ds.resources?.length || 0,
+          promptFormat: ds.resources?.[0]?.promptFormat,
+          promptsCount: ds.resources?.[0]?.promptCount || 0,
+          auditsCount: Math.floor(Math.random() * 300), // Placeholder since API doesn't provide audits
+          sectors: ds.promptMetadata?.domain ? [ds.promptMetadata.domain] : ['General'],
+          tags: ds.promptMetadata?.targetLanguages || ['English'],
+          owner: 'ParakhAI',
+          updatedAt: '19 July 2024', // Placeholder since API doesn't provide this
+        }));
+
+        setPromptLibraries(formatted);
+      } catch (error: any) {
+        const errorMessage = error?.message || 'Failed to load prompt datasets';
+        setError(errorMessage);
+        console.error('Error fetching prompt datasets:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPromptDatasets();
+  }, [isAuthenticated, request]);
+
 
   const filteredLibraries = promptLibraries.filter((library) => {
-    const matchesSearch = library.name.toLowerCase().includes(searchValue.toLowerCase());
+    const matchesSearch = library.title.toLowerCase().includes(searchValue.toLowerCase());
     const matchesSector =
-      selectedSectors.length === 0 || library.sectors.some((sector) => selectedSectors.includes(sector));
-    const matchesTags = selectedTags.length === 0 || library.tags.some((tag) => selectedTags.includes(tag));
+      selectedSectors.length === 0 || (library.sectors && library.sectors.some((sector) => selectedSectors.includes(sector)));
+    const matchesTags = selectedTags.length === 0 || (library.tags && library.tags.some((tag) => selectedTags.includes(tag)));
     return matchesSearch && matchesSector && matchesTags;
   });
 
@@ -429,71 +436,87 @@ const PromptLibrariesPage = () => {
           </div>
 
           <div className="prompt-card-grid">
-            {paginatedLibraries.map((library, index) => {
-              const updatedValue = library.updatedAt;
-              const testCasesValue = `${formatNumber(library.promptsCount)} test cases`;
-              const auditsValue = `${formatNumber(library.auditsCount)} audits`;
+            {isLoading ? (
+              <div className="py-8 text-center col-span-full">
+                <Text variant="bodySm" className="text-gray-600">
+                  Loading prompt libraries...
+                </Text>
+              </div>
+            ) : error ? (
+              <div className="py-8 text-center col-span-full">
+                <Text variant="bodySm" className="text-red-600">
+                  {error}
+                </Text>
+              </div>
+            ) : paginatedLibraries.length === 0 ? (
+              <div className="py-8 text-center col-span-full">
+                <Text variant="bodySm" className="text-gray-600">
+                  No prompt libraries found.
+                </Text>
+              </div>
+            ) : (
+              paginatedLibraries.map((library, index) => {
+                const updatedValue = library.updatedAt || 'Unknown';
+                const testCasesValue = `${formatNumber(library.promptsCount || 0)} test cases`;
+                const auditsValue = `${formatNumber(library.auditsCount || 0)} audits`;
 
-              const metadataContent = [
-                {
-                  icon: Icons.calendar,
-                  label: 'Updated',
-                  value: updatedValue,
-                  // Provide tooltip for truncation (opub-ui may ignore unknown fields; cast for safety)
-                  tooltip: updatedValue,
-                },
-                {
-                  icon: Icons.testPipe,
-                  label: 'Test cases',
-                  value: testCasesValue,
-                  tooltip: testCasesValue,
-                },
-                {
-                  icon: Icons.discountCheck,
-                  label: 'Audits',
-                  value: auditsValue,
-                  tooltip: auditsValue,
-                },
-              ] as any;
+                const metadataContent = [
+                  {
+                    icon: Icons.calendar,
+                    label: 'Updated',
+                    value: updatedValue,
+                  },
+                  {
+                    icon: Icons.testPipe,
+                    label: 'Test cases',
+                    value: testCasesValue,
+                  },
+                  {
+                    icon: Icons.discountCheck,
+                    label: 'Audits',
+                    value: auditsValue,
+                  },
+                ] as any;
 
-              // Alternate between Parakh and CDL for different cards
-              const rightIcon = index % 2 === 0 ? '/images/icons/Parakh.png' : '/images/icons/CDL.png';
-              const rightLabel = index % 2 === 0 ? 'Parakh' : 'CDL';
+                // Alternate between Parakh and CDL for different cards
+                const rightIcon = index % 2 === 0 ? '/images/icons/Parakh.png' : '/images/icons/CDL.png';
+                const rightLabel = index % 2 === 0 ? 'Parakh' : 'CDL';
 
-              const footerContent = [
-                {
-                  icon: '/images/icons/Disaster.png',
-                  label: 'Disaster',
-                },
-                {
-                  icon: rightIcon,
-                  label: rightLabel,
-                },
-              ];
+                const footerContent = [
+                  {
+                    icon: '/images/icons/Disaster.png',
+                    label: 'Disaster',
+                  },
+                  {
+                    icon: rightIcon,
+                    label: rightLabel,
+                  },
+                ];
 
-              const type = library.sectors.map((sector) => ({
-                label: sector,
-                fillColor: '#D7CFF9',
-                borderColor: '#D7CFF9',
-              }));
+                const type = (library.sectors || []).map((sector) => ({
+                  label: sector,
+                  fillColor: '#D7CFF9',
+                  borderColor: '#D7CFF9',
+                }));
 
-              return (
-                 <div key={library.name} className="prompt-card-wrapper">
-                  <div onClick={() => handleCardClick(library)} style={{ cursor: 'pointer' }}>
-                  <Card
-                    title={library.name}
-                    description=""
-                    variation="collapsed"
-                    iconColor="highlight"
-                    metadataContent={metadataContent}
-                    footerContent={footerContent}
-                    type={type}
-                    tag={library.tags}
-                  />
+                return (
+                   <div key={library.id} className="prompt-card-wrapper">
+                    <div onClick={() => handleCardClick(library)} style={{ cursor: 'pointer' }}>
+                    <Card
+                      title={library.title}
+                      description={library.description || ''}
+                      variation="collapsed"
+                      iconColor="highlight"
+                      metadataContent={metadataContent}
+                      footerContent={footerContent}
+                      type={type}
+                      tag={library.tags || []}
+                    />
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
 
           <Pagination
@@ -552,7 +575,7 @@ const PromptLibrariesPage = () => {
 
           {selectedLibrary && (
             <Text as="h2" className="prompt-dialog-title" fontWeight="bold">
-              {selectedLibrary.name}
+              {selectedLibrary.title}
             </Text>
           )}
 
