@@ -29,7 +29,16 @@ const WelcomeSection = () => {
 
   const normalizedPath = useMemo(() => {
     if (!pathname) return '/';
-    const withoutLocale = pathname.replace(/^\/[^/]+/, '') || '/';
+    // Only remove locale prefix if it's a valid locale
+    const validLocales = ['en', 'hi']; // Match config/locales.ts
+    const match = pathname.match(/^\/([^/]+)/);
+    let withoutLocale = pathname;
+    
+    if (match && validLocales.includes(match[1])) {
+      // Remove locale prefix if it's a valid locale
+      withoutLocale = pathname.replace(/^\/[^/]+/, '') || '/';
+    }
+    
     return withoutLocale.endsWith('/') && withoutLocale.length > 1
       ? withoutLocale.slice(0, -1)
       : withoutLocale;
@@ -46,7 +55,12 @@ const WelcomeSection = () => {
   const localePrefix = useMemo(() => {
     if (!pathname) return '';
     const match = pathname.match(/^\/([^/]+)/);
-    return match ? `/${match[1]}` : '';
+    if (!match) return '';
+    const firstSegment = match[1];
+    // Only treat as locale if it's a valid locale (en, hi, etc.)
+    // With 'as-needed', default locale (en) might not have prefix, so check both
+    const validLocales = ['en', 'hi']; // Match config/locales.ts
+    return validLocales.includes(firstSegment) ? `/${firstSegment}` : '';
   }, [pathname]);
 
   const navItems = useMemo(

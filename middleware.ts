@@ -1,35 +1,52 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextRequest } from 'next/server';
+import { withAuth } from 'next-auth/middleware';
+import createIntlMiddleware from 'next-intl/middleware';
 
-const PUBLIC_FILE = /\.(.*)$/;
-const locales = ['en'];
+import locales from './config/locales';
 
-export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+// Public pages that don't require authentication (without locale prefix)
+// The regex will automatically handle locale prefixes like /en, /hi, etc.
+const publicPages = ['/'];
 
-  // Skip assets & internals
-  if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
-    PUBLIC_FILE.test(pathname)
-  ) {
-    return;
+// Create internationalization middleware
+const intlMiddleware = createIntlMiddleware({
+  locales: locales.all,
+  localePrefix: 'as-needed', // Only add locale prefix when needed (not for default locale)
+  defaultLocale: locales.default,
+});
+
+// Create authentication middleware that chains with i18n
+const authMiddleware = withAuth(
+  function onSuccess(req) {
+    return intlMiddleware(req);
+  },
+  {
+    pages: {
+      signIn: '/api/auth/signin',
+    },
   }
+);
 
-  // Check if pathname already has a locale prefix
-  const hasLocale = locales.some(
-    (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`)
+// Main middleware function
+export default function middleware(req: NextRequest) {
+  // Create regex pattern to match public pages with optional locale prefix
+  // This handles: /, /en, /hi, /en/, /hi/, etc.
+  const publicPathnameRegex = RegExp(
+    `^(/(${locales.all.join('|')}))?(${publicPages
+      .flatMap((p) => (p === '/' ? ['', '/'] : p))
+      .join('|')})/?$`,
+    'i'
   );
 
-  // If no locale, redirect to /en + pathname
-  if (!hasLocale) {
-    // Handle root path: redirect to /en (not /en/)
-    if (pathname === '/') {
-      return NextResponse.redirect(new URL('/en', req.url));
-    }
-    // For all other paths, prepend /en
-    return NextResponse.redirect(new URL(`/en${pathname}`, req.url));
+  const isPublicPage = publicPathnameRegex.test(req.nextUrl.pathname);
+
+  // If it's a public page, use i18n middleware only (no auth required)
+  if (isPublicPage) {
+    return intlMiddleware(req);
   }
+
+  // For protected pages, use auth middleware (which chains with i18n)
+  return (authMiddleware as any)(req);
 }
 
 export const config = {
