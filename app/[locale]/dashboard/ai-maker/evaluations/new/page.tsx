@@ -137,6 +137,9 @@ const NewAuditPage = () => {
   const router = useRouter();
   const params = useParams();
   const locale = params?.locale || "en";
+  
+  const urlModelId = searchParams.get('modelId');
+  
   const [auditType, setAuditType] = useState<AuditType>("technical");
   const [activeTab, setActiveTab] = useState<"config" | "test" | "results">(
     "config"
@@ -145,7 +148,7 @@ const NewAuditPage = () => {
   const isAutoSaved = true;
 
   // AI Models state
-  const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
+  const [selectedModelId, setSelectedModelId] = useState<string | null>(urlModelId);
   const [aiModels, setAiModels] = useState<
     Array<{
       id: string;
@@ -470,9 +473,15 @@ const NewAuditPage = () => {
       const models = data?.aiModels || [];
       setAiModels(models);
 
-      // Auto-select first model if available and none selected
+      // Auto-select model based on URL parameter, or first model if available and none selected
       if (models.length > 0 && !selectedModelId) {
-        setSelectedModelId(models[0].id);
+        if (urlModelId && models.find(m => m.id === urlModelId)) {
+          setSelectedModelId(urlModelId);
+        } else {
+          setSelectedModelId(models[0].id);
+        }
+      } else if (urlModelId && models.find(m => m.id === urlModelId) && selectedModelId !== urlModelId) {
+        setSelectedModelId(urlModelId);
       }
     } catch (error: any) {
       const errorMessage =
