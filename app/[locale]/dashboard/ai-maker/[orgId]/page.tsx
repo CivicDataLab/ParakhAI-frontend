@@ -91,22 +91,26 @@ const AIMakerDashboard = () => {
 
   // GraphQL hook
   const { request } = useGraphQL();
-  
+
   // State for data and loading
   const [models, setModels] = useState<AIModel[]>([]);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
-  const [organization, setOrganization] = useState<{ name: string; logoUrl: string | null } | null>(null);
+  const [organization, setOrganization] = useState<{
+    name: string;
+    logoUrl: string | null;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Fetch data on component mount
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [modelsResponse, evaluationsResponse, orgResponse] = await Promise.all([
-          request(GET_AI_MODELS, { limit: 6 }, { organization: orgId }),
-          request(GET_EVALUATIONS, { limit: 5 }, { organization: orgId }),
-          request(GET_ORG_DETAILS, { orgId })
-        ]);
+        const [modelsResponse, evaluationsResponse, orgResponse] =
+          await Promise.all([
+            request(GET_AI_MODELS, { limit: 6 }, { organization: orgId }),
+            request(GET_EVALUATIONS, { limit: 5 }, { organization: orgId }),
+            request(GET_ORG_DETAILS, { orgId }),
+          ]);
 
         console.log("DEBUG: orgResponse", orgResponse);
 
@@ -120,7 +124,7 @@ const AIMakerDashboard = () => {
           setOrganization({ name: orgData.name, logoUrl: orgData.logoUrl });
         }
       } catch (error) {
-        console.error('Failed to fetch data:', error);
+        console.error("Failed to fetch data:", error);
       } finally {
         setLoading(false);
       }
@@ -133,8 +137,14 @@ const AIMakerDashboard = () => {
   const hasEvaluations = evaluations.length > 0;
 
   // Calculate metrics
-  const totalTestCases = evaluations.reduce((sum, evaluation) => sum + (evaluation.totalTests || 0), 0);
-  const totalIssues = evaluations.reduce((sum, evaluation) => sum + (evaluation.failedTests || 0), 0);
+  const totalTestCases = evaluations.reduce(
+    (sum, evaluation) => sum + (evaluation.totalTests || 0),
+    0
+  );
+  const totalIssues = evaluations.reduce(
+    (sum, evaluation) => sum + (evaluation.failedTests || 0),
+    0
+  );
 
   const metrics = [
     { label: "Audit Runs", value: evaluations.length.toString() || "--" },
@@ -165,7 +175,9 @@ const AIMakerDashboard = () => {
         return modelName ? (
           <Text variant="bodySm">{modelName}</Text>
         ) : (
-          <Text variant="bodySm" className="text-gray-500">Unknown Model</Text>
+          <Text variant="bodySm" className="text-gray-500">
+            Unknown Model
+          </Text>
         );
       },
     }),
@@ -194,24 +206,26 @@ const AIMakerDashboard = () => {
         const row = info.row.original;
         const passed = row.passedTests;
         const failed = row.failedTests;
-        
+
         if (!total || !passed || !failed) {
           return <Text variant="bodySm">No data</Text>;
         }
-        
+
         return (
           <div className="flex items-center gap-2">
             <div className="test-result-bar">
-              <div 
-                className="test-result-pass" 
+              <div
+                className="test-result-pass"
                 style={{ width: `${(passed / total) * 100}%` }}
               />
-              <div 
-                className="test-result-fail" 
+              <div
+                className="test-result-fail"
                 style={{ width: `${(failed / total) * 100}%` }}
               />
             </div>
-            <Text variant="bodySm">{passed}/{total} passed</Text>
+            <Text variant="bodySm">
+              {passed}/{total} passed
+            </Text>
           </div>
         );
       },
@@ -233,7 +247,10 @@ const AIMakerDashboard = () => {
       <div className="w-full max-w-7xl  mx-auto px-4 sm:px-6 lg:px-10 overflow-x-visible">
         <div className="flex flex-1 flex-col lg:flex-row gap-6 md:gap-8 lg:-ml-[120px] xl:-ml-[130px]">
           {/* Sidebar */}
-          <WelcomeSection orgName={organization?.name} orgLogo={organization?.logoUrl} />
+          <WelcomeSection
+            orgName={organization?.name}
+            orgLogo={organization?.logoUrl}
+          />
 
           {/* Main Content */}
           <div className="flex-1 bg-gray-50 p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0">
@@ -327,9 +344,7 @@ const AIMakerDashboard = () => {
 
                     return (
                       <div key={model.id} className="w-full">
-                        <Card
-                          {...commonProps}
-                        />
+                        <Card {...commonProps} />
                       </div>
                     );
                   })}
@@ -390,7 +405,9 @@ const AIMakerDashboard = () => {
                   <Text variant="bodySm" className="text-gray-600 mb-4">
                     No evaluations yet. Start by running your first evaluation.
                   </Text>
-                  <Link href={`/${locale}/dashboard/ai-maker/${orgId}/evaluations/new`}>
+                  <Link
+                    href={`/${locale}/dashboard/ai-maker/${orgId}/evaluations/new`}
+                  >
                     <Button kind="primary">Start New Evaluation</Button>
                   </Link>
                 </div>

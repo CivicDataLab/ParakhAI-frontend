@@ -150,9 +150,9 @@ const NewAuditPage = () => {
   const router = useRouter();
   const params = useParams();
   const locale = params?.locale || "en";
-  
-  const urlModelId = searchParams.get('modelId');
-  
+
+  const urlModelId = searchParams.get("modelId");
+
   const [auditType, setAuditType] = useState<AuditType>("technical");
   const [activeTab, setActiveTab] = useState<"config" | "test" | "results">(
     "config"
@@ -161,8 +161,12 @@ const NewAuditPage = () => {
   const isAutoSaved = true;
 
   // AI Models state
-  const [selectedModelId, setSelectedModelId] = useState<string | null>(urlModelId);
-  const [selectedVersionId, setSelectedVersionId] = useState<number | null>(null);
+  const [selectedModelId, setSelectedModelId] = useState<string | null>(
+    urlModelId
+  );
+  const [selectedVersionId, setSelectedVersionId] = useState<number | null>(
+    null
+  );
   const [aiModels, setAiModels] = useState<
     Array<{
       id: string;
@@ -178,7 +182,10 @@ const NewAuditPage = () => {
       }>;
     }>
   >([]);
-  const [organization, setOrganization] = useState<{ name: string; logoUrl: string | null } | null>(null);
+  const [organization, setOrganization] = useState<{
+    name: string;
+    logoUrl: string | null;
+  } | null>(null);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [modelsError, setModelsError] = useState<string | null>(null);
 
@@ -186,7 +193,9 @@ const NewAuditPage = () => {
   const selectedModel = aiModels.find((m) => m.id === selectedModelId);
   const modelName = selectedModel?.displayName || selectedModel?.name || "";
   // Get version display from selected version or latest version
-  const selectedVersion = selectedModel?.versions?.find((v) => v.id === selectedVersionId);
+  const selectedVersion = selectedModel?.versions?.find(
+    (v) => v.id === selectedVersionId
+  );
   const latestVersion = selectedModel?.versions?.find((v) => v.isLatest);
   const modelVersion = selectedVersion?.version || latestVersion?.version || "";
   const modelType = selectedModel?.modelType || "TEXT_GENERATION"; // Full model type for GraphQL queries
@@ -220,6 +229,13 @@ const NewAuditPage = () => {
   const [auditObjective, setAuditObjective] = useState("");
   const [scopeOfAudit, setScopeOfAudit] = useState("");
   const [modeOfEvaluation, setModeOfEvaluation] = useState<string>("");
+
+  // Prefill organisation name when org details are loaded
+  useEffect(() => {
+    if (organization?.name && !organisationName) {
+      setOrganisationName(organization.name);
+    }
+  }, [organization?.name, organisationName]);
 
   // Set auditor name from session when user is available
   useEffect(() => {
@@ -255,9 +271,9 @@ const NewAuditPage = () => {
   }>({});
 
   // Test Cases state
-  const [selectedPromptLibraries, setSelectedPromptLibraries] = useState<
-    any[]
-  >([]);
+  const [selectedPromptLibraries, setSelectedPromptLibraries] = useState<any[]>(
+    []
+  );
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [pastedTestCases, setPastedTestCases] = useState("");
   const [testInputMode, setTestInputMode] = useState<"paste" | "upload">(
@@ -485,15 +501,19 @@ const NewAuditPage = () => {
             modelType: string;
             organization?: string;
           }>;
-        }>(AI_MODELS_QUERY, {
-          status: "ACTIVE",
-          modelType: null,
-          provider: null,
-          isPublic: true,
-          limit: 50,
-          offset: 0,
-        }, { organization: params.orgId as string }),
-        request(GET_ORG_DETAILS, { orgId: params.orgId })
+        }>(
+          AI_MODELS_QUERY,
+          {
+            status: "ACTIVE",
+            modelType: null,
+            provider: null,
+            isPublic: true,
+            limit: 50,
+            offset: 0,
+          },
+          { organization: params.orgId as string }
+        ),
+        request(GET_ORG_DETAILS, { orgId: params.orgId }),
       ]);
 
       const models = modelsResponse?.aiModels || [];
@@ -504,12 +524,16 @@ const NewAuditPage = () => {
 
       // Auto-select model based on URL parameter, or first model if available and none selected
       if (models.length > 0 && !selectedModelId) {
-        if (urlModelId && models.find(m => m.id === urlModelId)) {
+        if (urlModelId && models.find((m) => m.id === urlModelId)) {
           setSelectedModelId(urlModelId);
         } else {
           setSelectedModelId(models[0].id);
         }
-      } else if (urlModelId && models.find(m => m.id === urlModelId) && selectedModelId !== urlModelId) {
+      } else if (
+        urlModelId &&
+        models.find((m) => m.id === urlModelId) &&
+        selectedModelId !== urlModelId
+      ) {
         setSelectedModelId(urlModelId);
       }
     } catch (error: any) {
@@ -737,7 +761,9 @@ const NewAuditPage = () => {
       name: auditName,
       modules,
       metrics,
-      testDatasetIds: selectedPromptLibraries.map((item: any) => String(item.id)),
+      testDatasetIds: selectedPromptLibraries.map((item: any) =>
+        String(item.id)
+      ),
       customTestInputs: customTestInputs || null,
       configuration,
       modelId,
@@ -755,7 +781,11 @@ const NewAuditPage = () => {
       // Use authenticated GraphQL request - access token is automatically included
       const result = await request<{
         requestAudit: { success: boolean; message: string; audit: any };
-      }>(REQUEST_AUDIT_MUTATION, { input }, { organization: params.orgId as string });
+      }>(
+        REQUEST_AUDIT_MUTATION,
+        { input },
+        { organization: params.orgId as string }
+      );
 
       const payload = result?.requestAudit;
       if (!payload) {
@@ -935,8 +965,14 @@ const NewAuditPage = () => {
           { href: "/", label: "Home" },
           { href: "/dashboard", label: "User Dashboard" },
           { href: `/${locale}/dashboard/ai-maker`, label: "AI Maker" },
-          { href: `/${locale}/dashboard/ai-maker/${params.orgId}`, label: organization?.name || "Dashboard" },
-          { href: `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations`, label: "Evaluations" },
+          {
+            href: `/${locale}/dashboard/ai-maker/${params.orgId}`,
+            label: organization?.name || "Dashboard",
+          },
+          {
+            href: `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations`,
+            label: "Evaluations",
+          },
           { href: "#", label: "New Evaluation" },
         ]}
       />
@@ -944,7 +980,10 @@ const NewAuditPage = () => {
       {/* Match AI Maker dashboard layout so sticky nav + breadcrumbs behave the same on all screens */}
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 overflow-x-visible">
         <div className="flex flex-1 flex-col lg:flex-row gap-6 md:gap-8 lg:-ml-[120px] xl:-ml-[130px] main-content-wrapper">
-          <WelcomeSection orgName={organization?.name} orgLogo={organization?.logoUrl} />
+          <WelcomeSection
+            orgName={organization?.name}
+            orgLogo={organization?.logoUrl}
+          />
 
           <div className="flex-1 audit-content p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0 bg-white">
             {/* Model Name and Owner Section */}
@@ -976,8 +1015,10 @@ const NewAuditPage = () => {
                       onChange={(value) => {
                         setSelectedModelId(value);
                         // Auto-select latest version when model changes
-                        const model = aiModels.find(m => m.id === value);
-                        const latestVer = model?.versions?.find(v => v.isLatest);
+                        const model = aiModels.find((m) => m.id === value);
+                        const latestVer = model?.versions?.find(
+                          (v) => v.isLatest
+                        );
                         setSelectedVersionId(latestVer?.id || null);
                       }}
                       disabled={
@@ -986,22 +1027,28 @@ const NewAuditPage = () => {
                       }
                     />
                     {/* Version Selector - appears after model selection */}
-                    {selectedModel && selectedModel.versions && selectedModel.versions.length > 0 && (
-                      <Select
-                        name="versionSelect"
-                        label="Select Model Version"
-                        options={selectedModel.versions.map((ver) => ({
-                          value: String(ver.id),
-                          label: `${ver.version}${ver.isLatest ? " (Latest)" : ""}`,
-                        }))}
-                        value={selectedVersionId ? String(selectedVersionId) : ""}
-                        onChange={(value) => setSelectedVersionId(value ? Number(value) : null)}
-                        disabled={
-                          typeof activeTab !== "undefined" &&
-                          activeTab !== "config"
-                        }
-                      />
-                    )}
+                    {selectedModel &&
+                      selectedModel.versions &&
+                      selectedModel.versions.length > 0 && (
+                        <Select
+                          name="versionSelect"
+                          label="Select Model Version"
+                          options={selectedModel.versions.map((ver) => ({
+                            value: String(ver.id),
+                            label: `${ver.version}${ver.isLatest ? " (Latest)" : ""}`,
+                          }))}
+                          value={
+                            selectedVersionId ? String(selectedVersionId) : ""
+                          }
+                          onChange={(value) =>
+                            setSelectedVersionId(value ? Number(value) : null)
+                          }
+                          disabled={
+                            typeof activeTab !== "undefined" &&
+                            activeTab !== "config"
+                          }
+                        />
+                      )}
                   </div>
                 ) : (
                   <div>

@@ -434,6 +434,19 @@ const EvaluationDetailPage = () => {
   const duration = getDuration();
   const isRunning = audit?.status === "RUNNING" || audit?.status === "PENDING";
 
+  const getPassRate = () => {
+    if (!audit?.totalTests || !audit?.passedTests) return 0;
+    return ((audit.passedTests / audit.totalTests) * 100).toFixed(2);
+  };
+
+  const getPassRateColor = () => {
+    if (!audit?.totalTests || !audit?.passedTests) return "default";
+    const passRate = parseFloat(getPassRate().toString());
+    if (passRate >= 85) return "success";
+    if (passRate >= 70) return "warning";
+    return "critical";
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-white overflow-x-visible">
       <BreadCrumbs
@@ -454,8 +467,8 @@ const EvaluationDetailPage = () => {
             label: error
               ? "Error"
               : isSessionLoading || isLoading
-              ? "Loading..."
-              : audit?.name || `Evaluation #${audit?.id?.slice(0, 8)}`,
+                ? "Loading..."
+                : audit?.name || `Evaluation #${audit?.id?.slice(0, 8)}`,
           },
         ]}
       />
@@ -477,13 +490,18 @@ const EvaluationDetailPage = () => {
               </div>
             ) : error || !audit ? (
               <div className="flex flex-col items-center justify-center py-20">
-                <Text variant="bodyMd" className="text-red-600 mb-6 font-medium">
+                <Text
+                  variant="bodyMd"
+                  className="text-red-600 mb-6 font-medium"
+                >
                   {error || "Evaluation not found"}
                 </Text>
                 <Button
                   kind="secondary"
                   onClick={() =>
-                    router.push(`/${locale}/dashboard/ai-maker/${orgId}/evaluations`)
+                    router.push(
+                      `/${locale}/dashboard/ai-maker/${orgId}/evaluations`
+                    )
                   }
                 >
                   Back to Evaluations
@@ -648,53 +666,87 @@ const EvaluationDetailPage = () => {
                   <div className="mb-8 p-6 bg-white rounded-2xl border border-[#C4B8F3]">
                     <div className="mb-5">
                       <Text variant="headingMd" fontWeight="bold">
-                        Results Summary
+                        Evaluation Summary
                       </Text>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                      <div className="p-4 bg-gray-50 rounded-lg text-center">
-                        <Text variant="headingLg" fontWeight="bold">
-                          {audit.totalTests || 0}
-                        </Text>
-                        <Text variant="bodySm" className="pl-1 text-gray-500">
-                          Total Tests
-                        </Text>
-                      </div>
-                      <div className="p-4 bg-green-50 rounded-lg text-center">
+                    <div className="grid grid-cols-3 md:grid-cols-5 gap-8">
+                      <div className="result-summary-evaluation-section md:col-span-2 flex flex-col p-3 gap-4 justify-center">
                         <Text
-                          variant="headingLg"
-                          fontWeight="bold"
-                          className="text-green-600"
+                          variant="headingSm"
+                          fontWeight="semibold"
+                          color="onBgDisabled"
+                          className="text-gray-400"
                         >
-                          {audit.passedTests || 0}
+                          TOTAL PASS RATE
                         </Text>
-                        <Text variant="bodySm" className="pl-1 text-gray-500">
-                          Passed
-                        </Text>
+                        <div>
+                          <Text
+                            variant="headingLg"
+                            fontWeight="bold"
+                            color={getPassRateColor()}
+                            className="text-green-600"
+                          >
+                            {getPassRate() || 0}%
+                          </Text>
+                        </div>
                       </div>
-                      <div className="p-4 bg-red-50 rounded-lg text-center">
+                      <div className="result-summary-evaluation-section flex flex-col p-3 gap-4 justify-center">
                         <Text
-                          variant="headingLg"
-                          fontWeight="bold"
-                          className="text-red-600"
+                          variant="headingSm"
+                          fontWeight="semibold"
+                          color="onBgDisabled"
+                          className="text-gray-400"
                         >
-                          {audit.failedTests || 0}
+                          PASSED TESTS
                         </Text>
-                        <Text variant="bodySm" className="pl-1 text-gray-500">
-                          Failed
-                        </Text>
+                        <div>
+                          <Text
+                            variant="headingLg"
+                            fontWeight="bold"
+                            className="text-green-600"
+                          >
+                            {audit.passedTests || 0}
+                          </Text>
+                        </div>
                       </div>
-                      <div className="p-4 bg-yellow-50 rounded-lg text-center">
+                      <div className="result-summary-evaluation-section flex flex-col p-3 gap-4 justify-center">
                         <Text
-                          variant="headingLg"
-                          fontWeight="bold"
-                          className="text-yellow-600"
+                          variant="headingSm"
+                          fontWeight="semibold"
+                          color="onBgDisabled"
+                          className="text-gray-400"
                         >
-                          {audit.skippedTests || 0}
+                          FAILED TESTS
                         </Text>
-                        <Text variant="bodySm" className="pl-1 text-gray-500">
-                          Skipped
+                        <div>
+                          <Text
+                            variant="headingLg"
+                            fontWeight="bold"
+                            className="text-green-600"
+                          >
+                            {audit.failedTests || 0}
+                          </Text>
+                        </div>
+                      </div>
+
+                      <div className="result-summary-evaluation-section flex flex-col p-3 gap-4 justify-center">
+                        <Text
+                          variant="headingSm"
+                          fontWeight="semibold"
+                          color="onBgDisabled"
+                          className="text-gray-400"
+                        >
+                          SKIPPED TESTS
                         </Text>
+                        <div>
+                          <Text
+                            variant="headingLg"
+                            fontWeight="bold"
+                            className="text-green-600"
+                          >
+                            {audit.skippedTests || 0}
+                          </Text>
+                        </div>
                       </div>
                     </div>
                   </div>
