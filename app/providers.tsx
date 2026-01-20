@@ -26,7 +26,11 @@ const TooltipProvider = ({ children }: { children: React.ReactNode }) => {
     loadTooltip();
   }, []);
   
-  if (isLoading || !Tooltip || !Tooltip.Provider) {
+  if (isLoading) {
+    return null;
+  }
+  
+  if (!Tooltip || !Tooltip.Provider) {
     return <>{children}</>;
   }
   

@@ -57,12 +57,40 @@ const WelcomeSection = ({
       : withoutLocale;
   }, [pathname]);
 
+  const orgIdFromPath = useMemo(() => {
+    const parts = normalizedPath.split("/");
+    // index 0 is empty, index 1 is 'dashboard', index 2 is 'ai-maker', index 3 might be [orgId]
+    if (
+      parts[1] === "dashboard" &&
+      parts[2] === "ai-maker" &&
+      parts[3] &&
+      !["ai-models", "evaluations", "prompt-libraries"].includes(parts[3])
+    ) {
+      return parts[3];
+    }
+    return null;
+  }, [normalizedPath]);
+
+  const matchingPath = useMemo(() => {
+    if (!orgIdFromPath) return normalizedPath;
+    // Replace /dashboard/ai-maker/[orgId] with /dashboard/ai-maker for comparison
+    return normalizedPath.replace(
+      `/dashboard/ai-maker/${orgIdFromPath}`,
+      "/dashboard/ai-maker",
+    );
+  }, [normalizedPath, orgIdFromPath]);
+
   const [selectedItem, setSelectedItem] = useState<string>(() => {
-    const activeFromPath = baseNavItems.find((item) => {
-      if (!item.path) return false;
-      return normalizedPath === item.path || normalizedPath.startsWith(`${item.path}/`);
-    });
-    return activeFromPath ? activeFromPath.label : 'Home';
+    const activeFromPath = baseNavItems
+      .filter((item) => item.path)
+      .sort((a, b) => (b.path?.length ?? 0) - (a.path?.length ?? 0))
+      .find((item) => {
+        if (!item.path) return false;
+        return (
+          matchingPath === item.path || matchingPath.startsWith(`${item.path}/`)
+        );
+      });
+    return activeFromPath ? activeFromPath.label : "Home";
   });
 
   const localePrefix = useMemo(() => {
@@ -76,14 +104,6 @@ const WelcomeSection = ({
     return validLocales.includes(firstSegment) ? `/${firstSegment}` : '';
   }, [pathname]);
 
-  const orgIdFromPath = useMemo(() => {
-    const parts = normalizedPath.split("/");
-    // index 0 is empty, index 1 is 'dashboard', index 2 is 'ai-maker', index 3 might be [orgId]
-    if (parts[1] === "dashboard" && parts[2] === "ai-maker" && parts[3] && !["ai-models", "evaluations", "prompt-libraries"].includes(parts[3])) {
-      return parts[3];
-    }
-    return null;
-  }, [normalizedPath]);
 
   const navItems = useMemo(
     () =>
@@ -110,25 +130,20 @@ const WelcomeSection = ({
 
   // Set initial selected item based on pathname
   useEffect(() => {
-    let activeFromPath = navItems.find((item) => {
-      if (!item.path) return false;
-      return normalizedPath === item.path;
-    });
-
-    if (!activeFromPath) {
-      activeFromPath = navItems
-        .filter((item) => item.path)
-        .sort((a, b) => (b.path?.length ?? 0) - (a.path?.length ?? 0))
-        .find((item) => {
-          if (!item.path) return false;
-          return normalizedPath.startsWith(`${item.path}/`);
-        });
-    }
+    let activeFromPath = navItems
+      .filter((item) => item.path)
+      .sort((a, b) => (b.path?.length ?? 0) - (a.path?.length ?? 0))
+      .find((item) => {
+        if (!item.path) return false;
+        return (
+          matchingPath === item.path || matchingPath.startsWith(`${item.path}/`)
+        );
+      });
 
     if (activeFromPath) {
       setSelectedItem(activeFromPath.label);
     }
-  }, [navItems, normalizedPath]);
+  }, [navItems, matchingPath]);
 
   return (
     <div className="welcome-section mt-6">
