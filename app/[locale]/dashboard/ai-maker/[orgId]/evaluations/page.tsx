@@ -65,7 +65,10 @@ const AuditsListPage = () => {
   } = useGraphQL();
 
   const [audits, setAudits] = useState<Audit[]>([]);
-  const [organization, setOrganization] = useState<{ name: string; logoUrl: string | null } | null>(null);
+  const [organization, setOrganization] = useState<{
+    name: string;
+    logoUrl: string | null;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,11 +82,15 @@ const AuditsListPage = () => {
         setError(null);
 
         const [auditsData, orgData] = await Promise.all([
-          request<{ audits: Audit[] }>(AUDITS_QUERY, {
-            status: null,
-            limit: 100,
-          }, { organization: params.orgId as string }),
-          request(GET_ORG_DETAILS, { orgId: params.orgId })
+          request<{ audits: Audit[] }>(
+            AUDITS_QUERY,
+            {
+              status: null,
+              limit: 100,
+            },
+            { organization: params.orgId as string }
+          ),
+          request(GET_ORG_DETAILS, { orgId: params.orgId }),
         ]);
 
         setAudits(auditsData?.audits || []);
@@ -227,7 +234,9 @@ const AuditsListPage = () => {
 
   // Handle new audit button click
   const handleNewAudit = () => {
-    router.push(`/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/new`);
+    router.push(
+      `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/new`
+    );
   };
 
   return (
@@ -237,14 +246,20 @@ const AuditsListPage = () => {
           { href: "/", label: "Home" },
           { href: "/dashboard", label: "User Dashboard" },
           { href: `/${locale}/dashboard/ai-maker`, label: "AI Maker" },
-          { href: `/${locale}/dashboard/ai-maker/${params.orgId}`, label: organization?.name || "Dashboard" },
+          {
+            href: `/${locale}/dashboard/ai-maker/${params.orgId}`,
+            label: organization?.name || "Dashboard",
+          },
           { href: "#", label: "Evaluations" },
         ]}
       />
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 overflow-x-visible">
         <div className="flex flex-1 flex-col lg:flex-row gap-6 md:gap-8 lg:-ml-[120px] xl:-ml-[130px]">
-          <WelcomeSection orgName={organization?.name} orgLogo={organization?.logoUrl} />
+          <WelcomeSection
+            orgName={organization?.name}
+            orgLogo={organization?.logoUrl}
+          />
 
           <div className="flex-1 bg-gray-50 p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0">
             {/* Header */}

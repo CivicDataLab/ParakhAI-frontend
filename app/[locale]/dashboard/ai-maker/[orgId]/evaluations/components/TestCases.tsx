@@ -133,9 +133,9 @@ const TestCases: React.FC<TestCasesProps> = ({
 
         setPromptDatasets(formatted);
       } catch (error: any) {
-        const errorMessage = error?.message || 'Failed to load prompt datasets';
+        const errorMessage = error?.message || "Failed to load prompt datasets";
         setDatasetsError(errorMessage);
-        console.error('Error fetching prompt datasets:', error);
+        console.error("Error fetching prompt datasets:", error);
       } finally {
         setIsLoadingDatasets(false);
       }
@@ -225,7 +225,8 @@ const TestCases: React.FC<TestCasesProps> = ({
         ) : promptDatasets.length === 0 ? (
           <div className="py-8 text-center">
             <Text variant="bodySm" className="text-gray-600">
-              No prompt datasets available. Please create prompt datasets in DataSpace first.
+              No prompt datasets available. Please create prompt datasets in
+              DataSpace first.
             </Text>
           </div>
         ) : (
@@ -234,8 +235,9 @@ const TestCases: React.FC<TestCasesProps> = ({
             columns={promptDatasetColumns}
             hideSelection={false}
             hideFooter={true}
+            defaultSelectedRows={selectedPromptLibraries}
             onRowSelectionChange={(selected) => {
-              setSelectedPromptLibraries(selected as string[]);
+              setSelectedPromptLibraries(selected as any[]);
             }}
           />
         )}
@@ -297,13 +299,15 @@ const TestCases: React.FC<TestCasesProps> = ({
                 }
               />
               <div className="flex items-center gap-2 mt-2 text-black [&_svg]:text-black [&_svg]:fill-black [&_svg]:stroke-black">
-                <Icon source={Icons.alert} size={16} className="flex-shrink-0" />
-                <Text
-                  variant="bodySm"
-                  className="text-black"
-                >
+                <Icon
+                  source={Icons.alert}
+                  size={16}
+                  className="flex-shrink-0"
+                />
+                <Text variant="bodySm" className="text-black">
                   Your test cases should be comma separated values in the format{" "}
-                  <strong className="text-black">Input</strong>, <strong className="text-black">Expected output</strong>, etc
+                  <strong className="text-black">Input</strong>,{" "}
+                  <strong className="text-black">Expected output</strong>, etc
                 </Text>
               </div>
             </div>

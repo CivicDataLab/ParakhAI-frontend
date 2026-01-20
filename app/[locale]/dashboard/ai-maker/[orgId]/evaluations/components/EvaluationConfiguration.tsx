@@ -278,6 +278,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                     label="Organisation Name"
                     labelHidden
                     value={organisationName}
+                    disabled={organisationName ? true : false}
                     onChange={(value) => {
                       setOrganisationName(value);
                       if (

@@ -1,18 +1,14 @@
-'use client';
+"use client";
 
-import BreadCrumbs from '@/components/Breadcrumbs';
-import { Icons } from '@/components/icons';
-import { Pagination } from '@/components/Pagination/Pagination';
-import { useGraphQL } from '@/lib/api';
-import {
-  IconChevronDown,
-  IconMinus,
-  IconX
-} from '@tabler/icons-react';
-import { useParams } from 'next/navigation';
-import { Button, Card, DataTable, Dialog, Popover, Tag, Text } from 'opub-ui';
-import React from 'react';
-import WelcomeSection from '../../../components/WelcomeSection';
+import BreadCrumbs from "@/components/Breadcrumbs";
+import { Icons } from "@/components/icons";
+import { Pagination } from "@/components/Pagination/Pagination";
+import { useGraphQL } from "@/lib/api";
+import { IconChevronDown, IconMinus, IconX } from "@tabler/icons-react";
+import { useParams } from "next/navigation";
+import { Button, Card, DataTable, Dialog, Popover, Tag, Text } from "opub-ui";
+import React from "react";
+import WelcomeSection from "../../../components/WelcomeSection";
 
 const GET_ORG_DETAILS = `
   query GetOrgDetails($orgId: ID!) {
@@ -61,68 +57,74 @@ const PROMPT_DATASETS_QUERY = `
   }
 `;
 
-const sectorOptions = ['Healthcare', 'Technology', 'Finance', 'Law & Justice', 'General Translation'];
+const sectorOptions = [
+  "Healthcare",
+  "Technology",
+  "Finance",
+  "Law & Justice",
+  "General Translation",
+];
 const tagOptions = [
-  'English',
-  'Clinical',
-  'Justice',
-  'Mizo',
-  'Odiya',
-  'Translation',
-  'Finance',
-  'Education',
-  'Healthcare',
-  'Technology',
-  'Agriculture',
-  'Manufacturing',
-  'Retail',
-  'Tourism',
-  'Transport',
-  'Energy',
-  'Environment',
-  'Public Policy',
-  'Data Science',
-  'Cybersecurity',
-  'Analytics',
-  'Compliance',
-  'Marketing',
-  'Legal',
-  'Research',
-  'Operations',
-  'Human Resources',
-  'Logistics',
-  'Content',
-  'Localization',
-  'Quality Assurance',
-  'Testing',
-  'Sales',
-  'Strategy',
-  'Innovation',
-  'Engineering',
-  'Automation',
-  'Simulation',
-  'Predictive Modeling',
-  'Benchmarking',
-  'Risk Assessment',
-  'Auditing',
-  'Accessibility',
-  'Performance',
-  'Ethics',
-  'Diversity',
-  'Inclusion',
-  'Governance',
-  'Regulation',
-  'Open Data',
-  'Knowledge Base',
-  'Documentation',
-  'Citizen Services',
-  'Smart Cities',
-  'Climate',
-  'Finance Analytics',
-  'Behavioral Insights',
-  'Scenario Planning',
-  'Rapid Prototyping',
-  'Localization QA',
+  "English",
+  "Clinical",
+  "Justice",
+  "Mizo",
+  "Odiya",
+  "Translation",
+  "Finance",
+  "Education",
+  "Healthcare",
+  "Technology",
+  "Agriculture",
+  "Manufacturing",
+  "Retail",
+  "Tourism",
+  "Transport",
+  "Energy",
+  "Environment",
+  "Public Policy",
+  "Data Science",
+  "Cybersecurity",
+  "Analytics",
+  "Compliance",
+  "Marketing",
+  "Legal",
+  "Research",
+  "Operations",
+  "Human Resources",
+  "Logistics",
+  "Content",
+  "Localization",
+  "Quality Assurance",
+  "Testing",
+  "Sales",
+  "Strategy",
+  "Innovation",
+  "Engineering",
+  "Automation",
+  "Simulation",
+  "Predictive Modeling",
+  "Benchmarking",
+  "Risk Assessment",
+  "Auditing",
+  "Accessibility",
+  "Performance",
+  "Ethics",
+  "Diversity",
+  "Inclusion",
+  "Governance",
+  "Regulation",
+  "Open Data",
+  "Knowledge Base",
+  "Documentation",
+  "Citizen Services",
+  "Smart Cities",
+  "Climate",
+  "Finance Analytics",
+  "Behavioral Insights",
+  "Scenario Planning",
+  "Rapid Prototyping",
+  "Localization QA",
 ];
 
 const PromptLibrariesPage = () => {
@@ -131,27 +133,35 @@ const PromptLibrariesPage = () => {
   const { request, isAuthenticated } = useGraphQL();
   const params = useParams();
 
-  const [searchValue, setSearchValue] = React.useState('');
+  const [searchValue, setSearchValue] = React.useState("");
   const [selectedSectors, setSelectedSectors] = React.useState<string[]>([]);
   const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = React.useState(false);
-  const [resultsPerPage, setResultsPerPage] = React.useState('9');
+  const [resultsPerPage, setResultsPerPage] = React.useState("9");
   const [currentPage, setCurrentPage] = React.useState(1);
   const [sectorsExpanded, setSectorsExpanded] = React.useState(true);
   const [tagsExpanded, setTagsExpanded] = React.useState(true);
-  const [selectedLibrary, setSelectedLibrary] = React.useState<PromptLibrary | null>(null);
+  const [selectedLibrary, setSelectedLibrary] =
+    React.useState<PromptLibrary | null>(null);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [showNotice, setShowNotice] = React.useState(true);
-  const [promptLibraries, setPromptLibraries] = React.useState<PromptLibrary[]>([]);
-  const [organization, setOrganization] = React.useState<{ name: string; logoUrl: string | null } | null>(null);
+  const [promptLibraries, setPromptLibraries] = React.useState<PromptLibrary[]>(
+    []
+  );
+  const [organization, setOrganization] = React.useState<{
+    name: string;
+    logoUrl: string | null;
+  } | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const handleToggleSelection = (
     value: string,
-    setter: React.Dispatch<React.SetStateAction<string[]>>,
+    setter: React.Dispatch<React.SetStateAction<string[]>>
   ) => {
     setter((prev) =>
-      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value],
+      prev.includes(value)
+        ? prev.filter((item) => item !== value)
+        : [...prev, value]
     );
   };
 
@@ -182,11 +192,15 @@ const PromptLibrariesPage = () => {
                 promptCount?: number;
               }>;
             }>;
-          }>(PROMPT_DATASETS_QUERY, {
-            limit: 50,
-            isPublic: true,
-          }, { organization: params.orgId as string }),
-          request(GET_ORG_DETAILS, { orgId: params.orgId })
+          }>(
+            PROMPT_DATASETS_QUERY,
+            {
+              limit: 50,
+              isPublic: true,
+            },
+            { organization: params.orgId as string }
+          ),
+          request(GET_ORG_DETAILS, { orgId: params.orgId }),
         ]);
 
         const datasets = datasetsResponse?.promptDatasets || [];
@@ -203,17 +217,19 @@ const PromptLibrariesPage = () => {
           promptFormat: ds.resources?.[0]?.promptFormat,
           promptsCount: ds.resources?.[0]?.promptCount || 0,
           auditsCount: Math.floor(Math.random() * 300), // Placeholder since API doesn't provide audits
-          sectors: ds.promptMetadata?.domain ? [ds.promptMetadata.domain] : ['General'],
-          tags: ds.promptMetadata?.targetLanguages || ['English'],
-          owner: 'ParakhAI',
-          updatedAt: '19 July 2024', // Placeholder since API doesn't provide this
+          sectors: ds.promptMetadata?.domain
+            ? [ds.promptMetadata.domain]
+            : ["General"],
+          tags: ds.promptMetadata?.targetLanguages || ["English"],
+          owner: "ParakhAI",
+          updatedAt: "19 July 2024", // Placeholder since API doesn't provide this
         }));
 
         setPromptLibraries(formatted);
       } catch (error: any) {
-        const errorMessage = error?.message || 'Failed to load prompt datasets';
+        const errorMessage = error?.message || "Failed to load prompt datasets";
         setError(errorMessage);
-        console.error('Error fetching prompt datasets:', error);
+        console.error("Error fetching prompt datasets:", error);
       } finally {
         setIsLoading(false);
       }
@@ -222,20 +238,31 @@ const PromptLibrariesPage = () => {
     fetchPromptDatasets();
   }, [isAuthenticated, request]);
 
-
   const filteredLibraries = promptLibraries.filter((library) => {
-    const matchesSearch = library.title.toLowerCase().includes(searchValue.toLowerCase());
+    const matchesSearch = library.title
+      .toLowerCase()
+      .includes(searchValue.toLowerCase());
     const matchesSector =
-      selectedSectors.length === 0 || (library.sectors && library.sectors.some((sector) => selectedSectors.includes(sector)));
-    const matchesTags = selectedTags.length === 0 || (library.tags && library.tags.some((tag) => selectedTags.includes(tag)));
+      selectedSectors.length === 0 ||
+      (library.sectors &&
+        library.sectors.some((sector) => selectedSectors.includes(sector)));
+    const matchesTags =
+      selectedTags.length === 0 ||
+      (library.tags && library.tags.some((tag) => selectedTags.includes(tag)));
     return matchesSearch && matchesSector && matchesTags;
   });
 
-  const formatNumber = React.useCallback((value: number) => value.toLocaleString(), []);
+  const formatNumber = React.useCallback(
+    (value: number) => value.toLocaleString(),
+    []
+  );
 
   // Pagination logic
   const itemsPerPage = parseInt(resultsPerPage, 10);
-  const totalPages = Math.max(1, Math.ceil(filteredLibraries.length / itemsPerPage));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredLibraries.length / itemsPerPage)
+  );
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedLibraries = filteredLibraries.slice(startIndex, endIndex);
@@ -264,10 +291,10 @@ const PromptLibrariesPage = () => {
 
     // Generate sample data based on selected library
     return Array.from({ length: 13 }, (_, index) => ({
-      input: 'Content',
-      idealOutput: 'Content',
-      columnName1: 'Content',
-      columnName2: 'Content',
+      input: "Content",
+      idealOutput: "Content",
+      columnName1: "Content",
+      columnName2: "Content",
     }));
   }, [selectedLibrary]);
 
@@ -275,25 +302,30 @@ const PromptLibrariesPage = () => {
   const columns = React.useMemo(
     () => [
       {
-        accessorKey: 'input',
+        accessorKey: "input",
         header: (
           <span className="dt-header-with-icon">
-            <img src="/images/icons/arrows-sort.png" alt="" width={12} height={12} />
+            <img
+              src="/images/icons/arrows-sort.png"
+              alt=""
+              width={12}
+              height={12}
+            />
             <span>Input</span>
           </span>
         ),
       },
       {
-        accessorKey: 'idealOutput',
-        header: 'Ideal Output',
+        accessorKey: "idealOutput",
+        header: "Ideal Output",
       },
       {
-        accessorKey: 'columnName1',
-        header: 'Column name',
+        accessorKey: "columnName1",
+        header: "Column name",
       },
       {
-        accessorKey: 'columnName2',
-        header: 'Column name',
+        accessorKey: "columnName2",
+        header: "Column name",
       },
     ],
     []
@@ -303,16 +335,22 @@ const PromptLibrariesPage = () => {
     <div className="flex flex-col min-h-screen bg-white prompt-libraries-page">
       <BreadCrumbs
         data={[
-          { href: '/', label: 'Home' },
-          { href: '/dashboard', label: 'User Dashboard' },
-          { href: `/${params.locale}/dashboard/ai-maker`, label: 'AI Maker' },
-          { href: `/${params.locale}/dashboard/ai-maker/${params.orgId}`, label: organization?.name || 'Dashboard' },
-          { href: '#', label: 'Prompt Libraries' },
+          { href: "/", label: "Home" },
+          { href: "/dashboard", label: "User Dashboard" },
+          { href: `/${params.locale}/dashboard/ai-maker`, label: "AI Maker" },
+          {
+            href: `/${params.locale}/dashboard/ai-maker/${params.orgId}`,
+            label: organization?.name || "Dashboard",
+          },
+          { href: "#", label: "Prompt Libraries" },
         ]}
       />
 
       <div className="flex flex-1 gap-8 px-8 main-content-wrapper">
-        <WelcomeSection orgName={organization?.name} orgLogo={organization?.logoUrl} />
+        <WelcomeSection
+          orgName={organization?.name}
+          orgLogo={organization?.logoUrl}
+        />
 
         <div className="flex-1 prompt-libraries-content p-10">
           <div className="prompt-page-header">
@@ -327,7 +365,11 @@ const PromptLibrariesPage = () => {
                 Search prompt libraries
               </label>
               <div className="prompt-search-box">
-                <SearchIcon size={18} className="prompt-search-icon" aria-hidden />
+                <SearchIcon
+                  size={18}
+                  className="prompt-search-icon"
+                  aria-hidden
+                />
                 <input
                   id="promptSearch"
                   type="text"
@@ -340,7 +382,7 @@ const PromptLibrariesPage = () => {
                   <button
                     type="button"
                     className="prompt-search-clear"
-                    onClick={() => setSearchValue('')}
+                    onClick={() => setSearchValue("")}
                     aria-label="Clear search"
                   >
                     <ClearIcon size={16} aria-hidden />
@@ -365,10 +407,14 @@ const PromptLibrariesPage = () => {
                     <Text as="span" className="prompt-filter-popover-title">
                       FILTERS
                     </Text>
-                    <Button kind="tertiary" size="slim" onClick={() => {
-                      setSelectedSectors([]);
-                      setSelectedTags([]);
-                    }}>
+                    <Button
+                      kind="tertiary"
+                      size="slim"
+                      onClick={() => {
+                        setSelectedSectors([]);
+                        setSelectedTags([]);
+                      }}
+                    >
                       Reset
                     </Button>
                   </div>
@@ -383,16 +429,28 @@ const PromptLibrariesPage = () => {
                         <span className="prompt-filter-section-title">
                           Sectors ({sectorOptions.length})
                         </span>
-                        {sectorsExpanded ? <IconMinus size={16} /> : <IconChevronDown size={16} />}
+                        {sectorsExpanded ? (
+                          <IconMinus size={16} />
+                        ) : (
+                          <IconChevronDown size={16} />
+                        )}
                       </button>
                       {sectorsExpanded && (
                         <div className="prompt-filter-section-options prompt-filter-section-options--scrollable">
                           {sectorOptions.map((sector) => (
-                            <label key={sector} className="prompt-filter-checkbox">
+                            <label
+                              key={sector}
+                              className="prompt-filter-checkbox"
+                            >
                               <input
                                 type="checkbox"
                                 checked={selectedSectors.includes(sector)}
-                                onChange={() => handleToggleSelection(sector, setSelectedSectors)}
+                                onChange={() =>
+                                  handleToggleSelection(
+                                    sector,
+                                    setSelectedSectors
+                                  )
+                                }
                               />
                               <span>{sector}</span>
                             </label>
@@ -411,7 +469,11 @@ const PromptLibrariesPage = () => {
                         <span className="prompt-filter-section-title">
                           Tags ({tagOptions.length})
                         </span>
-                        {tagsExpanded ? <IconMinus size={16} /> : <IconChevronDown size={16} />}
+                        {tagsExpanded ? (
+                          <IconMinus size={16} />
+                        ) : (
+                          <IconChevronDown size={16} />
+                        )}
                       </button>
                       {tagsExpanded && (
                         <div className="prompt-filter-section-options prompt-filter-section-options--scrollable">
@@ -420,7 +482,9 @@ const PromptLibrariesPage = () => {
                               <input
                                 type="checkbox"
                                 checked={selectedTags.includes(tag)}
-                                onChange={() => handleToggleSelection(tag, setSelectedTags)}
+                                onChange={() =>
+                                  handleToggleSelection(tag, setSelectedTags)
+                                }
                               />
                               <span>{tag}</span>
                             </label>
@@ -443,9 +507,13 @@ const PromptLibrariesPage = () => {
                   textColor="#0A0704"
                   onRemove={() => {
                     if (selectedSectors.includes(filter)) {
-                      setSelectedSectors((prev) => prev.filter((sector) => sector !== filter));
+                      setSelectedSectors((prev) =>
+                        prev.filter((sector) => sector !== filter)
+                      );
                     } else {
-                      setSelectedTags((prev) => prev.filter((tag) => tag !== filter));
+                      setSelectedTags((prev) =>
+                        prev.filter((tag) => tag !== filter)
+                      );
                     }
                   }}
                 >
@@ -476,36 +544,39 @@ const PromptLibrariesPage = () => {
               </div>
             ) : (
               paginatedLibraries.map((library, index) => {
-                const updatedValue = library.updatedAt || 'Unknown';
+                const updatedValue = library.updatedAt || "Unknown";
                 const testCasesValue = `${formatNumber(library.promptsCount || 0)} test cases`;
                 const auditsValue = `${formatNumber(library.auditsCount || 0)} audits`;
 
                 const metadataContent = [
                   {
                     icon: Icons.calendar,
-                    label: 'Updated',
+                    label: "Updated",
                     value: updatedValue,
                   },
                   {
                     icon: Icons.testPipe,
-                    label: 'Test cases',
+                    label: "Test cases",
                     value: testCasesValue,
                   },
                   {
                     icon: Icons.discountCheck,
-                    label: 'Audits',
+                    label: "Audits",
                     value: auditsValue,
                   },
                 ] as any;
 
                 // Alternate between Parakh and CDL for different cards
-                const rightIcon = index % 2 === 0 ? '/images/icons/Parakh.png' : '/images/icons/CDL.png';
-                const rightLabel = index % 2 === 0 ? 'Parakh' : 'CDL';
+                const rightIcon =
+                  index % 2 === 0
+                    ? "/images/icons/Parakh.png"
+                    : "/images/icons/CDL.png";
+                const rightLabel = index % 2 === 0 ? "Parakh" : "CDL";
 
                 const footerContent = [
                   {
-                    icon: '/images/icons/Disaster.png',
-                    label: 'Disaster',
+                    icon: "/images/icons/Disaster.png",
+                    label: "Disaster",
                   },
                   {
                     icon: rightIcon,
@@ -515,23 +586,26 @@ const PromptLibrariesPage = () => {
 
                 const type = (library.sectors || []).map((sector) => ({
                   label: sector,
-                  fillColor: '#D7CFF9',
-                  borderColor: '#D7CFF9',
+                  fillColor: "#D7CFF9",
+                  borderColor: "#D7CFF9",
                 }));
 
                 return (
-                   <div key={library.id} className="prompt-card-wrapper">
-                    <div onClick={() => handleCardClick(library)} style={{ cursor: 'pointer' }}>
-                    <Card
-                      title={library.title}
-                      description={library.description || ''}
-                      variation="collapsed"
-                      iconColor="highlight"
-                      metadataContent={metadataContent}
-                      footerContent={footerContent}
-                      type={type}
-                      tag={library.tags || []}
-                    />
+                  <div key={library.id} className="prompt-card-wrapper">
+                    <div
+                      onClick={() => handleCardClick(library)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <Card
+                        title={library.title}
+                        description={library.description || ""}
+                        variation="collapsed"
+                        iconColor="highlight"
+                        metadataContent={metadataContent}
+                        footerContent={footerContent}
+                        type={type}
+                        tag={library.tags || []}
+                      />
                     </div>
                   </div>
                 );
@@ -549,8 +623,8 @@ const PromptLibrariesPage = () => {
               setResultsPerPage(String(newPageSize));
               setCurrentPage(1);
             }}
-                label="Results per page"
-              />
+            label="Results per page"
+          />
         </div>
       </div>
 
@@ -561,14 +635,14 @@ const PromptLibrariesPage = () => {
           headerHidden
           large
           className="PromptDlg"
-          style={{ maxHeight: '85vh' }}
+          style={{ maxHeight: "85vh" }}
           primaryAction={{
-            content: '',
+            content: "",
             onAction: () => {},
           }}
           secondaryActions={[
             {
-              content: '',
+              content: "",
               onAction: () => setDialogOpen(false),
             },
           ]}
@@ -580,7 +654,12 @@ const PromptLibrariesPage = () => {
                 aria-label="Flag this library"
                 onClick={() => {}}
               >
-                <img src="/images/icons/flag-2-filled.png" alt="Flag" width={18} height={18} />
+                <img
+                  src="/images/icons/flag-2-filled.png"
+                  alt="Flag"
+                  width={18}
+                  height={18}
+                />
               </button>
 
               <button
@@ -602,7 +681,8 @@ const PromptLibrariesPage = () => {
           {showNotice && (
             <div className="PromptDlg__note">
               <span>
-                Notice something wrong with this prompt library? Flag the issue by clicking the red flag above.
+                Notice something wrong with this prompt library? Flag the issue
+                by clicking the red flag above.
               </span>
               <button
                 type="button"
@@ -620,7 +700,7 @@ const PromptLibrariesPage = () => {
               <DataTable
                 rows={tableData}
                 columns={columns}
-                 hideSelection={true}
+                hideSelection={true}
                 hideFooter={true}
               />
             )}
@@ -632,5 +712,3 @@ const PromptLibrariesPage = () => {
 };
 
 export default PromptLibrariesPage;
-
-
