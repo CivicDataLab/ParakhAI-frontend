@@ -150,7 +150,7 @@ const AIModelsPage = () => {
   const [sectorsExpanded, setSectorsExpanded] = React.useState(true);
   const [tagsExpanded, setTagsExpanded] = React.useState(true);
   const [selectedModel, setSelectedModel] = React.useState<AIModel | null>(
-    null
+    null,
   );
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [showNotice, setShowNotice] = React.useState(true);
@@ -169,7 +169,7 @@ const AIModelsPage = () => {
     setter((prev) =>
       prev.includes(value)
         ? prev.filter((item) => item !== value)
-        : [...prev, value]
+        : [...prev, value],
     );
   };
 
@@ -203,7 +203,7 @@ const AIModelsPage = () => {
               limit: 50,
               offset: 0,
             },
-            { organization: params.orgId as string }
+            { organization: params.orgId as string },
           ),
           request(GET_ORG_DETAILS, { orgId: params.orgId }),
         ]);
@@ -255,14 +255,14 @@ const AIModelsPage = () => {
 
   const formatNumber = React.useCallback(
     (value: number) => value.toLocaleString(),
-    []
+    [],
   );
 
   // Pagination logic
   const itemsPerPage = parseInt(resultsPerPage, 10);
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredModels.length / itemsPerPage)
+    Math.ceil(filteredModels.length / itemsPerPage),
   );
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -280,17 +280,18 @@ const AIModelsPage = () => {
     }
   }, [totalPages, currentPage]);
 
-  // Handle card click to open dialog
+  // Handle card click to navigate to detail page
   const handleCardClick = (model: AIModel) => {
-    setSelectedModel(model);
-    setDialogOpen(true);
+    router.push(
+      `/${locale}/dashboard/ai-maker/${params.orgId}/ai-models/${model.id}`,
+    );
   };
 
   // Handle New Evaluation button click
   const handleNewEvaluation = (model: AIModel) => {
     // Navigate to new evaluation page with model pre-selected
     router.push(
-      `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/new?modelId=${model.id}`
+      `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/new?modelId=${model.id}`,
     );
   };
 
@@ -337,7 +338,7 @@ const AIModelsPage = () => {
         header: "Column name",
       },
     ],
-    []
+    [],
   );
 
   return (
@@ -457,7 +458,7 @@ const AIModelsPage = () => {
                                 onChange={() =>
                                   handleToggleSelection(
                                     sector,
-                                    setSelectedSectors
+                                    setSelectedSectors,
                                   )
                                 }
                               />
@@ -520,11 +521,11 @@ const AIModelsPage = () => {
                   onRemove={() => {
                     if (selectedSectors.includes(filter)) {
                       setSelectedSectors((prev) =>
-                        prev.filter((sector) => sector !== filter)
+                        prev.filter((sector) => sector !== filter),
                       );
                     } else {
                       setSelectedTags((prev) =>
-                        prev.filter((tag) => tag !== filter)
+                        prev.filter((tag) => tag !== filter),
                       );
                     }
                   }}
@@ -605,7 +606,7 @@ const AIModelsPage = () => {
                 return (
                   <div key={model.id} className="ai-models-card-wrapper">
                     <div
-                      onClick={() => handleNewEvaluation(model)}
+                      onClick={() => handleCardClick(model)}
                       style={{ cursor: "pointer" }}
                       className="h-full"
                     >

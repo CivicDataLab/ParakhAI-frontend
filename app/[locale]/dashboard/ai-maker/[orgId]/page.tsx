@@ -5,7 +5,7 @@ import { Icons } from "@/components/icons";
 import { useGraphQL } from "@/lib/api";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Button, Card, DataTable, Text } from "opub-ui";
 import { useEffect, useState } from "react";
 import WelcomeSection from "../../components/WelcomeSection";
@@ -38,6 +38,7 @@ type AIModel = {
 
 const AIMakerDashboard = () => {
   const params = useParams();
+  const router = useRouter();
   const locale = params?.locale || "en";
   const orgId = params?.orgId as string;
   const aiMakerBaseUrl =
@@ -139,11 +140,11 @@ const AIMakerDashboard = () => {
   // Calculate metrics
   const totalTestCases = evaluations.reduce(
     (sum, evaluation) => sum + (evaluation.totalTests || 0),
-    0
+    0,
   );
   const totalIssues = evaluations.reduce(
     (sum, evaluation) => sum + (evaluation.failedTests || 0),
-    0
+    0,
   );
 
   const metrics = [
@@ -152,6 +153,10 @@ const AIMakerDashboard = () => {
     { label: "Models Covered", value: models.length.toString() || "--" },
     { label: "Issues Flagged", value: totalIssues.toString() || "--" },
   ];
+
+  const handleCardClick = (modelId: string) => {
+    router.push(`/${locale}/dashboard/ai-maker/${orgId}/ai-models/${modelId}`);
+  };
 
   // Create column helper
   const columnHelper = createColumnHelper<Evaluation>();
@@ -343,7 +348,11 @@ const AIMakerDashboard = () => {
                     };
 
                     return (
-                      <div key={model.id} className="w-full">
+                      <div
+                        key={model.id}
+                        className="w-full cursor-pointer"
+                        onClick={() => handleCardClick(model.id)}
+                      >
                         <Card {...commonProps} />
                       </div>
                     );

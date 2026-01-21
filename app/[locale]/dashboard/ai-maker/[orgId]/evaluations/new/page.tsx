@@ -152,20 +152,21 @@ const NewAuditPage = () => {
   const locale = params?.locale || "en";
 
   const urlModelId = searchParams.get("modelId");
+  const urlVersion = searchParams.get("version");
 
   const [auditType, setAuditType] = useState<AuditType>("technical");
   const [activeTab, setActiveTab] = useState<"config" | "test" | "results">(
-    "config"
+    "config",
   );
   const [auditName, setAuditName] = useState(generateDefaultAuditName);
   const isAutoSaved = true;
 
   // AI Models state
   const [selectedModelId, setSelectedModelId] = useState<string | null>(
-    urlModelId
+    urlModelId,
   );
   const [selectedVersionId, setSelectedVersionId] = useState<number | null>(
-    null
+    null,
   );
   const [aiModels, setAiModels] = useState<
     Array<{
@@ -194,7 +195,7 @@ const NewAuditPage = () => {
   const modelName = selectedModel?.displayName || selectedModel?.name || "";
   // Get version display from selected version or latest version
   const selectedVersion = selectedModel?.versions?.find(
-    (v) => v.id === selectedVersionId
+    (v) => v.id === selectedVersionId,
   );
   const latestVersion = selectedModel?.versions?.find((v) => v.isLatest);
   const modelVersion = selectedVersion?.version || latestVersion?.version || "";
@@ -272,12 +273,12 @@ const NewAuditPage = () => {
 
   // Test Cases state
   const [selectedPromptLibraries, setSelectedPromptLibraries] = useState<any[]>(
-    []
+    [],
   );
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [pastedTestCases, setPastedTestCases] = useState("");
   const [testInputMode, setTestInputMode] = useState<"paste" | "upload">(
-    "paste"
+    "paste",
   );
 
   // Backend audit run state
@@ -352,7 +353,7 @@ const NewAuditPage = () => {
         // Use authenticated GraphQL request - access token is automatically included
         const data = await request<{ modulesByModelType: Module[] }>(
           MODULES_BY_MODEL_TYPE_QUERY,
-          { modelType }
+          { modelType },
         );
 
         const modulesData = Array.isArray(data?.modulesByModelType)
@@ -386,7 +387,7 @@ const NewAuditPage = () => {
                   label:
                     metric.displayName ||
                     toTitleCase(metric.name.replace(/_/g, " ")),
-                })
+                }),
               );
 
               initialModuleMetrics[moduleMetrics.name] = metricsOptions;
@@ -448,7 +449,7 @@ const NewAuditPage = () => {
           // Use the error message which now includes the actual endpoint URL
           setModulesError(
             error.message ||
-              "Backend server is not available. Please check your NEXT_PUBLIC_BACKEND_URL configuration."
+              "Backend server is not available. Please check your NEXT_PUBLIC_BACKEND_URL configuration.",
           );
           // Don't reset refs on connection error - prevent retry spam
         } else {
@@ -458,7 +459,7 @@ const NewAuditPage = () => {
             error?.response?.errors?.[0]?.message ||
             "Unknown error";
           setModulesError(
-            `Failed to load evaluation modules: ${errorMessage}. Please check your authentication and backend configuration.`
+            `Failed to load evaluation modules: ${errorMessage}. Please check your authentication and backend configuration.`,
           );
           // Reset refs on other errors so it can retry
           modulesFetchedRef.current = false;
@@ -500,6 +501,12 @@ const NewAuditPage = () => {
             version: string;
             modelType: string;
             organization?: string;
+            versions?: Array<{
+              id: number;
+              version: string;
+              isLatest: boolean;
+              status: string;
+            }>;
           }>;
         }>(
           AI_MODELS_QUERY,
@@ -511,7 +518,7 @@ const NewAuditPage = () => {
             limit: 50,
             offset: 0,
           },
-          { organization: params.orgId as string }
+          { organization: params.orgId as string },
         ),
         request(GET_ORG_DETAILS, { orgId: params.orgId }),
       ]);
@@ -526,6 +533,16 @@ const NewAuditPage = () => {
       if (models.length > 0 && !selectedModelId) {
         if (urlModelId && models.find((m) => m.id === urlModelId)) {
           setSelectedModelId(urlModelId);
+          // If version is provided in URL, find its ID and select it
+          if (urlVersion) {
+            const model = models.find((m) => m.id === urlModelId);
+            const versionObj = model?.versions?.find(
+              (v) => v.version === urlVersion,
+            );
+            if (versionObj) {
+              setSelectedVersionId(versionObj.id);
+            }
+          }
         } else {
           setSelectedModelId(models[0].id);
         }
@@ -542,7 +559,7 @@ const NewAuditPage = () => {
         error?.response?.errors?.[0]?.message ||
         "Unknown error";
       setModelsError(
-        `Failed to load AI models: ${errorMessage}. Please check your authentication and backend configuration.`
+        `Failed to load AI models: ${errorMessage}. Please check your authentication and backend configuration.`,
       );
       modelsFetchedRef.current = false; // Allow retry on error
     } finally {
@@ -574,7 +591,7 @@ const NewAuditPage = () => {
 
   // Fetch metrics for a specific module using metricsByModelType
   const fetchMetricsForModule = async (
-    moduleName: string
+    moduleName: string,
   ): Promise<SelectOption[]> => {
     if (!isAuthenticated) {
       return [];
@@ -653,7 +670,7 @@ const NewAuditPage = () => {
 
     // Check if at least one module is selected
     const hasSelectedModules = Object.values(selectedModules).some(
-      (isSelected) => isSelected
+      (isSelected) => isSelected,
     );
     if (!hasSelectedModules) {
       errors.modules = "At least one evaluation module must be selected";
@@ -762,7 +779,7 @@ const NewAuditPage = () => {
       modules,
       metrics,
       testDatasetIds: selectedPromptLibraries.map((item: any) =>
-        String(item.id)
+        String(item.id),
       ),
       customTestInputs: customTestInputs || null,
       configuration,
@@ -784,7 +801,7 @@ const NewAuditPage = () => {
       }>(
         REQUEST_AUDIT_MUTATION,
         { input },
-        { organization: params.orgId as string }
+        { organization: params.orgId as string },
       );
 
       const payload = result?.requestAudit;
@@ -830,7 +847,7 @@ const NewAuditPage = () => {
       let durationSeconds: number | null = null;
       if (started && completed) {
         durationSeconds = Math.round(
-          (completed.getTime() - started.getTime()) / 1000
+          (completed.getTime() - started.getTime()) / 1000,
         );
       }
 
@@ -883,7 +900,7 @@ const NewAuditPage = () => {
                 }
               }
             `,
-            { auditId: audit.id }
+            { auditId: audit.id },
           );
 
           const refetchedAudit = refetchResult?.audit;
@@ -906,7 +923,7 @@ const NewAuditPage = () => {
             let updatedDurationSeconds: number | null = null;
             if (started && completed) {
               updatedDurationSeconds = Math.round(
-                (completed.getTime() - started.getTime()) / 1000
+                (completed.getTime() - started.getTime()) / 1000,
               );
             }
 
@@ -1017,7 +1034,7 @@ const NewAuditPage = () => {
                         // Auto-select latest version when model changes
                         const model = aiModels.find((m) => m.id === value);
                         const latestVer = model?.versions?.find(
-                          (v) => v.isLatest
+                          (v) => v.isLatest,
                         );
                         setSelectedVersionId(latestVer?.id || null);
                       }}
