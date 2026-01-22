@@ -102,7 +102,7 @@ type AIModel = {
   providerModelId: string;
   organization: string;
   supportsStreaming: boolean;
-  maxTokens: number;
+  maxTokens?: number | null;
   supportedLanguages: string[];
   tags: string[];
   status: string;
@@ -290,11 +290,7 @@ const ModelDetailPage = () => {
       header: "Expert",
       cell: (info) => (
         <div className="flex items-center gap-2">
-          <Avatar
-            initials={info.getValue()?.substring(0, 2).toUpperCase() || "EX"}
-            color="colored"
-            size="xs"
-          />
+          <Avatar showInitials size="small" />
           <Text variant="bodySm">{info.getValue() || "Unknown"}</Text>
         </div>
       ),
@@ -502,12 +498,11 @@ const ModelDetailPage = () => {
                                     {model.supportsStreaming && (
                                       <Badge>Streaming</Badge>
                                     )}
-                                    {model.maxTokens && (
+                                    {model.maxTokens ? (
                                       <Badge>
-                                        {model.maxTokens.toLocaleString()}{" "}
-                                        Tokens
+                                        {`${model.maxTokens.toLocaleString()} Tokens`}
                                       </Badge>
-                                    )}
+                                    ) : null}
                                   </div>
                                 </div>
 
@@ -531,9 +526,7 @@ const ModelDetailPage = () => {
                                         {model.supportedLanguages.length >
                                           3 && (
                                           <Badge>
-                                            +
-                                            {model.supportedLanguages.length -
-                                              3}
+                                            {` + ${model.supportedLanguages.length - 3}`}
                                           </Badge>
                                         )}
                                       </div>
