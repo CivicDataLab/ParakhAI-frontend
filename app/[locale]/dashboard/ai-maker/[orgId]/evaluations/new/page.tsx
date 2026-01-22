@@ -870,7 +870,7 @@ const NewAuditPage = () => {
 
       // Redirect to the audit detail page with the audit ID in URL
       // This prevents re-triggering the audit on page reload
-      router.push(`/${locale}/dashboard/ai-maker/evaluations/${audit.id}`);
+      router.push(`/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/${audit.id}`);
       return; // Exit early - the detail page will handle polling
 
       // Poll for audit completion instead of fixed setTimeout
