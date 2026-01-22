@@ -451,6 +451,10 @@ html.mobile-menu-open .breadcrumbs-ml {
   border: 1px solid rgba(209, 213, 219, 1.4);
 }
 
+.moving-landing-card-border {
+  border: 1px solid #1f1f1f;
+  border-radius: 16px;
+}
 .result-summary-evaluation-section {
   background-color: #faf9f9;
   border-radius: 16px;

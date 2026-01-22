@@ -3,10 +3,11 @@
 import BreadCrumbs from "@/components/Breadcrumbs";
 import { Icons } from "@/components/icons";
 import { useGraphQL } from "@/lib/api";
+import { stripMarkdown } from "@/lib/utils";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Button, Card, DataTable, Text } from "opub-ui";
+import { Button, Card, DataTable, Spinner, Text } from "opub-ui";
 import { useEffect, useState } from "react";
 import WelcomeSection from "../../components/WelcomeSection";
 
@@ -140,11 +141,11 @@ const AIMakerDashboard = () => {
   // Calculate metrics
   const totalTestCases = evaluations.reduce(
     (sum, evaluation) => sum + (evaluation.totalTests || 0),
-    0,
+    0
   );
   const totalIssues = evaluations.reduce(
     (sum, evaluation) => sum + (evaluation.failedTests || 0),
-    0,
+    0
   );
 
   const metrics = [
@@ -296,7 +297,14 @@ const AIMakerDashboard = () => {
                   </div>
                 )}
               </div>
-              {hasModels ? (
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <Spinner />
+                  <Text variant="bodySm" className="mt-4 text-gray-600">
+                    Loading models...
+                  </Text>
+                </div>
+              ) : hasModels ? (
                 <div className="grid grid-cols-1 w-full gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {models.map((model) => {
                     // Card metadata (top row inside card)
@@ -338,7 +346,7 @@ const AIMakerDashboard = () => {
 
                     const commonProps = {
                       title: model.displayName,
-                      description: model.description,
+                      description: stripMarkdown(model.description || ""),
                       variation: "collapsed" as const,
                       iconColor: "highlight" as const,
                       metadataContent,
