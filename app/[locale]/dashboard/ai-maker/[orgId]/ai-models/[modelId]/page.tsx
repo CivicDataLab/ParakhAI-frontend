@@ -226,7 +226,7 @@ const ModelDetailPage = () => {
           }),
           request<{ organization: { name: string; logoUrl: string | null } }>(
             GET_ORG_DETAILS,
-            { orgId },
+            { orgId }
           ),
         ]);
 
@@ -290,7 +290,11 @@ const ModelDetailPage = () => {
       header: "Expert",
       cell: (info) => (
         <div className="flex items-center gap-2">
-          <Avatar showInitials size="small" />
+          <Avatar
+            showInitials
+            name={info.getValue() || "Expert"}
+            size="extraSmall"
+          />
           <Text variant="bodySm">{info.getValue() || "Unknown"}</Text>
         </div>
       ),
@@ -482,7 +486,7 @@ const ModelDetailPage = () => {
                                     {formatDateShort(
                                       v.createdAt ||
                                         model.updatedAt ||
-                                        new Date().toISOString(),
+                                        new Date().toISOString()
                                     )}
                                   </Text>
                                 </div>
@@ -526,7 +530,7 @@ const ModelDetailPage = () => {
                                         {model.supportedLanguages.length >
                                           3 && (
                                           <Badge>
-                                            {` + ${model.supportedLanguages.length - 3}`}
+                                            {`+${model.supportedLanguages.length - 3}`}
                                           </Badge>
                                         )}
                                       </div>
