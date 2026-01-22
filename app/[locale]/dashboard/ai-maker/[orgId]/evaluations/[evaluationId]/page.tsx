@@ -65,6 +65,40 @@ const GET_AI_MODEL_NAME_QUERY = `
   }
 `;
 
+// GraphQL query to fetch audit summary
+const GET_AUDIT_SUMMARY = `
+  query GetResults($audit_id: ID!)
+  {
+    auditSummaries(auditId: $audit_id) {
+      id
+      audit {
+        pk
+      }
+      status
+      totalTests
+      totalTasks
+      totalResults
+      aggregationMethod
+      riskDistribution
+      moduleSummary
+      metricSummary
+      toolSummary
+      overallVerdict
+      verdictReason
+      recommendations
+      auditorComments
+      executiveSummary
+      createdAt
+      updatedAt
+      auditReport {
+        name
+        size
+        url
+      }
+    }
+  }
+`;
+
 type Audit = {
   id: string;
   name: string;
@@ -113,6 +147,8 @@ const formatModuleName = (moduleName: string): string => {
     .join(" ");
 };
 
+
+
 const EvaluationDetailPage = () => {
   const params = useParams();
   const router = useRouter();
@@ -128,6 +164,11 @@ const EvaluationDetailPage = () => {
   const { organization } = useOrganization();
 
   const [audit, setAudit] = useState<Audit | null>(null);
+  const [auditReport, setAuditReport] = useState<{
+    name: string;
+    size: number | null;
+    url: string;
+  } | null>(null);
   const [testCasesData, setTestCasesData] = useState<TestCase[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingResults, setIsLoadingResults] = useState(false);
@@ -221,6 +262,7 @@ const EvaluationDetailPage = () => {
 
           if (data.audit.status === "COMPLETED" || data.audit.completedAt) {
             await fetchResults();
+            await fetchAuditSummary();
             return;
           }
 
@@ -328,6 +370,31 @@ const EvaluationDetailPage = () => {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const fetchAuditSummary = async () => {
+    try {
+      const data = await request<{
+        auditSummaries: Array<{
+          auditReport: {
+            name: string;
+            size: number | null;
+            url: string;
+          } | null;
+        }>;
+      }>(
+        GET_AUDIT_SUMMARY,
+        { audit_id: evaluationId },
+        { organization: orgId }
+      );
+
+      const summary = data?.auditSummaries?.[0];
+      if (summary?.auditReport) {
+        setAuditReport(summary.auditReport);
+      }
+    } catch (err) {
+      console.error("Error fetching audit summary:", err);
+    }
   };
 
   const getDuration = () => {
@@ -758,7 +825,10 @@ const EvaluationDetailPage = () => {
                   <Button
                     kind="secondary"
                     icon={<Icon source={IconDownload} size={18} />}
-                    onClick={() => {}}
+                    onClick={() => {
+                      if (!auditReport?.url) return;
+                      window.open(auditReport.url, "_blank", "noopener,noreferrer");
+                    }}
                   >
                     Download Report
                   </Button>
