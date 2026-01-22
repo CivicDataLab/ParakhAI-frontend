@@ -216,7 +216,7 @@ const ModelDetailPage = () => {
           }),
           request<{ organization: { name: string; logoUrl: string | null } }>(
             GET_ORG_DETAILS,
-            { orgId },
+            { orgId }
           ),
         ]);
 
@@ -281,9 +281,9 @@ const ModelDetailPage = () => {
       cell: (info) => (
         <div className="flex items-center gap-2">
           <Avatar
-            initials={info.getValue()?.substring(0, 2).toUpperCase() || "EX"}
-            color="colored"
-            size="xs"
+            showInitials
+            name={info.getValue() || "Expert"}
+            size="extraSmall"
           />
           <Text variant="bodySm">{info.getValue() || "Unknown"}</Text>
         </div>
@@ -462,7 +462,7 @@ const ModelDetailPage = () => {
                                     {formatDateShort(
                                       v.createdAt ||
                                         model.updatedAt ||
-                                        new Date().toISOString(),
+                                        new Date().toISOString()
                                     )}
                                   </Text>
                                 </div>
@@ -480,8 +480,7 @@ const ModelDetailPage = () => {
                                     )}
                                     {model.maxTokens && (
                                       <Badge>
-                                        {model.maxTokens.toLocaleString()}{" "}
-                                        Tokens
+                                        {`${model.maxTokens.toLocaleString()} Tokens`}
                                       </Badge>
                                     )}
                                   </div>
@@ -507,9 +506,7 @@ const ModelDetailPage = () => {
                                         {model.supportedLanguages.length >
                                           3 && (
                                           <Badge>
-                                            +
-                                            {model.supportedLanguages.length -
-                                              3}
+                                            {`+${model.supportedLanguages.length - 3}`}
                                           </Badge>
                                         )}
                                       </div>
