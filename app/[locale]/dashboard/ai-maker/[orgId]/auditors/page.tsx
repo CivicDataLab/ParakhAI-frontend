@@ -6,7 +6,6 @@ import { IconPlus, IconSearch, IconTrash, IconUser, IconX } from "@tabler/icons-
 import { useParams } from "next/navigation";
 import { Button, DataTable, Dialog, Text } from "opub-ui";
 import { useEffect, useState } from "react";
-import WelcomeSection from "../../../components/WelcomeSection";
 
 // Types
 type Auditor = {
@@ -344,93 +343,69 @@ const AuditorsPage = () => {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-white overflow-x-visible">
-      <BreadCrumbs
-        data={[
-          { href: "/", label: "Home" },
-          { href: "/dashboard", label: "User Dashboard" },
-          { href: `/${locale}/dashboard/ai-maker`, label: "AI Maker" },
-          {
-            href: `/${locale}/dashboard/ai-maker/${orgId}`,
-            label: organization?.name || "Dashboard",
-          },
-          { href: "#", label: "Auditors" },
-        ]}
-      />
-
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 overflow-x-visible">
-        <div className="flex flex-1 flex-col lg:flex-row gap-6 md:gap-8 lg:-ml-[120px] xl:-ml-[130px]">
-          <WelcomeSection
-            orgName={organization?.name}
-            orgLogo={organization?.logoUrl}
-          />
-
-          <div className="flex-1 bg-gray-50 p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <Text variant="headingLg" as="h1" fontWeight="bold">
-                  Auditors
-                </Text>
-                <Text variant="bodySm" className="text-gray-600 mt-1">
-                  Manage auditors who can evaluate your AI models
-                </Text>
-              </div>
-              <Button
-                kind="primary"
-                onClick={() => setIsAddModalOpen(true)}
-              >
-                <IconPlus size={18} className="mr-1" /> Add Auditor
-              </Button>
-            </div>
-
-            {loading ? (
-              <div className="flex items-center justify-center py-20">
-                <Text variant="bodySm" className="text-gray-600">
-                  Loading auditors...
-                </Text>
-              </div>
-            ) : error ? (
-              <div className="flex flex-col items-center justify-center py-20">
-                <Text variant="bodyMd" className="text-red-600 mb-4">
-                  {error}
-                </Text>
-                <Button kind="secondary" onClick={() => window.location.reload()}>
-                  Retry
-                </Button>
-              </div>
-            ) : auditors.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border border-gray-200">
-                <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mb-4">
-                  <IconUser size={32} className="text-purple-600" />
-                </div>
-                <Text variant="bodyMd" className="text-gray-600 mb-2">
-                  No auditors yet
-                </Text>
-                <Text variant="bodySm" className="text-gray-500 mb-4 text-center max-w-md">
-                  Add auditors to your organization so they can evaluate your AI models.
-                  Auditors must have an account in CivicDataSpace.
-                </Text>
-                <Button
-                  kind="primary"
-                  onClick={() => setIsAddModalOpen(true)}
-                >
-                  <IconPlus size={18} className="mr-1" /> Add Your First Auditor
-                </Button>
-              </div>
-            ) : (
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <DataTable
-                  rows={auditors}
-                  columns={columns}
-                  hoverable={true}
-                  hideSelection={true}
-                  hideFooter={auditors.length <= 10}
-                />
-              </div>
-            )}
-          </div>
+    <>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <Text variant="headingLg" as="h1" fontWeight="bold">
+            Auditors
+          </Text>
+          <Text variant="bodySm" className="text-gray-600 mt-1">
+            Manage auditors who can evaluate your AI models
+          </Text>
         </div>
+        <Button
+          kind="primary"
+          onClick={() => setIsAddModalOpen(true)}
+        >
+          <IconPlus size={18} className="mr-1" /> Add Auditor
+        </Button>
       </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <Text variant="bodySm" className="text-gray-600">
+            Loading auditors...
+          </Text>
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <Text variant="bodyMd" className="text-red-600 mb-4">
+            {error}
+          </Text>
+          <Button kind="secondary" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      ) : auditors.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border border-gray-200">
+          <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mb-4">
+            <IconUser size={32} className="text-purple-600" />
+          </div>
+          <Text variant="bodyMd" className="text-gray-600 mb-2">
+            No auditors yet
+          </Text>
+          <Text variant="bodySm" className="text-gray-500 mb-4 text-center max-w-md">
+            Add auditors to your organization so they can evaluate your AI models.
+            Auditors must have an account in CivicDataSpace.
+          </Text>
+          <Button
+            kind="primary"
+            onClick={() => setIsAddModalOpen(true)}
+          >
+            <IconPlus size={18} className="mr-1" /> Add Your First Auditor
+          </Button>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <DataTable
+            rows={auditors}
+            columns={columns}
+            hoverable={true}
+            hideSelection={true}
+            hideFooter={auditors.length <= 10}
+          />
+        </div>
+      )}
 
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <Dialog.Content
@@ -544,7 +519,7 @@ const AuditorsPage = () => {
           </button>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

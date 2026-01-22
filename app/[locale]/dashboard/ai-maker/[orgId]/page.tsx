@@ -1,15 +1,14 @@
 "use client";
 
-import BreadCrumbs from "@/components/Breadcrumbs";
 import { Icons } from "@/components/icons";
 import { useGraphQL } from "@/lib/api";
 import { stripMarkdown } from "@/lib/utils";
-import { createColumnHelper } from "@tanstack/react-table";
+import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Button, Card, DataTable, Spinner, Text } from "opub-ui";
-import { useEffect, useState } from "react";
-import WelcomeSection from "../../components/WelcomeSection";
+import { Button, Card, DataTable, Text } from "opub-ui";
+import { useEffect, useMemo, useState } from "react";
+import { useOrganization } from "./layout";
 
 // Define evaluation data type
 type Evaluation = {
@@ -48,16 +47,6 @@ const AIMakerDashboard = () => {
   const addModelUrl = aiMakerBaseUrl.replace(/\/$/, "");
 
   // GraphQL queries
-  const GET_ORG_DETAILS = `
-    query GetOrgDetails($orgId: ID!) {
-      organization(id: $orgId) {
-        id
-        name
-        logoUrl
-      }
-    }
-  `;
-
   const GET_AI_MODELS = `
     query GetAIModels($limit: Int) {
       aiModels(limit: $limit) {
@@ -95,36 +84,25 @@ const AIMakerDashboard = () => {
   const { request } = useGraphQL();
 
   // State for data and loading
+  const { organization } = useOrganization();
   const [models, setModels] = useState<AIModel[]>([]);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
-  const [organization, setOrganization] = useState<{
-    name: string;
-    logoUrl: string | null;
-  } | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Fetch data on component mount
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [modelsResponse, evaluationsResponse, orgResponse] =
-          await Promise.all([
-            request(GET_AI_MODELS, { limit: 6 }, { organization: orgId }),
-            request(GET_EVALUATIONS, { limit: 5 }, { organization: orgId }),
-            request(GET_ORG_DETAILS, { orgId }),
-          ]);
-
-        console.log("DEBUG: orgResponse", orgResponse);
+        const [modelsResponse, evaluationsResponse] = await Promise.all([
+          request(GET_AI_MODELS, { limit: 6 }, { organization: orgId }),
+          request(GET_EVALUATIONS, { limit: 5 }, { organization: orgId }),
+        ]);
 
         const modelsData = modelsResponse?.aiModels || [];
         const evaluationsData = evaluationsResponse?.audits || [];
-        const orgData = orgResponse?.organization;
 
         setModels(modelsData);
         setEvaluations(evaluationsData);
-        if (orgData) {
-          setOrganization({ name: orgData.name, logoUrl: orgData.logoUrl });
-        }
       } catch (error) {
         console.error("Failed to fetch data:", error);
       } finally {
@@ -133,7 +111,7 @@ const AIMakerDashboard = () => {
     };
 
     fetchData();
-  }, [request]);
+  }, [request, orgId]);
 
   const hasModels = models.length > 0;
   const hasEvaluations = evaluations.length > 0;
@@ -163,30 +141,30 @@ const AIMakerDashboard = () => {
   const columnHelper = createColumnHelper<Evaluation>();
 
   // Define columns
-  const columns = [
+  const columns = useMemo(() => [
     columnHelper.accessor("modelName", {
-      header: () => (
-        <div className="flex items-center gap-2">
-          <img
-            src="/images/icons/arrows-sort.png"
-            alt="Sort"
-            width={16}
-            height={16}
-          />
-          <span>Model</span>
-        </div>
-      ),
-      cell: (info) => {
-        const modelName = info.getValue();
-        return modelName ? (
-          <Text variant="bodySm">{modelName}</Text>
-        ) : (
-          <Text variant="bodySm" className="text-gray-500">
-            Unknown Model
-          </Text>
-        );
-      },
-    }),
+        header: () => (
+          <div className="flex items-center gap-2">
+            <img
+              src="/images/icons/arrows-sort.png"
+              alt="Sort"
+              width={16}
+              height={16}
+            />
+            <span>Model</span>
+          </div>
+        ),
+        cell: (info) => {
+          const modelName = info.getValue();
+          return modelName ? (
+            <Text variant="bodySm">{modelName}</Text>
+          ) : (
+            <Text variant="bodySm" className="text-gray-500">
+              Unknown Model
+            </Text>
+          );
+        },
+      }),
     columnHelper.accessor("createdAt", {
       header: "Evaluation Time",
       cell: (info) => new Date(info.getValue()).toLocaleDateString(),
@@ -236,75 +214,48 @@ const AIMakerDashboard = () => {
         );
       },
     }),
-  ];
+  ], [locale, orgId]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-white overflow-x-visible">
-      <BreadCrumbs
-        data={[
-          { href: "/", label: "Home" },
-          { href: "/dashboard", label: "User Dashboard" },
-          { href: `/${locale}/dashboard/ai-maker`, label: "AI Maker" },
-          { href: "#", label: organization?.name || "Dashboard" },
-        ]}
-      />
+    <>
+      {/* Header with Title */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-gray-900 overview-heading">Overview</h1>
+      </div>
 
-      {/* Sidebar and Content Layout */}
-      <div className="w-full max-w-7xl  mx-auto px-4 sm:px-6 lg:px-10 overflow-x-visible">
-        <div className="flex flex-1 flex-col lg:flex-row gap-6 md:gap-8 lg:-ml-[120px] xl:-ml-[130px]">
-          {/* Sidebar */}
-          <WelcomeSection
-            orgName={organization?.name}
-            orgLogo={organization?.logoUrl}
-          />
-
-          {/* Main Content */}
-          <div className="flex-1 bg-gray-50 p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0">
-            {/* Header with Title */}
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-gray-900 overview-heading">Overview</h1>
+      {/* Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 sm:mb-10 lg:mb-12">
+        {metrics.map((m) => (
+          <div key={m.label} className="metric-card">
+            <p className="metric-card-label">{m.label}</p>
+            <p className="metric-card-value">{m.value}</p>
+          </div>
+        ))}
+      </div>
+      {/* Models Section */}
+      <div className="section-margin-bottom">
+        <div className="flex items-center justify-between section-title-margin">
+          <Text variant="headingLg" as="h2" fontWeight="bold">
+            Models
+          </Text>
+          {hasModels && (
+            <div className="add-model-button-wrapper">
+              <Link
+                href={addModelUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="add-model-button"
+                style={{
+                  textDecoration: "none",
+                  display: "inline-block",
+                }}
+              >
+                Add A New Model
+              </Link>
             </div>
-
-            {/* Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 sm:mb-10 lg:mb-12">
-              {metrics.map((m) => (
-                <div key={m.label} className="metric-card">
-                  <p className="metric-card-label">{m.label}</p>
-                  <p className="metric-card-value">{m.value}</p>
-                </div>
-              ))}
-            </div>
-            {/* Models Section */}
-            <div className="section-margin-bottom">
-              <div className="flex items-center justify-between section-title-margin">
-                <Text variant="headingLg" as="h2" fontWeight="bold">
-                  Models
-                </Text>
-                {hasModels && (
-                  <div className="add-model-button-wrapper">
-                    <Link
-                      href={addModelUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="add-model-button"
-                      style={{
-                        textDecoration: "none",
-                        display: "inline-block",
-                      }}
-                    >
-                      Add A New Model
-                    </Link>
-                  </div>
-                )}
-              </div>
-              {loading ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <Spinner />
-                  <Text variant="bodySm" className="mt-4 text-gray-600">
-                    Loading models...
-                  </Text>
-                </div>
-              ) : hasModels ? (
+          )}
+        </div>
+        {hasModels ? (
                 <div className="grid grid-cols-1 w-full gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {models.map((model) => {
                     // Card metadata (top row inside card)
@@ -392,48 +343,45 @@ const AIMakerDashboard = () => {
                   </Link>
                 </div>
               )}
-            </div>
-
-            {/* Audits Table Section */}
-            <div className="audits-section">
-              <div className="flex justify-between items-center mb-4">
-                <Text variant="headingLg" as="h2">
-                  Recent Evaluations
-                </Text>
-                <Link
-                  href={`/${locale}/dashboard/ai-maker/${orgId}/evaluations`}
-                  className="text-blue-600 hover:underline"
-                >
-                  See All
-                </Link>
-              </div>
-              {hasEvaluations ? (
-                <DataTable
-                  rows={evaluations}
-                  columns={columns}
-                  hoverable={true}
-                  sortColumns={["aiModel.displayName", "createdAt"]}
-                  defaultSortDirection="asc"
-                  hideSelection={true}
-                  hideFooter={true}
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8 bg-gray-50 rounded-lg">
-                  <Text variant="bodySm" className="text-gray-600 mb-4">
-                    No evaluations yet. Start by running your first evaluation.
-                  </Text>
-                  <Link
-                    href={`/${locale}/dashboard/ai-maker/${orgId}/evaluations/new`}
-                  >
-                    <Button kind="primary">Start New Evaluation</Button>
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
+
+      {/* Audits Table Section */}
+      <div className="audits-section">
+        <div className="flex justify-between items-center mb-4">
+          <Text variant="headingLg" as="h2">
+            Recent Evaluations
+          </Text>
+          <Link
+            href={`/${locale}/dashboard/ai-maker/${orgId}/evaluations`}
+            className="text-blue-600 hover:underline"
+          >
+            See All
+          </Link>
+        </div>
+        {hasEvaluations ? (
+          <DataTable
+            rows={evaluations}
+            columns={columns}
+            hoverable={true}
+            sortColumns={["aiModel.displayName", "createdAt"]}
+            defaultSortDirection="asc"
+            hideSelection={true}
+            hideFooter={true}
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center py-8 bg-gray-50 rounded-lg">
+            <Text variant="bodySm" className="text-gray-600 mb-4">
+              No evaluations yet. Start by running your first evaluation.
+            </Text>
+            <Link
+              href={`/${locale}/dashboard/ai-maker/${orgId}/evaluations/new`}
+            >
+              <Button kind="primary">Start New Evaluation</Button>
+            </Link>
+          </div>
+        )}
       </div>
-    </div>
+    </>
   );
 };
 

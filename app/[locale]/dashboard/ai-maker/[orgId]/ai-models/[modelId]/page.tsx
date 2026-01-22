@@ -1,6 +1,5 @@
 "use client";
 
-import BreadCrumbs from "@/components/Breadcrumbs";
 import RichTextRenderer from "@/components/RichTextRenderer";
 import { useGraphQL } from "@/lib/api";
 import { createColumnHelper } from "@tanstack/react-table";
@@ -22,8 +21,8 @@ import {
   Tooltip,
 } from "opub-ui";
 import React from "react";
-import WelcomeSection from "../../../../components/WelcomeSection";
 import AuditorInvitation from "../../evaluations/components/AuditorInvitation";
+import { useOrganization } from "../../layout";
 
 const GET_AI_MODEL = `
   query GetAIModel($modelId: ID!) {
@@ -57,16 +56,6 @@ const GET_AI_MODEL = `
         lifecycleStage
         createdAt
       }
-    }
-  }
-`;
-
-const GET_ORG_DETAILS = `
-  query GetOrgDetails($orgId: ID!) {
-    organization(id: $orgId) {
-      id
-      name
-      logoUrl
     }
   }
 `;
@@ -198,10 +187,7 @@ const ModelDetailPage = () => {
 
   const [model, setModel] = React.useState<AIModel | null>(null);
   const [evaluations, setEvaluations] = React.useState<Evaluation[]>([]);
-  const [organization, setOrganization] = React.useState<{
-    name: string;
-    logoUrl: string | null;
-  } | null>(null);
+  const { organization } = useOrganization();
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -218,22 +204,16 @@ const ModelDetailPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [modelResponse, evalResponse, orgResponse] = await Promise.all([
+        const [modelResponse, evalResponse] = await Promise.all([
           request<{ aiModel: AIModel }>(GET_AI_MODEL, { modelId }),
           request<{ audits: Evaluation[] }>(GET_EVALUATIONS, {
             modelId,
             limit: 10,
           }),
-          request<{ organization: { name: string; logoUrl: string | null } }>(
-            GET_ORG_DETAILS,
-            { orgId }
-          ),
         ]);
 
         if (modelResponse?.aiModel) setModel(modelResponse.aiModel);
         if (evalResponse?.audits) setEvaluations(evalResponse.audits);
-        if (orgResponse?.organization)
-          setOrganization(orgResponse.organization);
       } catch (err: any) {
         setError(err.message || "Failed to fetch model details");
       } finally {
@@ -320,27 +300,9 @@ const ModelDetailPage = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
-      <BreadCrumbs
-        data={[
-          { href: "/", label: "Home" },
-          { href: "/dashboard", label: "User Dashboard" },
-          { href: `/${locale}/dashboard/ai-maker`, label: "AI Maker" },
-          {
-            href: `/${locale}/dashboard/ai-maker/${orgId}`,
-            label: "Evaluations", // Assuming hierarchy from design: AI Maker Dashboard > Evaluations > Model
-          },
-          { href: "#", label: `Eval ID: #${model.id.slice(0, 8)}` }, // Simplified for display
-        ]}
-      />
+    <>
 
-      <div className="flex flex-1 gap-8 px-8 main-content-wrapper">
-        <WelcomeSection
-          orgName={organization?.name}
-          orgLogo={organization?.logoUrl}
-        />
-
-        <div className="flex-1 p-10 bg-white">
+      <div className="flex-1 p-10 bg-white">
           <div className="flex">
             {/* Main Content */}
             <div className="flex-1 pr-16 border-r border-gray-100">
@@ -785,7 +747,6 @@ const ModelDetailPage = () => {
             )}
           </div>
         </div>
-      </div>
 
       {/* Auditor Invitation Modal */}
       {selectedVersionForAuditor && (
@@ -801,7 +762,7 @@ const ModelDetailPage = () => {
           versionLabel={selectedVersionForAuditor.version}
         />
       )}
-    </div>
+    </>
   );
 };
 
