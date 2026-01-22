@@ -1,6 +1,5 @@
 "use client";
 
-import BreadCrumbs from "@/components/Breadcrumbs";
 import { useGraphQL } from "@/lib/api";
 import { IconDownload } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -9,17 +8,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Button, DataTable, Icon, ProgressBar, Tag, Text } from "opub-ui";
 import { useEffect, useRef, useState } from "react";
-import WelcomeSection from "../../../../components/WelcomeSection";
-
-const GET_ORG_DETAILS = `
-  query GetOrgDetails($orgId: ID!) {
-    organization(id: $orgId) {
-      id
-      name
-      logoUrl
-    }
-  }
-`;
+import { useOrganization } from "../../layout";
 
 // GraphQL query to fetch audit details
 const GET_AUDIT_QUERY = `
@@ -136,12 +125,9 @@ const EvaluationDetailPage = () => {
     isAuthenticated,
     isLoading: isSessionLoading,
   } = useGraphQL();
+  const { organization } = useOrganization();
 
   const [audit, setAudit] = useState<Audit | null>(null);
-  const [organization, setOrganization] = useState<{
-    name: string;
-    logoUrl: string | null;
-  } | null>(null);
   const [testCasesData, setTestCasesData] = useState<TestCase[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingResults, setIsLoadingResults] = useState(false);
@@ -265,14 +251,11 @@ const EvaluationDetailPage = () => {
         setIsLoading(true);
         setError(null);
 
-        const [auditData, orgData] = await Promise.all([
-          request<{ audit: Audit }>(
-            GET_AUDIT_QUERY,
-            { auditId: evaluationId },
-            { organization: orgId }
-          ),
-          request(GET_ORG_DETAILS, { orgId: orgId }),
-        ]);
+        const auditData = await request<{ audit: Audit }>(
+          GET_AUDIT_QUERY,
+          { auditId: evaluationId },
+          { organization: orgId }
+        );
 
         if (!auditData?.audit) {
           setError("Evaluation not found");
@@ -280,9 +263,6 @@ const EvaluationDetailPage = () => {
         }
 
         setAudit(auditData.audit);
-        if (orgData?.organization) {
-          setOrganization(orgData.organization);
-        }
         lastFetchedAuditIdRef.current = evaluationId;
 
         if (!auditData.audit.modelName && auditData.audit.modelId) {
@@ -448,40 +428,8 @@ const EvaluationDetailPage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white overflow-x-visible">
-      <BreadCrumbs
-        data={[
-          { href: "/", label: "Home" },
-          { href: "/dashboard", label: "User Dashboard" },
-          { href: `/${locale}/dashboard/ai-maker`, label: "AI Maker" },
-          {
-            href: `/${locale}/dashboard/ai-maker/${orgId}`,
-            label: organization?.name || "Dashboard",
-          },
-          {
-            href: `/${locale}/dashboard/ai-maker/${orgId}/evaluations`,
-            label: "Evaluations",
-          },
-          {
-            href: "#",
-            label: error
-              ? "Error"
-              : isSessionLoading || isLoading
-                ? "Loading..."
-                : audit?.name || `Evaluation #${audit?.id?.slice(0, 8)}`,
-          },
-        ]}
-      />
-
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 overflow-x-visible">
-        <div className="flex flex-1 flex-col lg:flex-row gap-6 md:gap-8 lg:-ml-[120px] xl:-ml-[130px]">
-          <WelcomeSection
-            orgName={organization?.name}
-            orgLogo={organization?.logoUrl}
-          />
-
-          <div className="flex-1 bg-gray-50 p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0">
-            {isSessionLoading || isLoading ? (
+    <>
+      {isSessionLoading || isLoading ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <ProgressBar value={50} max={100} size="small" />
                 <Text variant="bodySm" className="mt-4 text-gray-600">
@@ -823,10 +771,7 @@ const EvaluationDetailPage = () => {
                 </div>
               </>
             )}
-          </div>
-        </div>
-      </div>
-    </div>
+    </>
   );
 };
 

@@ -1,6 +1,5 @@
 "use client";
 
-import BreadCrumbs from "@/components/Breadcrumbs";
 import { Icons } from "@/components/icons";
 import { Pagination } from "@/components/Pagination/Pagination";
 import { useGraphQL } from "@/lib/api";
@@ -8,17 +7,7 @@ import { IconChevronDown, IconMinus, IconX } from "@tabler/icons-react";
 import { useParams, useRouter } from "next/navigation";
 import { Button, Card, DataTable, Dialog, Popover, Tag, Text } from "opub-ui";
 import React from "react";
-import WelcomeSection from "../../../components/WelcomeSection";
-
-const GET_ORG_DETAILS = `
-  query GetOrgDetails($orgId: ID!) {
-    organization(id: $orgId) {
-      id
-      name
-      logoUrl
-    }
-  }
-`;
+import { useOrganization } from "../layout";
 
 type AIModel = {
   id: string;
@@ -155,10 +144,7 @@ const AIModelsPage = () => {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [showNotice, setShowNotice] = React.useState(true);
   const [aiModels, setAiModels] = React.useState<AIModel[]>([]);
-  const [organization, setOrganization] = React.useState<{
-    name: string;
-    logoUrl: string | null;
-  } | null>(null);
+  const { organization } = useOrganization();
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -182,36 +168,30 @@ const AIModelsPage = () => {
         setIsLoading(true);
         setError(null);
 
-        const [modelsResponse, orgResponse] = await Promise.all([
-          request<{
-            aiModels: Array<{
-              id: string;
-              name: string;
-              displayName: string;
-              version: string;
-              modelType: string;
-              isPublic: boolean;
-              organization?: string;
-            }>;
-          }>(
-            AI_MODELS_QUERY,
-            {
-              status: "ACTIVE",
-              modelType: null,
-              provider: null,
-              isPublic: true,
-              limit: 50,
-              offset: 0,
-            },
-            { organization: params.orgId as string },
-          ),
-          request(GET_ORG_DETAILS, { orgId: params.orgId }),
-        ]);
+        const modelsResponse = await request<{
+          aiModels: Array<{
+            id: string;
+            name: string;
+            displayName: string;
+            version: string;
+            modelType: string;
+            isPublic: boolean;
+            organization?: string;
+          }>;
+        }>(
+          AI_MODELS_QUERY,
+          {
+            status: "ACTIVE",
+            modelType: null,
+            provider: null,
+            isPublic: true,
+            limit: 50,
+            offset: 0,
+          },
+          { organization: params.orgId as string }
+        );
 
         const models = modelsResponse?.aiModels || [];
-        if (orgResponse?.organization) {
-          setOrganization(orgResponse.organization);
-        }
         const formatted: AIModel[] = models.map((model) => ({
           id: model.id,
           name: model.name,
@@ -238,7 +218,7 @@ const AIModelsPage = () => {
     };
 
     fetchAIModels();
-  }, [isAuthenticated, request]);
+  }, [isAuthenticated, request, params.orgId]);
 
   const filteredModels = aiModels.filter((model) => {
     const matchesSearch =
@@ -342,27 +322,9 @@ const AIModelsPage = () => {
   );
 
   return (
-    <div className="flex flex-col min-h-screen bg-white ai-models-page">
-      <BreadCrumbs
-        data={[
-          { href: "/", label: "Home" },
-          { href: "/dashboard", label: "User Dashboard" },
-          { href: `/${locale}/dashboard/ai-maker`, label: "AI Maker" },
-          {
-            href: `/${locale}/dashboard/ai-maker/${params.orgId}`,
-            label: organization?.name || "Dashboard",
-          },
-          { href: "#", label: "AI Models" },
-        ]}
-      />
+    <>
 
-      <div className="flex flex-1 gap-8 px-8 main-content-wrapper">
-        <WelcomeSection
-          orgName={organization?.name}
-          orgLogo={organization?.logoUrl}
-        />
-
-        <div className="flex-1 ai-models-content p-10">
+      <div className="ai-models-content">
           <div className="ai-models-page-header">
             <Text as="h1" className="ai-models-page-title" fontWeight="bold">
               AI Models
@@ -639,7 +601,6 @@ const AIModelsPage = () => {
             }}
             label="Results per page"
           />
-        </div>
       </div>
 
       {/* Dialog for showing model details */}
@@ -721,7 +682,7 @@ const AIModelsPage = () => {
           </div>
         </Dialog.Content>
       </Dialog>
-    </div>
+    </>
   );
 };
 

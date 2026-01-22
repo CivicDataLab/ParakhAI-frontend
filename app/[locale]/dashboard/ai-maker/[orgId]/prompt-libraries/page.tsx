@@ -1,6 +1,5 @@
 "use client";
 
-import BreadCrumbs from "@/components/Breadcrumbs";
 import { Icons } from "@/components/icons";
 import { Pagination } from "@/components/Pagination/Pagination";
 import { useGraphQL } from "@/lib/api";
@@ -8,17 +7,7 @@ import { IconChevronDown, IconMinus, IconX } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
 import { Button, Card, DataTable, Dialog, Popover, Tag, Text } from "opub-ui";
 import React from "react";
-import WelcomeSection from "../../../components/WelcomeSection";
-
-const GET_ORG_DETAILS = `
-  query GetOrgDetails($orgId: ID!) {
-    organization(id: $orgId) {
-      id
-      name
-      logoUrl
-    }
-  }
-`;
+import { useOrganization } from "../layout";
 
 type PromptLibrary = {
   id: string;
@@ -148,10 +137,7 @@ const PromptLibrariesPage = () => {
   const [promptLibraries, setPromptLibraries] = React.useState<PromptLibrary[]>(
     []
   );
-  const [organization, setOrganization] = React.useState<{
-    name: string;
-    logoUrl: string | null;
-  } | null>(null);
+  const { organization } = useOrganization();
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const handleToggleSelection = (
@@ -174,39 +160,33 @@ const PromptLibrariesPage = () => {
         setIsLoading(true);
         setError(null);
 
-        const [datasetsResponse, orgResponse] = await Promise.all([
-          request<{
-            promptDatasets: Array<{
+        const datasetsResponse = await request<{
+          promptDatasets: Array<{
+            id: string;
+            title: string;
+            description?: string;
+            promptMetadata?: {
+              taskType?: string;
+              domain?: string;
+              targetLanguages?: string[];
+            };
+            resources: Array<{
               id: string;
-              title: string;
-              description?: string;
-              promptMetadata?: {
-                taskType?: string;
-                domain?: string;
-                targetLanguages?: string[];
-              };
-              resources: Array<{
-                id: string;
-                name: string;
-                promptFormat?: string;
-                promptCount?: number;
-              }>;
+              name: string;
+              promptFormat?: string;
+              promptCount?: number;
             }>;
-          }>(
-            PROMPT_DATASETS_QUERY,
-            {
-              limit: 50,
-              isPublic: true,
-            },
-            { organization: params.orgId as string }
-          ),
-          request(GET_ORG_DETAILS, { orgId: params.orgId }),
-        ]);
+          }>;
+        }>(
+          PROMPT_DATASETS_QUERY,
+          {
+            limit: 50,
+            isPublic: true,
+          },
+          { organization: params.orgId as string }
+        );
 
         const datasets = datasetsResponse?.promptDatasets || [];
-        if (orgResponse?.organization) {
-          setOrganization(orgResponse.organization);
-        }
         const formatted: PromptLibrary[] = datasets.map((ds) => ({
           id: ds.id,
           title: ds.title,
@@ -332,27 +312,9 @@ const PromptLibrariesPage = () => {
   );
 
   return (
-    <div className="flex flex-col min-h-screen bg-white prompt-libraries-page">
-      <BreadCrumbs
-        data={[
-          { href: "/", label: "Home" },
-          { href: "/dashboard", label: "User Dashboard" },
-          { href: `/${params.locale}/dashboard/ai-maker`, label: "AI Maker" },
-          {
-            href: `/${params.locale}/dashboard/ai-maker/${params.orgId}`,
-            label: organization?.name || "Dashboard",
-          },
-          { href: "#", label: "Prompt Libraries" },
-        ]}
-      />
+    <>
 
-      <div className="flex flex-1 gap-8 px-8 main-content-wrapper">
-        <WelcomeSection
-          orgName={organization?.name}
-          orgLogo={organization?.logoUrl}
-        />
-
-        <div className="flex-1 prompt-libraries-content p-10">
+      <div className="prompt-libraries-content">
           <div className="prompt-page-header">
             <Text as="h1" className="prompt-page-title" fontWeight="bold">
               Prompt Libraries
@@ -625,7 +587,6 @@ const PromptLibrariesPage = () => {
             }}
             label="Results per page"
           />
-        </div>
       </div>
 
       {/* Dialog for showing library details */}
@@ -707,7 +668,7 @@ const PromptLibrariesPage = () => {
           </div>
         </Dialog.Content>
       </Dialog>
-    </div>
+    </>
   );
 };
 

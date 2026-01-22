@@ -1,23 +1,12 @@
 "use client";
 
-import BreadCrumbs from "@/components/Breadcrumbs";
 import { useGraphQL } from "@/lib/api";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Button, DataTable, ProgressBar, Tag, Text } from "opub-ui";
 import { useEffect, useState } from "react";
-import WelcomeSection from "../../../components/WelcomeSection";
-
-const GET_ORG_DETAILS = `
-  query GetOrgDetails($orgId: ID!) {
-    organization(id: $orgId) {
-      id
-      name
-      logoUrl
-    }
-  }
-`;
+import { useOrganization } from "../layout";
 
 // GraphQL query to fetch user's audits
 const AUDITS_QUERY = `
@@ -63,12 +52,9 @@ const AuditsListPage = () => {
     isAuthenticated,
     isLoading: isSessionLoading,
   } = useGraphQL();
+  const { organization } = useOrganization();
 
   const [audits, setAudits] = useState<Audit[]>([]);
-  const [organization, setOrganization] = useState<{
-    name: string;
-    logoUrl: string | null;
-  } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,22 +67,16 @@ const AuditsListPage = () => {
         setIsLoading(true);
         setError(null);
 
-        const [auditsData, orgData] = await Promise.all([
-          request<{ audits: Audit[] }>(
-            AUDITS_QUERY,
-            {
-              status: null,
-              limit: 100,
-            },
-            { organization: params.orgId as string }
-          ),
-          request(GET_ORG_DETAILS, { orgId: params.orgId }),
-        ]);
+        const auditsData = await request<{ audits: Audit[] }>(
+          AUDITS_QUERY,
+          {
+            status: null,
+            limit: 100,
+          },
+          { organization: params.orgId as string }
+        );
 
         setAudits(auditsData?.audits || []);
-        if (orgData?.organization) {
-          setOrganization(orgData.organization);
-        }
       } catch (err: any) {
         console.error("Error fetching audits:", err);
         setError(err?.message || "Failed to load audits");
@@ -106,7 +86,7 @@ const AuditsListPage = () => {
     };
 
     fetchAudits();
-  }, [isAuthenticated, isSessionLoading, request]);
+  }, [isAuthenticated, isSessionLoading, request, params.orgId]);
 
   // Column helper for DataTable
   const columnHelper = createColumnHelper<Audit>();
@@ -240,94 +220,70 @@ const AuditsListPage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white overflow-x-visible">
-      <BreadCrumbs
-        data={[
-          { href: "/", label: "Home" },
-          { href: "/dashboard", label: "User Dashboard" },
-          { href: `/${locale}/dashboard/ai-maker`, label: "AI Maker" },
-          {
-            href: `/${locale}/dashboard/ai-maker/${params.orgId}`,
-            label: organization?.name || "Dashboard",
-          },
-          { href: "#", label: "Evaluations" },
-        ]}
-      />
-
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 overflow-x-visible">
-        <div className="flex flex-1 flex-col lg:flex-row gap-6 md:gap-8 lg:-ml-[120px] xl:-ml-[130px]">
-          <WelcomeSection
-            orgName={organization?.name}
-            orgLogo={organization?.logoUrl}
-          />
-
-          <div className="flex-1 bg-gray-50 p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <Text variant="headingLg" as="h1" fontWeight="bold">
-                Evaluations
-              </Text>
-              <Button kind="secondary" onClick={handleNewAudit}>
-                New Evaluation
-              </Button>
-            </div>
-
-            {/* Content */}
-            {isSessionLoading || isLoading ? (
-              <div className="flex flex-col items-center justify-center py-16">
-                <ProgressBar value={50} max={100} size="small" />
-                <Text variant="bodySm" className="mt-4 text-gray-600">
-                  Loading evaluations...
-                </Text>
-              </div>
-            ) : error ? (
-              <div className="flex flex-col items-center justify-center py-16">
-                <Text variant="bodySm" className="text-red-600 mb-4">
-                  {error}
-                </Text>
-                <Button
-                  kind="secondary"
-                  onClick={() => window.location.reload()}
-                >
-                  Retry
-                </Button>
-              </div>
-            ) : audits.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16">
-                <img
-                  src="/images/icons/mood-empty.png"
-                  alt="No evaluations"
-                  width={70}
-                  height={70}
-                  className="mb-4 opacity-60"
-                />
-                <Text
-                  variant="bodyMd"
-                  className="text-gray-600 mb-4 text-center"
-                >
-                  You haven&apos;t run any evaluations yet.
-                  <br />
-                  Start your first evaluation to see results here.
-                </Text>
-                <Button kind="primary" onClick={handleNewAudit}>
-                  Start New Evaluation
-                </Button>
-              </div>
-            ) : (
-              <DataTable
-                rows={audits}
-                columns={columns}
-                hoverable
-                sortColumns={["name", "status", "createdAt", "completedAt"]}
-                defaultSortDirection="desc"
-                hideSelection
-                truncate
-              />
-            )}
-          </div>
-        </div>
+    <>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <Text variant="headingLg" as="h1" fontWeight="bold">
+          Evaluations
+        </Text>
+        <Button kind="secondary" onClick={handleNewAudit}>
+          New Evaluation
+        </Button>
       </div>
-    </div>
+
+      {/* Content */}
+      {isSessionLoading || isLoading ? (
+        <div className="flex flex-col items-center justify-center py-16">
+          <ProgressBar value={50} max={100} size="small" />
+          <Text variant="bodySm" className="mt-4 text-gray-600">
+            Loading evaluations...
+          </Text>
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center py-16">
+          <Text variant="bodySm" className="text-red-600 mb-4">
+            {error}
+          </Text>
+          <Button
+            kind="secondary"
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </Button>
+        </div>
+      ) : audits.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16">
+          <img
+            src="/images/icons/mood-empty.png"
+            alt="No evaluations"
+            width={70}
+            height={70}
+            className="mb-4 opacity-60"
+          />
+          <Text
+            variant="bodyMd"
+            className="text-gray-600 mb-4 text-center"
+          >
+            You haven&apos;t run any evaluations yet.
+            <br />
+            Start your first evaluation to see results here.
+          </Text>
+          <Button kind="primary" onClick={handleNewAudit}>
+            Start New Evaluation
+          </Button>
+        </div>
+      ) : (
+        <DataTable
+          rows={audits}
+          columns={columns}
+          hoverable
+          sortColumns={["name", "status", "createdAt", "completedAt"]}
+          defaultSortDirection="desc"
+          hideSelection
+          truncate
+        />
+      )}
+    </>
   );
 };
 

@@ -1,6 +1,5 @@
 "use client";
 
-import BreadCrumbs from "@/components/Breadcrumbs";
 import { useGraphQL } from "@/lib/api";
 import { useAppSession } from "@/lib/session";
 import { toTitleCase } from "@/lib/utils";
@@ -9,22 +8,12 @@ import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Button, Icon, Label, Select, Tag, Text, TextField } from "opub-ui";
 import { useEffect, useRef, useState } from "react";
-import WelcomeSection from "../../../../components/WelcomeSection";
 import EvaluationConfiguration from "../components/EvaluationConfiguration";
 import EvaluationSummary from "../components/EvaluationSummary";
 import ManualTestCases from "../components/ManualTestCases";
 import TestCases from "../components/TestCases";
 import type { AuditType, Module, SelectOption } from "../components/types";
-
-const GET_ORG_DETAILS = `
-  query GetOrgDetails($orgId: ID!) {
-    organization(id: $orgId) {
-      id
-      name
-      logoUrl
-    }
-  }
-`;
+import { useOrganization } from "../../layout";
 
 // GraphQL queries for dynamic modules and metrics
 const MODULES_BY_MODEL_TYPE_QUERY = `
@@ -183,10 +172,7 @@ const NewAuditPage = () => {
       }>;
     }>
   >([]);
-  const [organization, setOrganization] = useState<{
-    name: string;
-    logoUrl: string | null;
-  } | null>(null);
+  const { organization } = useOrganization();
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [modelsError, setModelsError] = useState<string | null>(null);
 
@@ -492,8 +478,7 @@ const NewAuditPage = () => {
       setIsLoadingModels(true);
       setModelsError(null);
 
-      const [modelsResponse, orgResponse] = await Promise.all([
-        request<{
+        const modelsResponse = await request<{
           aiModels: Array<{
             id: string;
             name: string;
@@ -518,16 +503,11 @@ const NewAuditPage = () => {
             limit: 50,
             offset: 0,
           },
-          { organization: params.orgId as string },
-        ),
-        request(GET_ORG_DETAILS, { orgId: params.orgId }),
-      ]);
+          { organization: params.orgId as string }
+        );
 
-      const models = modelsResponse?.aiModels || [];
-      setAiModels(models);
-      if (orgResponse?.organization) {
-        setOrganization(orgResponse.organization);
-      }
+        const models = modelsResponse?.aiModels || [];
+        setAiModels(models);
 
       // Auto-select model based on URL parameter, or first model if available and none selected
       if (models.length > 0 && !selectedModelId) {
@@ -976,33 +956,8 @@ const NewAuditPage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
-      <BreadCrumbs
-        data={[
-          { href: "/", label: "Home" },
-          { href: "/dashboard", label: "User Dashboard" },
-          { href: `/${locale}/dashboard/ai-maker`, label: "AI Maker" },
-          {
-            href: `/${locale}/dashboard/ai-maker/${params.orgId}`,
-            label: organization?.name || "Dashboard",
-          },
-          {
-            href: `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations`,
-            label: "Evaluations",
-          },
-          { href: "#", label: "New Evaluation" },
-        ]}
-      />
-
-      {/* Match AI Maker dashboard layout so sticky nav + breadcrumbs behave the same on all screens */}
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 overflow-x-visible">
-        <div className="flex flex-1 flex-col lg:flex-row gap-6 md:gap-8 lg:-ml-[120px] xl:-ml-[130px] main-content-wrapper">
-          <WelcomeSection
-            orgName={organization?.name}
-            orgLogo={organization?.logoUrl}
-          />
-
-          <div className="flex-1 audit-content p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0 bg-white">
+    <>
+      <div className="flex-1 audit-content p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0 bg-white">
             {/* Model Name and Owner Section */}
             <div className="mb-6">
               {/* Model Selector */}
@@ -1358,9 +1313,7 @@ const NewAuditPage = () => {
               </div>
             )}
           </div>
-        </div>
-      </div>
-    </div>
+    </>
   );
 };
 
