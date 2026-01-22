@@ -19,7 +19,7 @@ const baseNavItems: BaseNavItem[] = [
   { icon: '/images/icons/topology-star-ring.png', label: 'Models', isImage: true, path: '/dashboard/ai-maker/ai-models' },
   { icon: '/images/icons/report-analytics.png', label: 'Evaluations', isImage: true, path: '/dashboard/ai-maker/evaluations' },
   { icon: '/images/icons/messages.png', label: 'Prompt Libraries', isImage: true, path: '/dashboard/ai-maker/prompt-libraries' },
-  { icon: '/images/icons/users-group.png', label: 'Members & Experts', isImage: true },
+  { icon: '/images/icons/users-group.png', label: 'Auditors', isImage: true, path: '/dashboard/ai-maker/auditors' },
   { icon: '/images/icons/settings.png', label: 'Settings', isImage: true },
 ];
 
@@ -37,18 +37,16 @@ const WelcomeSection = ({
 
   useEffect(() => {
     setIsImageValid(!!orgLogo);
-    console.log("DEBUG: WelcomeSection props", { orgName, orgLogo });
-  }, [orgLogo, orgName]);
+  }, [orgLogo]);
 
   const normalizedPath = useMemo(() => {
     if (!pathname) return '/';
-    // Only remove locale prefix if it's a valid locale
-    const validLocales = ['en', 'hi']; // Match config/locales.ts
+    
+    const validLocales = ['en', 'hi'];
     const match = pathname.match(/^\/([^/]+)/);
     let withoutLocale = pathname;
     
     if (match && validLocales.includes(match[1])) {
-      // Remove locale prefix if it's a valid locale
       withoutLocale = pathname.replace(/^\/[^/]+/, '') || '/';
     }
     
@@ -59,7 +57,6 @@ const WelcomeSection = ({
 
   const orgIdFromPath = useMemo(() => {
     const parts = normalizedPath.split("/");
-    // index 0 is empty, index 1 is 'dashboard', index 2 is 'ai-maker', index 3 might be [orgId]
     if (
       parts[1] === "dashboard" &&
       parts[2] === "ai-maker" &&
@@ -73,7 +70,6 @@ const WelcomeSection = ({
 
   const matchingPath = useMemo(() => {
     if (!orgIdFromPath) return normalizedPath;
-    // Replace /dashboard/ai-maker/[orgId] with /dashboard/ai-maker for comparison
     return normalizedPath.replace(
       `/dashboard/ai-maker/${orgIdFromPath}`,
       "/dashboard/ai-maker",
@@ -98,9 +94,7 @@ const WelcomeSection = ({
     const match = pathname.match(/^\/([^/]+)/);
     if (!match) return '';
     const firstSegment = match[1];
-    // Only treat as locale if it's a valid locale (en, hi, etc.)
-    // With 'as-needed', default locale (en) might not have prefix, so check both
-    const validLocales = ['en', 'hi']; // Match config/locales.ts
+    const validLocales = ['en', 'hi'];
     return validLocales.includes(firstSegment) ? `/${firstSegment}` : '';
   }, [pathname]);
 
@@ -128,7 +122,6 @@ const WelcomeSection = ({
     [localePrefix, orgIdFromPath],
   );
 
-  // Set initial selected item based on pathname
   useEffect(() => {
     let activeFromPath = navItems
       .filter((item) => item.path)
@@ -147,9 +140,7 @@ const WelcomeSection = ({
 
   return (
     <div className="welcome-section mt-6">
-      {/* Welcome Section */}
       <div className="text-center sm:pt-4 md:pt-0">
-        {/* Logo */}
         <div className="mb-2 flex justify-center">
           <div className="cdl-logo-container">
             {orgLogo && isImageValid ? (

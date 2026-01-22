@@ -23,6 +23,7 @@ import {
 } from "opub-ui";
 import React from "react";
 import WelcomeSection from "../../../../components/WelcomeSection";
+import AuditorInvitation from "../../evaluations/components/AuditorInvitation";
 
 const GET_AI_MODEL = `
   query GetAIModel($modelId: ID!) {
@@ -165,6 +166,8 @@ const auditTypeLabels: Record<string, string> = {
   CULTURAL_AUDIT: "Cultural",
 };
 
+const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || "";
+
 // Helper for formatted date
 const formatDate = (dateString: string) => {
   return new Date(dateString)
@@ -201,6 +204,13 @@ const ModelDetailPage = () => {
   } | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+
+  // Auditor invitation state
+  const [selectedVersionForAuditor, setSelectedVersionForAuditor] =
+    React.useState<{
+      id: number;
+      version: string;
+    } | null>(null);
 
   React.useEffect(() => {
     if (!isAuthenticated) return;
@@ -433,6 +443,20 @@ const ModelDetailPage = () => {
                                   Start Evaluation
                                 </Button>
 
+                                <Button
+                                  size="slim"
+                                  kind="secondary"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedVersionForAuditor({
+                                      id: parseInt(v.id),
+                                      version: v.version,
+                                    });
+                                  }}
+                                >
+                                  Invite Auditors
+                                </Button>
+
                                 <AccordionTrigger className="flex items-center gap-2 p-0 hover:no-underline text-gray-600">
                                   <Text
                                     variant="bodyLg"
@@ -533,7 +557,6 @@ const ModelDetailPage = () => {
               </div>
             </div>
 
-            {/* Metadata Sidebar */}
             <div className="w-80 pl-10 shrink-0">
               <div className="flex flex-col gap-5 lg:gap-10">
                 <div className="flex flex-col gap-2">
@@ -553,13 +576,12 @@ const ModelDetailPage = () => {
                 <Divider />
 
                 <div className="flex flex-col gap-8">
-                  {/* Organization Logo */}
                   {organization && (
                     <div className="rounded-lg border border-gray-200 p-2 lg:block">
                       <div className="flex justify-center items-center h-[100px]">
                         {organization.logoUrl ? (
                           <Image
-                            src={organization.logoUrl}
+                            src={`${dataspaceUrl.replace(/\/$/, "")}${organization.logoUrl}`}
                             alt={organization.name}
                             width={100}
                             height={100}
@@ -767,6 +789,21 @@ const ModelDetailPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Auditor Invitation Modal */}
+      {selectedVersionForAuditor && (
+        <AuditorInvitation
+          organizationId={orgId}
+          modelId={modelId}
+          modelVersionId={selectedVersionForAuditor.id}
+          onAssignmentCreated={() => {
+            // Optionally refresh data or show success message
+          }}
+          isOpen={!!selectedVersionForAuditor}
+          onClose={() => setSelectedVersionForAuditor(null)}
+          versionLabel={selectedVersionForAuditor.version}
+        />
+      )}
     </div>
   );
 };
