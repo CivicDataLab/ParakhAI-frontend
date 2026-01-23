@@ -3080,10 +3080,8 @@ html.mobile-menu-open .breadcrumbs-ml {
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    width: 332px;
-    min-width: 332px;
-    max-width: 332px;
-    flex: 0 0 332px;
+    flex: 1 1 0;
+    min-width: 0;
     height: 52px;
     min-height: 52px;
     max-height: 52px;
@@ -3134,9 +3132,8 @@ html.mobile-menu-open .breadcrumbs-ml {
 
   /* Override any conflicting styles */
   button.audit-config-tab {
-    width: 332px;
-    min-width: 332px;
-    max-width: 332px;
+    flex: 1 1 0;
+    min-width: 0;
     height: 52px;
     min-height: 52px;
     max-height: 52px;
