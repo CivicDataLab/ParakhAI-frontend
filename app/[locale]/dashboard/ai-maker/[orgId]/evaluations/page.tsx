@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Button, DataTable, ProgressBar, Tag, Text } from "opub-ui";
 import { useEffect, useState } from "react";
-import { useOrganization } from "../layout";
+import { useOrganization } from "../OrganizationContext";
 
 // GraphQL query to fetch user's audits
 const AUDITS_QUERY = `

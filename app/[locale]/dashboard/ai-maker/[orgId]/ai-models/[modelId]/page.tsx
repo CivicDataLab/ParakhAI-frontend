@@ -22,7 +22,7 @@ import {
 } from "opub-ui";
 import React from "react";
 import AuditorInvitation from "../../evaluations/components/AuditorInvitation";
-import { useOrganization } from "../../layout";
+import { useOrganization } from "../../OrganizationContext";
 
 const GET_AI_MODEL = `
   query GetAIModel($modelId: ID!) {

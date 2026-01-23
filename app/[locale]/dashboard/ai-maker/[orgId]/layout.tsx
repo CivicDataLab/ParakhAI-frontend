@@ -3,8 +3,9 @@
 import BreadCrumbs from "@/components/Breadcrumbs";
 import { useGraphQL } from "@/lib/api";
 import { useParams } from "next/navigation";
-import { createContext, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import WelcomeSection from "../../components/WelcomeSection";
+import { OrganizationContext } from "./OrganizationContext";
 
 const GET_ORG_DETAILS = `
   query GetOrgDetails($orgId: ID!) {
@@ -15,21 +16,6 @@ const GET_ORG_DETAILS = `
     }
   }
 `;
-
-type OrganizationContextType = {
-  organization: {
-    name: string;
-    logoUrl: string | null;
-  } | null;
-  isLoading: boolean;
-};
-
-const OrganizationContext = createContext<OrganizationContextType>({
-  organization: null,
-  isLoading: true,
-});
-
-export const useOrganization = () => useContext(OrganizationContext);
 
 export default function AIMakerLayout({
   children,

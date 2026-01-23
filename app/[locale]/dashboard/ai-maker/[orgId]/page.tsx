@@ -3,12 +3,12 @@
 import { Icons } from "@/components/icons";
 import { useGraphQL } from "@/lib/api";
 import { stripMarkdown } from "@/lib/utils";
-import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
+import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Button, Card, DataTable, Text } from "opub-ui";
 import { useEffect, useMemo, useState } from "react";
-import { useOrganization } from "./layout";
+import { useOrganization } from "./OrganizationContext";
 
 // Define evaluation data type
 type Evaluation = {

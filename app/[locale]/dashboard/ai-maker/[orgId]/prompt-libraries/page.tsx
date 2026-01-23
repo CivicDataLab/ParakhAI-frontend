@@ -7,7 +7,7 @@ import { IconChevronDown, IconMinus, IconX } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
 import { Button, Card, DataTable, Dialog, Popover, Tag, Text } from "opub-ui";
 import React from "react";
-import { useOrganization } from "../layout";
+import { useOrganization } from "../OrganizationContext";
 
 type PromptLibrary = {
   id: string;

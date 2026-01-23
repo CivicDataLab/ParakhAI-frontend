@@ -8,11 +8,11 @@ import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Button, Icon, Label, Select, Tag, Text, TextField } from "opub-ui";
 import { useEffect, useRef, useState } from "react";
+import { useOrganization } from "../../OrganizationContext";
 import EvaluationConfiguration from "../components/EvaluationConfiguration";
 import ManualTestCases from "../components/ManualTestCases";
 import TestCases from "../components/TestCases";
 import type { AuditType, Module, SelectOption } from "../components/types";
-import { useOrganization } from "../../layout";
 
 // GraphQL queries for dynamic modules and metrics
 const MODULES_BY_MODEL_TYPE_QUERY = `
