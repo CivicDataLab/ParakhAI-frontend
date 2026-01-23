@@ -258,7 +258,11 @@ const EvaluationDetailPage = () => {
         );
 
         if (data?.audit) {
-          setAudit(data.audit);
+          // Preserve modelName if it exists in current state but not in new data
+          setAudit((prev) => ({
+            ...data.audit,
+            modelName: data.audit.modelName || prev?.modelName || null,
+          }));
 
           if (data.audit.status === "COMPLETED" || data.audit.completedAt) {
             await fetchResults();
