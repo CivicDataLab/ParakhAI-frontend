@@ -1,0 +1,148 @@
+"use client";
+
+import { useGraphQL } from "@/lib/api";
+import { useAppSession } from "@/lib/session";
+import { IconArrowLeft } from "@tabler/icons-react";
+import Link from "next/link";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Button, Text } from "opub-ui";
+import { useEffect, useState } from "react";
+
+const GET_MY_ASSIGNMENTS_FOR_MODEL = `
+  query GetMyAssignmentsForModel($modelId: String) {
+    myAssignments(modelId: $modelId) {
+      id
+      organizationId
+      modelId
+      modelVersionId
+      status
+    }
+  }
+`;
+
+const AuditorNewEvaluationPage = () => {
+  const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const locale = params?.locale || "en";
+  const { request, isAuthenticated, isLoading: isSessionLoading } = useGraphQL();
+  const { user } = useAppSession();
+
+  const modelId = searchParams.get("modelId");
+  const versionId = searchParams.get("versionId");
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [hasValidAssignment, setHasValidAssignment] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated || isSessionLoading) return;
+
+    const checkAssignment = async () => {
+      if (!modelId) {
+        setError("No model specified. Please select a model from your assignments.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const response = await request(GET_MY_ASSIGNMENTS_FOR_MODEL, {
+          modelId,
+        });
+
+        const assignments = response?.myAssignments || [];
+        
+        const validAssignment = assignments.find((a: any) => {
+          const statusValid = a.status === "ACCEPTED" || a.status === "IN_PROGRESS";
+          if (versionId) {
+            return statusValid && a.modelVersionId === parseInt(versionId);
+          }
+          return statusValid;
+        });
+
+        if (validAssignment) {
+          setHasValidAssignment(true);
+          router.push(
+            `/${locale}/dashboard/ai-maker/${validAssignment.organizationId}/evaluations/new?modelId=${modelId}${versionId ? `&versionId=${versionId}` : ""}`
+          );
+        } else {
+          setError(
+            "You don't have an accepted assignment for this model. Please accept the invitation first."
+          );
+        }
+      } catch (err: any) {
+        console.error("Error checking assignment:", err);
+        setError(err?.message || "Failed to verify assignment");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAssignment();
+  }, [isAuthenticated, isSessionLoading, modelId, versionId, request, router, locale]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <Text variant="bodySm" className="text-gray-600">
+          Verifying your assignment...
+        </Text>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <>
+        <div className="mb-6">
+          <Link
+            href={`/${locale}/dashboard/auditor`}
+            className="inline-flex items-center text-purple-600 hover:text-purple-800"
+          >
+            <IconArrowLeft size={18} className="mr-2" />
+            Back to Dashboard
+          </Link>
+        </div>
+
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border border-gray-200">
+          <Text variant="bodyMd" className="text-red-600 mb-4">
+            {error}
+          </Text>
+          <div className="flex gap-4">
+            <Button
+              kind="primary"
+              onClick={() => router.push(`/${locale}/dashboard/auditor`)}
+            >
+              View My Assignments
+            </Button>
+            {modelId && (
+              <Button
+                kind="secondary"
+                onClick={() =>
+                  router.push(`/${locale}/dashboard/auditor/models/${modelId}`)
+                }
+              >
+                View Model Details
+              </Button>
+            )}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (hasValidAssignment) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <Text variant="bodySm" className="text-gray-600">
+          Redirecting to evaluation setup...
+        </Text>
+      </div>
+    );
+  }
+
+  return null;
+};
+
+export default AuditorNewEvaluationPage;

@@ -7,14 +7,14 @@ import { usePathname } from "next/navigation";
 import { Divider } from "opub-ui";
 import { useEffect, useMemo, useState } from "react";
 
-type BaseNavItem = {
+export type NavItem = {
   icon: string;
   label: string;
   isImage: boolean;
   path?: string;
 };
 
-const baseNavItems: BaseNavItem[] = [
+const aiMakerNavItems: NavItem[] = [
   {
     icon: "/images/icons/home-2.png",
     label: "Home",
@@ -48,13 +48,49 @@ const baseNavItems: BaseNavItem[] = [
   { icon: "/images/icons/settings.png", label: "Settings", isImage: true },
 ];
 
+export const auditorNavItems: NavItem[] = [
+  {
+    icon: "/images/icons/home-2.png",
+    label: "Home",
+    isImage: true,
+    path: "/dashboard/auditor",
+  },
+  {
+    icon: "/images/icons/topology-star-ring.png",
+    label: "My Assignments",
+    isImage: true,
+    path: "/dashboard/auditor/assignments",
+  },
+  {
+    icon: "/images/icons/report-analytics.png",
+    label: "Evaluations",
+    isImage: true,
+    path: "/dashboard/auditor/evaluations",
+  },
+  { icon: "/images/icons/settings.png", label: "Settings", isImage: true },
+];
+
+export type DashboardType = "ai-maker" | "auditor";
+
+type WelcomeSectionProps = {
+  orgName?: string;
+  orgLogo?: string | null;
+  dashboardType?: DashboardType;
+  navItems?: NavItem[];
+  basePath?: string;
+  orgIdInPath?: string | null;
+};
+
 const WelcomeSection = ({
   orgName,
   orgLogo,
-}: {
-  orgName?: string;
-  orgLogo?: string | null;
-}) => {
+  dashboardType = "ai-maker",
+  navItems: customNavItems,
+  basePath,
+  orgIdInPath: customOrgId,
+}: WelcomeSectionProps) => {
+  const baseNavItems = customNavItems || (dashboardType === "auditor" ? auditorNavItems : aiMakerNavItems);
+  const dashboardBasePath = basePath || (dashboardType === "auditor" ? "/dashboard/auditor" : "/dashboard/ai-maker");
   const pathname = usePathname();
   const { user } = useAppSession();
   const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || "";
@@ -81,25 +117,29 @@ const WelcomeSection = ({
   }, [pathname]);
 
   const orgIdFromPath = useMemo(() => {
+    if (customOrgId !== undefined) return customOrgId;
+    
+    if (dashboardType !== "ai-maker") return null;
+    
     const parts = normalizedPath.split("/");
     if (
       parts[1] === "dashboard" &&
       parts[2] === "ai-maker" &&
       parts[3] &&
-      !["ai-models", "evaluations", "prompt-libraries"].includes(parts[3])
+      !["ai-models", "evaluations", "prompt-libraries", "auditors"].includes(parts[3])
     ) {
       return parts[3];
     }
     return null;
-  }, [normalizedPath]);
+  }, [normalizedPath, customOrgId, dashboardType]);
 
   const matchingPath = useMemo(() => {
     if (!orgIdFromPath) return normalizedPath;
     return normalizedPath.replace(
-      `/dashboard/ai-maker/${orgIdFromPath}`,
-      "/dashboard/ai-maker"
+      `${dashboardBasePath}/${orgIdFromPath}`,
+      dashboardBasePath
     );
-  }, [normalizedPath, orgIdFromPath]);
+  }, [normalizedPath, orgIdFromPath, dashboardBasePath]);
 
   const [selectedItem, setSelectedItem] = useState<string>(() => {
     const activeFromPath = baseNavItems
@@ -131,13 +171,13 @@ const WelcomeSection = ({
         if (
           orgIdFromPath &&
           item.path &&
-          item.path.startsWith("/dashboard/ai-maker")
+          item.path.startsWith(dashboardBasePath)
         ) {
-          const pathSuffix = item.path.replace("/dashboard/ai-maker", "");
+          const pathSuffix = item.path.replace(dashboardBasePath, "");
           if (pathSuffix === "") {
-            href = `${localePrefix}/dashboard/ai-maker/${orgIdFromPath}`;
+            href = `${localePrefix}${dashboardBasePath}/${orgIdFromPath}`;
           } else {
-            href = `${localePrefix}/dashboard/ai-maker/${orgIdFromPath}${pathSuffix}`;
+            href = `${localePrefix}${dashboardBasePath}/${orgIdFromPath}${pathSuffix}`;
           }
         }
 
@@ -147,7 +187,7 @@ const WelcomeSection = ({
           path: item.path,
         };
       }),
-    [localePrefix, orgIdFromPath]
+    [localePrefix, orgIdFromPath, baseNavItems, dashboardBasePath]
   );
 
   useEffect(() => {
@@ -192,12 +232,10 @@ const WelcomeSection = ({
           </div>
         </div>
 
-        {/* Welcome Text */}
         <p className="welcome-text sm:pt-4 md:pt-0">
-          Welcome, {user?.name || (orgName ? orgName : "CivicDataLab")}
+          Welcome, {user?.name || orgName || (dashboardType === "auditor" ? "Auditor" : "CivicDataLab")}
         </p>
 
-        {/* Switch Roles Button */}
         <Link
           href="/dashboard"
           className="mt-4 mb-4 inline-flex font-medium text-[#644FC1] underline transition-colors hover:opacity-90 switch-roles-link"
@@ -206,12 +244,9 @@ const WelcomeSection = ({
         </Link>
       </div>
 
-      {/* Divider */}
       <div className="welcome-divider mt-4 mb-4">
         <Divider />
       </div>
-
-      {/* Navigation */}
       <nav className="space-y-2 overflow-visible">
         {navItems.map((item) => {
           const isActive = selectedItem === item.label;
