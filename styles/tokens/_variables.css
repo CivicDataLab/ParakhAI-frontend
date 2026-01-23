@@ -85,6 +85,8 @@
   --base-amber-solid-12: #4e2009;
   --base-pure-white: #ffffff;
   --base-pure-black: #000000;
+  /* Global page background color */
+  --page-background: #F9F9FB;
   --purple-primary-color: #644FC1;
   --green-secondary-color: #E2F5C4;
   --blue-primary-text: #194C71;

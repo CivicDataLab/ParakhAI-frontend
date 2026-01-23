@@ -2128,15 +2128,15 @@ html.mobile-menu-open .breadcrumbs-ml {
 }
 
 @media (max-width: 1023px) {
-  /* CRITICAL: Ensure all base elements have white background to prevent black screen */
+  /* Ensure all base elements use the global page background color */
   body,
   html {
-    background-color: white;
+    background-color: var(--page-background);
   }
 
   main,
   main > * {
-    background-color: white;
+    background-color: var(--page-background);
     display: block;
   }
 
@@ -2588,7 +2588,7 @@ html.mobile-menu-open .breadcrumbs-ml {
     /* Removed padding-left and overflow-x to allow Tailwind classes to work */
     padding-right: 1rem;
     min-height: 100vh;
-    background-color: white;
+    background-color: var(--page-background);
     display: flex;
     flex-direction: column;
   }
@@ -2602,7 +2602,7 @@ html.mobile-menu-open .breadcrumbs-ml {
   /* Ensure ALL divs are visible by default on mobile */
   .ai-maker-container > div {
     display: block;
-    background-color: white;
+    background-color: var(--page-background);
     width: 100%;
   }
 
@@ -2615,14 +2615,14 @@ html.mobile-menu-open .breadcrumbs-ml {
     width: 100%;
     display: flex;
     flex-direction: column;
-    background-color: white;
+    background-color: var(--page-background);
     min-height: auto;
   }
 
   /* Ensure AI Maker container and all children have visible background */
   .ai-maker-container,
   .ai-maker-container > div {
-    background-color: white;
+    background-color: var(--page-background);
   }
 
   .metrics-grid {
