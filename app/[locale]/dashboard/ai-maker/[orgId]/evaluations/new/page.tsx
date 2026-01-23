@@ -9,7 +9,6 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Button, Icon, Label, Select, Tag, Text, TextField } from "opub-ui";
 import { useEffect, useRef, useState } from "react";
 import EvaluationConfiguration from "../components/EvaluationConfiguration";
-import EvaluationSummary from "../components/EvaluationSummary";
 import ManualTestCases from "../components/ManualTestCases";
 import TestCases from "../components/TestCases";
 import type { AuditType, Module, SelectOption } from "../components/types";
@@ -144,7 +143,7 @@ const NewAuditPage = () => {
   const urlVersion = searchParams.get("version");
 
   const [auditType, setAuditType] = useState<AuditType>("technical");
-  const [activeTab, setActiveTab] = useState<"config" | "test" | "results">(
+  const [activeTab, setActiveTab] = useState<"config" | "test">(
     "config",
   );
   const [auditName, setAuditName] = useState(generateDefaultAuditName);
@@ -203,8 +202,7 @@ const NewAuditPage = () => {
     const tabParam = searchParams.get("tab");
     if (
       tabParam === "config" ||
-      tabParam === "test" ||
-      tabParam === "results"
+      tabParam === "test" 
     ) {
       setActiveTab(tabParam);
     }
@@ -282,7 +280,7 @@ const NewAuditPage = () => {
     }
   };
 
-  const handleTabChange = (tab: "config" | "test" | "results") => {
+  const handleTabChange = (tab: "config" | "test") => {
     setActiveTab(tab);
     scrollToTop();
   };
@@ -767,9 +765,7 @@ const NewAuditPage = () => {
       modelVersionId: selectedVersionId,
     };
 
-    // Move user into the Audit Results tab and show loading state FIRST
-    setActiveTab("results");
-    scrollToTop(); // Scroll to top when switching to results tab
+    // Set loading state and clear previous audit data
     setAuditOverview(null);
     setAuditError(null);
     setIsRequestingAudit(true);
@@ -1135,10 +1131,10 @@ const NewAuditPage = () => {
 
             {/* Tabs */}
             <div className="mb-4 max-[1023px]:mb-3 max-[640px]:mb-2">
-              <div className="flex gap-6 max-[1023px]:gap-0 tabs-container">
+              <div className="flex gap-6 max-[1023px]:gap-0 tabs-container w-full">
                 <button
                   onClick={() => handleTabChange("config")}
-                  className={`audit-config-tab ${
+                  className={`audit-config-tab flex-1 ${
                     activeTab === "config"
                       ? "audit-config-tab-active text-gray-900 font-semibold"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 bg-transparent"
@@ -1161,7 +1157,7 @@ const NewAuditPage = () => {
                       handleTabChange("test");
                     }
                   }}
-                  className={`audit-config-tab ${
+                  className={`audit-config-tab flex-1 ${
                     activeTab === "test"
                       ? "audit-config-tab-active text-gray-900 font-semibold"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 bg-transparent"
@@ -1176,30 +1172,6 @@ const NewAuditPage = () => {
                     }
                   >
                     Test Cases
-                  </Text>
-                </button>
-                <button
-                  onClick={() => {
-                    if (auditOverview?.auditId) {
-                      handleTabChange("results");
-                    }
-                  }}
-                  className={`audit-config-tab ${
-                    activeTab === "results"
-                      ? "audit-config-tab-active text-gray-900 font-semibold"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 bg-transparent"
-                  }`}
-                  disabled={!auditOverview?.auditId}
-                >
-                  <Text
-                    variant="bodyMd"
-                    className={
-                      activeTab === "results"
-                        ? "text-gray-900 font-semibold"
-                        : "text-gray-600"
-                    }
-                  >
-                    Evaluation Summary
                   </Text>
                 </button>
               </div>
@@ -1261,17 +1233,6 @@ const NewAuditPage = () => {
                   isRequestingAudit={isRequestingAudit}
                 />
               ))}
-
-            {activeTab === "results" && (
-              <EvaluationSummary
-                auditOverview={auditOverview}
-                isRequestingAudit={isRequestingAudit}
-                auditError={auditError}
-                onDownloadReport={() => {
-                  // TODO: Implement download report functionality
-                }}
-              />
-            )}
 
             {/* Navigation Buttons - Audit Configuration tab */}
             {activeTab === "config" && (
