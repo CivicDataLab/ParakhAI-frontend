@@ -60,6 +60,40 @@ const GET_AI_MODEL_NAME_QUERY = `
   }
 `;
 
+// GraphQL query to fetch audit summary
+const GET_AUDIT_SUMMARY = `
+  query GetSummaries($audit_id: ID!)
+  {
+    auditSummaries(auditId: $audit_id) {
+      id
+      audit {
+        pk
+      }
+      status
+      totalTests
+      totalTasks
+      totalResults
+      aggregationMethod
+      riskDistribution
+      moduleSummary
+      metricSummary
+      toolSummary
+      overallVerdict
+      verdictReason
+      recommendations
+      auditorComments
+      executiveSummary
+      createdAt
+      updatedAt
+      auditReport {
+        name
+        size
+        url
+      }
+    }
+  }
+`;
+
 export type Audit = {
   id: string;
   name: string;
@@ -201,6 +235,11 @@ const EvaluationDetail = ({
   } = useGraphQL();
 
   const [audit, setAudit] = useState<Audit | null>(null);
+  const [auditReport, setAuditReport] = useState<{
+    name: string;
+    size: number | null;
+    url: string;
+  } | null>(null);
   const [testCasesData, setTestCasesData] = useState<TestCase[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingResults, setIsLoadingResults] = useState(false);
@@ -209,6 +248,7 @@ const EvaluationDetail = ({
 
   const isFetchingRef = useRef(false);
   const lastFetchedAuditIdRef = useRef<string | null>(null);
+  const isReportReady = Boolean(auditReport?.url);
 
   // Fetch audit results
   const fetchResults = async () => {
@@ -292,6 +332,7 @@ const EvaluationDetail = ({
 
           if (data.audit.status === "COMPLETED" || data.audit.completedAt) {
             await fetchResults();
+            await fetchAuditSummary();
             return;
           }
 
@@ -373,6 +414,7 @@ const EvaluationDetail = ({
           auditData.audit.completedAt
         ) {
           await fetchResults();
+          await fetchAuditSummary();
         } else if (
           auditData.audit.status === "RUNNING" ||
           auditData.audit.status === "PENDING"
@@ -402,6 +444,32 @@ const EvaluationDetail = ({
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const fetchAuditSummary = async () => {
+    const requestOptions = orgId ? { organization: orgId } : undefined;
+    try {
+      const data = await request<{
+        auditSummaries: Array<{
+          auditReport: {
+            name: string;
+            size: number | null;
+            url: string;
+          } | null;
+        }>;
+      }>(
+        GET_AUDIT_SUMMARY,
+        { audit_id: evaluationId },
+        requestOptions
+      );
+
+      const summary = data?.auditSummaries?.[0];
+      if (summary?.auditReport) {
+        setAuditReport(summary.auditReport);
+      }
+    } catch (err) {
+      console.error("Error fetching audit summary:", err);
+    }
   };
 
   const getDuration = () => {
@@ -730,8 +798,12 @@ const EvaluationDetail = ({
       <div className="flex flex-col items-center gap-4 pt-8">
         <Button
           kind="secondary"
+          disabled={!isReportReady}
           icon={<Icon source={IconDownload} size={18} />}
-          onClick={() => {}}
+          onClick={() => {
+            if (!auditReport?.url) return;
+            window.open(auditReport.url, "_blank", "noopener,noreferrer");
+          }}
         >
           Download Report
         </Button>
