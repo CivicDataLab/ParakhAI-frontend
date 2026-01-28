@@ -29,26 +29,38 @@ const MainFooter = () => {
   ];
   
   return (
-    <div className="bg-primaryPurple">
-      <div className="footer-container w-full max-w-[1440px] mx-auto h-[88px] py-6 px-[112px]">
+    <div className="bg-primaryPurple w-full">
+      <div className="footer-container w-full px-3 sm:px-4 lg:px-8 h-[88px]">
         <div className="footer-inner flex items-center justify-between h-full">
           {/* Left: Footer Links */}
-          <div className="footer-links flex items-center gap-8 -ml-20">
-            <Link href={'/sitemap'} className="hover:opacity-80 transition-opacity text-white text-[14px] leading-5 font-normal">
+          <div className="footer-links flex items-center gap-6">
+            <Link
+              href={'/sitemap'}
+              className="hover:opacity-80 transition-opacity text-white text-[14px] leading-5 font-normal"
+            >
               SITEMAP
             </Link>
-            <Link href={'mailto:info@civicdatalab.in'} className="hover:opacity-80 transition-opacity text-white text-[14px] leading-5 font-normal">
+            <Link
+              href={'mailto:info@civicdatalab.in'}
+              className="hover:opacity-80 transition-opacity text-white text-[14px] leading-5 font-normal"
+            >
               CONTACT US
             </Link>
-            <Link href={'/about-us'} className="hover:opacity-80 transition-opacity text-white text-[14px] leading-5 font-normal">
+            <Link
+              href={'/about-us'}
+              className="hover:opacity-80 transition-opacity text-white text-[14px] leading-5 font-normal"
+            >
               ABOUT US
             </Link>
-            <Link href={'/terms-privacy'} className="hover:opacity-80 transition-opacity text-white text-[14px] leading-5 font-normal">
+            <Link
+              href={'/terms-privacy'}
+              className="hover:opacity-80 transition-opacity text-white text-[14px] leading-5 font-normal"
+            >
               TERMS & PRIVACY
             </Link>
           </div>
 
-          {/* Center: Made by CivicDataLab and Social Media Icons */}
+          {/* Right: Made by CivicDataLab and Social Media Icons */}
           <div className="footer-center flex items-center gap-1">
             <Link
               href={'https://www.civicdatalab.in'}
@@ -64,7 +76,7 @@ const MainFooter = () => {
                 className="w-[94px] h-[32px]"
               />
             </Link>
-            
+
             {/* Social Media Icons */}
             <div className="footer-social flex items-center gap-[10px] ml-6">
               {socialMedia.map((item, index) => (

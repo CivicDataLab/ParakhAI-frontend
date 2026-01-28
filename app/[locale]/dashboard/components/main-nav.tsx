@@ -28,43 +28,44 @@ const MainNav = () => {
 
   return (
     <>
-      <nav className="bg-primaryPurple sticky top-0 z-[99999] overflow-visible">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 overflow-visible">
-          {/* Desktop Navigation Container */}
-          <div className="relative flex justify-between items-center min-h-[120px] pt-4 pr-10 pb-4 pl-0 
-                          lg:min-h-[60px] lg:pt-7 lg:pb-6
-                          sm:h-auto sm:pt-4 sm:pb-4 sm:pl-2 sm:pr-2 sm:justify-start sm:gap-4 overflow-visible">
-            
-            {/* Mobile Navigation */}
-            <MobileNav 
-              navigationLinks={navigationLinks}
-              session={session}
-              status={status}
-            />
+      <nav className="bg-primaryPurple sticky top-0 z-[99999] w-full">
+        <div className="w-full px-3 sm:px-4 lg:px-8">
+          {/* Top bar container */}
+          <div className="flex items-center justify-between min-h-[80px] py-4 lg:min-h-[60px] lg:py-3 gap-4">
+            {/* LEFT: Logo (MobileNav only visible on mobile) */}
+            <div className="flex items-center gap-3">
+              {/* Mobile Navigation - only visible on mobile */}
+              <div className="lg:hidden">
+                <MobileNav
+                  navigationLinks={navigationLinks}
+                  session={session}
+                  status={status}
+                />
+              </div>
 
-            {/* Logo */}
-            <div className="flex items-center flex-shrink-0 
-                            relative -translate-x-[180px]
-                            md:-translate-x-[184px]
-                            lg:absolute lg:left-[-90px] lg:translate-x-0">
-              <Link href="/" className="flex items-center" aria-label="ParakhAI Home">
-                <div className="relative overflow-hidden 
+              {/* Logo - always visible */}
+              <div className="flex items-center flex-shrink-0">
+                <Link href="/" className="flex items-center" aria-label="ParakhAI Home">
+                  <div
+                    className="relative overflow-hidden 
                                 h-6 w-[100px] 
                                 md:h-7 md:w-[120px] 
-                                lg:h-[55px] lg:w-[165px] lg:p-[6.53px]">
-                  <Image 
-                    src="/images/logos/parakhai-logo.png" 
-                    alt="ParakhAI" 
-                    fill
-                    className="object-contain"
-                    sizes="(max-width: 640px) 100px, (max-width: 1024px) 120px, 165px"
-                  />
-                </div>
-              </Link>
+                                lg:h-[55px] lg:w-[165px] lg:p-[6.53px]"
+                  >
+                    <Image
+                      src="/images/logos/parakhai-logo.png"
+                      alt="ParakhAI"
+                      fill
+                      className="object-contain"
+                      sizes="(max-width: 640px) 100px, (max-width: 1024px) 120px, 165px"
+                    />
+                  </div>
+                </Link>
+              </div>
             </div>
 
-            {/* Center Section: Search + Navigation Links - Hidden on mobile, visible on desktop */}
-            <div className="hidden lg:flex items-center gap-6 absolute -right-[116px]">
+            {/* RIGHT: Search + Navigation Links + Avatar/Profile (desktop only) */}
+            <div className="hidden lg:flex items-center gap-6">
               {/* Search Icon */}
               <IconButton
                 icon={Icons.search}
@@ -77,7 +78,8 @@ const MainNav = () => {
 
               {/* Navigation Links */}
               {navigationLinks.map((link) => {
-                const isExternal = link.href.startsWith('http://') || link.href.startsWith('https://');
+                const isExternal =
+                  link.href.startsWith('http://') || link.href.startsWith('https://');
                 const normalizedPath = (() => {
                   if (!pathname) return '/';
                   // Strip the leading locale segment if present: "/en/dashboard" -> "/dashboard"
@@ -85,7 +87,9 @@ const MainNav = () => {
                   return withoutLocale || '/';
                 })();
                 const isActive =
-                  !isExternal && (normalizedPath === link.href || normalizedPath.startsWith(`${link.href}/`));
+                  !isExternal &&
+                  (normalizedPath === link.href ||
+                    normalizedPath.startsWith(`${link.href}/`));
                 return (
                   <Link
                     key={link.href}
@@ -96,7 +100,7 @@ const MainNav = () => {
                       isActive ? 'underline decoration-secondaryGreen' : ''
                     }`}
                   >
-                    <span 
+                    <span
                       className={`text-base font-semibold leading-6 ${
                         isActive ? 'text-secondaryGreen' : 'text-white'
                       }`}
@@ -106,8 +110,8 @@ const MainNav = () => {
                   </Link>
                 );
               })}
-              
-              {/* Profile/Sign In - positioned after navigation links */}
+
+              {/* Profile/Sign In */}
               <div className="flex items-center gap-3 ml-6">
                 {status === 'loading' ? (
                   <Spinner />
@@ -120,8 +124,8 @@ const MainNav = () => {
                     contentClassName="profile-popover-content bg-white border border-gray-200 shadow-lg rounded-xl z-[10000]"
                   />
                 ) : (
-                  <button 
-                    onClick={() => signIn('keycloak')} 
+                  <button
+                    onClick={() => signIn('keycloak')}
                     className="bg-borderHighlightSubdued text-baseVioletSolid12 
                                text-base font-semibold uppercase tracking-[0.08em] 
                                py-3 px-6 rounded-lg border border-transparent 
@@ -131,7 +135,7 @@ const MainNav = () => {
                                focus:outline-none focus:ring-2 focus:ring-baseVioletSolid6 focus:ring-offset-0"
                   >
                     LOGIN / SIGN UP
-              </button>
+                  </button>
                 )}
               </div>
             </div>
