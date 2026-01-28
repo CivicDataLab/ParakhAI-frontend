@@ -23,7 +23,7 @@ type AuditorAssignment = {
   modelName?: string;
   modelVersionId: number;
   versionLabel?: string;
-  auditorUserId: string;
+  auditorId: number;
   auditorEmail: string;
   auditorUsername: string;
   status: string;
@@ -39,7 +39,7 @@ const GET_MY_ASSIGNMENTS = `
       organizationId
       modelId
       modelVersionId
-      auditorUserId
+      auditorId
       auditorEmail
       auditorUsername
       status
@@ -51,8 +51,8 @@ const GET_MY_ASSIGNMENTS = `
 `;
 
 const UPDATE_ASSIGNMENT_STATUS = `
-  mutation UpdateAuditorAssignmentStatus($assignmentId: ID!, $status: String!, $notes: String) {
-    updateAuditorAssignmentStatus(assignmentId: $assignmentId, status: $status, notes: $notes) {
+  mutation UpdateAuditorAssignmentStatus($assignmentId: ID!, $status: String!) {
+    updateAuditorAssignmentStatus(assignmentId: $assignmentId, status: $status) {
       success
       message
       assignment {

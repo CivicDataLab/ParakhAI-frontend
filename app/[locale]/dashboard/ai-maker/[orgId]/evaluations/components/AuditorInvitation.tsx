@@ -21,7 +21,7 @@ type AuditorAssignment = {
   organizationId: string;
   modelId: string;
   modelVersionId: number;
-  auditorUserId: string;
+  auditorId: number;
   auditorEmail: string;
   auditorUsername: string;
   status: string;
@@ -72,7 +72,7 @@ const GET_AUDITOR_ASSIGNMENTS = `
       organizationId
       modelId
       modelVersionId
-      auditorUserId
+      auditorId
       auditorEmail
       auditorUsername
       status
@@ -125,7 +125,7 @@ const ASSIGN_AUDITOR_TO_VERSION = `
         organizationId
         modelId
         modelVersionId
-        auditorUserId
+        auditorId
         auditorEmail
         auditorUsername
         status
@@ -212,7 +212,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   }, [organizationId, modelId, modelVersionId, request, isModalOpen]);
 
   const availableAuditors = auditors.filter(
-    (auditor) => !assignments.some((a) => a.auditorUserId === auditor.id)
+    (auditor) => !assignments.some((a) => a.auditorEmail === auditor.email)
   );
 
   const handleSearchUser = async () => {
@@ -330,9 +330,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
           input: {
             modelId,
             modelVersionId,
-            auditorUserId: targetAuditorId,
             auditorEmail: email,
-            auditorUsername: username,
             notes,
           },
         },
