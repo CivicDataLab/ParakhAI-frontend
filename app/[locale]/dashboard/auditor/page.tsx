@@ -10,6 +10,7 @@ import {
     IconX,
 } from "@tabler/icons-react";
 import { createColumnHelper } from "@tanstack/react-table";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Badge, Button, DataTable, Text } from "opub-ui";
 import { useEffect, useState } from "react";
@@ -177,7 +178,7 @@ const AuditorDashboard = () => {
 
   const handleStartEvaluation = (assignment: AuditorAssignment) => {
     router.push(
-      `/${locale}/dashboard/auditor/models/${assignment.modelId}?versionId=${assignment.modelVersionId}`
+      `/${locale}/dashboard/auditor/evaluations/new?modelId=${assignment.modelId}&versionId=${assignment.modelVersionId}`
     );
   };
 
@@ -197,12 +198,12 @@ const AuditorDashboard = () => {
     columnHelper.accessor("modelName", {
       header: "Model",
       cell: (info) => (
-        <button
-          onClick={() => handleViewModel(info.row.original)}
-          className="text-purple-600 hover:underline font-medium text-left"
+        <Link
+          href={`/${locale}/dashboard/auditor/models/${info.row.original.modelId}`}
+          className="text-purple-600 hover:underline font-medium"
         >
           {info.getValue() || `Model ${info.row.original.modelId.slice(0, 8)}`}
-        </button>
+        </Link>
       ),
     }),
     columnHelper.accessor("versionLabel", {
@@ -265,12 +266,12 @@ const AuditorDashboard = () => {
     columnHelper.accessor("modelName", {
       header: "Model",
       cell: (info) => (
-        <button
-          onClick={() => handleViewModel(info.row.original)}
-          className="text-purple-600 hover:underline font-medium text-left"
+        <Link
+          href={`/${locale}/dashboard/auditor/models/${info.row.original.modelId}`}
+          className="text-purple-600 hover:underline font-medium"
         >
           {info.getValue() || `Model ${info.row.original.modelId.slice(0, 8)}`}
-        </button>
+        </Link>
       ),
     }),
     columnHelper.accessor("versionLabel", {

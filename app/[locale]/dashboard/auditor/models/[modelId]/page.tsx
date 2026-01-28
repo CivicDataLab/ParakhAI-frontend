@@ -3,11 +3,7 @@
 import RichTextRenderer from "@/components/RichTextRenderer";
 import { useGraphQL } from "@/lib/api";
 import { useAppSession } from "@/lib/session";
-import {
-  IconArrowLeft,
-  IconPlayerPlay,
-  IconX,
-} from "@tabler/icons-react";
+import { IconArrowLeft, IconPlayerPlay, IconX } from "@tabler/icons-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -60,38 +56,6 @@ const GET_AI_MODEL = `
   }
 `;
 
-const GET_MY_ASSIGNMENTS_FOR_MODEL = `
-  query GetMyAssignmentsForModel($modelId: String) {
-    myAssignments(modelId: $modelId) {
-      id
-      organizationId
-      modelId
-      modelVersionId
-      auditorId
-      auditorEmail
-      auditorUsername
-      status
-      notes
-      createdAt
-    }
-  }
-`;
-
-const UPDATE_ASSIGNMENT_STATUS = `
-  mutation UpdateAuditorAssignmentStatus($assignmentId: ID!, $status: String!) {
-    updateAuditorAssignmentStatus(assignmentId: $assignmentId, status: $status) {
-      success
-      message
-      assignment {
-        id
-        status
-        notes
-        updatedAt
-      }
-    }
-  }
-`;
-
 type AIModel = {
   id: string;
   name: string;
@@ -124,21 +88,6 @@ type AIModel = {
   }>;
 };
 
-type AuditorAssignment = {
-  id: string;
-  organizationId: string;
-  organizationName?: string;
-  modelId: string;
-  modelVersionId: number;
-  versionLabel?: string;
-  auditorId: number;
-  auditorEmail: string;
-  auditorUsername: string;
-  status: string;
-  notes: string;
-  createdAt: string;
-};
-
 const modelTypeLabels: Record<string, string> = {
   TRANSLATION: "Translation",
   TEXT_GENERATION: "Text Generation",
@@ -162,6 +111,64 @@ const providerLabels: Record<string, string> = {
   HUGGINGFACE: "HuggingFace",
 };
 
+const formatDateShort = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+
+const GET_MY_ASSIGNMENTS_FOR_MODEL = `
+  query GetMyAssignmentsForModel($modelId: String) {
+    myAssignments(modelId: $modelId) {
+      id
+      organizationId
+      modelId
+      modelVersionId
+      auditorId
+      auditorEmail
+      auditorUsername
+      status
+      notes
+      createdAt
+    }
+  }
+`;
+
+const UPDATE_ASSIGNMENT_STATUS = `
+  mutation UpdateAuditorAssignmentStatus($assignmentId: ID!, $status: String!) {
+    updateAuditorAssignmentStatus(assignmentId: $assignmentId, status: $status) {
+      success
+      message
+      assignment {
+        id
+        status
+        notes
+        updatedAt
+      }
+    }
+  }
+`;
+
+
+type AuditorAssignment = {
+  id: string;
+  organizationId: string;
+  organizationName?: string;
+  modelId: string;
+  modelVersionId: number;
+  versionLabel?: string;
+  auditorId: number;
+  auditorEmail: string;
+  auditorUsername: string;
+  status: string;
+  notes: string;
+  createdAt: string;
+};
+
+
 const statusColors: Record<string, { bg: string; text: string }> = {
   PENDING: { bg: "bg-yellow-100", text: "text-yellow-700" },
   ACCEPTED: { bg: "bg-green-100", text: "text-green-700" },
@@ -170,15 +177,6 @@ const statusColors: Record<string, { bg: string; text: string }> = {
   COMPLETED: { bg: "bg-purple-100", text: "text-purple-700" },
 };
 
-const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || "";
-
-const formatDateShort = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-};
 
 const AuditorModelDetailPage = () => {
   const params = useParams();
@@ -230,7 +228,7 @@ const AuditorModelDetailPage = () => {
 
   const handleUpdateStatus = async (
     assignmentId: string,
-    newStatus: string
+    newStatus: string,
   ) => {
     try {
       setUpdatingId(assignmentId);
@@ -243,8 +241,8 @@ const AuditorModelDetailPage = () => {
       if (response?.updateAuditorAssignmentStatus?.success) {
         setAssignments((prev) =>
           prev.map((a) =>
-            a.id === assignmentId ? { ...a, status: newStatus } : a
-          )
+            a.id === assignmentId ? { ...a, status: newStatus } : a,
+          ),
         );
 
         setToast({
@@ -272,24 +270,21 @@ const AuditorModelDetailPage = () => {
     }
   };
 
+  const getAssignmentForVersion = (versionId: number) => {
+    return assignments.find((a) => a.modelVersionId === versionId);
+  };
+
   const handleStartEvaluation = (versionId: number) => {
-    // Navigate to evaluation creation page
+    // Navigate to auditor's evaluation creation page
     router.push(
-      `/${locale}/dashboard/auditor/evaluations/new?modelId=${modelId}&versionId=${versionId}`
+      `/${locale}/dashboard/auditor/evaluations/new?modelId=${modelId}&versionId=${versionId}`,
     );
   };
 
-  // Get assignment for a specific version
-  const getAssignmentForVersion = (versionId: string) => {
-    return assignments.find((a) => a.modelVersionId === parseInt(versionId));
-  };
-
-  // Filter versions to only show those the auditor is assigned to
-  const assignedVersionIds = new Set(
-    assignments.map((a) => a.modelVersionId.toString())
-  );
+  const assignedVersionIds = new Set(assignments.map((a) => a.modelVersionId));
   const assignedVersions =
-    model?.versions?.filter((v) => assignedVersionIds.has(v.id)) || [];
+    model?.versions?.filter((v) => assignedVersionIds.has(parseInt(v.id))) ||
+    [];
 
   if (loading) {
     return (
@@ -325,10 +320,10 @@ const AuditorModelDetailPage = () => {
         </Link>
       </div>
 
-      <div className="flex-1 p-6 lg:p-10 bg-white rounded-lg">
+      <div className="flex-1 p-6 lg:p-10 bg-white rounded-lg overflow-hidden">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content */}
-          <div className="flex-1 lg:pr-8 lg:border-r border-gray-100">
+          <div className="flex-1 min-w-0 lg:pr-8 lg:border-r border-gray-100">
             <div className="flex flex-col gap-8">
               <div className="flex flex-col gap-3">
                 <Text variant="heading3xl" fontWeight="bold">
@@ -355,7 +350,7 @@ const AuditorModelDetailPage = () => {
                 </div>
               </div>
 
-              <div>
+              <div className="overflow-hidden w-full">
                 <Text
                   variant="headingLg"
                   fontWeight="bold"
@@ -363,9 +358,11 @@ const AuditorModelDetailPage = () => {
                 >
                   About
                 </Text>
-                <RichTextRenderer
-                  content={model.description || "No description available."}
-                />
+                <div className="max-w-full overflow-hidden [&_*]:max-w-full [&_*]:overflow-wrap-anywhere [&_*]:word-break-break-word" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                  <RichTextRenderer
+                    content={model.description || "No description available."}
+                  />
+                </div>
               </div>
 
               {/* Assigned Versions Section */}
@@ -386,10 +383,13 @@ const AuditorModelDetailPage = () => {
                 ) : (
                   <div className="flex flex-col gap-4">
                     {assignedVersions.map((v) => {
-                      const assignment = getAssignmentForVersion(v.id);
+                      const assignment = getAssignmentForVersion(
+                        parseInt(v.id),
+                      );
                       const isHighlighted = highlightVersionId === v.id;
                       const colors = assignment
-                        ? statusColors[assignment.status] || statusColors.PENDING
+                        ? statusColors[assignment.status] ||
+                          statusColors.PENDING
                         : statusColors.PENDING;
 
                       return (
@@ -401,7 +401,11 @@ const AuditorModelDetailPage = () => {
                               : "border-gray-200"
                           } bg-white p-4 rounded-lg lg:mx-0 lg:p-6 shadow-sm`}
                         >
-                          <Accordion type="single" collapsible className="w-full">
+                          <Accordion
+                            type="single"
+                            collapsible
+                            className="w-full"
+                          >
                             <AccordionItem value={v.id} className="border-none">
                               <div className="flex flex-wrap items-center justify-between gap-4 md:flex-nowrap">
                                 <div className="flex flex-wrap items-center gap-2 md:flex-nowrap">
@@ -420,13 +424,18 @@ const AuditorModelDetailPage = () => {
                                       />
                                     </svg>
                                   </div>
-                                  <Text variant="headingMd" className="line-clamp-1">
+                                  <Text
+                                    variant="headingMd"
+                                    className="line-clamp-1"
+                                  >
                                     Version {v.version}
                                   </Text>
                                   {v.isLatest && (
                                     <Badge status="success">Primary</Badge>
                                   )}
-                                  <Badge>{v.lifecycleStage.replace(/_/g, " ")}</Badge>
+                                  <Badge>
+                                    {v.lifecycleStage.replace(/_/g, " ")}
+                                  </Badge>
                                   {assignment && (
                                     <span
                                       className={`px-2 py-1 text-xs rounded-full ${colors.bg} ${colors.text}`}
@@ -446,7 +455,7 @@ const AuditorModelDetailPage = () => {
                                           e.stopPropagation();
                                           handleUpdateStatus(
                                             assignment.id,
-                                            "ACCEPTED"
+                                            "ACCEPTED",
                                           );
                                         }}
                                         disabled={updatingId === assignment.id}
@@ -460,7 +469,7 @@ const AuditorModelDetailPage = () => {
                                           e.stopPropagation();
                                           handleUpdateStatus(
                                             assignment.id,
-                                            "DECLINED"
+                                            "DECLINED",
                                           );
                                         }}
                                         disabled={updatingId === assignment.id}
@@ -480,7 +489,10 @@ const AuditorModelDetailPage = () => {
                                         handleStartEvaluation(parseInt(v.id));
                                       }}
                                     >
-                                      <IconPlayerPlay size={16} className="mr-1" />
+                                      <IconPlayerPlay
+                                        size={16}
+                                        className="mr-1"
+                                      />
                                       {assignment.status === "IN_PROGRESS"
                                         ? "Continue Evaluation"
                                         : "Start Evaluation"}
@@ -514,7 +526,7 @@ const AuditorModelDetailPage = () => {
                                       {formatDateShort(
                                         v.createdAt ||
                                           model.updatedAt ||
-                                          new Date().toISOString()
+                                          new Date().toISOString(),
                                       )}
                                     </Text>
                                   </div>
@@ -555,7 +567,8 @@ const AuditorModelDetailPage = () => {
                                                 {l.toUpperCase()}
                                               </Badge>
                                             ))}
-                                          {model.supportedLanguages.length > 3 && (
+                                          {model.supportedLanguages.length >
+                                            3 && (
                                             <Badge>
                                               {`+${model.supportedLanguages.length - 3}`}
                                             </Badge>
@@ -572,7 +585,10 @@ const AuditorModelDetailPage = () => {
                                       >
                                         INVITATION NOTES
                                       </Text>
-                                      <Text variant="bodyMd" className="text-gray-700">
+                                      <Text
+                                        variant="bodyMd"
+                                        className="text-gray-700"
+                                      >
                                         {assignment.notes}
                                       </Text>
                                     </div>

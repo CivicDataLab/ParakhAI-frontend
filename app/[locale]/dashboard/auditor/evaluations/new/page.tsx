@@ -7,6 +7,8 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Button, Text } from "opub-ui";
 import { useEffect, useState } from "react";
+import { OrganizationContext } from "../../../ai-maker/[orgId]/OrganizationContext";
+import NewEvaluationContent from "../../../ai-maker/[orgId]/evaluations/components/NewEvaluationContent";
 
 const GET_MY_ASSIGNMENTS_FOR_MODEL = `
   query GetMyAssignmentsForModel($modelId: String) {
@@ -19,6 +21,24 @@ const GET_MY_ASSIGNMENTS_FOR_MODEL = `
     }
   }
 `;
+
+const GET_ORGANIZATION = `
+  query GetOrganization($orgId: ID!) {
+    organization(orgId: $orgId) {
+      id
+      name
+      logoUrl
+    }
+  }
+`;
+
+type Assignment = {
+  id: string;
+  organizationId: string;
+  modelId: string;
+  modelVersionId: number;
+  status: string;
+};
 
 const AuditorNewEvaluationPage = () => {
   const params = useParams();
@@ -33,7 +53,8 @@ const AuditorNewEvaluationPage = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hasValidAssignment, setHasValidAssignment] = useState(false);
+  const [validAssignment, setValidAssignment] = useState<Assignment | null>(null);
+  const [organization, setOrganization] = useState<{ name: string; logoUrl: string | null } | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated || isSessionLoading) return;
@@ -53,7 +74,7 @@ const AuditorNewEvaluationPage = () => {
 
         const assignments = response?.myAssignments || [];
         
-        const validAssignment = assignments.find((a: any) => {
+        const assignment = assignments.find((a: any) => {
           const statusValid = a.status === "ACCEPTED" || a.status === "IN_PROGRESS";
           if (versionId) {
             return statusValid && a.modelVersionId === parseInt(versionId);
@@ -61,11 +82,23 @@ const AuditorNewEvaluationPage = () => {
           return statusValid;
         });
 
-        if (validAssignment) {
-          setHasValidAssignment(true);
-          router.push(
-            `/${locale}/dashboard/ai-maker/${validAssignment.organizationId}/evaluations/new?modelId=${modelId}${versionId ? `&versionId=${versionId}` : ""}`
-          );
+        if (assignment) {
+          setValidAssignment(assignment);
+          
+          // Fetch organization details for context
+          try {
+            const orgResponse = await request(GET_ORGANIZATION, {
+              orgId: assignment.organizationId,
+            });
+            if (orgResponse?.organization) {
+              setOrganization({
+                name: orgResponse.organization.name,
+                logoUrl: orgResponse.organization.logoUrl,
+              });
+            }
+          } catch (orgErr) {
+            console.warn("Could not fetch organization details:", orgErr);
+          }
         } else {
           setError(
             "You don't have an accepted assignment for this model. Please accept the invitation first."
@@ -80,7 +113,7 @@ const AuditorNewEvaluationPage = () => {
     };
 
     checkAssignment();
-  }, [isAuthenticated, isSessionLoading, modelId, versionId, request, router, locale]);
+  }, [isAuthenticated, isSessionLoading, modelId, versionId, request]);
 
   if (loading) {
     return (
@@ -132,13 +165,15 @@ const AuditorNewEvaluationPage = () => {
     );
   }
 
-  if (hasValidAssignment) {
+  if (validAssignment) {
+    // Render the evaluation form inline with organization context
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <Text variant="bodySm" className="text-gray-600">
-          Redirecting to evaluation setup...
-        </Text>
-      </div>
+      <OrganizationContext.Provider value={{ organization, isLoading: false }}>
+        <NewEvaluationContent 
+          orgId={validAssignment.organizationId}
+          fromAuditor={true}
+        />
+      </OrganizationContext.Provider>
     );
   }
 

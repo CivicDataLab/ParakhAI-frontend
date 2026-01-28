@@ -302,10 +302,9 @@ const ModelDetailPage = () => {
   return (
     <>
 
-      <div className="flex-1 p-10 bg-white">
-          <div className="flex">
-            {/* Main Content */}
-            <div className="flex-1 pr-16 border-r border-gray-100">
+      <div className="flex-1 p-6 lg:p-10 bg-white overflow-hidden">
+          <div className="flex flex-col lg:flex-row gap-8">
+            <div className="flex-1 min-w-0 lg:pr-8 lg:border-r border-gray-100">
               <div className="flex flex-col gap-8">
                 <div className="flex flex-col gap-3">
                   <Text variant="heading3xl" fontWeight="bold">
@@ -332,7 +331,7 @@ const ModelDetailPage = () => {
                   </div>
                 </div>
 
-                <div>
+                <div className="overflow-hidden">
                   <Text
                     variant="headingLg"
                     fontWeight="bold"
@@ -340,9 +339,11 @@ const ModelDetailPage = () => {
                   >
                     About
                   </Text>
-                  <RichTextRenderer
-                    content={model.description || "No description available."}
-                  />
+                  <div className="prose prose-sm max-w-none overflow-x-hidden break-words">
+                    <RichTextRenderer
+                      content={model.description || "No description available."}
+                    />
+                  </div>
                 </div>
 
                 <div className="mt-8">
@@ -516,7 +517,7 @@ const ModelDetailPage = () => {
               </div>
             </div>
 
-            <div className="w-80 pl-10 shrink-0">
+            <div className="w-full lg:w-80 shrink-0">
               <div className="flex flex-col gap-5 lg:gap-10">
                 <div className="flex flex-col gap-2">
                   <Text

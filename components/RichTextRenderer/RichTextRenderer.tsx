@@ -12,9 +12,9 @@ const RichTextRenderer: React.FC<RichTextRendererProps> = ({
   className = "",
 }) => {
   return (
-    <div className={`rich-text-content ${className}`}>
+    <div className={`rich-text-content overflow-hidden max-w-full ${className}`}>
       <div
-        className="ql-editor"
+        className="ql-editor overflow-hidden"
         dangerouslySetInnerHTML={{ __html: content || "" }}
       />
       <style jsx global>{`
@@ -24,12 +24,16 @@ const RichTextRenderer: React.FC<RichTextRendererProps> = ({
           height: 100%;
           outline: none;
           overflow-y: auto;
+          overflow-x: hidden;
           padding: 12px 15px;
           tab-size: 4;
           -moz-tab-size: 4;
           text-align: left;
           white-space: pre-wrap;
           word-wrap: break-word;
+          word-break: break-word;
+          overflow-wrap: anywhere;
+          max-width: 100%;
         }
         .ql-editor p,
         .ql-editor ol,
