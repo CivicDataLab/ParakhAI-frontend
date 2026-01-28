@@ -11,7 +11,7 @@ const EvaluationDetailPage = () => {
   const locale = params?.locale || "en";
   const orgId = params?.orgId as string;
 
-  return (
+        return (
     <EvaluationDetail
       evaluationId={evaluationId}
       backLink={`/${locale}/dashboard/ai-maker/${orgId}/evaluations`}
