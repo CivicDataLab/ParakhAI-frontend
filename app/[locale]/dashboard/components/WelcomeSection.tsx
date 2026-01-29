@@ -262,7 +262,7 @@ const WelcomeSection = ({
               }}
               className={`py-2 text-left transition whitespace-nowrap block nav-item-link ${
                 isActive
-                  ? "font-semibold bg-primaryPurple text-white rounded-lg -mx-3 w-[calc(100%+24px)] px-6"
+                  ? "font-semibold bg-primaryPurple text-white rounded-[8px] -mx-3 w-[calc(100%+24px)] px-6"
                   : "hover:bg-gray-100 rounded-md text-[#60646C] font-medium px-3 w-full"
               }`}
             >
