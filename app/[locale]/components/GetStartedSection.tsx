@@ -34,7 +34,8 @@ const GetStartedSection = () => {
     if (session) {
       router.push('/dashboard');
     } else {
-      signIn('keycloak');
+      // After Keycloak login, always land on the dashboard instead of coming back to home
+      signIn('keycloak', { callbackUrl: '/dashboard' });
     }
   };
 
