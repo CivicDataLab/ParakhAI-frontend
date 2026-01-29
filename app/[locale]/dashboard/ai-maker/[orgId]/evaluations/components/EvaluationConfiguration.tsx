@@ -3,6 +3,7 @@
 import React from "react";
 import { Text, TextField, Label, Select, Combobox } from "opub-ui";
 import type { SelectOption } from "./types";
+import styles from "./styles.module.scss";
 
 type AuditType = "technical" | "domain" | "cultural";
 
@@ -121,16 +122,16 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
 
   return (
     <div className="mb-8">
-      <Label htmlFor="auditType" className="block audit-type-label">
+      <Label htmlFor="auditType" className={`block ${styles.auditTypeLabel}`}>
         <Text variant="bodyMd" fontWeight="medium">
           Evaluation Type <span className="text-red-500">*</span>
         </Text>
       </Label>
 
-      <div className="flex gap-4 audit-options-container">
+      <div className={`flex gap-4 ${styles.auditOptionsContainer}`}>
         {/* Technical Audit Option */}
         <label
-          className={`flex items-start gap-3 cursor-pointer transition-all technical-audit-card ${
+          className={`flex items-start gap-3 cursor-pointer transition-all ${styles.technicalAuditCard} ${
             auditType === "technical" ? "" : ""
           }`}
         >
@@ -161,7 +162,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
 
         {/* Domain Audit Option */}
         <label
-          className={`flex items-start gap-3 cursor-pointer transition-all domain-audit-card ${
+          className={`flex items-start gap-3 cursor-pointer transition-all ${styles.domainAuditCard} ${
             auditType === "domain" ? "" : ""
           }`}
         >
@@ -192,7 +193,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
 
         {/* Cultural Audit Option */}
         <label
-          className={`flex items-start gap-3 cursor-pointer transition-all cultural-audit-card ${
+          className={`flex items-start gap-3 cursor-pointer transition-all ${styles.culturalAuditCard} ${
             auditType === "cultural" ? "" : ""
           }`}
         >
@@ -224,21 +225,21 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
 
       {/* Audit Configuration Form - Show when Technical Audit is selected */}
       {auditType === "technical" && (
-        <div className="audit-config-form mt-8">
+        <div className={`${styles.auditConfigForm} mt-8`}>
           {/* Auditor Information Section */}
           <div className="mb-6">
             <div className="flex gap-6 flex-wrap">
-              <div className="flex-1 min-w-[300px] auditor-name-wrapper">
+              <div className={`flex-1 min-w-[300px] ${styles.auditorNameWrapper}`}>
                 <Label
                   htmlFor="auditorName"
-                  className="audit-form-label auditor-name-label"
+                  className={`${styles.auditFormLabel} ${styles.auditorNameLabel}`}
                 >
                   <Text variant="bodyMd" fontWeight="medium">
                     Expert name<span className="text-red-500">*</span>
                   </Text>
                 </Label>
                 <div
-                  className={`audit-form-textfield auditor-name-textfield ${auditorName ? "has-value" : ""}`}
+                  className={`${styles.auditFormTextfield} ${styles.auditorNameTextfield} ${auditorName ? "hasValue" : ""}`}
                 >
                   <TextField
                     id="auditorName"
@@ -260,17 +261,17 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                   />
                 </div>
               </div>
-              <div className="flex-1 min-w-[300px] organisation-name-wrapper ml-12">
+              <div className={`flex-1 min-w-[300px] ${styles.organisationNameWrapper} ml-12`}>
                 <Label
                   htmlFor="organisationName"
-                  className="audit-form-label organisation-name-label"
+                  className={`${styles.auditFormLabel} ${styles.organisationNameLabel}`}
                 >
                   <Text variant="bodyMd" fontWeight="medium">
                     Organisation Name<span className="text-red-500">*</span>
                   </Text>
                 </Label>
                 <div
-                  className={`audit-form-textfield organisation-name-textfield ${organisationName ? "has-value" : ""}`}
+                  className={`${styles.auditFormTextfield} ${styles.organisationNameTextfield} ${organisationName ? "hasValue" : ""}`}
                 >
                   <TextField
                     id="organisationName"
@@ -304,13 +305,13 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
               <div>
                 <Label
                   htmlFor="auditObjective"
-                  className="audit-form-label audit-objective-label"
+                  className={`${styles.auditFormLabel} ${styles.auditObjectiveLabel}`}
                 >
                   <Text variant="bodyMd" fontWeight="medium">
                     Evaluation Objective<span className="text-red-500">*</span>
                   </Text>
                 </Label>
-                <div className="audit-form-textarea audit-objective-textarea">
+                <div className={`${styles.auditFormTextarea} ${styles.auditObjectiveTextarea}`}>
                   <TextField
                     id="auditObjective"
                     name="auditObjective"
@@ -337,13 +338,13 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
               <div>
                 <Label
                   htmlFor="scopeOfAudit"
-                  className="audit-form-label scope-of-audit-label"
+                  className={`${styles.auditFormLabel} ${styles.scopeOfAuditLabel}`}
                 >
                   <Text variant="bodyMd" fontWeight="medium">
                     Scope of Evaluation<span className="text-red-500">*</span>
                   </Text>
                 </Label>
-                <div className="audit-form-textarea scope-of-audit-textarea">
+                <div className={`${styles.auditFormTextarea} ${styles.scopeOfAuditTextarea}`}>
                   <TextField
                     id="scopeOfAudit"
                     name="scopeOfAudit"
@@ -372,7 +373,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
 
           {/* Evaluation Modules Section */}
           <div className="mb-6">
-            <Label className="audit-form-label evaluation-modules-label">
+            <Label className={`${styles.auditFormLabel} ${styles.evaluationModulesLabel}`}>
               <Text variant="bodyMd" fontWeight="medium">
                 Evaluation Modules<span className="text-red-500">*</span>
               </Text>
@@ -414,7 +415,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                 </Text>
               </div>
             ) : (
-              <div className="flex flex-row gap-4 mt-4 evaluation-modules-row">
+              <div className={`flex flex-row gap-4 mt-4 ${styles.evaluationModulesRow}`}>
                 {modules
                   .filter((module) => module?.name)
                   .map((module) => {
@@ -441,9 +442,9 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                     return (
                       <div
                         key={moduleKey}
-                        className="flex flex-col gap-2 evaluation-module-wrapper"
+                        className={`flex flex-col gap-2 ${styles.evaluationModuleWrapper}`}
                       >
-                        <label className="evaluation-module-card">
+                        <label className={styles.evaluationModuleCard}>
                           <div className="flex items-start gap-4">
                             <input
                               type="checkbox"
@@ -506,7 +507,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                                   });
                                 }
                               }}
-                              className="evaluation-module-checkbox"
+                              className={styles.evaluationModuleCheckbox}
                             />
                             <div className="flex-1 flex flex-col">
                               <Text
@@ -525,7 +526,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                           </div>
                         </label>
                         {isSelected && (
-                          <div className="evaluation-module-dropdown ">
+                          <div className={styles.evaluationModuleDropdown}>
                             <Combobox
                               name={`${moduleKey}-metrics`}
                               label="Select sub-modules from dropdown"
@@ -586,13 +587,13 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
 
           {/* Mode of Evaluation Section */}
           <div className="mb-6 mt-6">
-            <Label className="audit-form-label evaluation-modules-label">
+            <Label className={`${styles.auditFormLabel} ${styles.evaluationModulesLabel}`}>
               <Text variant="bodyMd" fontWeight="medium">
                 Mode of Evaluation<span className="text-red-500">*</span>
               </Text>
             </Label>
             <div className="mt-4">
-              <div className="evaluation-module-dropdown mode-of-evaluation-dropdown">
+              <div className={`${styles.evaluationModuleDropdown} ${styles.modeOfEvaluationDropdown}`}>
                 <Select
                   name="modeOfEvaluation"
                   label="Mode of Evaluation"
