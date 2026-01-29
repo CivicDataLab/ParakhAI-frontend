@@ -765,6 +765,7 @@ html.mobile-menu-open .breadcrumbs-ml {
 
 .breadcrumbs-inner {
   display: flex;
+  align-items: center;
   overflow: visible;
   min-width: 0;
 }

@@ -59,8 +59,8 @@ const BreadCrumbs: React.FC<BreadCrumbsProps> = ({ data }) => {
   };
 
   return (
-        <div className="breadcrumbs-wrap border-b sticky top-[80px] sm:top-[80px] md:top-[80px] lg:top-[72px] z-[99998] flex items-center bg-secondaryGreen overflow-visible">
-          <div className="breadcrumbs-inner w-full h-8 py-1 lg:pt-2 lg:pb-3 px-3 sm:px-4 md:px-6 lg:px-8 lg:min-h-[32px] overflow-visible">
+        <div className="breadcrumbs-wrap sticky top-[104px] sm:top-[104px] md:top-[104px] lg:top-[76px] z-[99998] flex items-center bg-secondaryGreen overflow-visible">
+          <div className="breadcrumbs-inner w-full h-8 py-1 lg:pt-2 lg:pb-3 px-3 sm:px-4 md:px-6 lg:px-8 lg:min-h-[32px] overflow-visible flex items-center">
           <Breadcrumb className="mx-1 breadcrumbs-ml">
           <BreadcrumbList className="flex flex-wrap items-center gap-1 sm:gap-2">
             {/* Desktop: Show all items - hidden on small/medium, visible on lg+ */}
