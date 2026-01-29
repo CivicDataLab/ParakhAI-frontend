@@ -4,104 +4,6 @@
 @import url("opub-ui/dist/assets/styles.css");
 @import url("./tokens/_variables.css");
 
-/* Mobile spacing overrides using Tailwind's layer system */
-@layer utilities {
-  @media (max-width: 1023px) {
-    /* Target audit-name-section with mb-6 class */
-    .audit-content
-      .flex.items-center.justify-between.mb-6.gap-4.audit-name-section {
-      margin-bottom: 0.5rem;
-      gap: 0.5rem;
-    }
-
-    /* Target the next sibling div with mb-8 */
-    .audit-content
-      .flex.items-center.justify-between.mb-6.gap-4.audit-name-section
-      + div.mb-8 {
-      margin-top: 0.5rem;
-      margin-bottom: 0.75rem;
-    }
-
-    /* Target tabs container */
-    .audit-content div.mb-8.tabs-container {
-      margin-top: 0.5rem;
-      margin-bottom: 0.75rem;
-    }
-
-    /* Target audit-status-container */
-    .audit-content .flex.items-center.gap-4.audit-status-container {
-      gap: 0.5rem;
-      margin-top: 0.25rem;
-    }
-
-    /* Additional selectors for coverage */
-    .audit-content div.audit-name-section.mb-6,
-    .audit-content div[class*="audit-name-section"][class*="mb-6"] {
-      margin-bottom: 0.5rem;
-    }
-
-    .audit-content .audit-name-section.mb-6 + div.mb-8,
-    .audit-content .audit-name-section.mb-6 ~ div.mb-8 {
-      margin-top: 0.5rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .audit-content .audit-name-section.gap-4,
-    .audit-content div[class*="audit-name-section"][class*="gap-4"] {
-      gap: 0.5rem;
-    }
-
-    .audit-content .audit-status-container.gap-4,
-    .audit-content div[class*="audit-status-container"][class*="gap-4"] {
-      gap: 0.5rem;
-      margin-top: 0.25rem;
-    }
-  }
-
-  @media (max-width: 640px) {
-    /* More aggressive overrides for very small screens */
-    .audit-content
-      .flex.items-center.justify-between.mb-6.gap-4.audit-name-section {
-      margin-bottom: 0.25rem;
-      gap: 0.5rem;
-    }
-
-    .audit-content
-      .flex.items-center.justify-between.mb-6.gap-4.audit-name-section
-      + div.mb-8 {
-      margin-top: 0.25rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .audit-content div.mb-8.tabs-container {
-      margin-top: 0.25rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .audit-content .flex.items-center.gap-4.audit-status-container {
-      gap: 0.5rem;
-      margin-top: 0.125rem;
-    }
-
-    /* Additional selectors for coverage */
-    .audit-content div.audit-name-section.mb-6,
-    .audit-content div[class*="audit-name-section"][class*="mb-"] {
-      margin-bottom: 0.25rem;
-    }
-
-    .audit-content .audit-name-section.mb-6 + div.mb-8,
-    .audit-content .audit-name-section.mb-6 ~ div.mb-8 {
-      margin-top: 0.25rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .audit-content .audit-status-container.gap-4 {
-      gap: 0.5rem;
-      margin-top: 0.125rem;
-    }
-  }
-}
-
 /* (Legacy prompt-card mobile tweaks removed; consolidated rules live later) */
 /* (More legacy mobile footer tweaks removed to avoid duplication) */
 /* (Older ultra-compact footer block removed; behavior covered by later rules) */
@@ -441,8 +343,17 @@ html.mobile-menu-open .breadcrumbs-ml {
   flex-direction: column;
   gap: 0;
   flex-shrink: 0;
-  align-self: flex-start;
+  align-self: stretch;
+  /* Space above footer to avoid touching it */
+  margin-bottom: 48px;
   overflow: visible;
+}
+
+@media (max-width: 1023px) {
+  .welcome-section {
+    width: 100%;
+    max-width: 100%;
+  }
 }
 
 .overview-evaluation-section {
@@ -497,7 +408,8 @@ html.mobile-menu-open .breadcrumbs-ml {
 
 /* Metric Card */
 .metric-card {
-  width: 227px;
+  width: 100%;
+  max-width: 100%;
   height: 120px;
   background: #3b00ff0d;
   border-radius: 16px;
@@ -701,7 +613,8 @@ html.mobile-menu-open .breadcrumbs-ml {
 }
 
 .audits-section {
-  max-width: 1060px;
+  width: 100%;
+  max-width: 100%;
   margin-bottom: 48px;
 }
 
@@ -1249,7 +1162,9 @@ html.mobile-menu-open .breadcrumbs-ml {
     min-width: 0;
   }
   .prompt-card-grid {
-    grid-template-columns: repeat(1, minmax(0, 1fr));
+    display: flex;
+    flex-direction: column;
+    width: 100%;
     gap: 12px;
   }
   /* Compact cards on mobile to reduce height */
@@ -1764,12 +1679,16 @@ html.mobile-menu-open .breadcrumbs-ml {
 
 .prompt-card-grid {
   margin-top: 32px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
   gap: 24px;
 }
 
 .prompt-card-wrapper {
+  flex: 1 1 0;
+  min-width: 320px;
+  max-width: 100%;
   height: 100%;
 }
 
@@ -2922,471 +2841,6 @@ html.mobile-menu-open .breadcrumbs-ml {
   }
 }
 
-/* Audit page specific styles */
-.model-name-text {
-  font-weight: 700;
-  font-size: 20px;
-  line-height: 26px;
-  letter-spacing: 0%;
-  color: #0a0704;
-  height: 26px;
-}
-
-.model-name-container {
-  width: 100%;
-}
-
-.cdl-logo {
-  width: 36px;
-  height: 36px;
-  border: 1px solid #f2f2f5;
-  border-radius: 4px;
-}
-
-.tag-wrapper {
-  flex-shrink: 0;
-}
-
-/* Technical Audit Tag styling to match image */
-.audit-tag {
-  background-color: #e2f5c4;
-  border: 1px solid #e2f5c4;
-  border-radius: 4px;
-  padding: 4px 8px;
-  height: 24px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.audit-tag span,
-.audit-tag [class*="Tag"] {
-  background-color: transparent;
-  border: none;
-  padding: 0;
-}
-
-/* Audit auto-saved text styling - Body/Medium/Medium */
-.audit-auto-saved {
-  font-weight: 500;
-  font-size: 14px;
-  line-height: 20px;
-  letter-spacing: 0px;
-  color: #60646c;
-  height: 20px;
-  display: inline-block;
-}
-
-/* Reduce gap between text and icon for Audit auto-saved */
-.audit-auto-saved-wrapper img {
-  margin-left: -4px;
-}
-
-/* Cancel Audit button styling - Body/Medium/Medium */
-.cancel-audit-button {
-  width: auto;
-  min-width: 86px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0px;
-  font-weight: 500;
-  font-size: 14px;
-  line-height: 20px;
-  letter-spacing: 0px;
-  color: #59682c;
-  background: transparent;
-  border: none;
-  padding: 0;
-  margin: 0;
-  white-space: nowrap;
-}
-
-.cancel-audit-button > * {
-  margin: 0;
-  padding: 0;
-}
-
-/* Override Button component's internal spacing */
-.cancel-audit-button [class*="Button"] {
-  gap: 0px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  width: auto;
-  min-width: 86px;
-  height: 20px;
-  font-weight: 500;
-  font-size: 14px;
-  line-height: 20px;
-  letter-spacing: 0px;
-  color: #59682c;
-  background: transparent;
-  border: none;
-  padding: 0;
-}
-
-.cancel-audit-button span,
-.cancel-audit-button [class*="Button"] > *,
-.cancel-audit-button [class*="Button"] span,
-.cancel-audit-button [class*="Button"] button {
-  margin: 0;
-  padding: 0;
-  gap: 0px;
-  font-weight: 500;
-  font-size: 14px;
-  line-height: 20px;
-  letter-spacing: 0px;
-  color: #59682c;
-  white-space: nowrap;
-}
-
-.cancel-audit-button [class*="Icon"] {
-  color: #59682c;
-  width: 18px;
-  height: 18px;
-  min-width: 18px;
-  min-height: 18px;
-  flex-shrink: 0;
-  margin-left: 4px;
-}
-
-/* Desktop-only tab styles - wrapped in media query to not affect mobile */
-@media (min-width: 1024px) {
-  /* Tabs container - ensure it doesn't clip children */
-  .tabs-container {
-    position: relative;
-    overflow: visible;
-    display: flex;
-    gap: 0;
-    width: 996px;
-    max-width: 996px;
-    border-top: 2px solid #f2f2f5;
-    border-left: 2px solid #f2f2f5;
-    border-right: 2px solid #f2f2f5;
-    border-radius: 16px 16px 0 0;
-    box-sizing: border-box;
-  }
-
-  /* Audit Configuration tab styling */
-  .audit-config-tab {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    flex: 1 1 0;
-    min-width: 0;
-    height: 52px;
-    min-height: 52px;
-    max-height: 52px;
-    border-radius: 0;
-    padding: 16px;
-    margin: 0;
-    border: none;
-    border-bottom: 2px solid #f2f2f5;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    position: relative;
-    box-sizing: border-box;
-    overflow: visible;
-    background-color: transparent;
-  }
-
-  /* First tab - left border radius when not active */
-  .tabs-container
-    > .audit-config-tab:first-child:not(.audit-config-tab-active) {
-    border-top-left-radius: 16px;
-  }
-
-  /* First tab - both sides rounded when active */
-  .tabs-container > .audit-config-tab:first-child.audit-config-tab-active {
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
-  }
-
-  /* Middle tabs - both sides rounded when active */
-  .tabs-container
-    > .audit-config-tab:not(:first-child):not(
-      :last-child
-    ).audit-config-tab-active {
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
-  }
-
-  /* Last tab - right border radius */
-  .tabs-container > .audit-config-tab:last-child {
-    border-top-right-radius: 16px;
-  }
-
-  /* Last tab - both sides rounded when active */
-  .tabs-container > .audit-config-tab:last-child.audit-config-tab-active {
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
-  }
-
-  /* Override any conflicting styles */
-  button.audit-config-tab {
-    flex: 1 1 0;
-    min-width: 0;
-    height: 52px;
-    min-height: 52px;
-    max-height: 52px;
-    padding: 16px;
-    position: relative;
-    overflow: visible;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    border-bottom: 2px solid #f2f2f5;
-    border-radius: 0;
-  }
-
-  button.audit-config-tab:first-child:not(.audit-config-tab-active) {
-    border-top-left-radius: 16px;
-  }
-
-  button.audit-config-tab:first-child.audit-config-tab-active {
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
-  }
-
-  button.audit-config-tab:not(:first-child):not(
-      :last-child
-    ).audit-config-tab-active {
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
-  }
-
-  button.audit-config-tab:last-child {
-    border-top-right-radius: 16px;
-  }
-
-  button.audit-config-tab:last-child.audit-config-tab-active {
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
-  }
-}
-
-.audit-config-tab.bg-transparent {
-  background-color: transparent;
-}
-
-/* Unselected tab styling - Test Cases and Audit Results */
-.audit-config-tab:not(.audit-config-tab-active) {
-  padding: 16px;
-  border-radius: 0;
-  background-color: transparent;
-  border: none;
-  border-bottom: 2px solid #f2f2f5;
-}
-
-button.audit-config-tab:not(.audit-config-tab-active) {
-  padding: 16px;
-  border: none;
-  border-bottom: 1px solid #f2f2f5;
-  border-radius: 0;
-}
-
-.audit-config-tab:not(.audit-config-tab-active) span,
-.audit-config-tab:not(.audit-config-tab-active) [class*="Text"],
-.audit-config-tab:not(.audit-config-tab-active) [class*="Text"] span,
-.audit-config-tab:not(.audit-config-tab-active) [class*="Text"] > * {
-  font-weight: 500;
-  font-size: 14px;
-  line-height: 20px;
-  letter-spacing: 0px;
-  color: #60646c;
-  text-align: center;
-}
-
-.audit-config-tab-active {
-  background-color: #e2f5c4;
-  position: relative;
-  overflow: visible;
-  border: none;
-  border-bottom: 2px solid #f2f2f5;
-  border-radius: 0;
-}
-
-/* Bottom border indicator for selected tab - FIXED */
-.audit-config-tab-active::after {
-  content: "";
-  display: block;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  height: 3px;
-  background-color: #644fc1;
-  border-radius: 4px 4px 0 0;
-  box-sizing: border-box;
-  z-index: 10;
-  pointer-events: none;
-  opacity: 1;
-  visibility: visible;
-}
-
-/* Audit Type label spacing */
-.audit-type-label {
-  width: 1004px;
-  height: 20px;
-  margin-bottom: 0;
-  padding: 0;
-  display: block;
-  box-sizing: border-box;
-  font-weight: 500;
-  font-size: 14px;
-  line-height: 20px;
-  letter-spacing: 0px;
-  color: #0a0704;
-}
-
-/* Ensure the label wrapper has proper spacing */
-.audit-type-label [class*="Label"],
-.audit-type-label > * {
-  margin-bottom: 0;
-}
-
-.audit-type-label [class*="Text"],
-.audit-type-label [class*="Text"] *,
-.audit-type-label > * {
-  font-weight: 500;
-  font-size: 14px;
-  line-height: 20px;
-  letter-spacing: 0px;
-  color: #0a0704;
-  margin: 0;
-  padding: 0;
-}
-
-.audit-type-label span {
-  margin-left: 4px;
-  color: inherit;
-}
-
-/* Spacing between label and options */
-.audit-options-container {
-  margin-top: 15px;
-  padding-top: 0;
-}
-
-/* Technical Audit card styling */
-.technical-audit-card {
-  width: 321.33px;
-  min-width: 240px;
-  height: 90px;
-  min-height: 80px;
-  border-radius: 8px;
-  padding: 12px 16px;
-  background-color: #ffffff;
-  border: 1px solid #c4c4c4;
-  gap: 12px;
-}
-
-/* Override the default card styles for Technical Audit */
-label:has(input[value="technical"]) {
-  width: 321.33px;
-  min-width: 240px;
-  height: 90px;
-  min-height: 80px;
-  border-radius: 8px;
-  padding: 12px 16px;
-  background-color: #ffffff;
-  border: 1px solid #c4c4c4;
-  gap: 12px;
-}
-
-/* When Technical Audit is selected */
-label:has(input[value="technical"]:checked) {
-  border: 1px solid #c4c4c4;
-  box-shadow: none;
-}
-
-/* When Technical Audit is not selected */
-label:has(input[value="technical"]:not(:checked)) {
-  border: 1px solid #c4c4c4;
-  box-shadow: none;
-}
-
-/* Domain Audit card styling */
-.domain-audit-card {
-  width: 321.33px;
-  min-width: 240px;
-  height: 90px;
-  min-height: 80px;
-  border-radius: 8px;
-  padding: 12px 16px;
-  background-color: #ffffff;
-  border: 1px solid #c4c4c4;
-  gap: 12px;
-}
-
-/* Override the default card styles for Domain Audit */
-label:has(input[value="domain"]) {
-  width: 321.33px;
-  min-width: 240px;
-  height: 90px;
-  min-height: 80px;
-  border-radius: 8px;
-  padding: 12px 16px;
-  background-color: #ffffff;
-  border: 1px solid #c4c4c4;
-  gap: 12px;
-}
-
-/* When Domain Audit is selected */
-label:has(input[value="domain"]:checked) {
-  border: 1px solid #c4c4c4;
-  box-shadow: none;
-}
-
-/* When Domain Audit is not selected */
-label:has(input[value="domain"]:not(:checked)) {
-  border: 1px solid #c4c4c4;
-  box-shadow: none;
-}
-
-/* Cultural Audit card styling */
-.cultural-audit-card {
-  width: 321.33px;
-  min-width: 240px;
-  height: 90px;
-  min-height: 80px;
-  border-radius: 8px;
-  padding: 12px 16px;
-  background-color: #ffffff;
-  border: 1px solid #c4c4c4;
-  gap: 12px;
-}
-
-/* Override the default card styles for Cultural Audit */
-label:has(input[value="cultural"]) {
-  width: 321.33px;
-  min-width: 240px;
-  height: 90px;
-  min-height: 80px;
-  border-radius: 8px;
-  padding: 12px 16px;
-  background-color: #ffffff;
-  border: 1px solid #c4c4c4;
-  gap: 12px;
-}
-
-/* When Cultural Audit is selected */
-label:has(input[value="cultural"]:checked) {
-  border: 1px solid #c4c4c4;
-  box-shadow: none;
-}
-
-/* When Cultural Audit is not selected */
-label:has(input[value="cultural"]:not(:checked)) {
-  border: 1px solid #c4c4c4;
-  box-shadow: none;
-}
 
 /* Audit Name Label - prevent wrapping */
 .audit-name-label {
@@ -3451,7 +2905,6 @@ label:has(input[value="cultural"]:not(:checked)) {
   width: 100%;
   overflow: visible;
   position: relative;
-  max-width: 996px; /* Match tabs container width */
 }
 
 @media (max-width: 1024px) {
@@ -4106,8 +3559,7 @@ label:has(input[value="cultural"]:not(:checked)) {
 
 /* Reduce width of Audit Objective textarea */
 .audit-objective-textarea {
-  width: 1000px;
-  max-width: 100%;
+  width: 100%;
 }
 
 .audit-objective-textarea textarea,
@@ -4118,8 +3570,7 @@ label:has(input[value="cultural"]:not(:checked)) {
 
 /* Reduce width of Scope of Audit textarea */
 .scope-of-audit-textarea {
-  width: 1002px;
-  max-width: 100%;
+  width: 100%;
 }
 
 .scope-of-audit-textarea textarea,
@@ -4632,7 +4083,7 @@ label:has(input[value="cultural"]:not(:checked)) {
 }
 
 .test-cases-textarea-container [class*="TextField"] {
-  width: 1000px;
+  width: 100%;
   height: 100%;
 }
 
@@ -4646,7 +4097,7 @@ label:has(input[value="cultural"]:not(:checked)) {
 }
 
 .test-cases-dropzone-container {
-  width: 1000px;
+  width: 100%;
 }
 
 /* Increase gap between section title and Paste Text / Upload File buttons */
@@ -4823,14 +4274,13 @@ label:has(input[value="cultural"]:not(:checked)) {
   }
 
   .test-cases-table {
-    max-width: 1000px;
-    /* Keep original left alignment; just reduce width from the right */
+    max-width: 100%;
   }
 
   /* Match width of TextField and DropZone with Test Cases table */
   .test-cases-textarea-container,
   .test-cases-dropzone-container {
-    max-width: 1000px;
+    max-width: 100%;
   }
 }
 

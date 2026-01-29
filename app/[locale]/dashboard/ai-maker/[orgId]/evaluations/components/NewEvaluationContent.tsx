@@ -13,6 +13,7 @@ import EvaluationConfiguration from "./EvaluationConfiguration";
 import ManualTestCases from "./ManualTestCases";
 import TestCases from "./TestCases";
 import type { AuditType, Module, SelectOption } from "./types";
+import styles from "./styles.module.scss";
 
 // GraphQL queries for dynamic modules and metrics
 const MODULES_BY_MODEL_TYPE_QUERY = `
@@ -819,7 +820,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
   return (
     <>
-      <div className="flex-1 audit-content p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0 bg-white">
+      <div className={`flex-1 ${styles.auditContent} p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0 bg-white`}>
         {/* Model Name and Owner Section */}
         <div className="mb-6">
           {/* Model Selector */}
@@ -887,7 +888,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           </div>
 
           {/* Model Name label + value */}
-          <div className="mb-4 model-name-container">
+          <div className={`mb-4 ${styles.modelNameContainer}`}>
             <Text
               variant="bodySm"
               className="text-sm leading-5 font-medium text-[#60646C] mb-1 text-right"
@@ -895,11 +896,11 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               Model Name
             </Text>
             <div className="flex items-center gap-4">
-              <Text as="h1" className="model-name-text">
+              <Text as="h1" className={styles.modelNameText}>
                 {modelName}
               </Text>
               {modelVersion && (
-                <Text as="h2" className="model-name-text">
+                <Text as="h2" className={styles.modelNameText}>
                   {modelVersion}
                 </Text>
               )}
@@ -912,21 +913,21 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               alt="CDL"
               width={36}
               height={36}
-              className="object-contain cdl-logo"
+              className={`object-contain ${styles.cdlLogo}`}
             />
           </div>
         </div>
 
         {/* Audit Name, Tag, and Status Section */}
-        <div className="flex items-center justify-between mb-6 gap-4 audit-name-section max-[1023px]:mb-0.5 max-[1023px]:gap-0.5">
+        <div className={`flex items-center justify-between mb-6 gap-4 ${styles.auditNameSection} max-[1023px]:mb-0.5 max-[1023px]:gap-0.5`}>
           <div className="flex items-center gap-4 flex-nowrap min-w-0 flex-1 evaluation-name-row">
             <Label
               htmlFor="auditName"
-              className="audit-name-label flex-shrink-0 whitespace-nowrap"
+              className={`${styles.auditNameLabel} flex-shrink-0 whitespace-nowrap`}
             >
               Evaluation Name
             </Label>
-            <div className="audit-name-input-wrapper flex-1 min-w-0 max-w-[380px]">
+            <div className={`${styles.auditNameInputWrapper} flex-1 min-w-0 max-w-[380px]`}>
               <TextField
                 id="auditName"
                 name="evaluationName"
@@ -937,7 +938,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               />
             </div>
             <div className="flex-shrink-0">
-              <div className="tag-wrapper audit-tag">
+              <div className={`${styles.tagWrapper} ${styles.auditTag}`}>
                 <Tag variation="filled" fillColor="#E2F5C4" textColor="#0A0704">
                   {auditType === "technical"
                     ? "Technical Evaluation"
@@ -949,10 +950,10 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-4 audit-status-container flex-shrink-0 max-[1023px]:gap-0.5 max-[1023px]:mt-0 mr-4">
+          <div className={`flex items-center justify-end gap-4 ${styles.auditStatusContainer} flex-shrink-0 max-[1023px]:gap-0.5 max-[1023px]:mt-0 mr-4`}>
             {isAutoSaved && (
               <div className="flex items-center gap-1.5 lg:translate-x-0 xl:translate-x-2">
-                <Text className="audit-auto-saved">Auto-saved</Text>
+                <Text className={styles.auditAutoSaved}>Auto-saved</Text>
                 <Image
                   src="/images/icons/circle-check.png"
                   alt="Circle check"
@@ -970,7 +971,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                   window.history.back();
                 }
               }}
-              className="cancel-audit-button flex-shrink-0 max-[640px]:ml-4"
+              className={`${styles.cancelAuditButton} flex-shrink-0 max-[640px]:ml-4`}
             >
               Cancel Evaluation
               <Icon source={IconX} size={18} />
@@ -980,12 +981,12 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
         {/* Tabs */}
         <div className="mb-4 max-[1023px]:mb-3 max-[640px]:mb-2">
-          <div className="flex gap-6 max-[1023px]:gap-0 tabs-container w-full">
+          <div className={`flex gap-6 max-[1023px]:gap-0 ${styles.tabsContainer} w-full`}>
             <button
               onClick={() => handleTabChange("config")}
-              className={`audit-config-tab flex-1 ${
-                activeTab === "config"
-                  ? "audit-config-tab-active text-gray-900 font-semibold"
+              className={`${styles.auditConfigTab} flex-1 ${
+                  activeTab === "config"
+                    ? `${styles.auditConfigTabActive} text-gray-900 font-semibold`
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 bg-transparent"
               }`}
             >
@@ -1006,9 +1007,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                   handleTabChange("test");
                 }
               }}
-              className={`audit-config-tab flex-1 ${
-                activeTab === "test"
-                  ? "audit-config-tab-active text-gray-900 font-semibold"
+              className={`${styles.auditConfigTab} flex-1 ${
+                  activeTab === "test"
+                    ? `${styles.auditConfigTabActive} text-gray-900 font-semibold`
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 bg-transparent"
               }`}
             >
@@ -1087,16 +1088,16 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             <Button
               kind="secondary"
               disabled
-              className="previous-button previous-button-disabled"
+              className={`${styles.previousButton} ${styles.previousButtonDisabled}`}
             >
               <Image
                 src="/images/icons/circle-arrow-left.png"
                 alt="Circle arrow left"
                 width={18}
                 height={18}
-                className="object-contain previous-icon"
+                className={`object-contain ${styles.previousIcon}`}
               />
-              <span className="previous-text">Previous</span>
+              <span className={styles.previousText}>Previous</span>
             </Button>
 
             <Button
@@ -1106,15 +1107,15 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                   handleTabChange("test");
                 }
               }}
-              className="add-test-cases-button"
+              className={styles.addTestCasesButton}
             >
-              <span className="add-test-cases-text">Add Test Cases</span>
+              <span className={styles.addTestCasesText}>Add Test Cases</span>
               <Image
                 src="/images/icons/circle-arrow-right.png"
                 alt="Circle arrow right"
                 width={18}
                 height={18}
-                className="object-contain add-test-cases-icon"
+                className={`object-contain ${styles.addTestCasesIcon}`}
               />
             </Button>
           </div>
