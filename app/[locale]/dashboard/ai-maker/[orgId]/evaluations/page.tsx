@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Button, DataTable, ProgressBar, Tag, Text } from "opub-ui";
 import { useEffect, useState } from "react";
 import { useOrganization } from "../OrganizationContext";
+import ModelSelectionModal from "./components/ModelSelectionModal";
 
 // GraphQL query to fetch user's audits
 const AUDITS_QUERY = `
@@ -57,6 +58,7 @@ const AuditsListPage = () => {
   const [audits, setAudits] = useState<Audit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Fetch audits on mount
   useEffect(() => {
@@ -212,11 +214,9 @@ const AuditsListPage = () => {
     }),
   ];
 
-  // Handle new audit button click
+  // Handle new audit button click - open modal
   const handleNewAudit = () => {
-    router.push(
-      `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/new`
-    );
+    setIsModalOpen(true);
   };
 
   return (
@@ -244,10 +244,7 @@ const AuditsListPage = () => {
           <Text variant="bodySm" className="text-red-600 mb-4">
             {error}
           </Text>
-          <Button
-            kind="secondary"
-            onClick={() => window.location.reload()}
-          >
+          <Button kind="secondary" onClick={() => window.location.reload()}>
             Retry
           </Button>
         </div>
@@ -260,10 +257,7 @@ const AuditsListPage = () => {
             height={70}
             className="mb-4 opacity-60"
           />
-          <Text
-            variant="bodyMd"
-            className="text-gray-600 mb-4 text-center"
-          >
+          <Text variant="bodyMd" className="text-gray-600 mb-4 text-center">
             You haven&apos;t run any evaluations yet.
             <br />
             Start your first evaluation to see results here.
@@ -283,6 +277,13 @@ const AuditsListPage = () => {
           truncate
         />
       )}
+
+      {/* Model Selection Modal */}
+      <ModelSelectionModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        orgId={params.orgId as string}
+      />
     </>
   );
 };

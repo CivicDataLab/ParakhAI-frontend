@@ -9,6 +9,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Button, Card, DataTable, Text } from "opub-ui";
 import { useEffect, useMemo, useState } from "react";
 import { useOrganization } from "./OrganizationContext";
+import ModelSelectionModal from "./evaluations/components/ModelSelectionModal";
 
 // Define evaluation data type
 type Evaluation = {
@@ -88,6 +89,7 @@ const AIMakerDashboard = () => {
   const [models, setModels] = useState<AIModel[]>([]);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -141,8 +143,9 @@ const AIMakerDashboard = () => {
   const columnHelper = createColumnHelper<Evaluation>();
 
   // Define columns
-  const columns = useMemo(() => [
-    columnHelper.accessor("modelName", {
+  const columns = useMemo(
+    () => [
+      columnHelper.accessor("modelName", {
         header: () => (
           <div className="flex items-center gap-2">
             <img
@@ -165,56 +168,58 @@ const AIMakerDashboard = () => {
           );
         },
       }),
-    columnHelper.accessor("createdAt", {
-      header: "Evaluation Time",
-      cell: (info) => new Date(info.getValue()).toLocaleDateString(),
-    }),
-    columnHelper.accessor("id", {
-      header: "Evaluation ID",
-      cell: (info) => (
-        <Link
-          href={`/${locale}/dashboard/ai-maker/${orgId}/evaluations/${info.getValue()}`}
-          className="text-primary-purple hover:underline"
-        >
-          ID #{info.getValue().slice(0, 8)}
-        </Link>
-      ),
-    }),
-    columnHelper.accessor("status", {
-      header: "Status",
-    }),
-    columnHelper.accessor("totalTests", {
-      header: "Test Result",
-      cell: (info) => {
-        const total = info.getValue();
-        const row = info.row.original;
-        const passed = row.passedTests;
-        const failed = row.failedTests;
+      columnHelper.accessor("createdAt", {
+        header: "Evaluation Time",
+        cell: (info) => new Date(info.getValue()).toLocaleDateString(),
+      }),
+      columnHelper.accessor("id", {
+        header: "Evaluation ID",
+        cell: (info) => (
+          <Link
+            href={`/${locale}/dashboard/ai-maker/${orgId}/evaluations/${info.getValue()}`}
+            className="text-primary-purple hover:underline"
+          >
+            ID #{info.getValue().slice(0, 8)}
+          </Link>
+        ),
+      }),
+      columnHelper.accessor("status", {
+        header: "Status",
+      }),
+      columnHelper.accessor("totalTests", {
+        header: "Test Result",
+        cell: (info) => {
+          const total = info.getValue();
+          const row = info.row.original;
+          const passed = row.passedTests;
+          const failed = row.failedTests;
 
-        if (!total || !passed || !failed) {
-          return <Text variant="bodySm">No data</Text>;
-        }
+          if (!total || !passed || !failed) {
+            return <Text variant="bodySm">No data</Text>;
+          }
 
-        return (
-          <div className="flex items-center gap-2">
-            <div className="test-result-bar">
-              <div
-                className="test-result-pass"
-                style={{ width: `${(passed / total) * 100}%` }}
-              />
-              <div
-                className="test-result-fail"
-                style={{ width: `${(failed / total) * 100}%` }}
-              />
+          return (
+            <div className="flex items-center gap-2">
+              <div className="test-result-bar">
+                <div
+                  className="test-result-pass"
+                  style={{ width: `${(passed / total) * 100}%` }}
+                />
+                <div
+                  className="test-result-fail"
+                  style={{ width: `${(failed / total) * 100}%` }}
+                />
+              </div>
+              <Text variant="bodySm">
+                {passed}/{total} passed
+              </Text>
             </div>
-            <Text variant="bodySm">
-              {passed}/{total} passed
-            </Text>
-          </div>
-        );
-      },
-    }),
-  ], [locale, orgId]);
+          );
+        },
+      }),
+    ],
+    [locale, orgId]
+  );
 
   return (
     <>
@@ -256,94 +261,94 @@ const AIMakerDashboard = () => {
           )}
         </div>
         {hasModels ? (
-                <div className="grid grid-cols-1 w-full gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {models.map((model) => {
-                    // Card metadata (top row inside card)
-                    const metadataContent = [
-                      {
-                        icon: Icons.calendar,
-                        label: "Created",
-                        value: new Date(model.createdAt).toLocaleDateString(),
-                        tooltip: new Date(model.createdAt).toLocaleDateString(),
-                      },
-                      {
-                        icon: Icons.testPipe,
-                        label: "Evaluations",
-                        value: `${model.auditCount} evaluations`,
-                        tooltip: `${model.auditCount} evaluations`,
-                      },
-                      {
-                        icon: Icons.discountCheck,
-                        label: "Version",
-                        value: model.version || "N/A",
-                        tooltip: model.version || "N/A",
-                      },
-                    ] as any;
+          <div className="grid grid-cols-1 w-full gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {models.map((model) => {
+              // Card metadata (top row inside card)
+              const metadataContent = [
+                {
+                  icon: Icons.calendar,
+                  label: "Created",
+                  value: new Date(model.createdAt).toLocaleDateString(),
+                  tooltip: new Date(model.createdAt).toLocaleDateString(),
+                },
+                {
+                  icon: Icons.testPipe,
+                  label: "Evaluations",
+                  value: `${model.auditCount} evaluations`,
+                  tooltip: `${model.auditCount} evaluations`,
+                },
+                {
+                  icon: Icons.discountCheck,
+                  label: "Version",
+                  value: model.version || "N/A",
+                  tooltip: model.version || "N/A",
+                },
+              ] as any;
 
-                    // Card footer info (bottom row inside card)
-                    const footerContent = [
-                      {
-                        icon: "/images/icons/Ellipse 4.png",
-                        label: "Owner",
-                        tooltip: "Owner",
-                      },
-                    ];
+              // Card footer info (bottom row inside card)
+              const footerContent = [
+                {
+                  icon: "/images/icons/Ellipse 4.png",
+                  label: "Owner",
+                  tooltip: "Owner",
+                },
+              ];
 
-                    const type = ["AI Model"].map((tag: string) => ({
-                      label: tag,
-                      fillColor: "#E2F5C4",
-                      borderColor: "#E2F5C4",
-                    }));
+              const type = ["AI Model"].map((tag: string) => ({
+                label: tag,
+                fillColor: "#E2F5C4",
+                borderColor: "#E2F5C4",
+              }));
 
-                    const commonProps = {
-                      title: model.displayName,
-                      description: stripMarkdown(model.description || ""),
-                      variation: "collapsed" as const,
-                      iconColor: "highlight" as const,
-                      metadataContent,
-                      footerContent,
-                      type,
-                      tag: ["AI Model"],
-                    };
+              const commonProps = {
+                title: model.displayName,
+                description: stripMarkdown(model.description || ""),
+                variation: "collapsed" as const,
+                iconColor: "highlight" as const,
+                metadataContent,
+                footerContent,
+                type,
+                tag: ["AI Model"],
+              };
 
-                    return (
-                      <div
-                        key={model.id}
-                        className="w-full cursor-pointer"
-                        onClick={() => handleCardClick(model.id)}
-                      >
-                        <Card {...commonProps} />
-                      </div>
-                    );
-                  })}
+              return (
+                <div
+                  key={model.id}
+                  className="w-full cursor-pointer"
+                  onClick={() => handleCardClick(model.id)}
+                >
+                  <Card {...commonProps} />
                 </div>
-              ) : (
-                <div className="ai-maker-empty-state">
-                  <div className="ai-maker-empty-icon">
-                    <img
-                      src="/images/icons/mood-empty.png"
-                      alt="No models"
-                      width={70}
-                      height={70}
-                    />
-                  </div>
-                  <Text as="p" className="ai-maker-empty-title">
-                    You have no registered AI models.
-                    <br />
-                    Register your first model to get started!
-                  </Text>
-                  <Link
-                    href={addModelUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="add-model-button ai-maker-empty-button"
-                    style={{ textDecoration: "none", display: "inline-block" }}
-                  >
-                    Add A New Model
-                  </Link>
-                </div>
-              )}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="ai-maker-empty-state">
+            <div className="ai-maker-empty-icon">
+              <img
+                src="/images/icons/mood-empty.png"
+                alt="No models"
+                width={70}
+                height={70}
+              />
+            </div>
+            <Text as="p" className="ai-maker-empty-title">
+              You have no registered AI models.
+              <br />
+              Register your first model to get started!
+            </Text>
+            <Link
+              href={addModelUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="add-model-button ai-maker-empty-button"
+              style={{ textDecoration: "none", display: "inline-block" }}
+            >
+              Add A New Model
+            </Link>
+          </div>
+        )}
+      </div>
 
       {/* Audits Table Section */}
       <div className="audits-section">
@@ -373,14 +378,19 @@ const AIMakerDashboard = () => {
             <Text variant="bodySm" className="text-gray-600 mb-4">
               No evaluations yet. Start by running your first evaluation.
             </Text>
-            <Link
-              href={`/${locale}/dashboard/ai-maker/${orgId}/evaluations/new`}
-            >
-              <Button kind="primary">Start New Evaluation</Button>
-            </Link>
+            <Button kind="primary" onClick={() => setIsModalOpen(true)}>
+              Start New Evaluation
+            </Button>
           </div>
         )}
       </div>
+
+      {/* Model Selection Modal */}
+      <ModelSelectionModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        orgId={orgId}
+      />
     </>
   );
 };
