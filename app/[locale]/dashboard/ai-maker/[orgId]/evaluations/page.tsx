@@ -222,7 +222,7 @@ const AuditsListPage = () => {
   return (
     <>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 mt-10">
         <Text variant="headingLg" as="h1" fontWeight="bold">
           Evaluations
         </Text>

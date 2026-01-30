@@ -235,7 +235,7 @@ const AIMakerDashboard = () => {
   return (
     <>
       {/* Header with Title */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 mt-10">
         <h1 className="text-gray-900 overview-heading">Overview</h1>
       </div>
 

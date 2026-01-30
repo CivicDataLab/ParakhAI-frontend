@@ -315,7 +315,7 @@ const PromptLibrariesPage = () => {
     <>
 
       <div className="prompt-libraries-content">
-          <div className="prompt-page-header">
+          <div className="prompt-page-header mt-10">
             <Text as="h1" className="prompt-page-title" fontWeight="bold">
               Prompt Libraries
             </Text>
