@@ -461,11 +461,7 @@ const EvaluationDetail = ({
             url: string;
           } | null;
         }>;
-      }>(
-        GET_AUDIT_SUMMARY,
-        { audit_id: evaluationId },
-        requestOptions
-      );
+      }>(GET_AUDIT_SUMMARY, { audit_id: evaluationId }, requestOptions);
 
       const summary = data?.auditSummaries?.[0];
       if (summary?.auditReport) {
@@ -555,11 +551,11 @@ const EvaluationDetail = ({
           <Link href={backLink}>
             <Button kind="primary">{backLinkText}</Button>
           </Link>
-          {newEvaluationLink && (
+          {/* {newEvaluationLink && (
             <Link href={newEvaluationLink}>
               <Button kind="secondary">New Evaluation</Button>
             </Link>
-          )}
+          )} */}
         </div>
       </div>
 

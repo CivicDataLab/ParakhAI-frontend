@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { useOrganization } from "../../OrganizationContext";
 import EvaluationConfiguration from "./EvaluationConfiguration";
 import ManualTestCases from "./ManualTestCases";
+import ModelSelectionModal from "./ModelSelectionModal";
 import TestCases from "./TestCases";
 import type { AuditType, Module, SelectOption } from "./types";
 import styles from "./styles.module.scss";
@@ -159,10 +160,10 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
   // AI Models state
   const [selectedModelId, setSelectedModelId] = useState<string | null>(
-    urlModelId,
+    urlModelId
   );
   const [selectedVersionId, setSelectedVersionId] = useState<number | null>(
-    urlVersionId ? parseInt(urlVersionId) : null,
+    urlVersionId ? parseInt(urlVersionId) : null
   );
   const [aiModels, setAiModels] = useState<
     Array<{
@@ -182,17 +183,20 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const { organization } = useOrganization();
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [modelsError, setModelsError] = useState<string | null>(null);
+  const [invalidModelError, setInvalidModelError] = useState<string | null>(
+    null
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Computed values from selected model
   const selectedModel = aiModels.find((m) => m.id === selectedModelId);
   const modelName = selectedModel?.displayName || selectedModel?.name || "";
   // Get version display from selected version or latest version
   const selectedVersion = selectedModel?.versions?.find(
-    (v) => v.id === selectedVersionId,
+    (v) => v.id === selectedVersionId
   );
   const latestVersion = selectedModel?.versions?.find((v) => v.isLatest);
-  const modelVersion =
-    selectedVersion?.version || latestVersion?.version || "";
+  const modelVersion = selectedVersion?.version || latestVersion?.version || "";
   const modelType = selectedModel?.modelType || "TEXT_GENERATION";
 
   // GraphQL API hook for authenticated requests
@@ -262,12 +266,12 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
   // Test Cases state
   const [selectedPromptLibraries, setSelectedPromptLibraries] = useState<any[]>(
-    [],
+    []
   );
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [pastedTestCases, setPastedTestCases] = useState("");
   const [testInputMode, setTestInputMode] = useState<"paste" | "upload">(
-    "paste",
+    "paste"
   );
 
   // Backend audit run state
@@ -325,7 +329,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       isSessionLoading ||
       modulesFetchedRef.current ||
       isFetchingRef.current ||
-      isLoadingModules
+      isLoadingModules ||
+      invalidModelError ||
+      !selectedModelId
     ) {
       return;
     }
@@ -341,7 +347,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
         const data = await request<{ modulesByModelType: Module[] }>(
           MODULES_BY_MODEL_TYPE_QUERY,
-          { modelType },
+          { modelType }
         );
 
         const modulesData = Array.isArray(data?.modulesByModelType)
@@ -375,7 +381,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                   label:
                     metric.displayName ||
                     toTitleCase(metric.name.replace(/_/g, " ")),
-                }),
+                })
               );
 
               initialModuleMetrics[moduleMetrics.name] = metricsOptions;
@@ -431,7 +437,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         ) {
           setModulesError(
             error.message ||
-              "Backend server is not available. Please check your NEXT_PUBLIC_BACKEND_URL configuration.",
+              "Backend server is not available. Please check your NEXT_PUBLIC_BACKEND_URL configuration."
           );
         } else {
           const errorMessage =
@@ -439,7 +445,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             error?.response?.errors?.[0]?.message ||
             "Unknown error";
           setModulesError(
-            `Failed to load evaluation modules: ${errorMessage}. Please check your authentication and backend configuration.`,
+            `Failed to load evaluation modules: ${errorMessage}. Please check your authentication and backend configuration.`
           );
           modulesFetchedRef.current = false;
         }
@@ -496,37 +502,75 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           limit: 50,
           offset: 0,
         },
-        { organization: orgId },
+        { organization: orgId }
       );
 
       const models = modelsResponse?.aiModels || [];
       setAiModels(models);
 
-      // Auto-select model based on URL parameter
-      if (models.length > 0 && !selectedModelId) {
-        if (urlModelId && models.find((m) => m.id === urlModelId)) {
-          setSelectedModelId(urlModelId);
-          // If version is provided in URL, find its ID and select it
+      // Validate URL parameters if they exist
+      if (urlModelId) {
+        const foundModel = models.find((m) => m.id === urlModelId);
+        if (!foundModel) {
+          setInvalidModelError(
+            `The selected model (ID: ${urlModelId}) does not exist or is not available. Please select a different model.`
+          );
+          setSelectedModelId(null);
+          setSelectedVersionId(null);
+        } else {
+          // Model exists, check version if provided
           if (urlVersionId) {
-            setSelectedVersionId(parseInt(urlVersionId));
-          } else if (urlVersion) {
-            const model = models.find((m) => m.id === urlModelId);
-            const versionObj = model?.versions?.find(
-              (v) => v.version === urlVersion,
+            const versionExists = foundModel.versions?.some(
+              (v) => v.id === parseInt(urlVersionId)
             );
-            if (versionObj) {
+            if (!versionExists) {
+              setInvalidModelError(
+                `The selected model version (ID: ${urlVersionId}) does not exist for this model. Please select a different version.`
+              );
+              setSelectedModelId(urlModelId);
+              setSelectedVersionId(null);
+            } else {
+              // Both model and version are valid
+              setInvalidModelError(null);
+              setSelectedModelId(urlModelId);
+              setSelectedVersionId(parseInt(urlVersionId));
+            }
+          } else if (urlVersion) {
+            const versionObj = foundModel.versions?.find(
+              (v) => v.version === urlVersion
+            );
+            if (!versionObj) {
+              setInvalidModelError(
+                `The selected model version (${urlVersion}) does not exist for this model. Please select a different version.`
+              );
+              setSelectedModelId(urlModelId);
+              setSelectedVersionId(null);
+            } else {
+              setInvalidModelError(null);
+              setSelectedModelId(urlModelId);
               setSelectedVersionId(versionObj.id);
             }
+          } else {
+            // Model exists but no version specified, use latest
+            setInvalidModelError(null);
+            setSelectedModelId(urlModelId);
+            const latestVer = foundModel.versions?.find((v) => v.isLatest);
+            if (latestVer) {
+              setSelectedVersionId(latestVer.id);
+            }
           }
-        } else {
-          setSelectedModelId(models[0].id);
         }
-      } else if (
-        urlModelId &&
-        models.find((m) => m.id === urlModelId) &&
-        selectedModelId !== urlModelId
-      ) {
-        setSelectedModelId(urlModelId);
+      } else {
+        // No URL params, auto-select first model
+        setInvalidModelError(null);
+        if (models.length > 0 && !selectedModelId) {
+          setSelectedModelId(models[0].id);
+          const firstModel = models[0];
+          const latestVer = firstModel.versions?.find((v) => v.isLatest);
+          if (latestVer) {
+            setSelectedVersionId(latestVer.id);
+          }
+        }
       }
     } catch (error: any) {
       const errorMessage =
@@ -534,7 +578,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         error?.response?.errors?.[0]?.message ||
         "Unknown error";
       setModelsError(
-        `Failed to load AI models: ${errorMessage}. Please check your authentication and backend configuration.`,
+        `Failed to load AI models: ${errorMessage}. Please check your authentication and backend configuration.`
       );
       modelsFetchedRef.current = false;
     } finally {
@@ -556,6 +600,38 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, isSessionLoading]);
 
+  // Re-validate when URL params change (e.g., after modal navigation)
+  useEffect(() => {
+    if (aiModels.length > 0 && urlModelId) {
+      const foundModel = aiModels.find((m) => m.id === urlModelId);
+      if (foundModel) {
+        // Model exists, validate version
+        if (urlVersionId) {
+          const versionExists = foundModel.versions?.some(
+            (v) => v.id === parseInt(urlVersionId)
+          );
+          if (versionExists) {
+            setInvalidModelError(null);
+            setSelectedModelId(urlModelId);
+            setSelectedVersionId(parseInt(urlVersionId));
+          }
+        } else {
+          // No version specified, clear error and use latest
+          setInvalidModelError(null);
+          setSelectedModelId(urlModelId);
+          const latestVer = foundModel.versions?.find((v) => v.isLatest);
+          if (latestVer) {
+            setSelectedVersionId(latestVer.id);
+          }
+        }
+      }
+    } else if (!urlModelId && aiModels.length > 0) {
+      // No URL params, clear error
+      setInvalidModelError(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlModelId, urlVersionId, aiModels.length]);
+
   // Reset modules when model changes
   useEffect(() => {
     if (selectedModelId) {
@@ -566,7 +642,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
   // Fetch metrics for a specific module
   const fetchMetricsForModule = async (
-    moduleName: string,
+    moduleName: string
   ): Promise<SelectOption[]> => {
     if (!isAuthenticated) {
       return [];
@@ -632,7 +708,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     }
 
     const hasSelectedModules = Object.values(selectedModules).some(
-      (isSelected) => isSelected,
+      (isSelected) => isSelected
     );
     if (!hasSelectedModules) {
       errors.modules = "At least one evaluation module must be selected";
@@ -722,7 +798,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       modules,
       metrics,
       testDatasetIds: selectedPromptLibraries.map((item: any) =>
-        String(item.id),
+        String(item.id)
       ),
       customTestInputs: customTestInputs || null,
       configuration,
@@ -781,7 +857,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       let durationSeconds: number | null = null;
       if (started && completed) {
         durationSeconds = Math.round(
-          (completed.getTime() - started.getTime()) / 1000,
+          (completed.getTime() - started.getTime()) / 1000
         );
       }
 
@@ -806,7 +882,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         router.push(`/${locale}/dashboard/auditor/evaluations/${audit.id}`);
       } else {
         router.push(
-          `/${locale}/dashboard/ai-maker/${orgId}/evaluations/${audit.id}`,
+          `/${locale}/dashboard/ai-maker/${orgId}/evaluations/${audit.id}`
         );
       }
     } catch (error: any) {
@@ -820,72 +896,125 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
   return (
     <>
-      <div className={`flex-1 ${styles.auditContent} p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0 bg-white`}>
+      <div
+        className={`flex-1 ${styles.auditContent} p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0 bg-white`}
+      >
+        {/* Invalid Model/Version Error */}
+        {invalidModelError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <svg
+                  className="h-5 w-5 text-red-600 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <Text
+                  variant="bodyMd"
+                  className="text-red-800 font-medium mb-1 mr-2"
+                >
+                  Invalid Model or Version Selected
+                </Text>
+                <Text variant="bodySm" className="text-red-700">
+                  {invalidModelError}
+                </Text>
+                <div className="mt-3">
+                  <Button
+                    kind="secondary"
+                    onClick={() => {
+                      setIsModalOpen(true);
+                    }}
+                  >
+                    Start Fresh Evaluation
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Model Name and Owner Section */}
         <div className="mb-6">
-          {/* Model Selector */}
-          <div className="mb-4 max-w-md">
-            {isLoadingModels ? (
-              <div>
-                <Text variant="bodySm" className="text-gray-600">
-                  Loading models...
-                </Text>
-              </div>
-            ) : modelsError ? (
-              <div>
-                <Text variant="bodySm" className="text-red-600">
-                  {modelsError}
-                </Text>
-              </div>
-            ) : aiModels.length > 0 ? (
-              <div className="flex flex-col gap-4">
-                <Select
-                  name="modelSelect"
-                  label="Select AI Model"
-                  options={aiModels.map((model) => ({
-                    value: model.id,
-                    label: model.displayName || model.name,
-                  }))}
-                  value={selectedModelId || ""}
-                  onChange={(value) => {
-                    setSelectedModelId(value);
-                    const model = aiModels.find((m) => m.id === value);
-                    const latestVer = model?.versions?.find((v) => v.isLatest);
-                    setSelectedVersionId(latestVer?.id || null);
-                  }}
-                  disabled={
-                    typeof activeTab !== "undefined" && activeTab !== "config"
-                  }
-                />
-                {selectedModel &&
-                  selectedModel.versions &&
-                  selectedModel.versions.length > 0 && (
-                    <Select
-                      name="versionSelect"
-                      label="Select Model Version"
-                      options={selectedModel.versions.map((ver) => ({
-                        value: String(ver.id),
-                        label: `${ver.version}${ver.isLatest ? " (Latest)" : ""}`,
-                      }))}
-                      value={selectedVersionId ? String(selectedVersionId) : ""}
-                      onChange={(value) =>
-                        setSelectedVersionId(value ? Number(value) : null)
-                      }
-                      disabled={
-                        typeof activeTab !== "undefined" &&
-                        activeTab !== "config"
-                      }
-                    />
-                  )}
-              </div>
-            ) : (
-              <div>
-                <Text variant="bodySm" className="text-gray-600">
-                  No models available. Please check your backend configuration.
-                </Text>
-              </div>
-            )}
-          </div>
+          {/* Model Selector - Only show if no URL params (not coming from modal) */}
+          {!urlModelId && (
+            <div className="mb-4 max-w-md">
+              {isLoadingModels ? (
+                <div>
+                  <Text variant="bodySm" className="text-gray-600">
+                    Loading models...
+                  </Text>
+                </div>
+              ) : modelsError ? (
+                <div>
+                  <Text variant="bodySm" className="text-red-600">
+                    {modelsError}
+                  </Text>
+                </div>
+              ) : aiModels.length > 0 ? (
+                <div className="flex flex-col gap-4">
+                  <Select
+                    name="modelSelect"
+                    label="Select AI Model"
+                    options={aiModels.map((model) => ({
+                      value: model.id,
+                      label: model.displayName || model.name,
+                    }))}
+                    value={selectedModelId || ""}
+                    onChange={(value) => {
+                      setSelectedModelId(value);
+                      const model = aiModels.find((m) => m.id === value);
+                      const latestVer = model?.versions?.find(
+                        (v) => v.isLatest
+                      );
+                      setSelectedVersionId(latestVer?.id || null);
+                    }}
+                    disabled={
+                      typeof activeTab !== "undefined" && activeTab !== "config"
+                    }
+                  />
+                  {selectedModel &&
+                    selectedModel.versions &&
+                    selectedModel.versions.length > 0 && (
+                      <Select
+                        name="versionSelect"
+                        label="Select Model Version"
+                        options={selectedModel.versions.map((ver) => ({
+                          value: String(ver.id),
+                          label: `${ver.version}${ver.isLatest ? " (Latest)" : ""}`,
+                        }))}
+                        value={
+                          selectedVersionId ? String(selectedVersionId) : ""
+                        }
+                        onChange={(value) =>
+                          setSelectedVersionId(value ? Number(value) : null)
+                        }
+                        disabled={
+                          typeof activeTab !== "undefined" &&
+                          activeTab !== "config"
+                        }
+                      />
+                    )}
+                </div>
+              ) : (
+                <div>
+                  <Text variant="bodySm" className="text-gray-600">
+                    No models available. Please check your backend
+                    configuration.
+                  </Text>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Model Name label + value */}
           <div className={`mb-4 ${styles.modelNameContainer}`}>
@@ -919,7 +1048,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         </div>
 
         {/* Audit Name, Tag, and Status Section */}
-        <div className={`flex items-center justify-between mb-6 gap-4 ${styles.auditNameSection} max-[1023px]:mb-0.5 max-[1023px]:gap-0.5`}>
+        <div
+          className={`flex items-center justify-between mb-6 gap-4 ${styles.auditNameSection} max-[1023px]:mb-0.5 max-[1023px]:gap-0.5`}
+        >
           <div className="flex items-center gap-4 flex-nowrap min-w-0 flex-1 evaluation-name-row">
             <Label
               htmlFor="auditName"
@@ -927,7 +1058,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             >
               Evaluation Name
             </Label>
-            <div className={`${styles.auditNameInputWrapper} flex-1 min-w-0 max-w-[380px]`}>
+            <div
+              className={`${styles.auditNameInputWrapper} flex-1 min-w-0 max-w-[380px]`}
+            >
               <TextField
                 id="auditName"
                 name="evaluationName"
@@ -950,7 +1083,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             </div>
           </div>
 
-          <div className={`flex items-center justify-end gap-4 ${styles.auditStatusContainer} flex-shrink-0 max-[1023px]:gap-0.5 max-[1023px]:mt-0 mr-4`}>
+          <div
+            className={`flex items-center justify-end gap-4 ${styles.auditStatusContainer} flex-shrink-0 max-[1023px]:gap-0.5 max-[1023px]:mt-0 mr-4`}
+          >
             {isAutoSaved && (
               <div className="flex items-center gap-1.5 lg:translate-x-0 xl:translate-x-2">
                 <Text className={styles.auditAutoSaved}>Auto-saved</Text>
@@ -981,14 +1116,17 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
         {/* Tabs */}
         <div className="mb-4 max-[1023px]:mb-3 max-[640px]:mb-2">
-          <div className={`flex gap-6 max-[1023px]:gap-0 ${styles.tabsContainer} w-full`}>
+          <div
+            className={`flex gap-6 max-[1023px]:gap-0 ${styles.tabsContainer} w-full`}
+          >
             <button
               onClick={() => handleTabChange("config")}
+              disabled={!!invalidModelError}
               className={`${styles.auditConfigTab} flex-1 ${
-                  activeTab === "config"
-                    ? `${styles.auditConfigTabActive} text-gray-900 font-semibold`
+                activeTab === "config"
+                  ? `${styles.auditConfigTabActive} text-gray-900 font-semibold`
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 bg-transparent"
-              }`}
+              } ${invalidModelError ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <Text
                 variant="bodyMd"
@@ -1007,11 +1145,12 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                   handleTabChange("test");
                 }
               }}
+              disabled={!!invalidModelError}
               className={`${styles.auditConfigTab} flex-1 ${
-                  activeTab === "test"
-                    ? `${styles.auditConfigTabActive} text-gray-900 font-semibold`
+                activeTab === "test"
+                  ? `${styles.auditConfigTabActive} text-gray-900 font-semibold`
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 bg-transparent"
-              }`}
+              } ${invalidModelError ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <Text
                 variant="bodyMd"
@@ -1029,58 +1168,73 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
         {/* Tab Content */}
         {activeTab === "config" && (
-          <EvaluationConfiguration
-            auditType={auditType}
-            setAuditType={setAuditType}
-            auditorName={auditorName}
-            setAuditorName={setAuditorName}
-            organisationName={organisationName}
-            setOrganisationName={setOrganisationName}
-            auditObjective={auditObjective}
-            setAuditObjective={setAuditObjective}
-            scopeOfAudit={scopeOfAudit}
-            setScopeOfAudit={setScopeOfAudit}
-            modeOfEvaluation={modeOfEvaluation}
-            setModeOfEvaluation={setModeOfEvaluation}
-            modules={modules}
-            selectedModules={selectedModules}
-            setSelectedModules={setSelectedModules}
-            selectedMetrics={selectedMetrics as Record<string, SelectOption[]>}
-            setSelectedMetrics={setSelectedMetrics}
-            moduleMetricsOptions={moduleMetricsOptions}
-            setModuleMetricsOptions={setModuleMetricsOptions}
-            isLoadingModules={isLoadingModules}
-            modulesError={modulesError}
-            fetchMetricsForModule={fetchMetricsForModule}
-            getModuleDisplayName={getModuleDisplayName}
-            toTitleCase={toTitleCase}
-            validationErrors={validationErrors}
-            setValidationErrors={setValidationErrors}
-          />
+          <div
+            className={
+              invalidModelError ? "pointer-events-none opacity-50" : ""
+            }
+          >
+            <EvaluationConfiguration
+              auditType={auditType}
+              setAuditType={setAuditType}
+              auditorName={auditorName}
+              setAuditorName={setAuditorName}
+              organisationName={organisationName}
+              setOrganisationName={setOrganisationName}
+              auditObjective={auditObjective}
+              setAuditObjective={setAuditObjective}
+              scopeOfAudit={scopeOfAudit}
+              setScopeOfAudit={setScopeOfAudit}
+              modeOfEvaluation={modeOfEvaluation}
+              setModeOfEvaluation={setModeOfEvaluation}
+              modules={modules}
+              selectedModules={selectedModules}
+              setSelectedModules={setSelectedModules}
+              selectedMetrics={
+                selectedMetrics as Record<string, SelectOption[]>
+              }
+              setSelectedMetrics={setSelectedMetrics}
+              moduleMetricsOptions={moduleMetricsOptions}
+              setModuleMetricsOptions={setModuleMetricsOptions}
+              isLoadingModules={isLoadingModules}
+              modulesError={modulesError}
+              fetchMetricsForModule={fetchMetricsForModule}
+              getModuleDisplayName={getModuleDisplayName}
+              toTitleCase={toTitleCase}
+              validationErrors={validationErrors}
+              setValidationErrors={setValidationErrors}
+            />
+          </div>
         )}
 
-        {activeTab === "test" &&
-          (modeOfEvaluation === "manual" ? (
-            <ManualTestCases
-              onPrevious={() => handleTabChange("config")}
-              onRunAudit={handleRunAudit}
-              isRequestingAudit={isRequestingAudit}
-            />
-          ) : (
-            <TestCases
-              selectedPromptLibraries={selectedPromptLibraries}
-              setSelectedPromptLibraries={setSelectedPromptLibraries}
-              uploadedFiles={uploadedFiles}
-              setUploadedFiles={setUploadedFiles}
-              pastedTestCases={pastedTestCases}
-              setPastedTestCases={setPastedTestCases}
-              testInputMode={testInputMode}
-              setTestInputMode={setTestInputMode}
-              onPrevious={() => handleTabChange("config")}
-              onRunAudit={handleRunAudit}
-              isRequestingAudit={isRequestingAudit}
-            />
-          ))}
+        {activeTab === "test" && (
+          <div
+            className={
+              invalidModelError ? "pointer-events-none opacity-50" : ""
+            }
+          >
+            {modeOfEvaluation === "manual" ? (
+              <ManualTestCases
+                onPrevious={() => handleTabChange("config")}
+                onRunAudit={handleRunAudit}
+                isRequestingAudit={isRequestingAudit}
+              />
+            ) : (
+              <TestCases
+                selectedPromptLibraries={selectedPromptLibraries}
+                setSelectedPromptLibraries={setSelectedPromptLibraries}
+                uploadedFiles={uploadedFiles}
+                setUploadedFiles={setUploadedFiles}
+                pastedTestCases={pastedTestCases}
+                setPastedTestCases={setPastedTestCases}
+                testInputMode={testInputMode}
+                setTestInputMode={setTestInputMode}
+                onPrevious={() => handleTabChange("config")}
+                onRunAudit={handleRunAudit}
+                isRequestingAudit={isRequestingAudit}
+              />
+            )}
+          </div>
+        )}
 
         {/* Navigation Buttons - Audit Configuration tab */}
         {activeTab === "config" && (
@@ -1107,6 +1261,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                   handleTabChange("test");
                 }
               }}
+              disabled={!!invalidModelError}
               className={styles.addTestCasesButton}
             >
               <span className={styles.addTestCasesText}>Add Test Cases</span>
@@ -1121,6 +1276,19 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           </div>
         )}
       </div>
+
+      {/* Model Selection Modal */}
+      <ModelSelectionModal
+        open={isModalOpen}
+        onOpenChange={(open) => {
+          setIsModalOpen(open);
+          // Clear invalid model error when modal opens (user is starting fresh)
+          if (open) {
+            setInvalidModelError(null);
+          }
+        }}
+        orgId={orgId}
+      />
     </>
   );
 };

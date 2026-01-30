@@ -224,10 +224,10 @@ const ModelDetailPage = () => {
     fetchData();
   }, [isAuthenticated, modelId, orgId, request]);
 
-  const handleNewEvaluation = (version?: string) => {
+  const handleNewEvaluation = (versionId?: string) => {
     let url = `/${locale}/dashboard/ai-maker/${orgId}/evaluations/new?modelId=${modelId}`;
-    if (version) {
-      url += `&version=${version}`;
+    if (versionId) {
+      url += `&versionId=${versionId}`;
     }
     router.push(url);
   };
@@ -301,453 +301,449 @@ const ModelDetailPage = () => {
 
   return (
     <>
-
       <div className="flex-1 p-6 lg:p-10 bg-white overflow-hidden">
-          <div className="flex flex-col lg:flex-row gap-8">
-            <div className="flex-1 min-w-0 lg:pr-8 lg:border-r border-gray-100">
-              <div className="flex flex-col gap-8">
-                <div className="flex flex-col gap-3">
-                  <Text variant="heading3xl" fontWeight="bold">
-                    {model.displayName}
-                  </Text>
+        <div className="flex flex-col lg:flex-row gap-8">
+          <div className="flex-1 min-w-0 lg:pr-8 lg:border-r border-gray-100">
+            <div className="flex flex-col gap-8">
+              <div className="flex flex-col gap-3">
+                <Text variant="heading3xl" fontWeight="bold">
+                  {model.displayName}
+                </Text>
 
-                  <div className="flex flex-wrap gap-2">
-                    {model.sectors?.slice(0, 1).map((sector, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 text-xs font-medium text-purple-800 bg-purple-100 rounded-md"
-                      >
-                        {sector}
-                      </span>
-                    ))}
-                    {model.tags?.slice(0, 1).map((tag, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 text-xs font-medium text-purple-800 bg-purple-100 rounded-md"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+                <div className="flex flex-wrap gap-2">
+                  {model.sectors?.slice(0, 1).map((sector, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 text-xs font-medium text-purple-800 bg-purple-100 rounded-md"
+                    >
+                      {sector}
+                    </span>
+                  ))}
+                  {model.tags?.slice(0, 1).map((tag, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 text-xs font-medium text-purple-800 bg-purple-100 rounded-md"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="overflow-hidden">
+                <Text
+                  variant="headingLg"
+                  fontWeight="bold"
+                  className="mb-4 text-gray-900"
+                >
+                  About
+                </Text>
+                <div className="prose prose-sm max-w-none overflow-x-hidden break-words">
+                  <RichTextRenderer
+                    content={model.description || "No description available."}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-8">
+                <div className="flex flex-col gap-1 mb-5">
+                  <Text variant="headingXl">Versions</Text>
+                  <Text variant="bodyLg">
+                    All versions linked to DataSpace and available for public
+                    viewing
+                  </Text>
                 </div>
 
-                <div className="overflow-hidden">
-                  <Text
-                    variant="headingLg"
-                    fontWeight="bold"
-                    className="mb-4 text-gray-900"
-                  >
-                    About
-                  </Text>
-                  <div className="prose prose-sm max-w-none overflow-x-hidden break-words">
-                    <RichTextRenderer
-                      content={model.description || "No description available."}
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-8">
-                  <div className="flex flex-col gap-1 mb-5">
-                    <Text variant="headingXl">Versions</Text>
-                    <Text variant="bodyLg">
-                      All versions linked to DataSpace and available for public
-                      viewing
-                    </Text>
-                  </div>
-
-                  <div className="flex flex-col gap-4">
-                    {(model.versions || []).map((v) => (
-                      <div
-                        key={v.id}
-                        className="mt-5 flex flex-col gap-6 border border-gray-200 bg-white p-4 rounded-lg lg:mx-0 lg:p-6 shadow-sm"
-                      >
-                        <Accordion type="single" collapsible className="w-full">
-                          <AccordionItem value={v.id} className="border-none">
-                            <div className="flex flex-wrap items-center justify-between gap-4 md:flex-nowrap">
-                              <div className="flex flex-wrap items-center gap-2 md:flex-nowrap">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 border border-gray-200">
-                                  <svg
-                                    className="h-5 w-5 text-gray-600"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                    />
-                                  </svg>
-                                </div>
-                                <Text
-                                  variant="headingMd"
-                                  className="line-clamp-1"
+                <div className="flex flex-col gap-4">
+                  {(model.versions || []).map((v) => (
+                    <div
+                      key={v.id}
+                      className="mt-5 flex flex-col gap-6 border border-gray-200 bg-white p-4 rounded-lg lg:mx-0 lg:p-6 shadow-sm"
+                    >
+                      <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value={v.id} className="border-none">
+                          <div className="flex flex-wrap items-center justify-between gap-4 md:flex-nowrap">
+                            <div className="flex flex-wrap items-center gap-2 md:flex-nowrap">
+                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 border border-gray-200">
+                                <svg
+                                  className="h-5 w-5 text-gray-600"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
                                 >
-                                  Version {v.version}
-                                </Text>
-                                {v.isLatest && (
-                                  <Badge status="success">Primary</Badge>
-                                )}
-                                <Badge>
-                                  {v.lifecycleStage.replace(/_/g, " ")}
-                                </Badge>
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                  />
+                                </svg>
                               </div>
-
-                              <div className="flex items-center gap-4">
-                                <Button
-                                  size="slim"
-                                  kind="primary"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleNewEvaluation(v.version);
-                                  }}
-                                >
-                                  Start Evaluation
-                                </Button>
-
-                                <Button
-                                  size="slim"
-                                  kind="secondary"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedVersionForAuditor({
-                                      id: parseInt(v.id),
-                                      version: v.version,
-                                    });
-                                  }}
-                                >
-                                  Invite Auditors
-                                </Button>
-
-                                <AccordionTrigger className="flex items-center gap-2 p-0 hover:no-underline text-gray-600">
-                                  <Text
-                                    variant="bodyLg"
-                                    className="text-secondaryText"
-                                  >
-                                    View Details
-                                  </Text>
-                                </AccordionTrigger>
-                              </div>
+                              <Text
+                                variant="headingMd"
+                                className="line-clamp-1"
+                              >
+                                Version {v.version}
+                              </Text>
+                              {v.isLatest && (
+                                <Badge status="success">Primary</Badge>
+                              )}
+                              <Badge>
+                                {v.lifecycleStage.replace(/_/g, " ")}
+                              </Badge>
                             </div>
 
-                            <AccordionContent
-                              className="flex w-full flex-col py-5 mt-4"
-                              style={{
-                                backgroundColor: "white",
-                              }}
-                            >
-                              <div className="pt-4 border-t border-gray-100 flex flex-wrap gap-12">
-                                <div className="flex flex-col gap-1">
-                                  <Text
-                                    variant="bodySm"
-                                    className="uppercase text-gray-500"
-                                  >
-                                    DATE UPDATED
-                                  </Text>
-                                  <Text variant="bodyMd">
-                                    {formatDateShort(
-                                      v.createdAt ||
-                                        model.updatedAt ||
-                                        new Date().toISOString()
-                                    )}
-                                  </Text>
-                                </div>
+                            <div className="flex items-center gap-4">
+                              <Button
+                                size="slim"
+                                kind="primary"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleNewEvaluation(v.id);
+                                }}
+                              >
+                                Start Evaluation
+                              </Button>
 
-                                <div className="flex flex-col gap-1">
-                                  <Text
-                                    variant="bodySm"
-                                    className="uppercase text-gray-500"
-                                  >
-                                    CAPABILITIES
-                                  </Text>
-                                  <div className="flex gap-2">
-                                    {model.supportsStreaming && (
-                                      <Badge>Streaming</Badge>
-                                    )}
-                                    {model.maxTokens ? (
-                                      <Badge>
-                                        {`${model.maxTokens.toLocaleString()} Tokens`}
-                                      </Badge>
-                                    ) : null}
-                                  </div>
-                                </div>
+                              <Button
+                                size="slim"
+                                kind="secondary"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedVersionForAuditor({
+                                    id: parseInt(v.id),
+                                    version: v.version,
+                                  });
+                                }}
+                              >
+                                Invite Auditors
+                              </Button>
 
-                                {model.supportedLanguages &&
-                                  model.supportedLanguages.length > 0 && (
-                                    <div className="flex flex-col gap-1">
-                                      <Text
-                                        variant="bodySm"
-                                        className="uppercase text-gray-500"
-                                      >
-                                        LANGUAGES
-                                      </Text>
-                                      <div className="flex gap-1 flex-wrap">
-                                        {model.supportedLanguages
-                                          .slice(0, 3)
-                                          .map((l) => (
-                                            <Badge key={l}>
-                                              {l.toUpperCase()}
-                                            </Badge>
-                                          ))}
-                                        {model.supportedLanguages.length >
-                                          3 && (
-                                          <Badge>
-                                            {`+${model.supportedLanguages.length - 3}`}
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </div>
+                              <AccordionTrigger className="flex items-center gap-2 p-0 hover:no-underline text-gray-600">
+                                <Text
+                                  variant="bodyLg"
+                                  className="text-secondaryText"
+                                >
+                                  View Details
+                                </Text>
+                              </AccordionTrigger>
+                            </div>
+                          </div>
+
+                          <AccordionContent
+                            className="flex w-full flex-col py-5 mt-4"
+                            style={{
+                              backgroundColor: "white",
+                            }}
+                          >
+                            <div className="pt-4 border-t border-gray-100 flex flex-wrap gap-12">
+                              <div className="flex flex-col gap-1">
+                                <Text
+                                  variant="bodySm"
+                                  className="uppercase text-gray-500"
+                                >
+                                  DATE UPDATED
+                                </Text>
+                                <Text variant="bodyMd">
+                                  {formatDateShort(
+                                    v.createdAt ||
+                                      model.updatedAt ||
+                                      new Date().toISOString()
                                   )}
+                                </Text>
                               </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        </Accordion>
-                      </div>
-                    ))}
-                    {(model.versions || []).length === 0 && (
-                      <div className="p-6 border border-dashed border-gray-300 rounded-lg text-center bg-gray-50">
-                        <Text variant="bodyMd" className="text-gray-500">
-                          No version information available for this model.
-                        </Text>
+
+                              <div className="flex flex-col gap-1">
+                                <Text
+                                  variant="bodySm"
+                                  className="uppercase text-gray-500"
+                                >
+                                  CAPABILITIES
+                                </Text>
+                                <div className="flex gap-2">
+                                  {model.supportsStreaming && (
+                                    <Badge>Streaming</Badge>
+                                  )}
+                                  {model.maxTokens ? (
+                                    <Badge>
+                                      {`${model.maxTokens.toLocaleString()} Tokens`}
+                                    </Badge>
+                                  ) : null}
+                                </div>
+                              </div>
+
+                              {model.supportedLanguages &&
+                                model.supportedLanguages.length > 0 && (
+                                  <div className="flex flex-col gap-1">
+                                    <Text
+                                      variant="bodySm"
+                                      className="uppercase text-gray-500"
+                                    >
+                                      LANGUAGES
+                                    </Text>
+                                    <div className="flex gap-1 flex-wrap">
+                                      {model.supportedLanguages
+                                        .slice(0, 3)
+                                        .map((l) => (
+                                          <Badge key={l}>
+                                            {l.toUpperCase()}
+                                          </Badge>
+                                        ))}
+                                      {model.supportedLanguages.length > 3 && (
+                                        <Badge>
+                                          {`+${model.supportedLanguages.length - 3}`}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
+                    </div>
+                  ))}
+                  {(model.versions || []).length === 0 && (
+                    <div className="p-6 border border-dashed border-gray-300 rounded-lg text-center bg-gray-50">
+                      <Text variant="bodyMd" className="text-gray-500">
+                        No version information available for this model.
+                      </Text>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="w-full lg:w-80 shrink-0">
+            <div className="flex flex-col gap-5 lg:gap-10">
+              <div className="flex flex-col gap-2">
+                <Text
+                  variant="headingLg"
+                  fontWeight="semibold"
+                  className="text-primary-purple"
+                >
+                  ABOUT THE MODEL
+                </Text>
+
+                <Text variant="bodyLg" className="uppercase">
+                  METADATA
+                </Text>
+              </div>
+
+              <Divider />
+
+              <div className="flex flex-col gap-8">
+                {organization && (
+                  <div className="rounded-lg border border-gray-200 p-2 lg:block">
+                    <div className="flex justify-center items-center h-[100px]">
+                      {organization.logoUrl ? (
+                        <Image
+                          src={`${dataspaceUrl.replace(/\/$/, "")}${organization.logoUrl}`}
+                          alt={organization.name}
+                          width={100}
+                          height={100}
+                          className="object-contain max-h-full"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 font-bold text-xl">
+                          {organization.name.substring(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Organization */}
+                <div className="flex items-center gap-2">
+                  <Text
+                    variant="bodyMd"
+                    className="min-w-[120px] basis-1/4 uppercase text-gray-500"
+                  >
+                    Organization
+                  </Text>
+                  <Tooltip
+                    content={model.organization || organization?.name || "N/A"}
+                  >
+                    <Text
+                      variant="bodyLg"
+                      fontWeight="medium"
+                      className="text-gray-900 line-clamp-2"
+                    >
+                      {model.organization || organization?.name || "N/A"}
+                    </Text>
+                  </Tooltip>
+                </div>
+
+                {/* Model Type */}
+                <div className="flex items-center gap-2">
+                  <Text
+                    variant="bodyMd"
+                    className="min-w-[120px] basis-1/4 uppercase text-gray-500"
+                  >
+                    Model Type
+                  </Text>
+                  <Text
+                    variant="bodyLg"
+                    fontWeight="medium"
+                    className="text-gray-900"
+                  >
+                    {modelTypeLabels[model.modelType] || model.modelType}
+                  </Text>
+                </div>
+
+                {/* Views (Placeholder) */}
+                <div className="flex items-center gap-2">
+                  <Text
+                    variant="bodyMd"
+                    className="min-w-[120px] basis-1/4 uppercase text-gray-500"
+                  >
+                    Views
+                  </Text>
+                  <Text
+                    variant="bodyLg"
+                    fontWeight="medium"
+                    className="text-gray-900"
+                  >
+                    200+
+                  </Text>
+                </div>
+
+                {/* Source */}
+                <div className="flex items-center gap-2">
+                  <Text
+                    variant="bodyMd"
+                    className="min-w-[120px] basis-1/4 uppercase text-gray-500"
+                  >
+                    Source
+                  </Text>
+                  <Text
+                    variant="bodyLg"
+                    fontWeight="medium"
+                    className="text-gray-900"
+                  >
+                    {providerLabels[model.provider] || model.provider}
+                  </Text>
+                </div>
+
+                {/* License */}
+                <div className="flex gap-2">
+                  <Text
+                    variant="bodyMd"
+                    className="min-w-[120px] basis-1/4 uppercase text-gray-500"
+                  >
+                    License
+                  </Text>
+                  <Text
+                    variant="bodyLg"
+                    fontWeight="medium"
+                    className="text-gray-900"
+                  >
+                    Creative Commons Attribution License (cc-by)
+                  </Text>
+                </div>
+
+                {/* Sector */}
+                <div className="flex gap-2">
+                  <Text
+                    variant="bodyMd"
+                    className="min-w-[120px] basis-1/4 uppercase text-gray-500"
+                  >
+                    Sector
+                  </Text>
+                  <div className="flex flex-wrap gap-2">
+                    {model.sectors?.length > 0 ? (
+                      model.sectors.map((sector, idx) => (
+                        <Tooltip content={sector} key={idx}>
+                          <div className="w-[52px] h-[52px] border border-gray-200 p-1 rounded bg-white flex items-center justify-center">
+                            {/* Simulated sector icon since real ones might not exist in this repo */}
+                            <span className="text-xs text-center font-bold text-gray-400">
+                              {sector.substring(0, 2).toUpperCase()}
+                            </span>
+                          </div>
+                        </Tooltip>
+                      ))
+                    ) : (
+                      <Text variant="bodyLg" className="text-gray-900">
+                        General
+                      </Text>
+                    )}
+                  </div>
+                </div>
+
+                {/* Geography */}
+                <div className="flex items-center gap-2">
+                  <Text
+                    variant="bodyMd"
+                    className="min-w-[120px] basis-1/4 uppercase text-gray-500"
+                  >
+                    Geography
+                  </Text>
+                  <div className="flex flex-wrap gap-2">
+                    {model.geographies?.length > 0 ? (
+                      model.geographies.map((geo, idx) => (
+                        <Tag
+                          key={idx}
+                          variation="filled"
+                          fillColor="#F3EFFF"
+                          textColor="#6941C6"
+                        >
+                          {geo}
+                        </Tag>
+                      ))
+                    ) : (
+                      <div className="flex gap-1">
+                        <Tag
+                          variation="filled"
+                          fillColor="#F3EFFF"
+                          textColor="#6941C6"
+                        >
+                          India
+                        </Tag>
+                        <Tag
+                          variation="filled"
+                          fillColor="#F3EFFF"
+                          textColor="#6941C6"
+                        >
+                          Asia
+                        </Tag>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
             </div>
-
-            <div className="w-full lg:w-80 shrink-0">
-              <div className="flex flex-col gap-5 lg:gap-10">
-                <div className="flex flex-col gap-2">
-                  <Text
-                    variant="headingLg"
-                    fontWeight="semibold"
-                    className="text-primary-purple"
-                  >
-                    ABOUT THE MODEL
-                  </Text>
-
-                  <Text variant="bodyLg" className="uppercase">
-                    METADATA
-                  </Text>
-                </div>
-
-                <Divider />
-
-                <div className="flex flex-col gap-8">
-                  {organization && (
-                    <div className="rounded-lg border border-gray-200 p-2 lg:block">
-                      <div className="flex justify-center items-center h-[100px]">
-                        {organization.logoUrl ? (
-                          <Image
-                            src={`${dataspaceUrl.replace(/\/$/, "")}${organization.logoUrl}`}
-                            alt={organization.name}
-                            width={100}
-                            height={100}
-                            className="object-contain max-h-full"
-                          />
-                        ) : (
-                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 font-bold text-xl">
-                            {organization.name.substring(0, 2).toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Organization */}
-                  <div className="flex items-center gap-2">
-                    <Text
-                      variant="bodyMd"
-                      className="min-w-[120px] basis-1/4 uppercase text-gray-500"
-                    >
-                      Organization
-                    </Text>
-                    <Tooltip
-                      content={
-                        model.organization || organization?.name || "N/A"
-                      }
-                    >
-                      <Text
-                        variant="bodyLg"
-                        fontWeight="medium"
-                        className="text-gray-900 line-clamp-2"
-                      >
-                        {model.organization || organization?.name || "N/A"}
-                      </Text>
-                    </Tooltip>
-                  </div>
-
-                  {/* Model Type */}
-                  <div className="flex items-center gap-2">
-                    <Text
-                      variant="bodyMd"
-                      className="min-w-[120px] basis-1/4 uppercase text-gray-500"
-                    >
-                      Model Type
-                    </Text>
-                    <Text
-                      variant="bodyLg"
-                      fontWeight="medium"
-                      className="text-gray-900"
-                    >
-                      {modelTypeLabels[model.modelType] || model.modelType}
-                    </Text>
-                  </div>
-
-                  {/* Views (Placeholder) */}
-                  <div className="flex items-center gap-2">
-                    <Text
-                      variant="bodyMd"
-                      className="min-w-[120px] basis-1/4 uppercase text-gray-500"
-                    >
-                      Views
-                    </Text>
-                    <Text
-                      variant="bodyLg"
-                      fontWeight="medium"
-                      className="text-gray-900"
-                    >
-                      200+
-                    </Text>
-                  </div>
-
-                  {/* Source */}
-                  <div className="flex items-center gap-2">
-                    <Text
-                      variant="bodyMd"
-                      className="min-w-[120px] basis-1/4 uppercase text-gray-500"
-                    >
-                      Source
-                    </Text>
-                    <Text
-                      variant="bodyLg"
-                      fontWeight="medium"
-                      className="text-gray-900"
-                    >
-                      {providerLabels[model.provider] || model.provider}
-                    </Text>
-                  </div>
-
-                  {/* License */}
-                  <div className="flex gap-2">
-                    <Text
-                      variant="bodyMd"
-                      className="min-w-[120px] basis-1/4 uppercase text-gray-500"
-                    >
-                      License
-                    </Text>
-                    <Text
-                      variant="bodyLg"
-                      fontWeight="medium"
-                      className="text-gray-900"
-                    >
-                      Creative Commons Attribution License (cc-by)
-                    </Text>
-                  </div>
-
-                  {/* Sector */}
-                  <div className="flex gap-2">
-                    <Text
-                      variant="bodyMd"
-                      className="min-w-[120px] basis-1/4 uppercase text-gray-500"
-                    >
-                      Sector
-                    </Text>
-                    <div className="flex flex-wrap gap-2">
-                      {model.sectors?.length > 0 ? (
-                        model.sectors.map((sector, idx) => (
-                          <Tooltip content={sector} key={idx}>
-                            <div className="w-[52px] h-[52px] border border-gray-200 p-1 rounded bg-white flex items-center justify-center">
-                              {/* Simulated sector icon since real ones might not exist in this repo */}
-                              <span className="text-xs text-center font-bold text-gray-400">
-                                {sector.substring(0, 2).toUpperCase()}
-                              </span>
-                            </div>
-                          </Tooltip>
-                        ))
-                      ) : (
-                        <Text variant="bodyLg" className="text-gray-900">
-                          General
-                        </Text>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Geography */}
-                  <div className="flex items-center gap-2">
-                    <Text
-                      variant="bodyMd"
-                      className="min-w-[120px] basis-1/4 uppercase text-gray-500"
-                    >
-                      Geography
-                    </Text>
-                    <div className="flex flex-wrap gap-2">
-                      {model.geographies?.length > 0 ? (
-                        model.geographies.map((geo, idx) => (
-                          <Tag
-                            key={idx}
-                            variation="filled"
-                            fillColor="#F3EFFF"
-                            textColor="#6941C6"
-                          >
-                            {geo}
-                          </Tag>
-                        ))
-                      ) : (
-                        <div className="flex gap-1">
-                          <Tag
-                            variation="filled"
-                            fillColor="#F3EFFF"
-                            textColor="#6941C6"
-                          >
-                            India
-                          </Tag>
-                          <Tag
-                            variation="filled"
-                            fillColor="#F3EFFF"
-                            textColor="#6941C6"
-                          >
-                            Asia
-                          </Tag>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Evaluations Section */}
-          <div className="mt-16">
-            <div className="flex justify-between items-center mb-6">
-              <Text variant="headingXl" as="h2" fontWeight="bold">
-                Past Evaluations
-              </Text>
-            </div>
-            {evaluations.length > 0 ? (
-              <div className="bg-purple-50/30 rounded-lg overflow-hidden border border-purple-100">
-                <DataTable
-                  rows={evaluations}
-                  columns={columns}
-                  hideSelection={true}
-                  hideFooter={false}
-                />
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                <Text variant="bodyMd" className="text-gray-500 mb-4">
-                  No evaluations yet for this model.
-                </Text>
-                <Button kind="primary" onClick={() => handleNewEvaluation()}>
-                  Start First Evaluation
-                </Button>
-              </div>
-            )}
           </div>
         </div>
+
+        {/* Recent Evaluations Section */}
+        <div className="mt-16">
+          <div className="flex justify-between items-center mb-6">
+            <Text variant="headingXl" as="h2" fontWeight="bold">
+              Past Evaluations
+            </Text>
+          </div>
+          {evaluations.length > 0 ? (
+            <div className="bg-purple-50/30 rounded-lg overflow-hidden border border-purple-100">
+              <DataTable
+                rows={evaluations}
+                columns={columns}
+                hideSelection={true}
+                hideFooter={false}
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+              <Text variant="bodyMd" className="text-gray-500 mb-4">
+                No evaluations yet for this model.
+              </Text>
+              <Button kind="primary" onClick={() => handleNewEvaluation()}>
+                Start First Evaluation
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Auditor Invitation Modal */}
       {selectedVersionForAuditor && (
