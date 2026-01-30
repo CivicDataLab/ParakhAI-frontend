@@ -226,7 +226,7 @@ const AuditsListPage = () => {
         <Text variant="headingLg" as="h1" fontWeight="bold">
           Evaluations
         </Text>
-        <Button kind="secondary" onClick={handleNewAudit}>
+        <Button kind="secondary" onClick={handleNewAudit} className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base">
           New Evaluation
         </Button>
       </div>

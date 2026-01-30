@@ -260,7 +260,7 @@ const AIMakerDashboard = () => {
                 href={addModelUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="add-model-button"
+                className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
                 style={{
                   textDecoration: "none",
                   display: "inline-block",
@@ -352,7 +352,7 @@ const AIMakerDashboard = () => {
               href={addModelUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="add-model-button ai-maker-empty-button"
+              className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
               style={{ textDecoration: "none", display: "inline-block" }}
             >
               Add A New Model

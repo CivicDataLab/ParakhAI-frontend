@@ -250,7 +250,7 @@ const EvaluationsPage = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 mt-10">
         <div>
           <Text variant="headingLg" as="h1" fontWeight="bold">
             My Evaluations

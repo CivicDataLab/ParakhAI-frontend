@@ -396,20 +396,20 @@ const ModelDetailPage = () => {
                             </div>
 
                             <div className="flex items-center gap-4">
-                              <Button
-                                size="slim"
-                                kind="primary"
+                              <button
+                                type="button"
+                                className="prompt-add-filters-link"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleNewEvaluation(v.id);
                                 }}
                               >
                                 Start Evaluation
-                              </Button>
+                              </button>
 
-                              <Button
-                                size="slim"
-                                kind="secondary"
+                              <button
+                                type="button"
+                                className="prompt-add-filters-link"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setSelectedVersionForAuditor({
@@ -419,15 +419,10 @@ const ModelDetailPage = () => {
                                 }}
                               >
                                 Invite Auditors
-                              </Button>
+                              </button>
 
-                              <AccordionTrigger className="flex items-center gap-2 p-0 hover:no-underline text-gray-600">
-                                <Text
-                                  variant="bodyLg"
-                                  className="text-secondaryText"
-                                >
-                                  View Details
-                                </Text>
+                              <AccordionTrigger className="prompt-add-filters-link flex items-center gap-2 p-0 hover:no-underline">
+                                View Details
                               </AccordionTrigger>
                             </div>
                           </div>
