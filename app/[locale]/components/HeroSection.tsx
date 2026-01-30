@@ -47,7 +47,7 @@ const HeroSection = () => {
           <Button
             kind="primary"
             onClick={handleGetStarted}
-            className="bg-[#6849EE] hover:bg-[#5538CC] text-white px-8 py-3 rounded-lg font-semibold"
+            className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-lg font-semibold"
           >
             Get Started →
           </Button>

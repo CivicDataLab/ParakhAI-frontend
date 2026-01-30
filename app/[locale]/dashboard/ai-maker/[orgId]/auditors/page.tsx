@@ -7,6 +7,36 @@ import { useParams } from "next/navigation";
 import { Button, DataTable, Dialog, Text } from "opub-ui";
 import { useEffect, useState } from "react";
 
+// Custom Avatar component with error handling
+const Avatar = ({ 
+  src, 
+  alt, 
+  username, 
+  size = 16 
+}: { 
+  src: string | null; 
+  alt: string; 
+  username: string;
+  size?: number;
+}) => {
+  const [imageError, setImageError] = useState(false);
+
+  if (!src || imageError) {
+    return <IconUser size={size} className="text-purple-600" />;
+  }
+
+  const sizeClass = size === 20 ? "w-10 h-10" : "w-8 h-8";
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={`${sizeClass} rounded-full object-cover`}
+      onError={() => setImageError(true)}
+    />
+  );
+};
+
 // Types
 type Auditor = {
   id: string;
@@ -279,15 +309,11 @@ const AuditorsPage = () => {
       cell: ({ row }: any) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-            {row.original.profilePicture ? (
-              <img
-                src={row.original.profilePicture}
-                alt={row.original.username}
-                className="w-8 h-8 rounded-full object-cover"
-              />
-            ) : (
-              <IconUser size={16} className="text-purple-600" />
-            )}
+            <Avatar
+              src={row.original.profilePicture}
+              alt={row.original.username}
+              username={row.original.username}
+            />
           </div>
           <Text variant="bodySm" fontWeight="medium">
             {row.original.username}
@@ -353,12 +379,13 @@ const AuditorsPage = () => {
             Manage auditors who can evaluate your AI models
           </Text>
         </div>
-        <Button
-          kind="primary"
+        <button
+          type="button"
+          className="add-model-button"
           onClick={() => setIsAddModalOpen(true)}
         >
-          <IconPlus size={18} className="mr-1" /> Add Auditor
-        </Button>
+          Add Auditor
+        </button>
       </div>
 
       {loading ? (
@@ -469,15 +496,12 @@ const AuditorsPage = () => {
                 {searchResult.found && searchResult.user ? (
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                      {searchResult.user.profilePicture ? (
-                        <img
-                          src={searchResult.user.profilePicture}
-                          alt={searchResult.user.username}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <IconUser size={20} className="text-purple-600" />
-                      )}
+                      <Avatar
+                        src={searchResult.user.profilePicture}
+                        alt={searchResult.user.username}
+                        username={searchResult.user.username}
+                        size={20}
+                      />
                     </div>
                     <div>
                       <Text variant="bodySm" fontWeight="medium">

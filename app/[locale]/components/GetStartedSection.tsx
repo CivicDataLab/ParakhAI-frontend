@@ -80,7 +80,7 @@ const GetStartedSection = () => {
         {/* CTA Button */}
         
         <div className="flex justify-center">
-          <Button onClick={handleGetStarted} kind="primary" className="bg-secondary-green text-basePureBlack px-8 py-3 rounded-lg font-semibold">Get Started →</Button>
+          <Button onClick={handleGetStarted} kind="primary" className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-lg font-semibold">Get Started →</Button>
         </div>
       </div>
     </section>
