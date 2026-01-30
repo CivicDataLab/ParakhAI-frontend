@@ -370,7 +370,7 @@ const AuditorsPage = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 mt-10">
         <div>
           <Text variant="headingLg" as="h1" fontWeight="bold">
             Auditors
@@ -381,7 +381,7 @@ const AuditorsPage = () => {
         </div>
         <button
           type="button"
-          className="add-model-button"
+          className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base border-none"
           onClick={() => setIsAddModalOpen(true)}
         >
           Add Auditor
