@@ -207,7 +207,7 @@ const WelcomeSection = ({
   }, [navItems, matchingPath]);
 
   return (
-    <div className="welcome-section mt-6">
+    <div className="welcome-section mt-11">
       <div className="text-center sm:pt-4 md:pt-0">
         <div className="mb-2 flex justify-center">
           <div className="cdl-logo-container">
@@ -247,7 +247,7 @@ const WelcomeSection = ({
       <div className="welcome-divider mt-4 mb-4">
         <Divider />
       </div>
-      <nav className="space-y-2 overflow-visible">
+      <nav className="space-y-2 overflow-visible mx-1">
         {navItems.map((item) => {
           const isActive = selectedItem === item.label;
           return (
