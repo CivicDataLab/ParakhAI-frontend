@@ -247,7 +247,7 @@ const WelcomeSection = ({
       <div className="welcome-divider mt-4 mb-4">
         <Divider />
       </div>
-      <nav className="space-y-2 overflow-visible">
+      <nav className="space-y-2 overflow-visible mx-1">
         {navItems.map((item) => {
           const isActive = selectedItem === item.label;
           return (
