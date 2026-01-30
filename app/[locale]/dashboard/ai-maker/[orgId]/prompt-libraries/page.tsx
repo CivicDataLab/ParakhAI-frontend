@@ -485,7 +485,7 @@ const PromptLibrariesPage = () => {
             ))}
           </div>
 
-          <div className="prompt-card-grid">
+          <div className="prompt-card-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8 items-stretch">
             {isLoading ? (
               <div className="py-8 text-center col-span-full">
                 <Text variant="bodySm" className="text-gray-600">
@@ -553,10 +553,10 @@ const PromptLibrariesPage = () => {
                 }));
 
                 return (
-                  <div key={library.id} className="prompt-card-wrapper">
+                  <div key={library.id} className="ai-models-card-wrapper">
                     <div
                       onClick={() => handleCardClick(library)}
-                      style={{ cursor: "pointer" }}
+                      className="cursor-pointer h-full"
                     >
                       <Card
                         title={library.title}
