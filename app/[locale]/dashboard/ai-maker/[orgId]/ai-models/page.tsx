@@ -5,7 +5,7 @@ import { Pagination } from "@/components/Pagination/Pagination";
 import { useGraphQL } from "@/lib/api";
 import { IconChevronDown, IconMinus, IconX } from "@tabler/icons-react";
 import { useParams, useRouter } from "next/navigation";
-import { Button, Card, DataTable, Dialog, Popover, Tag, Text } from "opub-ui";
+import { Button, Card, DataTable, Dialog, Popover, Spinner, Tag, Text } from "opub-ui";
 import React from "react";
 import { useOrganization } from "../OrganizationContext";
 
@@ -500,7 +500,8 @@ const AIModelsPage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {isLoading ? (
-              <div className="py-8 text-center col-span-full">
+              <div className="flex flex-col items-center justify-center gap-4 py-8 col-span-full">
+                <Spinner />
                 <Text variant="bodySm" className="text-gray-600">
                   Loading AI models...
                 </Text>

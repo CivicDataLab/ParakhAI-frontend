@@ -5,7 +5,7 @@ import { useAppSession } from "@/lib/session";
 import { IconArrowLeft } from "@tabler/icons-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Button, Text } from "opub-ui";
+import { Button, Spinner, Text } from "opub-ui";
 import { useEffect, useState } from "react";
 import { OrganizationContext } from "../../../ai-maker/[orgId]/OrganizationContext";
 import NewEvaluationContent from "../../../ai-maker/[orgId]/evaluations/components/NewEvaluationContent";
@@ -117,7 +117,8 @@ const AuditorNewEvaluationPage = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
+      <div className="flex flex-col items-center justify-center gap-4 py-20">
+        <Spinner />
         <Text variant="bodySm" className="text-gray-600">
           Verifying your assignment...
         </Text>

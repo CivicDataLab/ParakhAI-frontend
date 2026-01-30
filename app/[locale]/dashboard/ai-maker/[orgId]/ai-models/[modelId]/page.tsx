@@ -16,6 +16,7 @@ import {
   Button,
   DataTable,
   Divider,
+  Spinner,
   Tag,
   Text,
   Tooltip,
@@ -283,8 +284,9 @@ const ModelDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Text variant="bodyMd">Loading model details...</Text>
+      <div className="flex flex-col items-center justify-center gap-4 min-h-screen">
+        <Spinner />
+        <Text variant="bodyMd" className="text-gray-600">Loading model details...</Text>
       </div>
     );
   }

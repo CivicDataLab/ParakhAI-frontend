@@ -4,7 +4,7 @@ import { useGraphQL } from "@/lib/api";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Button, DataTable, ProgressBar, Tag, Text } from "opub-ui";
+import { Button, DataTable, Spinner, Tag, Text } from "opub-ui";
 import { useEffect, useState } from "react";
 import { useOrganization } from "../OrganizationContext";
 import ModelSelectionModal from "./components/ModelSelectionModal";
@@ -233,9 +233,9 @@ const AuditsListPage = () => {
 
       {/* Content */}
       {isSessionLoading || isLoading ? (
-        <div className="flex flex-col items-center justify-center py-16">
-          <ProgressBar value={50} max={100} size="small" />
-          <Text variant="bodySm" className="mt-4 text-gray-600">
+        <div className="flex flex-col items-center justify-center gap-4 py-16">
+          <Spinner />
+          <Text variant="bodySm" className="text-gray-600">
             Loading evaluations...
           </Text>
         </div>

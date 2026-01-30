@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Text, TextField, Label, Select, Combobox } from "opub-ui";
+import { Text, TextField, Label, Select, Combobox, Spinner } from "opub-ui";
 import type { SelectOption } from "./types";
 import styles from "./styles.module.scss";
 
@@ -397,7 +397,8 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
               </Text>
             )}
             {isLoadingModules ? (
-              <div className="mt-4">
+              <div className="mt-4 flex flex-col items-center gap-4">
+                <Spinner />
                 <Text variant="bodySm" className="text-gray-600">
                   Loading modules...
                 </Text>

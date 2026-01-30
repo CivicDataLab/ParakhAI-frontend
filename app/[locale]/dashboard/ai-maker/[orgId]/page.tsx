@@ -6,7 +6,7 @@ import { stripMarkdown } from "@/lib/utils";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Button, Card, DataTable, Text } from "opub-ui";
+import { Button, Card, DataTable, Spinner, Text } from "opub-ui";
 import { useEffect, useMemo, useState } from "react";
 import { useOrganization } from "./OrganizationContext";
 import ModelSelectionModal from "./evaluations/components/ModelSelectionModal";
@@ -220,6 +220,17 @@ const AIMakerDashboard = () => {
     ],
     [locale, orgId]
   );
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 min-h-screen">
+        <Spinner />
+        <Text variant="bodyMd" className="text-gray-600">
+          Loading overview...
+        </Text>
+      </div>
+    );
+  }
 
   return (
     <>

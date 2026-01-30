@@ -11,6 +11,7 @@ import {
   DropZone,
   Icon,
   Label,
+  Spinner,
   Text,
   TextField,
 } from "opub-ui";
@@ -211,7 +212,8 @@ const TestCases: React.FC<TestCasesProps> = ({
           </Text>
         </div>
         {isLoadingDatasets ? (
-          <div className="py-8 text-center">
+          <div className="flex flex-col items-center justify-center gap-4 py-8">
+            <Spinner />
             <Text variant="bodySm" className="text-gray-600">
               Loading prompt datasets...
             </Text>
