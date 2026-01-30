@@ -325,21 +325,21 @@ const AIModelsPage = () => {
     <>
 
       <div className="ai-models-content">
-          <div className="ai-models-page-header">
-            <Text as="h1" className="ai-models-page-title" fontWeight="bold">
+          <div className="prompt-page-header">
+            <Text as="h1" className="prompt-page-title" fontWeight="bold">
               AI Models
             </Text>
           </div>
 
-          <div className="ai-models-search-row">
-            <div className="ai-models-search-input">
+          <div className="prompt-search-row mb-8">
+            <div className="prompt-search-input">
               <label htmlFor="aiModelsSearch" className="sr-only">
                 Search AI models
               </label>
-              <div className="ai-models-search-box">
+              <div className="prompt-search-box">
                 <SearchIcon
                   size={18}
-                  className="ai-models-search-icon"
+                  className="prompt-search-icon"
                   aria-hidden
                 />
                 <input
@@ -348,12 +348,12 @@ const AIModelsPage = () => {
                   value={searchValue}
                   placeholder="Search by name"
                   onChange={(event) => setSearchValue(event.target.value)}
-                  className="ai-models-search-field"
+                  className="prompt-search-field"
                 />
                 {searchValue && (
                   <button
                     type="button"
-                    className="ai-models-search-clear"
+                    className="prompt-search-clear"
                     onClick={() => setSearchValue("")}
                     aria-label="Clear search"
                   >
@@ -362,10 +362,10 @@ const AIModelsPage = () => {
                 )}
               </div>
             </div>
-            <div className="ai-models-search-actions">
+            <div className="prompt-search-actions">
               <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
                 <Popover.Trigger asChild>
-                  <button type="button" className="ai-models-add-filters-link">
+                  <button type="button" className="prompt-add-filters-link">
                     Add Filters
                   </button>
                 </Popover.Trigger>
@@ -373,10 +373,10 @@ const AIModelsPage = () => {
                   side="bottom"
                   align="end"
                   alignOffset={10}
-                  className="ai-models-filter-popover"
+                  className="prompt-filter-popover"
                 >
-                  <div className="ai-models-filter-popover-header">
-                    <Text as="span" className="ai-models-filter-popover-title">
+                  <div className="prompt-filter-popover-header">
+                    <Text as="span" className="prompt-filter-popover-title">
                       FILTERS
                     </Text>
                     <Button
@@ -390,15 +390,15 @@ const AIModelsPage = () => {
                       Reset
                     </Button>
                   </div>
-                  <div className="ai-models-filter-popover-scroll">
-                    <div className="ai-models-filter-section">
+                  <div className="prompt-filter-popover-scroll">
+                    <div className="prompt-filter-section">
                       <button
                         type="button"
-                        className="ai-models-filter-section-header"
+                        className="prompt-filter-section-header"
                         onClick={() => setSectorsExpanded((prev) => !prev)}
                         aria-expanded={sectorsExpanded}
                       >
-                        <span className="ai-models-filter-section-title">
+                        <span className="prompt-filter-section-title">
                           Sectors ({sectorOptions.length})
                         </span>
                         {sectorsExpanded ? (
@@ -408,11 +408,11 @@ const AIModelsPage = () => {
                         )}
                       </button>
                       {sectorsExpanded && (
-                        <div className="ai-models-filter-section-options ai-models-filter-section-options--scrollable">
+                        <div className="prompt-filter-section-options prompt-filter-section-options--scrollable">
                           {sectorOptions.map((sector) => (
                             <label
                               key={sector}
-                              className="ai-models-filter-checkbox"
+                              className="prompt-filter-checkbox"
                             >
                               <input
                                 type="checkbox"
@@ -431,14 +431,14 @@ const AIModelsPage = () => {
                       )}
                     </div>
 
-                    <div className="ai-models-filter-section">
+                    <div className="prompt-filter-section">
                       <button
                         type="button"
-                        className="ai-models-filter-section-header"
+                        className="prompt-filter-section-header"
                         onClick={() => setTagsExpanded((prev) => !prev)}
                         aria-expanded={tagsExpanded}
                       >
-                        <span className="ai-models-filter-section-title">
+                        <span className="prompt-filter-section-title">
                           Tags ({tagOptions.length})
                         </span>
                         {tagsExpanded ? (
@@ -448,11 +448,11 @@ const AIModelsPage = () => {
                         )}
                       </button>
                       {tagsExpanded && (
-                        <div className="ai-models-filter-section-options ai-models-filter-section-options--scrollable">
+                        <div className="prompt-filter-section-options prompt-filter-section-options--scrollable">
                           {tagOptions.map((tag) => (
                             <label
                               key={tag}
-                              className="ai-models-filter-checkbox"
+                              className="prompt-filter-checkbox"
                             >
                               <input
                                 type="checkbox"
@@ -472,9 +472,9 @@ const AIModelsPage = () => {
               </Popover>
             </div>
           </div>
-          <div className="ai-models-active-filters">
+          <div className="prompt-active-filters mb-8">
             {selectedSectors.concat(selectedTags).map((filter) => (
-              <div key={filter} className="ai-models-filter-tag">
+              <div key={filter} className="prompt-filter-tag">
                 <Tag
                   value={filter}
                   variation="filled"
