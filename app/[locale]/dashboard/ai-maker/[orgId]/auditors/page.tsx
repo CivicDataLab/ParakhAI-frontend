@@ -4,7 +4,7 @@ import BreadCrumbs from "@/components/Breadcrumbs";
 import { useGraphQL } from "@/lib/api";
 import { IconPlus, IconSearch, IconTrash, IconUser, IconX } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
-import { Button, DataTable, Dialog, Text } from "opub-ui";
+import { Button, DataTable, Dialog, Spinner, Text } from "opub-ui";
 import { useEffect, useState } from "react";
 
 // Custom Avatar component with error handling
@@ -389,7 +389,8 @@ const AuditorsPage = () => {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
+        <div className="flex flex-col items-center justify-center gap-4 py-20">
+          <Spinner />
           <Text variant="bodySm" className="text-gray-600">
             Loading auditors...
           </Text>

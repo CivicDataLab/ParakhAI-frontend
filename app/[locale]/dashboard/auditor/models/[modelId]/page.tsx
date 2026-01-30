@@ -14,6 +14,7 @@ import {
   Badge,
   Button,
   Divider,
+  Spinner,
   Tag,
   Text,
   Tooltip,
@@ -288,8 +289,9 @@ const AuditorModelDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <Text variant="bodyMd">Loading model details...</Text>
+      <div className="flex flex-col items-center justify-center gap-4 min-h-[400px]">
+        <Spinner />
+        <Text variant="bodyMd" className="text-gray-600">Loading model details...</Text>
       </div>
     );
   }

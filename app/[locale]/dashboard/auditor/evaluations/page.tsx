@@ -6,7 +6,7 @@ import { IconEye, IconFilter, IconReportAnalytics } from "@tabler/icons-react";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Badge, Button, DataTable, Text } from "opub-ui";
+import { Badge, Button, DataTable, Spinner, Text } from "opub-ui";
 import { useEffect, useState } from "react";
 
 // Types
@@ -226,7 +226,8 @@ const EvaluationsPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="flex flex-col items-center justify-center gap-4 py-20">
+        <Spinner />
         <Text variant="bodySm" className="text-gray-600">
           Loading your evaluations...
         </Text>

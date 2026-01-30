@@ -6,7 +6,7 @@ import { toTitleCase } from "@/lib/utils";
 import { IconX } from "@tabler/icons-react";
 import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Button, Icon, Label, Select, Tag, Text, TextField } from "opub-ui";
+import { Button, Icon, Label, Select, Spinner, Tag, Text, TextField } from "opub-ui";
 import { useEffect, useRef, useState } from "react";
 import { useOrganization } from "../../OrganizationContext";
 import EvaluationConfiguration from "./EvaluationConfiguration";
@@ -949,7 +949,8 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           {!urlModelId && (
             <div className="mb-4 max-w-md">
               {isLoadingModels ? (
-                <div>
+                <div className="flex flex-col items-center gap-4">
+                  <Spinner />
                   <Text variant="bodySm" className="text-gray-600">
                     Loading models...
                   </Text>

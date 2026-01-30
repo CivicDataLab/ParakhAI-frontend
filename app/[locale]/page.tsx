@@ -1,5 +1,6 @@
 'use client';
 
+import { Loading } from "@/components/loading";
 import { useSession } from "next-auth/react";
 import dynamic from 'next/dynamic';
 
@@ -15,11 +16,7 @@ export default function Home() {
   const { status } = useSession();
 
   if (status === "loading") {
-    return (
-      <div className="loading-container">
-        <p>Loading...</p>
-      </div>
-    );
+    return <Loading />;
   }
 
   return (

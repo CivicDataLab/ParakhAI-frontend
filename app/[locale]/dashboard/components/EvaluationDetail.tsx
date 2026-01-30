@@ -5,7 +5,7 @@ import { IconDownload } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import Image from "next/image";
 import Link from "next/link";
-import { Button, DataTable, Icon, ProgressBar, Tag, Text } from "opub-ui";
+import { Button, DataTable, Icon, Spinner, Tag, Text } from "opub-ui";
 import { useEffect, useRef, useState } from "react";
 
 const GET_AUDIT_QUERY = `
@@ -499,9 +499,9 @@ const EvaluationDetail = ({
 
   if (isSessionLoading || isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <ProgressBar value={50} max={100} size="small" />
-        <Text variant="bodySm" className="mt-4 text-gray-600">
+      <div className="flex flex-col items-center justify-center gap-4 py-20">
+        <Spinner />
+        <Text variant="bodySm" className="text-gray-600">
           Loading evaluation...
         </Text>
       </div>
@@ -754,9 +754,9 @@ const EvaluationDetail = ({
         </div>
 
         {isLoadingResults ? (
-          <div className="flex items-center justify-center py-8">
-            <ProgressBar value={50} max={100} size="small" />
-            <Text variant="bodySm" className="ml-4">
+          <div className="flex flex-col items-center justify-center gap-4 py-8">
+            <Spinner />
+            <Text variant="bodySm" className="text-gray-600">
               Loading results...
             </Text>
           </div>

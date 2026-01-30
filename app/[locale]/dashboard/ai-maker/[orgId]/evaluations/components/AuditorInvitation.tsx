@@ -2,7 +2,7 @@
 
 import { useGraphQL } from "@/lib/api";
 import { IconPlus, IconSearch, IconUser, IconUserCheck, IconX } from "@tabler/icons-react";
-import { Button, Dialog, Text } from "opub-ui";
+import { Button, Dialog, Spinner, Text } from "opub-ui";
 import { useEffect, useState } from "react";
 
 // Types
@@ -439,7 +439,8 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
               </Text>
 
               {loading ? (
-                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg flex flex-col items-center gap-4">
+                  <Spinner />
                   <Text variant="bodySm" className="text-gray-600">
                     Loading auditors...
                   </Text>
@@ -615,9 +616,12 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
       </div>
 
       {loading ? (
-        <Text variant="bodySm" className="text-gray-500">
-          Loading...
-        </Text>
+        <div className="flex flex-col items-center gap-4 py-4">
+          <Spinner />
+          <Text variant="bodySm" className="text-gray-500">
+            Loading...
+          </Text>
+        </div>
       ) : assignments.length === 0 ? (
         <div className="text-center py-8 bg-gray-50 rounded-lg">
           <IconUserCheck size={32} className="mx-auto text-gray-400" />
