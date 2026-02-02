@@ -378,6 +378,15 @@ html.mobile-menu-open .breadcrumbs-ml {
 
 .evaluation-name-text {
   border-bottom: 1px solid #1f1f1f;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+@media (max-width: 640px) {
+  .evaluation-name-text {
+    font-size: 18px;
+    line-height: 24px;
+  }
 }
 
 /* Ensure selected nav item extends to both edges */
@@ -784,6 +793,16 @@ html.mobile-menu-open .breadcrumbs-ml {
 
 .breadcrumbs-inner [class*="BreadcrumbSeparator"] {
   display: inline-flex;
+  border: none;
+  background: transparent;
+}
+
+.breadcrumbs-inner [class*="BreadcrumbSeparator"] *,
+.breadcrumbs-inner [class*="BreadcrumbSeparator"] svg,
+.breadcrumbs-inner [class*="BreadcrumbSeparator"] > * {
+  border: none !important;
+  background: transparent !important;
+  color: inherit;
 }
 
 /* Desktop: Full text display - no truncation */
@@ -1321,9 +1340,10 @@ html.mobile-menu-open .breadcrumbs-ml {
 .prompt-page-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start !important;
   gap: 16px;
   margin-bottom: 24px;
+  text-align: left;
 }
 
 .prompt-page-title {
@@ -1332,8 +1352,10 @@ html.mobile-menu-open .breadcrumbs-ml {
   line-height: 26px;
   font-weight: 700;
   letter-spacing: 0;
+  text-align: left;
   display: flex;
   align-items: center;
+  justify-content: flex-start;
 }
 
 .prompt-filter-popover {
@@ -2044,6 +2066,17 @@ html.mobile-menu-open .breadcrumbs-ml {
 /* Mobile navigation styles */
 .mobile-hamburger-button {
   display: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+}
+
+.mobile-hamburger-button *,
+.mobile-hamburger-button svg,
+.mobile-hamburger-button > * {
+  border: none !important;
+  background: transparent !important;
 }
 
 .mobile-nav-overlay {
@@ -2116,6 +2149,17 @@ html.mobile-menu-open .breadcrumbs-ml {
 
   .mobile-hamburger-button {
     display: block;
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+  }
+
+  .mobile-hamburger-button *,
+  .mobile-hamburger-button svg,
+  .mobile-hamburger-button > * {
+    border: none !important;
+    background: transparent !important;
   }
 
   /* Only show overlay/menu when actually open */

@@ -148,12 +148,16 @@ const ModelSelectionModal = ({
     }
   }, [selectedModel]);
 
-  // Reset state when modal closes
+  // Reset state when modal closes with delay to prevent portal cleanup errors
   useEffect(() => {
     if (!open) {
-      setSelectedModelId(null);
-      setSelectedVersionId(null);
-      setModelsError(null);
+      // Add a small delay to ensure Dialog cleanup completes before state updates
+      const timeoutId = setTimeout(() => {
+        setSelectedModelId(null);
+        setSelectedVersionId(null);
+        setModelsError(null);
+      }, 150);
+      return () => clearTimeout(timeoutId);
     }
   }, [open]);
 
