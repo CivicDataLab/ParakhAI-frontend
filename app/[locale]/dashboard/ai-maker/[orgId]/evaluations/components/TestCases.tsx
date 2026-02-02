@@ -202,7 +202,7 @@ const TestCases: React.FC<TestCasesProps> = ({
             variant="headingMd"
             className="select-prompt-library-heading block whitespace-nowrap"
           >
-            Select Prompt Dataset
+            Select Prompt Datasets
           </Text>
           <Text
             variant="bodySm"
