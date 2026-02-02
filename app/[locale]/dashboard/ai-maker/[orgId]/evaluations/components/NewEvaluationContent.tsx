@@ -74,6 +74,24 @@ const AI_MODELS_QUERY = `
   }
 `;
 
+// Query to fetch a single AI model by ID
+const AI_MODEL_BY_ID_QUERY = `
+  query GetAIModel($modelId: ID!) {
+    aiModel(modelId: $modelId) {
+      id
+      name
+      displayName
+      modelType
+      versions {
+        id
+        version
+        isLatest
+        status
+      }
+    }
+  }
+`;
+
 // Query to fetch audit details by ID
 const GET_AUDIT_QUERY = `
   query GetAudit($auditId: ID!) {
@@ -87,6 +105,7 @@ const GET_AUDIT_QUERY = `
       auditScope
       modelId
       modelVersionId
+      modelName
       modules
       metrics
       testDatasetIds
@@ -281,16 +300,19 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const [auditModelName, setAuditModelName] = useState<string | null>(null);
+  const [auditModelVersion, setAuditModelVersion] = useState<string | null>(null);
 
   // Computed values from selected model
   const selectedModel = aiModels.find((m) => m.id === selectedModelId);
-  const modelName = selectedModel?.displayName || selectedModel?.name || "";
+  const modelName = auditModelName || selectedModel?.displayName || selectedModel?.name || "";
   // Get version display from selected version or latest version
   const selectedVersion = selectedModel?.versions?.find(
     (v) => v.id === selectedVersionId
   );
   const latestVersion = selectedModel?.versions?.find((v) => v.isLatest);
-  const modelVersion = selectedVersion?.version || latestVersion?.version || "";
+  const modelVersion = auditModelVersion || selectedVersion?.version || latestVersion?.version || "";
   const modelType = selectedModel?.modelType || "TEXT_GENERATION";
 
   // GraphQL API hook for authenticated requests
@@ -395,6 +417,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             auditScope: string | null;
             modelId: string;
             modelVersionId: number | null;
+            modelName: string | null;
             modules: string[];
             metrics: string[];
             testDatasetIds: string[];
@@ -407,6 +430,48 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           setAuditName(audit.name || generateDefaultAuditName());
           setSelectedModelId(audit.modelId);
           setSelectedVersionId(audit.modelVersionId);
+
+          // Fetch model details to get proper name and version
+          if (audit.modelId) {
+            try {
+              const modelResult = await request<{
+                aiModel: {
+                  id: string;
+                  name: string;
+                  displayName: string;
+                  modelType: string;
+                  versions: Array<{
+                    id: number;
+                    version: string;
+                    isLatest: boolean;
+                    status: string;
+                  }>;
+                } | null;
+              }>(AI_MODEL_BY_ID_QUERY, { modelId: audit.modelId }, { organization: orgId });
+
+              if (modelResult?.aiModel) {
+                const model = modelResult.aiModel;
+                setAuditModelName(model.displayName || model.name);
+                
+                // Find the version string for the selected version
+                if (audit.modelVersionId && model.versions) {
+                  const version = model.versions.find((v) => v.id === audit.modelVersionId);
+                  if (version) {
+                    setAuditModelVersion(version.version);
+                  }
+                }
+                
+                // Add the model to aiModels so version info is available
+                setAiModels((prev) => {
+                  const exists = prev.find((m) => m.id === model.id);
+                  if (exists) return prev;
+                  return [...prev, model];
+                });
+              }
+            } catch (modelError) {
+              console.error("Error fetching model details:", modelError);
+            }
+          }
 
           if (audit.auditType) {
             const auditTypeMap: Record<string, AuditType> = {
@@ -1212,10 +1277,21 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           </div>
         )}
 
-        {/* Model Name and Owner Section */}
+        {/* Loading state when fetching audit details */}
+        {urlAuditId && isLoadingAuditDetails && (
+          <div className="flex flex-col items-center justify-center py-12 gap-4">
+            <Spinner />
+            <Text variant="bodySm" className="text-gray-600">
+              Loading evaluation details...
+            </Text>
+          </div>
+        )}
+
+        {/* Model Name and Owner Section - Hide while loading audit details */}
+        {!(urlAuditId && isLoadingAuditDetails) && (
         <div className="mb-6">
-          {/* Model Selector - Only show if no URL params (not coming from modal) */}
-          {!urlModelId && (
+          {/* Model Selector - Only show if no URL params and no audit loaded */}
+          {!urlModelId && !currentAuditId && (
             <div className="mb-4 max-w-md">
               {isLoadingModels ? (
                 <div className="flex flex-col items-center gap-4">
@@ -1316,6 +1392,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             />
           </div>
         </div>
+        )}
 
         {/* Audit Name, Tag, and Status Section */}
         <div
