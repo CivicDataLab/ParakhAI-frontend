@@ -824,12 +824,22 @@ const EvaluationDetail = ({
         <Button
           kind="secondary"
           disabled={!isReportReady}
-          icon={<Icon source={IconDownload} size={18} className="text-white" />}
+          icon={
+            <Icon
+              source={IconDownload}
+              size={18}
+              className={isReportReady ? "text-white" : "text-black"}
+            />
+          }
           onClick={() => {
             if (!auditReport?.url) return;
             window.open(auditReport.url, "_blank", "noopener,noreferrer");
           }}
-          className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base [&_svg]:text-white [&_svg]:fill-white [&_svg]:stroke-white [&_*]:text-white [&_*]:fill-white [&_*]:stroke-white"
+          className={
+            isReportReady
+              ? "bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base [&_svg]:text-white [&_svg]:fill-white [&_svg]:stroke-white [&_*]:text-white [&_*]:fill-white [&_*]:stroke-white"
+              : "bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-black hover:text-black hover:!text-black px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base [&_svg]:text-black [&_svg]:fill-black [&_svg]:stroke-black [&_*]:text-black [&_*]:fill-black [&_*]:stroke-black"
+          }
         >
           Download Report
         </Button>
