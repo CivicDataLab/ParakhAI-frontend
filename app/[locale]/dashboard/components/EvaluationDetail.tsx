@@ -539,18 +539,24 @@ const EvaluationDetail = ({
               {audit.name || `Evaluation #${audit.id.slice(0, 8)}`}
             </Text>
           </div>
-          <Tag
-            variation="filled"
-            fillColor={statusColors.fillColor}
-            textColor={statusColors.textColor}
-            className="self-start sm:self-auto"
-          >
-            {audit.status}
-          </Tag>
+          <span className="self-start sm:self-auto">
+            <Tag
+              variation="filled"
+              fillColor={statusColors.fillColor}
+              textColor={statusColors.textColor}
+            >
+              {audit.status}
+            </Tag>
+          </span>
         </div>
         <div className="flex items-center gap-3">
           <Link href={backLink} className="w-full sm:w-auto">
-            <Button kind="primary" className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base w-full sm:w-auto">{backLinkText}</Button>
+            <Button
+              kind="primary"
+              className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base w-full sm:w-auto"
+            >
+              {backLinkText}
+            </Button>
           </Link>
           {/* {newEvaluationLink && (
             <Link href={newEvaluationLink}>
@@ -575,7 +581,10 @@ const EvaluationDetail = ({
             <Text variant="bodyMd" className="text-gray-500">
               Model Name :{" "}
             </Text>
-            <Text variant="headingXl" className="font-bold text-gray-900 break-words">
+            <Text
+              variant="headingXl"
+              className="font-bold text-gray-900 break-words"
+            >
               {audit.modelName}
             </Text>
           </div>
@@ -606,7 +615,10 @@ const EvaluationDetail = ({
                 <Text variant="bodyMd" className="text-gray-500">
                   Evaluation ID :{" "}
                 </Text>
-                <Text variant="headingXl" className="font-bold text-gray-900 break-words">
+                <Text
+                  variant="headingXl"
+                  className="font-bold text-gray-900 break-words"
+                >
                   {audit.id}
                 </Text>
               </div>
@@ -617,7 +629,10 @@ const EvaluationDetail = ({
                 <Text variant="bodyMd" className="text-gray-500">
                   Created :{" "}
                 </Text>
-                <Text variant="bodyMd" className="text-gray-900 font-medium break-words">
+                <Text
+                  variant="bodyMd"
+                  className="text-gray-900 font-medium break-words"
+                >
                   {formatDate(audit.createdAt)}
                 </Text>
               </div>
@@ -625,7 +640,10 @@ const EvaluationDetail = ({
                 <Text variant="bodyMd" className="text-gray-500">
                   Completed :{" "}
                 </Text>
-                <Text variant="bodyMd" className="text-gray-900 font-medium break-words">
+                <Text
+                  variant="bodyMd"
+                  className="text-gray-900 font-medium break-words"
+                >
                   {formatDate(audit.completedAt)}
                 </Text>
               </div>
@@ -634,7 +652,10 @@ const EvaluationDetail = ({
                   <Text variant="bodyMd" className="text-gray-500">
                     Duration :{" "}
                   </Text>
-                  <Text variant="bodyMd" className="text-gray-900 font-medium break-words">
+                  <Text
+                    variant="bodyMd"
+                    className="text-gray-900 font-medium break-words"
+                  >
                     {duration}
                   </Text>
                 </div>
@@ -646,7 +667,10 @@ const EvaluationDetail = ({
                 <Text variant="bodyMd" className="text-gray-500">
                   Modules :{" "}
                 </Text>
-                <Text variant="bodyMd" className="text-gray-900 font-medium break-words">
+                <Text
+                  variant="bodyMd"
+                  className="text-gray-900 font-medium break-words"
+                >
                   {audit.modules?.map(formatModuleName).join(", ") || "--"}
                 </Text>
               </div>
@@ -809,7 +833,10 @@ const EvaluationDetail = ({
           Download Report
         </Button>
         <Link href={backLink}>
-          <Button kind="primary" className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base">
+          <Button
+            kind="primary"
+            className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base"
+          >
             {backLinkText}
           </Button>
         </Link>
