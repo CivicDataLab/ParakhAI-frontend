@@ -824,7 +824,7 @@ const EvaluationDetail = ({
         <Button
           kind="secondary"
           disabled={!isReportReady}
-          icon={<Icon source={IconDownload} size={18} />}
+          icon={<Icon source={IconDownload} size={18} className="text-white" />}
           onClick={() => {
             if (!auditReport?.url) return;
             window.open(auditReport.url, "_blank", "noopener,noreferrer");
