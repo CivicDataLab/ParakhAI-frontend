@@ -1,6 +1,7 @@
 'use client';
 
 import { GraphQLClient } from 'graphql-request';
+import { signOut } from 'next-auth/react';
 import React from 'react';
 import { useAppSession } from './session';
 
@@ -109,9 +110,52 @@ export async function graphqlRequest<T = any>(
 }
 
 /**
+ * Check if an error is an authentication error that should trigger logout
+ */
+function isAuthenticationError(error: any): boolean {
+  const errorMessage = (error?.message || '').toLowerCase();
+  const responseErrors = error?.response?.errors || [];
+  
+  // Check error message
+  if (
+    errorMessage.includes('authentication') ||
+    errorMessage.includes('unauthorized') ||
+    errorMessage.includes('not authenticated') ||
+    errorMessage.includes('invalid token') ||
+    errorMessage.includes('token expired') ||
+    errorMessage.includes('token has expired')
+  ) {
+    return true;
+  }
+  
+  // Check GraphQL errors
+  for (const gqlError of responseErrors) {
+    const msg = (gqlError?.message || '').toLowerCase();
+    if (
+      msg.includes('authentication') ||
+      msg.includes('unauthorized') ||
+      msg.includes('not authenticated') ||
+      msg.includes('invalid token') ||
+      msg.includes('token expired') ||
+      gqlError?.extensions?.code === 'UNAUTHENTICATED'
+    ) {
+      return true;
+    }
+  }
+  
+  // Check HTTP status
+  if (error?.response?.status === 401 || error?.response?.status === 403) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
  * React hook for making authenticated GraphQL requests
  * 
  * Automatically uses the current user's access token from the session.
+ * Handles authentication errors by logging out the user.
  * 
  * @example
  * ```tsx
@@ -127,7 +171,19 @@ export async function graphqlRequest<T = any>(
  * ```
  */
 export function useGraphQL() {
-  const { accessToken, status } = useAppSession();
+  const { accessToken, status, error: sessionError } = useAppSession();
+  const hasLoggedOut = React.useRef(false);
+
+  // Handle session errors
+  React.useEffect(() => {
+    if (hasLoggedOut.current) return;
+    
+    if (sessionError === 'RefreshAccessTokenError' || sessionError === 'RefreshTokenExpired') {
+      hasLoggedOut.current = true;
+      console.warn('🔒 useGraphQL: Session error detected, logging out:', sessionError);
+      signOut({ callbackUrl: '/', redirect: true });
+    }
+  }, [sessionError]);
 
   // Memoize request function to prevent unnecessary re-renders
   const request = React.useCallback(async <T = any>(
@@ -140,6 +196,11 @@ export function useGraphQL() {
     }
 
     if (status === 'unauthenticated') {
+      if (!hasLoggedOut.current) {
+        hasLoggedOut.current = true;
+        console.warn('🔒 useGraphQL: User not authenticated, redirecting to login');
+        signOut({ callbackUrl: '/', redirect: true });
+      }
       throw new Error('User is not authenticated. Please log in.');
     }
 
@@ -147,6 +208,14 @@ export function useGraphQL() {
       const result = await graphqlRequest<T>(query, variables, accessToken, headers);
       return result;
     } catch (error: any) {
+      // Check for authentication errors and logout if needed
+      if (isAuthenticationError(error) && !hasLoggedOut.current) {
+        hasLoggedOut.current = true;
+        console.warn('🔒 useGraphQL: Authentication error from backend, logging out:', error?.message);
+        signOut({ callbackUrl: '/', redirect: true });
+        throw new Error('Session expired. Please log in again.');
+      }
+      
       // More specific error handling
       const errorMessage = error?.message || 'Unknown error';
       // Check for CORS errors (shouldn't happen with proxy, but just in case)
