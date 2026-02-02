@@ -8,6 +8,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import FailureDetails from './FailureDetails';
 import ModelOutputDisplay from './ModelOutputDisplay';
 import ModuleSelector from './ModuleSelector';
+import RecommendationModal from './RecommendationModal';
 import TestCaseHistory from './TestCaseHistory';
 import TestCaseInput from './TestCaseInput';
 import type {
@@ -66,8 +67,8 @@ const COMPLETE_MODULE_MUTATION = `
 `;
 
 const FINISH_EVALUATION_MUTATION = `
-  mutation FinishManualEvaluation($auditId: ID!) {
-    finishManualEvaluation(auditId: $auditId) {
+  mutation FinishManualEvaluation($input: FinishManualEvaluationInput!) {
+    finishManualEvaluation(input: $input) {
       success
       message
       auditId
@@ -188,6 +189,10 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   const [severity, setSeverity] = useState('');
   const [comments, setComments] = useState('');
   const [idealOutput, setIdealOutput] = useState('');
+
+  // Modal state for recommendations
+  const [showModuleRecommendationModal, setShowModuleRecommendationModal] = useState(false);
+  const [showOverallRecommendationModal, setShowOverallRecommendationModal] = useState(false);
 
   // Loading states
   const [isCallingModel, setIsCallingModel] = useState(false);
@@ -369,8 +374,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
     }
   };
 
-  // Complete module evaluation
-  const handleCompleteModule = async () => {
+  const handleCompleteModule = async (recommendation: string) => {
     if (!selectedModule) return;
 
     const progress = moduleProgress.find((p) => p.module === selectedModule);
@@ -395,6 +399,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           input: {
             auditId,
             module: selectedModule,
+            recommendation: recommendation || null,
           },
         },
         { organization: orgId }
@@ -403,6 +408,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
       if (result?.completeModuleEvaluation?.success) {
         setCanFinishEvaluation(result.completeModuleEvaluation.canFinishEvaluation);
         setSelectedModule(null);
+        setShowModuleRecommendationModal(false);
         await fetchEvaluationStatus();
       } else {
         setError(result?.completeModuleEvaluation?.message || 'Failed to complete module');
@@ -414,8 +420,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
     }
   };
 
-  // Finish entire evaluation
-  const handleFinishEvaluation = async () => {
+  const handleFinishEvaluation = async (recommendation: string) => {
     try {
       const result = await request<{
         finishManualEvaluation: {
@@ -423,9 +428,10 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           message: string;
           auditId?: number;
         };
-      }>(FINISH_EVALUATION_MUTATION, { auditId }, { organization: orgId });
+      }>(FINISH_EVALUATION_MUTATION, { input: { auditId, recommendation: recommendation || null } }, { organization: orgId });
 
       if (result?.finishManualEvaluation?.success) {
+        setShowOverallRecommendationModal(false);
         router.push(`/${locale}/dashboard/ai-maker/${orgId}/evaluations/${auditId}`);
       } else {
         setError(result?.finishManualEvaluation?.message || 'Failed to finish evaluation');
@@ -435,7 +441,6 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
     }
   };
 
-  // Reset form for next test case
   const resetTestCaseForm = () => {
     setInputPrompt('');
     setModelOutput('');
@@ -516,7 +521,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
               {currentModuleProgress && currentModuleProgress.testCaseCount >= 3 && (
                 <Button
                   kind="primary"
-                  onClick={handleCompleteModule}
+                  onClick={() => setShowModuleRecommendationModal(true)}
                   disabled={isCompletingModule}
                 >
                   {isCompletingModule ? 'Completing...' : 'Complete Module'}
@@ -611,7 +616,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
 
         <Button
           kind="primary"
-          onClick={handleFinishEvaluation}
+          onClick={() => setShowOverallRecommendationModal(true)}
           disabled={!canFinishEvaluation || isRequestingAudit}
           className="run-audit-button"
         >
@@ -633,6 +638,30 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           Complete at least 3 test cases for each module to finish the evaluation.
         </Text>
       )}
+
+      {/* Module Recommendation Modal */}
+      <RecommendationModal
+        open={showModuleRecommendationModal}
+        onOpenChange={setShowModuleRecommendationModal}
+        title="Module Recommendation"
+        description={`Enter your recommendation for the ${selectedModule ? getModuleDisplayName(selectedModule) : ''} module.`}
+        placeholder="Enter your recommendation for this module (optional)"
+        onSubmit={handleCompleteModule}
+        isSubmitting={isCompletingModule}
+        submitButtonText="Complete Module"
+      />
+
+      {/* Overall Recommendation Modal */}
+      <RecommendationModal
+        open={showOverallRecommendationModal}
+        onOpenChange={setShowOverallRecommendationModal}
+        title="Overall Recommendation"
+        description="Enter your overall recommendation for this evaluation."
+        placeholder="Enter your overall recommendation (optional)"
+        onSubmit={handleFinishEvaluation}
+        isSubmitting={isRequestingAudit}
+        submitButtonText="Finish Evaluation"
+      />
     </div>
   );
 };
