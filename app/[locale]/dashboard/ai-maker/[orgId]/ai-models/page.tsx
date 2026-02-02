@@ -325,8 +325,8 @@ const AIModelsPage = () => {
     <>
 
       <div className="ai-models-content">
-          <div className="prompt-page-header mt-10">
-            <Text as="h1" className="prompt-page-title" fontWeight="bold">
+          <div className="prompt-page-header mt-10 text-left">
+            <Text as="h1" className="prompt-page-title text-left" fontWeight="bold">
               AI Models
             </Text>
           </div>

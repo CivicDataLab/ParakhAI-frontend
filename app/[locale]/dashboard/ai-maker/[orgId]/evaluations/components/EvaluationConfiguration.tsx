@@ -128,7 +128,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
         </Text>
       </Label>
 
-      <div className={`flex gap-4 ${styles.auditOptionsContainer}`}>
+      <div className={`flex gap-4 flex-wrap ${styles.auditOptionsContainer}`}>
         {/* Technical Audit Option */}
         <label
           className={`flex items-start gap-3 cursor-pointer transition-all ${styles.technicalAuditCard} ${
@@ -147,13 +147,13 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
             <Text
               variant="bodyMd"
               fontWeight="semibold"
-              className="text-gray-900 mb-2 whitespace-nowrap"
+              className="text-gray-900 mb-2"
             >
               Technical Evaluation
             </Text>
             <Text
               variant="bodySm"
-              className="text-gray-600 block whitespace-nowrap"
+              className="text-gray-600 block"
             >
               Check performance, safety, drift
             </Text>
@@ -178,13 +178,13 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
             <Text
               variant="bodyMd"
               fontWeight="semibold"
-              className="text-gray-900 mb-2 whitespace-nowrap"
+              className="text-gray-900 mb-2"
             >
               Domain Evaluation
             </Text>
             <Text
               variant="bodySm"
-              className="text-gray-600 block whitespace-nowrap"
+              className="text-gray-600 block"
             >
               Check accuracy within domain context
             </Text>
@@ -209,13 +209,13 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
             <Text
               variant="bodyMd"
               fontWeight="semibold"
-              className="text-gray-900 mb-2 whitespace-nowrap"
+              className="text-gray-900 mb-2"
             >
               Cultural Evaluation
             </Text>
             <Text
               variant="bodySm"
-              className="text-gray-600 block whitespace-nowrap"
+              className="text-gray-600 block"
             >
               Expert checks for real-world fit
             </Text>

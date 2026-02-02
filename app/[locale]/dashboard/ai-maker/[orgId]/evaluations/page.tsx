@@ -262,7 +262,7 @@ const AuditsListPage = () => {
             <br />
             Start your first evaluation to see results here.
           </Text>
-          <Button kind="primary" onClick={handleNewAudit}>
+          <Button kind="primary" onClick={handleNewAudit} className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base">
             Start New Evaluation
           </Button>
         </div>

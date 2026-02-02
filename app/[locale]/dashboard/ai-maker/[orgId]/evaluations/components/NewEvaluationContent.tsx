@@ -1052,15 +1052,15 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         <div
           className={`flex items-center justify-between mb-6 gap-4 ${styles.auditNameSection} max-[1023px]:mb-0.5 max-[1023px]:gap-0.5`}
         >
-          <div className="flex items-center gap-4 flex-nowrap min-w-0 flex-1 evaluation-name-row">
+          <div className="flex items-center gap-4 flex-wrap min-w-0 flex-1 evaluation-name-row max-[640px]:flex-col max-[640px]:items-start max-[640px]:gap-2">
             <Label
               htmlFor="auditName"
-              className={`${styles.auditNameLabel} flex-shrink-0 whitespace-nowrap`}
+              className={`${styles.auditNameLabel} flex-shrink-0 whitespace-nowrap max-[640px]:w-full text-left`}
             >
               Evaluation Name
             </Label>
             <div
-              className={`${styles.auditNameInputWrapper} flex-1 min-w-0 max-w-[380px]`}
+              className={`${styles.auditNameInputWrapper} flex-1 min-w-0 max-w-[380px] max-[1024px]:max-w-full max-[640px]:w-full`}
             >
               <TextField
                 id="auditName"
@@ -1071,8 +1071,11 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                 onChange={(value) => setAuditName(value)}
               />
             </div>
-            <div className="flex-shrink-0">
-              <div className={`${styles.tagWrapper} ${styles.auditTag}`}>
+            <div className="flex-shrink-0 max-[640px]:w-full max-[640px]:flex max-[640px]:items-start">
+              <div 
+                className={`${styles.tagWrapper} ${styles.auditTag}`}
+                style={{ borderRadius: '4px', overflow: 'hidden' }}
+              >
                 <Tag variation="filled" fillColor="#E2F5C4" textColor="#0A0704">
                   {auditType === "technical"
                     ? "Technical Evaluation"
@@ -1280,6 +1283,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
       {/* Model Selection Modal */}
       <ModelSelectionModal
+        key="model-selection-modal"
         open={isModalOpen}
         onOpenChange={(open) => {
           setIsModalOpen(open);

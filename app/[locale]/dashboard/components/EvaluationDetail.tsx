@@ -524,9 +524,9 @@ const EvaluationDetail = ({
   return (
     <>
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <div className="flex flex-row items-end gap-1">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-end gap-1">
             <Text variant="bodyMd" className="text-gray-500">
               Evaluation Name :{" "}
             </Text>
@@ -534,7 +534,7 @@ const EvaluationDetail = ({
               variant="headingMd"
               as="h4"
               fontWeight="semibold"
-              className="evaluation-name-text"
+              className="evaluation-name-text break-words"
             >
               {audit.name || `Evaluation #${audit.id.slice(0, 8)}`}
             </Text>
@@ -543,13 +543,14 @@ const EvaluationDetail = ({
             variation="filled"
             fillColor={statusColors.fillColor}
             textColor={statusColors.textColor}
+            className="self-start sm:self-auto"
           >
             {audit.status}
           </Tag>
         </div>
         <div className="flex items-center gap-3">
-          <Link href={backLink}>
-            <Button kind="primary">{backLinkText}</Button>
+          <Link href={backLink} className="w-full sm:w-auto">
+            <Button kind="primary" className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base w-full sm:w-auto">{backLinkText}</Button>
           </Link>
           {/* {newEvaluationLink && (
             <Link href={newEvaluationLink}>
@@ -569,16 +570,16 @@ const EvaluationDetail = ({
       )}
 
       <div className="mb-8 bg-white overview-evaluation-section ">
-        <div className="flex p-6 items-center justify-between">
-          <div className="flex flex-col gap-1">
+        <div className="flex flex-col sm:flex-row p-4 sm:p-6 items-start sm:items-center justify-between gap-4">
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
             <Text variant="bodyMd" className="text-gray-500">
               Model Name :{" "}
             </Text>
-            <Text variant="headingXl" className="font-bold text-gray-900">
+            <Text variant="headingXl" className="font-bold text-gray-900 break-words">
               {audit.modelName}
             </Text>
           </div>
-          <div className=" rounded-full">
+          <div className="rounded-full flex-shrink-0">
             <Image
               src="/images/logos/CDL Logo.png"
               alt="CivicDataLab Logo"
@@ -599,33 +600,33 @@ const EvaluationDetail = ({
             </Text>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
             <div className="space-y-4">
               <div className="flex flex-col gap-1">
                 <Text variant="bodyMd" className="text-gray-500">
                   Evaluation ID :{" "}
                 </Text>
-                <Text variant="headingXl" className="font-bold text-gray-900">
+                <Text variant="headingXl" className="font-bold text-gray-900 break-words">
                   {audit.id}
                 </Text>
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
                 <Text variant="bodyMd" className="text-gray-500">
                   Created :{" "}
                 </Text>
-                <Text variant="bodyMd" className="text-gray-900 font-medium">
+                <Text variant="bodyMd" className="text-gray-900 font-medium break-words">
                   {formatDate(audit.createdAt)}
                 </Text>
               </div>
               <div>
                 <Text variant="bodyMd" className="text-gray-500">
                   Completed :{" "}
-                  <Text variant="bodyMd" className="text-gray-900 font-medium">
-                    {formatDate(audit.completedAt)}
-                  </Text>
+                </Text>
+                <Text variant="bodyMd" className="text-gray-900 font-medium break-words">
+                  {formatDate(audit.completedAt)}
                 </Text>
               </div>
               {duration && (
@@ -633,19 +634,19 @@ const EvaluationDetail = ({
                   <Text variant="bodyMd" className="text-gray-500">
                     Duration :{" "}
                   </Text>
-                  <Text variant="bodyMd" className="text-gray-900 font-medium">
+                  <Text variant="bodyMd" className="text-gray-900 font-medium break-words">
                     {duration}
                   </Text>
                 </div>
               )}
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 sm:col-span-2 md:col-span-1">
               <div>
                 <Text variant="bodyMd" className="text-gray-500">
                   Modules :{" "}
                 </Text>
-                <Text variant="bodyMd" className="text-gray-900 font-medium">
+                <Text variant="bodyMd" className="text-gray-900 font-medium break-words">
                   {audit.modules?.map(formatModuleName).join(", ") || "--"}
                 </Text>
               </div>
@@ -656,19 +657,19 @@ const EvaluationDetail = ({
 
       {/* Results Summary */}
       {(audit.status === "COMPLETED" || audit.completedAt) && (
-        <div className="mb-8 p-6 bg-white rounded-2xl border border-[#C4B8F3]">
-          <div className="mb-5">
+        <div className="mb-8 p-4 sm:p-6 bg-white rounded-2xl border border-[#C4B8F3]">
+          <div className="mb-4 sm:mb-5">
             <Text variant="headingMd" fontWeight="bold">
               Evaluation Summary
             </Text>
           </div>
-          <div className="grid grid-cols-3 md:grid-cols-5 gap-8">
-            <div className="result-summary-evaluation-section md:col-span-2 flex flex-col p-3 gap-4 justify-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 md:gap-8">
+            <div className="result-summary-evaluation-section sm:col-span-2 md:col-span-2 lg:col-span-2 flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 justify-center">
               <Text
                 variant="headingSm"
                 fontWeight="semibold"
                 color="onBgDisabled"
-                className="text-gray-400"
+                className="text-gray-400 text-xs sm:text-sm"
               >
                 TOTAL PASS RATE
               </Text>
@@ -677,18 +678,18 @@ const EvaluationDetail = ({
                   variant="headingLg"
                   fontWeight="bold"
                   color={getPassRateColor()}
-                  className="text-green-600"
+                  className="text-green-600 text-xl sm:text-2xl"
                 >
                   {getPassRate() || 0}%
                 </Text>
               </div>
             </div>
-            <div className="result-summary-evaluation-section flex flex-col p-3 gap-4 justify-center">
+            <div className="result-summary-evaluation-section flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 justify-center">
               <Text
                 variant="headingSm"
                 fontWeight="semibold"
                 color="onBgDisabled"
-                className="text-gray-400"
+                className="text-gray-400 text-xs sm:text-sm"
               >
                 PASSED TESTS
               </Text>
@@ -696,18 +697,18 @@ const EvaluationDetail = ({
                 <Text
                   variant="headingLg"
                   fontWeight="bold"
-                  className="text-green-600"
+                  className="text-green-600 text-xl sm:text-2xl"
                 >
                   {audit.passedTests || 0}
                 </Text>
               </div>
             </div>
-            <div className="result-summary-evaluation-section flex flex-col p-3 gap-4 justify-center">
+            <div className="result-summary-evaluation-section flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 justify-center">
               <Text
                 variant="headingSm"
                 fontWeight="semibold"
                 color="onBgDisabled"
-                className="text-gray-400"
+                className="text-gray-400 text-xs sm:text-sm"
               >
                 FAILED TESTS
               </Text>
@@ -715,19 +716,19 @@ const EvaluationDetail = ({
                 <Text
                   variant="headingLg"
                   fontWeight="bold"
-                  className="text-green-600"
+                  className="text-green-600 text-xl sm:text-2xl"
                 >
                   {audit.failedTests || 0}
                 </Text>
               </div>
             </div>
 
-            <div className="result-summary-evaluation-section flex flex-col p-3 gap-4 justify-center">
+            <div className="result-summary-evaluation-section flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 justify-center sm:col-span-2 md:col-span-1 lg:col-span-1">
               <Text
                 variant="headingSm"
                 fontWeight="semibold"
                 color="onBgDisabled"
-                className="text-gray-400"
+                className="text-gray-400 text-xs sm:text-sm"
               >
                 SKIPPED TESTS
               </Text>
@@ -735,7 +736,7 @@ const EvaluationDetail = ({
                 <Text
                   variant="headingLg"
                   fontWeight="bold"
-                  className="text-green-600"
+                  className="text-green-600 text-xl sm:text-2xl"
                 >
                   {audit.skippedTests || 0}
                 </Text>
@@ -807,8 +808,10 @@ const EvaluationDetail = ({
         >
           Download Report
         </Button>
-        <Link href={backLink} className="text-primary-purple hover:underline">
-          {backLinkText}
+        <Link href={backLink}>
+          <Button kind="primary" className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base">
+            {backLinkText}
+          </Button>
         </Link>
       </div>
     </>

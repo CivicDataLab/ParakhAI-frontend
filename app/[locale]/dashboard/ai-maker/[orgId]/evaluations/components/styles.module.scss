@@ -62,12 +62,40 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  position: relative;
 
+  /* Target all possible Tag component classes */
   span,
-  [class*="Tag"] {
+  [class*="Tag"],
+  [class*="Tag-module"],
+  [class*="Tag-module"] > *,
+  [class*="Tag-module"] > div,
+  [class*="Tag"] > *,
+  [class*="Tag"] > div,
+  [class*="Tag"] span {
     background-color: transparent;
     border: none;
     padding: 0;
+    border-radius: 4px;
+  }
+
+  /* Ensure the Tag component itself has rounded borders */
+  > *,
+  > * > *,
+  > * > * > * {
+    border-radius: 4px;
+  }
+
+  /* Override any border-radius from opub-ui Tag */
+  [class*="Tag"] {
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  /* Apply border-radius to the wrapper itself */
+  & * {
+    border-radius: 4px;
   }
 }
 
@@ -180,6 +208,14 @@
       display: none;
     }
   }
+
+  @media (max-width: 640px) {
+    border-radius: 12px 12px 0 0;
+  }
+
+  @media (max-width: 480px) {
+    border-radius: 8px 8px 0 0;
+  }
 }
 
 /* Audit Configuration Tab */
@@ -206,10 +242,10 @@
   background-color: transparent;
 
   @media (max-width: 1023px) {
-    flex: 1 1 33.3333%;
+    flex: 1 1 50%;
     min-width: 0;
-    max-width: 33.3333%;
-    width: 33.3333%;
+    max-width: 50%;
+    width: 50%;
     flex-shrink: 1;
     white-space: nowrap;
     overflow: hidden;
@@ -218,18 +254,56 @@
     min-height: 52px;
     max-height: 52px;
     text-align: center;
+    padding: 12px 8px;
+  }
+
+  @media (max-width: 640px) {
+    padding: 12px 4px;
+    font-size: 12px;
+    
+    [class*="Text"] {
+      font-size: 12px !important;
+      line-height: 16px !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 2px;
+    
+    [class*="Text"] {
+      font-size: 11px !important;
+      line-height: 14px !important;
+    }
   }
 }
 
 /* First tab - left border radius when not active */
 .tabsContainer > .auditConfigTab:first-child:not(.auditConfigTabActive) {
   border-top-left-radius: 16px;
+
+  @media (max-width: 640px) {
+    border-top-left-radius: 12px;
+  }
+
+  @media (max-width: 480px) {
+    border-top-left-radius: 8px;
+  }
 }
 
 /* First tab - both sides rounded when active */
 .tabsContainer > .auditConfigTab:first-child.auditConfigTabActive {
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
+
+  @media (max-width: 640px) {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+  }
+
+  @media (max-width: 480px) {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
 }
 
 /* Middle tabs - both sides rounded when active */
@@ -237,17 +311,45 @@
   > .auditConfigTab:not(:first-child):not(:last-child).auditConfigTabActive {
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
+
+  @media (max-width: 640px) {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+  }
+
+  @media (max-width: 480px) {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
 }
 
 /* Last tab - right border radius */
 .tabsContainer > .auditConfigTab:last-child {
   border-top-right-radius: 16px;
+
+  @media (max-width: 640px) {
+    border-top-right-radius: 12px;
+  }
+
+  @media (max-width: 480px) {
+    border-top-right-radius: 8px;
+  }
 }
 
 /* Last tab - both sides rounded when active */
 .tabsContainer > .auditConfigTab:last-child.auditConfigTabActive {
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
+
+  @media (max-width: 640px) {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+  }
+
+  @media (max-width: 480px) {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
 }
 
 .auditConfigTab.bgTransparent {
@@ -318,6 +420,7 @@
     flex-wrap: wrap;
     max-width: 100%;
     align-items: flex-start;
+    gap: 12px;
 
     > div:first-child {
       width: 100%;
@@ -334,15 +437,43 @@
       row-gap: 8px;
     }
   }
+
+  @media (max-width: 640px) {
+    gap: 8px;
+    flex-direction: column;
+    align-items: stretch;
+
+    > div:first-child {
+      width: 100%;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .auditStatusContainer {
+      width: 100%;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+  }
 }
 
 .auditNameSection > div:first-child {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   flex-wrap: nowrap;
   min-width: 0;
   flex: 1 1 auto;
   overflow: visible;
+
+  @media (max-width: 640px) {
+    flex-wrap: wrap;
+    width: 100%;
+    align-items: flex-start;
+  }
 }
 
 /* Audit Name Label */
@@ -356,10 +487,14 @@
   height: auto;
   display: inline-flex;
   align-items: center;
+  justify-content: flex-start;
+  text-align: left;
   vertical-align: middle;
   white-space: nowrap;
   flex-shrink: 0;
   overflow: visible;
+  margin: 0;
+  padding: 0;
 
   [class*="Label"],
   [class*="Text"],
@@ -369,6 +504,16 @@
     overflow: visible;
     text-overflow: clip;
     display: inline-block;
+    text-align: left;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Override any centering from opub-ui Label component */
+  &,
+  * {
+    text-align: left;
+    justify-content: flex-start;
   }
 }
 
@@ -442,6 +587,12 @@
     }
   }
 
+  @media (max-width: 1024px) {
+    max-width: 100%;
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
   @media (max-width: 768px) {
     [class*="TextField"],
     [class*="TextField"] > div,
@@ -452,6 +603,25 @@
     input {
       max-width: 100%;
       width: 100%;
+      font-size: 15px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    max-width: 100%;
+    width: 100%;
+    margin-top: 4px;
+
+    input {
+      font-size: 14px;
+      white-space: normal;
+      word-wrap: break-word;
+    }
+  }
+
+  @media (max-width: 480px) {
+    input {
+      font-size: 13px;
     }
   }
 }
@@ -465,10 +635,23 @@
   white-space: nowrap;
   position: relative;
   left: auto;
+
+  @media (max-width: 640px) {
+    gap: 8px;
+    flex-wrap: wrap;
+    white-space: normal;
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
 .auditNameSection .auditStatusContainer {
   margin-left: auto;
+
+  @media (max-width: 640px) {
+    margin-left: 0;
+    width: 100%;
+  }
 }
 
 /* Previous Button */
@@ -699,6 +882,17 @@
 .auditOptionsContainer {
   margin-top: 15px;
   padding-top: 0;
+  flex-wrap: wrap;
+
+  @media (max-width: 1023px) {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  @media (max-width: 640px) {
+    gap: 8px;
+    margin-top: 12px;
+  }
 }
 
 /* Audit Type Cards */
@@ -714,11 +908,46 @@
   background-color: #ffffff;
   border: 1px solid #c4c4c4;
   gap: 12px;
+  box-sizing: border-box;
 
   @media (max-width: 1023px) {
     flex: 1 1 100%;
     width: 100%;
     max-width: 100%;
+    min-width: 0;
+  }
+
+  @media (max-width: 640px) {
+    height: auto;
+    min-height: 70px;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    gap: 6px;
+    min-height: 65px;
+  }
+
+  /* Text content inside cards */
+  [class*="Text"] {
+    @media (max-width: 640px) {
+      font-size: 13px !important;
+      line-height: 18px !important;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 12px !important;
+      line-height: 16px !important;
+    }
+  }
+
+  /* Remove whitespace-nowrap on small screens to allow wrapping */
+  .whitespace-nowrap {
+    @media (max-width: 640px) {
+      white-space: normal !important;
+    }
   }
 }
 
