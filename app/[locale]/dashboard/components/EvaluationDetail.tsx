@@ -824,11 +824,12 @@ const EvaluationDetail = ({
         <Button
           kind="secondary"
           disabled={!isReportReady}
-          icon={<Icon source={IconDownload} size={18} />}
+          icon={<Icon source={IconDownload} size={18} style={{ color: 'white', stroke: 'white' }} />}
           onClick={() => {
             if (!auditReport?.url) return;
             window.open(auditReport.url, "_blank", "noopener,noreferrer");
           }}
+          className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base [&_svg]:text-white [&_svg]:fill-white [&_svg]:stroke-white [&_*]:text-white [&_*]:fill-white [&_*]:stroke-white"
         >
           Download Report
         </Button>
