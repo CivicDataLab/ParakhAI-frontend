@@ -12,9 +12,9 @@ import { useOrganization } from "../../OrganizationContext";
 import EvaluationConfiguration from "./EvaluationConfiguration";
 import ManualTestCases from "./ManualTestCases";
 import ModelSelectionModal from "./ModelSelectionModal";
+import styles from "./styles.module.scss";
 import TestCases from "./TestCases";
 import type { AuditType, Module, SelectOption } from "./types";
-import styles from "./styles.module.scss";
 
 // GraphQL queries for dynamic modules and metrics
 const MODULES_BY_MODEL_TYPE_QUERY = `
@@ -74,7 +74,95 @@ const AI_MODELS_QUERY = `
   }
 `;
 
-// Mutation to request an audit run from the backend
+// Query to fetch audit details by ID
+const GET_AUDIT_QUERY = `
+  query GetAudit($auditId: ID!) {
+    audit(auditId: $auditId) {
+      id
+      name
+      status
+      auditType
+      evaluationMode
+      auditObjective
+      auditScope
+      modelId
+      modelVersionId
+      modules
+      metrics
+      testDatasetIds
+      configuration
+    }
+  }
+`;
+
+// Mutation to create a blank audit (early in the flow)
+const CREATE_BLANK_AUDIT_MUTATION = `
+  mutation CreateBlankAudit($input: CreateBlankAuditInput!) {
+    createBlankAudit(input: $input) {
+      success
+      message
+      audit {
+        id
+        name
+        status
+        modelId
+        modelVersionId
+      }
+    }
+  }
+`;
+
+// Mutation to update an existing audit
+const UPDATE_AUDIT_MUTATION = `
+  mutation UpdateAudit($input: UpdateAuditInput!) {
+    updateAudit(input: $input) {
+      success
+      message
+      audit {
+        id
+        name
+        status
+        modules
+        metrics
+        modelId
+        modelVersionId
+        testDatasetIds
+        configuration
+      }
+    }
+  }
+`;
+
+// Mutation to run/execute an audit
+const RUN_AUDIT_MUTATION = `
+  mutation RunAudit($input: RunAuditInput!) {
+    runAudit(input: $input) {
+      success
+      message
+      audit {
+        id
+        name
+        status
+        modules
+        metrics
+        modelId
+        modelVersionId
+        testDatasetIds
+        configuration
+        judgeModel
+        judgeConfig
+        errorMessage
+        errorDetails
+        totalTests
+        passedTests
+        failedTests
+        skippedTests
+      }
+    }
+  }
+`;
+
+// Legacy mutation - kept for backward compatibility
 const REQUEST_AUDIT_MUTATION = `
   mutation RequestAudit($input: RequestAuditInput!) {
     requestAudit(input: $input) {
@@ -152,11 +240,17 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const urlModelId = searchParams.get("modelId");
   const urlVersion = searchParams.get("version");
   const urlVersionId = searchParams.get("versionId");
+  const urlAuditId = searchParams.get("auditId");
 
   const [auditType, setAuditType] = useState<AuditType>("technical");
   const [activeTab, setActiveTab] = useState<"config" | "test">("config");
   const [auditName, setAuditName] = useState(generateDefaultAuditName);
   const isAutoSaved = true;
+
+  // Current audit ID - persisted in URL
+  const [currentAuditId, setCurrentAuditId] = useState<string | null>(urlAuditId);
+  const [isCreatingAudit, setIsCreatingAudit] = useState(false);
+  const [isLoadingAuditDetails, setIsLoadingAuditDetails] = useState(false);
 
   // AI Models state
   const [selectedModelId, setSelectedModelId] = useState<string | null>(
@@ -283,6 +377,74 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     durationSeconds: number | null;
   } | null>(null);
 
+  // Fetch audit details when auditId is in URL
+  useEffect(() => {
+    const fetchAuditDetails = async () => {
+      if (!urlAuditId || !isAuthenticated || isSessionLoading) return;
+
+      setIsLoadingAuditDetails(true);
+      try {
+        const result = await request<{
+          audit: {
+            id: string;
+            name: string;
+            status: string;
+            auditType: string;
+            evaluationMode: string;
+            auditObjective: string | null;
+            auditScope: string | null;
+            modelId: string;
+            modelVersionId: number | null;
+            modules: string[];
+            metrics: string[];
+            testDatasetIds: string[];
+            configuration: any;
+          } | null;
+        }>(GET_AUDIT_QUERY, { auditId: urlAuditId }, { organization: orgId });
+
+        const audit = result?.audit;
+        if (audit) {
+          setAuditName(audit.name || generateDefaultAuditName());
+          setSelectedModelId(audit.modelId);
+          setSelectedVersionId(audit.modelVersionId);
+
+          if (audit.auditType) {
+            const auditTypeMap: Record<string, AuditType> = {
+              TECHNICAL_AUDIT: "technical",
+              DOMAIN_AUDIT: "domain",
+              CULTURAL_AUDIT: "cultural",
+            };
+            setAuditType(auditTypeMap[audit.auditType] || "technical");
+          }
+
+          if (audit.auditObjective) setAuditObjective(audit.auditObjective);
+          if (audit.auditScope) setScopeOfAudit(audit.auditScope);
+          if (audit.evaluationMode) {
+            setModeOfEvaluation(audit.evaluationMode.toLowerCase());
+          }
+
+          const config = audit.configuration || {};
+          if (config.auditorName) setAuditorName(config.auditorName);
+          if (config.organisationName) setOrganisationName(config.organisationName);
+
+          if (audit.modules && audit.modules.length > 0) {
+            const modulesMap: Record<string, boolean> = {};
+            audit.modules.forEach((mod: string) => {
+              modulesMap[mod] = true;
+            });
+            setSelectedModules(modulesMap);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching audit details:", error);
+      } finally {
+        setIsLoadingAuditDetails(false);
+      }
+    };
+
+    fetchAuditDetails();
+  }, [urlAuditId, isAuthenticated, isSessionLoading, orgId, request]);
+
   const scrollToTop = () => {
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -292,6 +454,94 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const handleTabChange = (tab: "config" | "test") => {
     setActiveTab(tab);
     scrollToTop();
+  };
+
+  // Update URL with audit ID without full page navigation
+  const updateUrlWithAuditId = (auditId: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("auditId", auditId);
+    window.history.replaceState({}, "", url.toString());
+  };
+
+  // Create a blank audit when model is selected
+  const createBlankAudit = async (modelId: string, versionId: number | null): Promise<string | null> => {
+    if (!isAuthenticated || isCreatingAudit) return null;
+
+    setIsCreatingAudit(true);
+    setAuditError(null);
+
+    try {
+      const result = await request<{
+        createBlankAudit: { success: boolean; message: string; audit: any };
+      }>(
+        CREATE_BLANK_AUDIT_MUTATION,
+        {
+          input: {
+            modelId,
+            modelVersionId: versionId,
+            name: auditName,
+          },
+        },
+        { organization: orgId }
+      );
+
+      const payload = result?.createBlankAudit;
+      if (!payload?.success || !payload?.audit?.id) {
+        setAuditError(payload?.message || "Failed to create evaluation.");
+        return null;
+      }
+
+      const auditId = String(payload.audit.id);
+      setCurrentAuditId(auditId);
+      updateUrlWithAuditId(auditId);
+      return auditId;
+    } catch (error: any) {
+      setAuditError(error.message || "Error creating evaluation.");
+      return null;
+    } finally {
+      setIsCreatingAudit(false);
+    }
+  };
+
+  // Update audit with current configuration
+  const updateAuditConfig = async (): Promise<boolean> => {
+    if (!currentAuditId || !isAuthenticated) return false;
+
+    const { modules: modulesList, metrics: metricsList } = buildModulesAndMetrics();
+
+    try {
+      const result = await request<{
+        updateAudit: { success: boolean; message: string; audit: any };
+      }>(
+        UPDATE_AUDIT_MUTATION,
+        {
+          input: {
+            auditId: currentAuditId,
+            name: auditName,
+            auditType,
+            evaluationMode: modeOfEvaluation || "automated",
+            modules: modulesList,
+            metrics: metricsList,
+            testDatasetIds: selectedPromptLibraries.map((item: any) => item.id),
+            auditorName,
+            organisationName,
+            auditObjective,
+            scopeOfAudit,
+          },
+        },
+        { organization: orgId }
+      );
+
+      if (!result?.updateAudit?.success) {
+        setAuditError(result?.updateAudit?.message || "Failed to update evaluation.");
+        return false;
+      }
+
+      return true;
+    } catch (error: any) {
+      setAuditError(error.message || "Error updating evaluation.");
+      return false;
+    }
   };
 
   // Helper function to map module name keys to display names
@@ -752,36 +1002,60 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     return { modules: selectedModuleNames, metrics: selectedMetricNames };
   };
 
+  // Handle tab change - create audit if needed and update config
+  const handleTestTabClick = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    // Create audit if not already created
+    if (!currentAuditId && selectedModelId) {
+      const auditId = await createBlankAudit(selectedModelId, selectedVersionId);
+      if (!auditId) {
+        return; // Error already set
+      }
+    }
+
+    // Update audit with current configuration
+    if (currentAuditId) {
+      const updated = await updateAuditConfig();
+      if (!updated) {
+        return; // Error already set
+      }
+    }
+
+    handleTabChange("test");
+  };
+
   const handleRunAudit = async () => {
     if (!isAuthenticated) {
       setAuditError("Please log in to run an audit.");
       return;
     }
 
-    const { modules, metrics } = buildModulesAndMetrics();
+    // Ensure we have an audit ID
+    let auditId = currentAuditId;
+    
+    if (!auditId && selectedModelId) {
+      // Create audit if not exists
+      auditId = await createBlankAudit(selectedModelId, selectedVersionId);
+      if (!auditId) {
+        return; // Error already set
+      }
+    }
 
-    const configuration: any = {
-      auditType,
-      auditorName,
-      organisationName,
-      auditObjective,
-      scopeOfAudit,
-      modeOfEvaluation,
-      testInputMode,
-      selectedPromptLibraries,
-      uploadedFilesCount: uploadedFiles.length,
-      pastedTestCasesLength: pastedTestCases.length,
-    };
-
-    const modelId =
-      selectedModelId || process.env.NEXT_PUBLIC_AUDIT_MODEL_ID || null;
-
-    if (!modelId) {
+    if (!auditId) {
       setAuditError("Please select an AI model before running the audit.");
-      setIsRequestingAudit(false);
       return;
     }
 
+    // Update audit config first
+    const updated = await updateAuditConfig();
+    if (!updated) {
+      return; // Error already set
+    }
+
+    // Prepare custom test inputs
     let customTestInputs: string | null = null;
 
     if (testInputMode === "paste" && pastedTestCases.trim()) {
@@ -793,29 +1067,21 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       customTestInputs = JSON.stringify(fileData);
     }
 
-    const input: any = {
-      name: auditName,
-      modules,
-      metrics,
-      testDatasetIds: selectedPromptLibraries.map((item: any) =>
-        String(item.id)
-      ),
-      customTestInputs: customTestInputs || null,
-      configuration,
-      modelId,
-      modelVersionId: selectedVersionId,
-    };
-
     setAuditOverview(null);
     setAuditError(null);
     setIsRequestingAudit(true);
 
     try {
+      // Use the new runAudit mutation
       const result = await request<{
-        requestAudit: { success: boolean; message: string; audit: any };
-      }>(REQUEST_AUDIT_MUTATION, { input }, { organization: orgId });
+        runAudit: { success: boolean; message: string; audit: any };
+      }>(
+        RUN_AUDIT_MUTATION,
+        { input: { auditId, customTestInputs } },
+        { organization: orgId }
+      );
 
-      const payload = result?.requestAudit;
+      const payload = result?.runAudit;
       if (!payload) {
         setAuditError("Audit response was empty.");
         setIsRequestingAudit(false);
@@ -1144,17 +1410,13 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               </Text>
             </button>
             <button
-              onClick={() => {
-                if (validateForm()) {
-                  handleTabChange("test");
-                }
-              }}
-              disabled={!!invalidModelError}
+              onClick={handleTestTabClick}
+              disabled={isCreatingAudit || !!invalidModelError}
               className={`${styles.auditConfigTab} flex-1 ${
                 activeTab === "test"
                   ? `${styles.auditConfigTabActive} text-gray-900 font-semibold`
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 bg-transparent"
-              } ${invalidModelError ? "opacity-50 cursor-not-allowed" : ""}`}
+              } ${isCreatingAudit || invalidModelError ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <Text
                 variant="bodyMd"
@@ -1164,7 +1426,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                     : "text-gray-600"
                 }
               >
-                Test Cases
+                {isCreatingAudit ? "Creating Evaluation..." : "Test Cases"}
               </Text>
             </button>
           </div>
@@ -1218,6 +1480,10 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           >
             {modeOfEvaluation === "manual" ? (
               <ManualTestCases
+                auditId={currentAuditId || undefined}
+                modules={buildModulesAndMetrics().modules}
+                modelType={modelType}
+                orgId={orgId}
                 onPrevious={() => handleTabChange("config")}
                 onRunAudit={handleRunAudit}
                 isRequestingAudit={isRequestingAudit}
@@ -1240,6 +1506,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           </div>
         )}
 
+
         {/* Navigation Buttons - Audit Configuration tab */}
         {activeTab === "config" && (
           <div className="flex items-center justify-center gap-6 pt-8">
@@ -1260,15 +1527,14 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
             <Button
               kind="secondary"
-              onClick={() => {
-                if (validateForm()) {
-                  handleTabChange("test");
-                }
-              }}
-              disabled={!!invalidModelError}
+              onClick={handleTestTabClick}
+              disabled={isCreatingAudit || !!invalidModelError}
               className={styles.addTestCasesButton}
             >
-              <span className={styles.addTestCasesText}>Add Test Cases</span>
+              <span className="add-test-cases-text">
+                {isCreatingAudit ? "Creating..." : "Add Test Cases"}
+              </span>
+
               <Image
                 src="/images/icons/circle-arrow-right.png"
                 alt="Circle arrow right"
