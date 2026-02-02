@@ -504,8 +504,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   };
 
   // Update audit with current configuration
-  const updateAuditConfig = async (): Promise<boolean> => {
-    if (!currentAuditId || !isAuthenticated) return false;
+  const updateAuditConfig = async (auditIdOverride?: string): Promise<boolean> => {
+    const auditId = auditIdOverride || currentAuditId;
+    if (!auditId || !isAuthenticated) return false;
 
     const { modules: modulesList, metrics: metricsList } = buildModulesAndMetrics();
 
@@ -516,7 +517,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         UPDATE_AUDIT_MUTATION,
         {
           input: {
-            auditId: currentAuditId,
+            auditId: auditId,
             name: auditName,
             auditType,
             evaluationMode: modeOfEvaluation || "automated",
@@ -1008,17 +1009,19 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       return;
     }
 
+    let auditId = currentAuditId;
+
     // Create audit if not already created
-    if (!currentAuditId && selectedModelId) {
-      const auditId = await createBlankAudit(selectedModelId, selectedVersionId);
+    if (!auditId && selectedModelId) {
+      auditId = await createBlankAudit(selectedModelId, selectedVersionId);
       if (!auditId) {
         return; // Error already set
       }
     }
 
-    // Update audit with current configuration
-    if (currentAuditId) {
-      const updated = await updateAuditConfig();
+    // Update audit with current configuration (pass auditId directly to handle async state)
+    if (auditId) {
+      const updated = await updateAuditConfig(auditId);
       if (!updated) {
         return; // Error already set
       }
@@ -1049,8 +1052,8 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       return;
     }
 
-    // Update audit config first
-    const updated = await updateAuditConfig();
+    // Update audit config first (pass auditId directly to handle async state)
+    const updated = await updateAuditConfig(auditId);
     if (!updated) {
       return; // Error already set
     }
