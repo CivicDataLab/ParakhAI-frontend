@@ -115,6 +115,8 @@ const AuditsListPage = () => {
         return { fillColor: "#FEF3C7", textColor: "#92400E" };
       case "PENDING":
         return { fillColor: "#E0E7FF", textColor: "#3730A3" };
+      case "DRAFT":
+        return { fillColor: "#FEF9C3", textColor: "#854D0E" };
       case "FAILED":
       case "ERROR":
         return { fillColor: "#FEE2E2", textColor: "#DC2626" };
@@ -123,13 +125,21 @@ const AuditsListPage = () => {
     }
   };
 
+  // Get the appropriate link for an audit based on its status
+  const getAuditLink = (audit: Audit) => {
+    if (audit.status?.toUpperCase() === "DRAFT") {
+      return `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/new?auditId=${audit.id}`;
+    }
+    return `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/${audit.id}`;
+  };
+
   // Define columns
   const columns = [
     columnHelper.accessor("name", {
       header: "Evaluation Name",
       cell: (info) => (
         <Link
-          href={`/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/${info.row.original.id}`}
+          href={getAuditLink(info.row.original)}
           className="text-primary-purple hover:underline font-medium"
         >
           {info.getValue() || `Evaluation #${info.row.original.id.slice(0, 8)}`}
