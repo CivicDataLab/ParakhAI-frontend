@@ -36,7 +36,6 @@ interface TestCasesProps {
   setPastedTestCases: (value: string) => void;
   testInputMode: "paste" | "upload";
   setTestInputMode: (mode: "paste" | "upload") => void;
-  onPrevious: () => void;
   onRunAudit: () => void;
   isRequestingAudit: boolean;
 }
@@ -71,7 +70,6 @@ const TestCases: React.FC<TestCasesProps> = ({
   setPastedTestCases,
   testInputMode,
   setTestInputMode,
-  onPrevious,
   onRunAudit,
   isRequestingAudit,
 }) => {
@@ -349,20 +347,6 @@ const TestCases: React.FC<TestCasesProps> = ({
 
       {/* Navigation Buttons */}
       <div className="flex items-center justify-center gap-6 pt-8 border-t border-gray-200">
-        <Button
-          kind="secondary"
-          onClick={onPrevious}
-          className="previous-button"
-        >
-          <Image
-            src="/images/icons/circle-arrow-left.png"
-            alt="Circle arrow left"
-            width={18}
-            height={18}
-            className="object-contain previous-icon"
-          />
-          <span className="previous-text">Previous</span>
-        </Button>
         <Button
           kind="primary"
           onClick={() => {

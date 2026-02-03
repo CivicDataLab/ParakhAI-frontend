@@ -250,13 +250,14 @@ const ModelSelectionModal = ({
         </div>
         {/* Action buttons */}
         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
-          <Button kind="primary" onClick={() => onOpenChange(false)}>
+          <Button kind="secondary" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button
-            kind="secondary"
+            kind="primary"
             onClick={handleStart}
             disabled={!canStart || isSubmitting}
+            className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
           >
             {isSubmitting ? "Starting..." : "Start"}
           </Button>

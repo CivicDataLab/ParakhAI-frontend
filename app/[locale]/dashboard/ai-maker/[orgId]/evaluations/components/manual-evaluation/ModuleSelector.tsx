@@ -3,6 +3,7 @@
 import { Tag, Text } from 'opub-ui';
 import React from 'react';
 import type { ModuleProgress } from './types';
+import styles from '../styles.module.scss';
 
 interface ModuleSelectorProps {
   modules: string[];
@@ -11,6 +12,12 @@ interface ModuleSelectorProps {
   onSelectModule: (module: string) => void;
   getModuleDisplayName: (name: string) => string;
 }
+
+const MODULE_DESCRIPTIONS: Record<string, string> = {
+  BIAS_FAIRNESS: 'Checks whether model perpetuates stereotypes',
+  HALLUCINATION_MISINFORMATION: 'Detects false or unsafe outputs',
+  PRIVACY_SAFETY: 'Ensures personal data is not exposed',
+};
 
 const ModuleSelector: React.FC<ModuleSelectorProps> = ({
   modules,
@@ -23,12 +30,16 @@ const ModuleSelector: React.FC<ModuleSelectorProps> = ({
     return moduleProgress.find((p) => p.module === moduleName);
   };
 
+  const getModuleDescription = (moduleName: string): string => {
+    return MODULE_DESCRIPTIONS[moduleName] || '';
+  };
+
   return (
     <div className="mb-6">
-      <Text variant="headingMd" className="mb-4">
+      <Text variant="headingMd" className="mb-1 block">
         Select Module to Test
       </Text>
-      <Text variant="bodySm" className="text-gray-500 mb-4">
+      <Text variant="bodySm" className="text-gray-500 mb-4 block">
         Choose a module to begin testing. Each module requires at least 3 test cases.
       </Text>
 
@@ -36,6 +47,8 @@ const ModuleSelector: React.FC<ModuleSelectorProps> = ({
         {modules.map((module) => {
           const progress = getProgressForModule(module);
           const testCount = progress?.testCaseCount || 0;
+          const passedCount = progress?.passedCount || 0;
+          const failedCount = progress?.failedCount || 0;
           const isComplete = progress?.isComplete || false;
           const isSelected = selectedModule === module;
 
@@ -43,45 +56,33 @@ const ModuleSelector: React.FC<ModuleSelectorProps> = ({
             <button
               key={module}
               onClick={() => onSelectModule(module)}
-              className={`p-4 rounded-lg border-2 text-left transition-all ${
+              className={`${styles.evaluationModuleCard} text-left transition-all ${
                 isSelected
-                  ? 'border-purple-600 bg-purple-50'
+                  ? 'border-2 border-purple-600 bg-purple-50'
                   : isComplete
-                    ? 'border-green-300 bg-green-50'
-                    : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
+                    ? 'border border-green-300 bg-green-50'
+                    : ''
               }`}
             >
-              <div className="flex items-start justify-between mb-2">
-                <Text variant="bodyMd" fontWeight="semibold">
-                  {getModuleDisplayName(module)}
-                </Text>
-                {isComplete && (
-                  <Tag variation="filled" fillColor="#BBF7D0" textColor="#15803D">
-                    Complete
-                  </Tag>
-                )}
-              </div>
+              <Text variant="bodyMd" fontWeight="semibold" className="mb-2 text-[#0A0704] block">
+                {getModuleDisplayName(module)}
+              </Text>
+              
+              <Text variant="bodySm" className="text-gray-600 mb-4 block">
+                {getModuleDescription(module)}
+              </Text>
 
-              <div className="flex items-center gap-2 mt-2">
-                <div className="flex-1 bg-gray-200 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full transition-all ${
-                      testCount >= 3 ? 'bg-green-500' : 'bg-purple-500'
-                    }`}
-                    style={{ width: `${Math.min((testCount / 3) * 100, 100)}%` }}
-                  />
-                </div>
-                <Text variant="bodySm" className="text-gray-600 whitespace-nowrap">
-                  {testCount}/3 tests
-                </Text>
+              <div className="flex gap-2 flex-wrap">
+                <Tag variation="filled" fillColor="#E5E7EB" textColor="#374151">
+                  {testCount} Test Cases
+                </Tag>
+                <Tag variation="filled" fillColor="#EC4899" textColor="#FFFFFF">
+                  {failedCount} Failed
+                </Tag>
+                <Tag variation="filled" fillColor="#D9F99D" textColor="#15803D">
+                  {passedCount} Passed
+                </Tag>
               </div>
-
-              {progress && (
-                <div className="flex gap-3 mt-2 text-xs">
-                  <span className="text-green-600">✓ {progress.passedCount} passed</span>
-                  <span className="text-red-600">✕ {progress.failedCount} failed</span>
-                </div>
-              )}
             </button>
           );
         })}

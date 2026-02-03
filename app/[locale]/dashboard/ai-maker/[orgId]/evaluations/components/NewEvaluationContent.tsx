@@ -338,7 +338,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const [auditorName, setAuditorName] = useState("");
   const [organisationName, setOrganisationName] = useState("");
   const [auditObjective, setAuditObjective] = useState("");
-  const [scopeOfAudit, setScopeOfAudit] = useState("");
   const [modeOfEvaluation, setModeOfEvaluation] = useState<string>("");
 
   // Prefill organisation name when org details are loaded
@@ -347,6 +346,13 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       setOrganisationName(organization.name);
     }
   }, [organization?.name, organisationName]);
+
+  // Automatically set mode of evaluation to "manual" when domain or cultural evaluation is selected
+  useEffect(() => {
+    if ((auditType === "domain" || auditType === "cultural") && modeOfEvaluation !== "manual") {
+      setModeOfEvaluation("manual");
+    }
+  }, [auditType, modeOfEvaluation]);
 
   // Set auditor name from session when user is available
   useEffect(() => {
@@ -374,7 +380,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     auditorName?: string;
     organisationName?: string;
     auditObjective?: string;
-    scopeOfAudit?: string;
     modeOfEvaluation?: string;
     modules?: string;
     metrics?: string;
@@ -483,7 +488,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           }
 
           if (audit.auditObjective) setAuditObjective(audit.auditObjective);
-          if (audit.auditScope) setScopeOfAudit(audit.auditScope);
           if (audit.evaluationMode) {
             setModeOfEvaluation(audit.evaluationMode.toLowerCase());
           }
@@ -592,7 +596,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             auditorName,
             organisationName,
             auditObjective,
-            scopeOfAudit,
           },
         },
         { organization: orgId }
@@ -1013,10 +1016,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
     if (!auditObjective.trim()) {
       errors.auditObjective = "Evaluation objective is required";
-    }
-
-    if (!scopeOfAudit.trim()) {
-      errors.scopeOfAudit = "Scope of evaluation is required";
     }
 
     if (!modeOfEvaluation || modeOfEvaluation.trim() === "") {
@@ -1528,8 +1527,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               setOrganisationName={setOrganisationName}
               auditObjective={auditObjective}
               setAuditObjective={setAuditObjective}
-              scopeOfAudit={scopeOfAudit}
-              setScopeOfAudit={setScopeOfAudit}
               modeOfEvaluation={modeOfEvaluation}
               setModeOfEvaluation={setModeOfEvaluation}
               modules={modules}
@@ -1564,7 +1561,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                 modules={buildModulesAndMetrics().modules}
                 modelType={modelType}
                 orgId={orgId}
-                onPrevious={() => handleTabChange("config")}
                 onRunAudit={handleRunAudit}
                 isRequestingAudit={isRequestingAudit}
               />
@@ -1578,7 +1574,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                 setPastedTestCases={setPastedTestCases}
                 testInputMode={testInputMode}
                 setTestInputMode={setTestInputMode}
-                onPrevious={() => handleTabChange("config")}
                 onRunAudit={handleRunAudit}
                 isRequestingAudit={isRequestingAudit}
               />
@@ -1590,21 +1585,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         {/* Navigation Buttons - Audit Configuration tab */}
         {activeTab === "config" && (
           <div className="flex items-center justify-center gap-6 pt-8">
-            <Button
-              kind="secondary"
-              disabled
-              className={`${styles.previousButton} ${styles.previousButtonDisabled}`}
-            >
-              <Image
-                src="/images/icons/circle-arrow-left.png"
-                alt="Circle arrow left"
-                width={18}
-                height={18}
-                className={`object-contain ${styles.previousIcon}`}
-              />
-              <span className={styles.previousText}>Previous</span>
-            </Button>
-
             <Button
               kind="secondary"
               onClick={handleTestTabClick}

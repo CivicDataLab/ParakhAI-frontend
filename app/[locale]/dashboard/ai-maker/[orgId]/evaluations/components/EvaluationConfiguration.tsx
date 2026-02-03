@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Text, TextField, Label, Select, Combobox, Spinner } from "opub-ui";
 import type { SelectOption } from "./types";
 import styles from "./styles.module.scss";
@@ -27,8 +27,6 @@ interface EvaluationConfigurationProps {
   setOrganisationName: (value: string) => void;
   auditObjective: string;
   setAuditObjective: (value: string) => void;
-  scopeOfAudit: string;
-  setScopeOfAudit: (value: string) => void;
   modeOfEvaluation: string;
   setModeOfEvaluation: (value: string) => void;
   modules: Module[];
@@ -53,7 +51,6 @@ interface EvaluationConfigurationProps {
     auditorName?: string;
     organisationName?: string;
     auditObjective?: string;
-    scopeOfAudit?: string;
     modeOfEvaluation?: string;
     modules?: string;
     metrics?: string;
@@ -63,7 +60,6 @@ interface EvaluationConfigurationProps {
       auditorName?: string;
       organisationName?: string;
       auditObjective?: string;
-      scopeOfAudit?: string;
       modeOfEvaluation?: string;
       modules?: string;
       metrics?: string;
@@ -80,8 +76,6 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
   setOrganisationName,
   auditObjective,
   setAuditObjective,
-  scopeOfAudit,
-  setScopeOfAudit,
   modeOfEvaluation,
   setModeOfEvaluation,
   modules,
@@ -103,6 +97,13 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
     { value: "automated", label: "Automated" },
     { value: "manual", label: "Manual" },
   ];
+
+  // Automatically set mode of evaluation to "manual" when domain or cultural evaluation is selected
+  useEffect(() => {
+    if ((auditType === "domain" || auditType === "cultural") && modeOfEvaluation !== "manual") {
+      setModeOfEvaluation("manual");
+    }
+  }, [auditType, modeOfEvaluation, setModeOfEvaluation]);
 
   // Helper function to format selected metrics as comma-separated string with truncation
   const formatSelectedMetrics = (selected: SelectOption[]): string => {
@@ -223,8 +224,8 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
         </label>
       </div>
 
-      {/* Audit Configuration Form - Show when Technical Audit is selected */}
-      {auditType === "technical" && (
+      {/* Audit Configuration Form - Show when Technical, Domain, or Cultural Audit is selected */}
+      {(auditType === "technical" || auditType === "domain" || auditType === "cultural") && (
         <div className={`${styles.auditConfigForm} mt-8`}>
           {/* Auditor Information Section */}
           <div className="mb-6">
@@ -332,39 +333,6 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                       }
                     }}
                     error={validationErrors.auditObjective}
-                  />
-                </div>
-              </div>
-              <div>
-                <Label
-                  htmlFor="scopeOfAudit"
-                  className={`${styles.auditFormLabel} ${styles.scopeOfAuditLabel}`}
-                >
-                  <Text variant="bodyMd" fontWeight="medium">
-                    Scope of Evaluation<span className="text-red-500">*</span>
-                  </Text>
-                </Label>
-                <div className={`${styles.auditFormTextarea} ${styles.scopeOfAuditTextarea}`}>
-                  <TextField
-                    id="scopeOfAudit"
-                    name="scopeOfAudit"
-                    label="Scope of Audit"
-                    labelHidden
-                    multiline={4}
-                    value={scopeOfAudit}
-                    onChange={(value) => {
-                      setScopeOfAudit(value);
-                      if (
-                        setValidationErrors &&
-                        validationErrors.scopeOfAudit
-                      ) {
-                        setValidationErrors((prev) => ({
-                          ...prev,
-                          scopeOfAudit: undefined,
-                        }));
-                      }
-                    }}
-                    error={validationErrors.scopeOfAudit}
                   />
                 </div>
               </div>
@@ -615,6 +583,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                   }}
                   placeholder="Click to select from dropdown"
                   error={validationErrors.modeOfEvaluation}
+                  disabled={auditType === "domain" || auditType === "cultural"}
                 />
               </div>
             </div>

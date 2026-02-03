@@ -9,7 +9,6 @@ interface ManualTestCasesProps {
   modelType?: string;
   supportedLanguages?: string[];
   orgId: string;
-  onPrevious: () => void;
   onRunAudit: () => void;
   isRequestingAudit: boolean;
 }
@@ -20,7 +19,6 @@ const ManualTestCases: React.FC<ManualTestCasesProps> = ({
   modelType = 'LLM',
   supportedLanguages,
   orgId,
-  onPrevious,
   onRunAudit,
   isRequestingAudit,
 }) => {
@@ -42,7 +40,6 @@ const ManualTestCases: React.FC<ManualTestCasesProps> = ({
       modelType={modelType}
       supportedLanguages={supportedLanguages}
       orgId={orgId}
-      onPrevious={onPrevious}
       onFinishAudit={onRunAudit}
       isRequestingAudit={isRequestingAudit}
     />
