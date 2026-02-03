@@ -78,25 +78,25 @@ const SectorsSection = () => {
     {
       name: "HEALTHCARE",
       slug: "healthcare",
-      icon: "/images/icons/healthcare.png",
+      icon: "/images/domain/healthcare.svg",
     },
     {
       name: "AGRICULTURE",
       slug: "agriculture",
-      icon: "/images/icons/agriculture.png",
+      icon: "/images/domain/agri.svg",
     },
     {
       name: "CLIMATE",
       slug: "environment",
-      icon: "/images/icons/environment.png",
+      icon: "/images/domain/environment.svg",
     },
     {
       name: "EDUCATION",
       slug: "education",
-      icon: "/images/icons/education.png",
+      icon: "/images/domain/education.svg",
     },
-    { name: "LEGAL", slug: "legal", icon: "/images/icons/legal.png" },
-    { name: "FINANCE", slug: "finance", icon: "/images/icons/finance.png" },
+    { name: "LEGAL", slug: "legal", icon: "/images/domain/legal.svg" },
+    { name: "FINANCE", slug: "finance", icon: "/images/domain/finance.svg" },
 
     // {
     //   name: "GOVERNMENT",
@@ -106,20 +106,20 @@ const SectorsSection = () => {
     {
       name: "TECHNOLOGY",
       slug: "technology",
-      icon: "/images/icons/technology.png",
+      icon: "/images/domain/technology.svg",
     },
-    { name: "SCIENCE", slug: "science", icon: "/images/icons/science.png" },
+    { name: "SCIENCE", slug: "science", icon: "/images/domain/science.svg" },
     {
       name: "SOCIAL SERVICES",
       slug: "social_services",
-      icon: "/images/icons/social services.png",
+      icon: "/images/domain/social services.svg",
     },
     {
       name: "TRANSPORTATION",
       slug: "transportation",
-      icon: "/images/icons/transportation.png",
+      icon: "/images/domain/transport.svg",
     },
-    { name: "ENERGY", slug: "energy", icon: "/images/icons/energy.png" },
+    { name: "ENERGY", slug: "energy", icon: "/images/domain/energy.svg" },
     // { name: "GENERAL", slug: "general", icon: "/images/logos/CDL Logo.png" },
     // { name: "OTHER", slug: "other", icon: "/images/logos/CDL Logo.png" },
   ];
@@ -154,9 +154,9 @@ const SectorsSection = () => {
               <Link
                 href={`/models?sector=${sector.slug}`}
                 key={sector.id}
-                className="group border-1 h-[80px] border-solid md:min-w-[300px] rounded-2 bg-white  transition-all duration-300"
+                className="group border-1 h-[90px] border-solid md:min-w-[300px] rounded-2 bg-white  transition-all duration-300 flex justify-around items-center"
               >
-                <div className="flex items-center gap-4 p-5 justify-center ">
+                <div className="flex items-center w-full gap-4 p-5 justify-between ">
                   {/* Sector Info */}
                   <div className="flex flex-col gap-2 justify-center flex-1 min-w-0">
                     <Text

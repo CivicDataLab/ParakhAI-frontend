@@ -286,7 +286,9 @@ const ModelDetailPage = () => {
     return (
       <div className="flex flex-col items-center justify-center gap-4 min-h-screen">
         <Spinner />
-        <Text variant="bodyMd" className="text-gray-600">Loading model details...</Text>
+        <Text variant="bodyMd" className="text-gray-600">
+          Loading model details...
+        </Text>
       </div>
     );
   }
