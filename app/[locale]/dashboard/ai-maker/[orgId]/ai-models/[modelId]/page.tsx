@@ -7,10 +7,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
   Avatar,
   Badge,
   Button,
@@ -303,41 +299,49 @@ const ModelDetailPage = () => {
     );
   }
 
+  console.log("v", model.versions);
+
   return (
     <>
-      <div className="flex-1 p-6 lg:p-10 bg-white overflow-hidden">
+      <div className="flex-1 lg:py-10 bg-white overflow-hidden">
         <div className="flex flex-col lg:flex-row gap-8">
-          <div className="flex-1 min-w-0 lg:pr-8 lg:border-r border-gray-100">
-            <div className="flex flex-col gap-8">
+          <div className="flex-1 min-w-0  lg:border-r border-gray-100">
+            <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-3">
-                <Text variant="heading3xl" fontWeight="bold">
+                <Text variant="heading3xl" fontWeight="semibold">
                   {model.displayName}
                 </Text>
 
                 <div className="flex flex-wrap gap-2">
                   {model.sectors?.slice(0, 1).map((sector, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 text-xs font-medium text-purple-800 bg-purple-100 rounded-md"
-                    >
-                      {sector}
+                    <span className="self-start sm:self-auto">
+                      <Tag
+                        variation="filled"
+                        fillColor={"bg-purple-200"}
+                        textColor={"text-purple-800"}
+                      >
+                        {sector}
+                      </Tag>
                     </span>
                   ))}
                   {model.tags?.slice(0, 1).map((tag, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 text-xs font-medium text-purple-800 bg-purple-100 rounded-md"
-                    >
-                      {tag}
+                    <span className="self-start sm:self-auto">
+                      <Tag
+                        variation="filled"
+                        fillColor={"bg-purple-200"}
+                        textColor={"text-purple-800"}
+                      >
+                        {tag}
+                      </Tag>
                     </span>
                   ))}
                 </div>
               </div>
 
-              <div className="overflow-hidden">
+              <div className="overflow-hidden flex flex-col gap-2 mt-8">
                 <Text
-                  variant="headingLg"
-                  fontWeight="bold"
+                  variant="headingXl"
+                  fontWeight="semibold"
                   className="mb-4 text-gray-900"
                 >
                   About
@@ -352,154 +356,145 @@ const ModelDetailPage = () => {
               <div className="mt-8">
                 <div className="flex flex-col gap-1 mb-5">
                   <Text variant="headingXl">Versions</Text>
-                  <Text variant="bodyLg">
+                  {/* <Text variant="bodyLg">
                     All versions linked to DataSpace and available for public
                     viewing
-                  </Text>
+                  </Text> */}
                 </div>
 
                 <div className="flex flex-col gap-4">
                   {(model.versions || []).map((v) => (
                     <div
                       key={v.id}
-                      className="mt-5 flex flex-col gap-6 border border-gray-200 bg-white p-4 rounded-lg lg:mx-0 lg:p-6 shadow-sm"
+                      className="mt-2 flex flex-col gap-2 border-solid border-2 border-baseGraySlateSolid6 bg-white bg-white p-4 rounded-2 lg:mx-0 lg:p-4 shadow-sm"
                     >
-                      <Accordion type="single" collapsible className="w-full">
-                        <AccordionItem value={v.id} className="border-none">
-                          <div className="flex flex-wrap items-center justify-between gap-4 md:flex-nowrap">
-                            <div className="flex flex-wrap items-center gap-2 md:flex-nowrap">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 border border-gray-200">
-                                <svg
-                                  className="h-5 w-5 text-gray-600"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                  />
-                                </svg>
-                              </div>
-                              <Text
-                                variant="headingMd"
-                                className="line-clamp-1"
-                              >
-                                Version {v.version}
-                              </Text>
-                              {v.isLatest && (
-                                <Badge status="success">Primary</Badge>
+                      {/* Header row - version name, badges, actions */}
+                      <div className="flex flex-wrap items-center justify-between gap-4 md:flex-nowrap ">
+                        <div className="flex flex-wrap items-center gap-4 md:flex-nowrap">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 border border-gray-200">
+                            <Image
+                              src="/images/icons/version.svg"
+                              alt="Version"
+                              width={40}
+                              height={40}
+                            />
+                          </div>
+                          <Text variant="headingMd" className="line-clamp-1">
+                            Version {v.version}
+                          </Text>
+                          {v.isLatest && (
+                            <Tag
+                              variation="filled"
+                              fillColor="#E2F5C4" // light violet
+                              textColor="#59682C" // darker violet
+                            >
+                              Primary
+                            </Tag>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                          <button
+                            type="button"
+                            style={{ textDecoration: "none" }}
+                            className="prompt-add-filters-link no-underline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleNewEvaluation(v.id);
+                            }}
+                          >
+                            Start Evaluation
+                          </button>
+
+                          <button
+                            type="button"
+                            style={{ textDecoration: "none" }}
+                            className="prompt-add-filters-link"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedVersionForAuditor({
+                                id: parseInt(v.id),
+                                version: v.version,
+                              });
+                            }}
+                          >
+                            Invite Auditors
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Details row - table-like layout */}
+                      <div className="mt-4 rounded-lg border border-baseGraySlateSolid4 overflow-hidden">
+                        {/* Header row */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 bg-baseGraySlateSolid2">
+                          <div className="px-4 py-2 border-b md:border-b-0 md:border-r border-baseGraySlateSolid4">
+                            <Text
+                              variant="bodySm"
+                              className="uppercase text-gray-500"
+                            >
+                              DATE UPDATED
+                            </Text>
+                          </div>
+                          <div className="px-4 py-2 border-b md:border-b-0 md:border-r border-baseGraySlateSolid4">
+                            <Text
+                              variant="bodySm"
+                              className="uppercase text-gray-500"
+                            >
+                              CAPABILITIES
+                            </Text>
+                          </div>
+                          <div className="px-4 py-2 border-b md:border-b-0 border-baseGraySlateSolid4">
+                            <Text
+                              variant="bodySm"
+                              className="uppercase text-gray-500"
+                            >
+                              {v.isLatest ? "LIFECYCLE STAGE" : "STATUS"}
+                            </Text>
+                          </div>
+                        </div>
+
+                        {/* Values row */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 bg-white">
+                          <div className="px-4 py-3 border-t md:border-t-0 md:border-r border-baseGraySlateSolid4">
+                            <Text variant="bodyMd">
+                              {formatDateShort(
+                                v.createdAt ||
+                                  model.updatedAt ||
+                                  new Date().toISOString()
                               )}
-                              <Badge>
-                                {v.lifecycleStage.replace(/_/g, " ")}
-                              </Badge>
-                            </div>
+                            </Text>
+                          </div>
 
-                            <div className="flex items-center gap-4">
-                              <button
-                                type="button"
-                                className="prompt-add-filters-link"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleNewEvaluation(v.id);
-                                }}
-                              >
-                                Start Evaluation
-                              </button>
-
-                              <button
-                                type="button"
-                                className="prompt-add-filters-link"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedVersionForAuditor({
-                                    id: parseInt(v.id),
-                                    version: v.version,
-                                  });
-                                }}
-                              >
-                                Invite Auditors
-                              </button>
-
-                              <AccordionTrigger className="prompt-add-filters-link flex items-center gap-2 p-0 hover:no-underline">
-                                View Details
-                              </AccordionTrigger>
+                          <div className="px-4 py-3 border-t md:border-t-0 md:border-r border-baseGraySlateSolid4">
+                            <div className="flex flex-wrap gap-2">
+                              {model.supportsStreaming && (
+                                <Badge>Streaming</Badge>
+                              )}
+                              {model.maxTokens ? (
+                                <Badge>
+                                  {`${model.maxTokens.toLocaleString()} Tokens`}
+                                </Badge>
+                              ) : null}
+                              {!model.supportsStreaming && !model.maxTokens && (
+                                <Text
+                                  variant="bodyMd"
+                                  className="text-gray-500"
+                                >
+                                  --
+                                </Text>
+                              )}
                             </div>
                           </div>
 
-                          <AccordionContent
-                            className="flex w-full flex-col py-5 mt-4"
-                            style={{
-                              backgroundColor: "white",
-                            }}
-                          >
-                            <div className="pt-4 border-t border-gray-100 flex flex-wrap gap-12">
-                              <div className="flex flex-col gap-1">
-                                <Text
-                                  variant="bodySm"
-                                  className="uppercase text-gray-500"
-                                >
-                                  DATE UPDATED
-                                </Text>
-                                <Text variant="bodyMd">
-                                  {formatDateShort(
-                                    v.createdAt ||
-                                      model.updatedAt ||
-                                      new Date().toISOString()
-                                  )}
-                                </Text>
-                              </div>
-
-                              <div className="flex flex-col gap-1">
-                                <Text
-                                  variant="bodySm"
-                                  className="uppercase text-gray-500"
-                                >
-                                  CAPABILITIES
-                                </Text>
-                                <div className="flex gap-2">
-                                  {model.supportsStreaming && (
-                                    <Badge>Streaming</Badge>
-                                  )}
-                                  {model.maxTokens ? (
-                                    <Badge>
-                                      {`${model.maxTokens.toLocaleString()} Tokens`}
-                                    </Badge>
-                                  ) : null}
-                                </div>
-                              </div>
-
-                              {model.supportedLanguages &&
-                                model.supportedLanguages.length > 0 && (
-                                  <div className="flex flex-col gap-1">
-                                    <Text
-                                      variant="bodySm"
-                                      className="uppercase text-gray-500"
-                                    >
-                                      LANGUAGES
-                                    </Text>
-                                    <div className="flex gap-1 flex-wrap">
-                                      {model.supportedLanguages
-                                        .slice(0, 3)
-                                        .map((l) => (
-                                          <Badge key={l}>
-                                            {l.toUpperCase()}
-                                          </Badge>
-                                        ))}
-                                      {model.supportedLanguages.length > 3 && (
-                                        <Badge>
-                                          {`+${model.supportedLanguages.length - 3}`}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      </Accordion>
+                          <div className="px-4 py-3 border-t md:border-t-0 border-baseGraySlateSolid4">
+                            <Text variant="bodyMd" className="capitalize">
+                              {v.isLatest
+                                ? v.lifecycleStage.replace(/_/g, " ")
+                                : v.status.replace(/_/g, " ")}
+                            </Text>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ))}
                   {(model.versions || []).length === 0 && (
@@ -510,11 +505,16 @@ const ModelDetailPage = () => {
                     </div>
                   )}
                 </div>
+
+                <div></div>
               </div>
             </div>
           </div>
 
-          <div className="w-full lg:w-80 shrink-0">
+          {/* <div
+            className="w-full lg:w-80 border-s-2 border-solid pl-4 pt-2 border-baseGraySlateSolid4 shrink-0"
+            dir="ltr"
+          >
             <div className="flex flex-col gap-5 lg:gap-10">
               <div className="flex flex-col gap-2">
                 <Text
@@ -553,7 +553,6 @@ const ModelDetailPage = () => {
                   </div>
                 )}
 
-                {/* Organization */}
                 <div className="flex items-center gap-2">
                   <Text
                     variant="bodyMd"
@@ -574,7 +573,6 @@ const ModelDetailPage = () => {
                   </Tooltip>
                 </div>
 
-                {/* Model Type */}
                 <div className="flex items-center gap-2">
                   <Text
                     variant="bodyMd"
@@ -591,7 +589,6 @@ const ModelDetailPage = () => {
                   </Text>
                 </div>
 
-                {/* Views (Placeholder) */}
                 <div className="flex items-center gap-2">
                   <Text
                     variant="bodyMd"
@@ -608,7 +605,6 @@ const ModelDetailPage = () => {
                   </Text>
                 </div>
 
-                {/* Source */}
                 <div className="flex items-center gap-2">
                   <Text
                     variant="bodyMd"
@@ -625,7 +621,6 @@ const ModelDetailPage = () => {
                   </Text>
                 </div>
 
-                {/* License */}
                 <div className="flex gap-2">
                   <Text
                     variant="bodyMd"
@@ -642,7 +637,6 @@ const ModelDetailPage = () => {
                   </Text>
                 </div>
 
-                {/* Sector */}
                 <div className="flex gap-2">
                   <Text
                     variant="bodyMd"
@@ -655,7 +649,6 @@ const ModelDetailPage = () => {
                       model.sectors.map((sector, idx) => (
                         <Tooltip content={sector} key={idx}>
                           <div className="w-[52px] h-[52px] border border-gray-200 p-1 rounded bg-white flex items-center justify-center">
-                            {/* Simulated sector icon since real ones might not exist in this repo */}
                             <span className="text-xs text-center font-bold text-gray-400">
                               {sector.substring(0, 2).toUpperCase()}
                             </span>
@@ -670,7 +663,6 @@ const ModelDetailPage = () => {
                   </div>
                 </div>
 
-                {/* Geography */}
                 <div className="flex items-center gap-2">
                   <Text
                     variant="bodyMd"
@@ -712,7 +704,7 @@ const ModelDetailPage = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Recent Evaluations Section */}
