@@ -1,59 +1,59 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import Link from 'next/link';
-import { Icon, Text } from 'opub-ui';
+import Image from "next/image";
+import Link from "next/link";
+import { Icon, Text } from "opub-ui";
 
-import { cn } from '@/lib/utils';
-import { Icons } from '@/components/icons';
-import styles from './styles.module.scss';
+import { cn } from "@/lib/utils";
+import { Icons } from "@/components/icons";
+import styles from "./styles.module.scss";
 
 const MainFooter = () => {
   const socialMedia = [
     {
       icon: Icons.github,
-      link: 'https://github.com/civicdatalab',
+      link: "https://github.com/civicdatalab",
     },
     {
       icon: Icons.linkedin,
-      link: 'https://www.linkedin.com/company/civicdatalab',
+      link: "https://www.linkedin.com/company/civicdatalab",
     },
     {
       icon: Icons.twitter,
-      link: 'https://twitter.com/civicdatalab',
+      link: "https://twitter.com/civicdatalab",
     },
     {
       icon: Icons.facebook,
-      link: 'https://facebook.com/civicdatalab',
+      link: "https://facebook.com/civicdatalab",
     },
   ];
-  
+
   return (
-    <div className="bg-primaryPurple w-full">
+    <div className="bg-primaryPurple2 w-full">
       <div className="footer-container w-full px-3 sm:px-4 lg:px-8 h-[88px]">
         <div className="footer-inner flex items-center justify-between h-full">
           {/* Left: Footer Links */}
           <div className="footer-links flex items-center gap-6">
             <Link
-              href={'/sitemap'}
+              href={"/sitemap"}
               className="hover:opacity-80 transition-opacity text-white text-[14px] leading-5 font-normal"
             >
               SITEMAP
             </Link>
             <Link
-              href={'mailto:info@civicdatalab.in'}
+              href={"mailto:info@civicdatalab.in"}
               className="hover:opacity-80 transition-opacity text-white text-[14px] leading-5 font-normal"
             >
               CONTACT US
             </Link>
             <Link
-              href={'/about-us'}
+              href={"/about-us"}
               className="hover:opacity-80 transition-opacity text-white text-[14px] leading-5 font-normal"
             >
               ABOUT US
             </Link>
             <Link
-              href={'/terms-privacy'}
+              href={"/terms-privacy"}
               className="hover:opacity-80 transition-opacity text-white text-[14px] leading-5 font-normal"
             >
               TERMS & PRIVACY
@@ -63,7 +63,7 @@ const MainFooter = () => {
           {/* Right: Made by CivicDataLab and Social Media Icons */}
           <div className="footer-center flex items-center gap-1">
             <Link
-              href={'https://www.civicdatalab.in'}
+              href={"https://www.civicdatalab.in"}
               target="_blank"
               rel="noopener noreferrer"
               className="hover:opacity-90 transition-opacity"
@@ -87,11 +87,7 @@ const MainFooter = () => {
                   rel="noopener noreferrer"
                   className="w-10 h-10 p-2 rounded-[20px] flex items-center justify-center hover:opacity-80 transition-opacity bg-secondaryGreen"
                 >
-                  <Icon
-                    className="text-black"
-                    source={item.icon}
-                    size={20}
-                  />
+                  <Icon className="text-black" source={item.icon} size={20} />
                 </Link>
               ))}
             </div>
