@@ -22,8 +22,12 @@ type Evaluation = {
   skippedTests: number | null;
   createdAt: string;
   startedAt: string | null;
-  completedAt: string | null;
+  completedAt: string;
   modelName: string | null;
+  modelId: string;
+  auditType: string;
+  evaluationMode: string;
+  successRate: number;
 };
 
 type AIModel = {
@@ -82,6 +86,8 @@ const AIMakerDashboard = () => {
         skippedTests
         modelName
         successRate
+        completedAt
+        createdAt
       }
     }
   `;
@@ -127,7 +133,7 @@ const AIMakerDashboard = () => {
     const fetchData = async () => {
       try {
         const [modelsResponse, evaluationsResponse] = await Promise.all([
-          request(GET_AI_MODELS, { limit: 6 }, { organization: orgId }),
+          request(GET_AI_MODELS, { limit: 10 }, { organization: orgId }),
           request(GET_EVALUATIONS, { limit: 5 }, { organization: orgId }),
         ]);
 
@@ -216,6 +222,9 @@ const AIMakerDashboard = () => {
       }),
       columnHelper.accessor("status", {
         header: "Status",
+      }),
+      columnHelper.accessor("auditType", {
+        header: "Audit Type",
       }),
       columnHelper.accessor("totalTests", {
         header: "Test Result",
