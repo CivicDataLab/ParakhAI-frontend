@@ -64,7 +64,12 @@ const RecommendationModal: React.FC<RecommendationModalProps> = ({
             <Button kind="secondary" onClick={handleClose} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button kind="primary" onClick={handleSubmit} disabled={isSubmitting}>
+            <Button 
+              kind="primary" 
+              onClick={handleSubmit} 
+              disabled={isSubmitting}
+              className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
+            >
               {isSubmitting ? 'Submitting...' : submitButtonText}
             </Button>
           </div>

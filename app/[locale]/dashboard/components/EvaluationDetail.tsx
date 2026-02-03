@@ -577,7 +577,7 @@ const EvaluationDetail = ({
           <Link href={backLink} className="w-full sm:w-auto">
             <Button
               kind="primary"
-              className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base w-full sm:w-auto"
+              className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base w-full sm:w-auto"
             >
               {backLinkText}
             </Button>
@@ -797,7 +797,7 @@ const EvaluationDetail = ({
       {/* Risk Severity Summary - Total Issues Identified */}
       {(audit.status === "COMPLETED" || audit.completedAt) &&
         totalIssuesIdentified > 0 && (
-          <div className="mb-8 manual-eval-input-panel p-4 sm:p-6 bg-white">
+          <div className="mb-8 border-solid border-1 border-baseGraySlateAlpha7 rounded-4 p-4 sm:p-6 bg-white">
             <div className="mb-4 flex items-baseline gap-2">
               <Text variant="bodyMd" className="text-gray-900">
                 Total Issues Identified:
@@ -933,7 +933,7 @@ const EvaluationDetail = ({
           }}
           className={
             isReportReady
-              ? "bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base [&_svg]:text-white [&_svg]:fill-white [&_svg]:stroke-white [&_*]:text-white [&_*]:fill-white [&_*]:stroke-white"
+              ? "bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base [&_svg]:text-white [&_svg]:fill-white [&_svg]:stroke-white [&_*]:text-white [&_*]:fill-white [&_*]:stroke-white"
               : "bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-black hover:text-black hover:!text-black px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base [&_svg]:text-black [&_svg]:fill-black [&_svg]:stroke-black [&_*]:text-black [&_*]:fill-black [&_*]:stroke-black"
           }
         >
@@ -942,7 +942,7 @@ const EvaluationDetail = ({
         <Link href={backLink}>
           <Button
             kind="primary"
-            className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base"
+            className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base"
           >
             {backLinkText}
           </Button>

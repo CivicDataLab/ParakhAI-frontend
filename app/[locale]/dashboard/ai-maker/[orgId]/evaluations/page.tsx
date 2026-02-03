@@ -236,7 +236,7 @@ const AuditsListPage = () => {
         <Text variant="headingLg" as="h1" fontWeight="bold">
           Evaluations
         </Text>
-        <Button kind="secondary" onClick={handleNewAudit} className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base">
+        <Button kind="secondary" onClick={handleNewAudit} className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base">
           New Evaluation
         </Button>
       </div>
@@ -272,7 +272,7 @@ const AuditsListPage = () => {
             <br />
             Start your first evaluation to see results here.
           </Text>
-          <Button kind="primary" onClick={handleNewAudit} className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base">
+          <Button kind="primary" onClick={handleNewAudit} className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base">
             Start New Evaluation
           </Button>
         </div>
