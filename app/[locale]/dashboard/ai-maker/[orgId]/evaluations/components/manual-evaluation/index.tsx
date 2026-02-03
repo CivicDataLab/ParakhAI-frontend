@@ -1,21 +1,25 @@
 'use client';
 
 import { useGraphQL } from '@/lib/api';
+import RichTextRenderer from '@/components/RichTextRenderer';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { Button, Spinner, Tag, Text } from 'opub-ui';
+import { Button, Label, Select, Spinner, Tag, Text, TextField } from 'opub-ui';
 import React, { useCallback, useEffect, useState } from 'react';
+import { IconCircleArrowRight } from '@tabler/icons-react';
 import FailureDetails from './FailureDetails';
 import ModelOutputDisplay from './ModelOutputDisplay';
 import ModuleSelector from './ModuleSelector';
 import RecommendationModal from './RecommendationModal';
 import TestCaseHistory from './TestCaseHistory';
 import TestCaseInput from './TestCaseInput';
-import type {
-  ManualEvaluationStatus,
-  ManualTestCase,
-  ModuleProgress,
-  SubModuleInfo,
+import {
+  LANGUAGE_OPTIONS,
+  SEVERITY_OPTIONS,
+  type ManualEvaluationStatus,
+  type ManualTestCase,
+  type ModuleProgress,
+  type SubModuleInfo,
 } from './types';
 
 // GraphQL Queries and Mutations
@@ -137,7 +141,6 @@ interface ManualEvaluationFlowProps {
   modelType: string;
   supportedLanguages?: string[];
   orgId: string;
-  onPrevious: () => void;
   onFinishAudit: () => void;
   isRequestingAudit: boolean;
 }
@@ -154,7 +157,6 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   modelType,
   supportedLanguages,
   orgId,
-  onPrevious,
   onFinishAudit,
   isRequestingAudit,
 }) => {
@@ -471,15 +473,23 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <Text variant="headingLg" className="mb-2">
-          Manual Evaluation
-        </Text>
-        <Text variant="bodySm" className="text-gray-500">
-          Test each module with at least 3 test cases. Evaluate model outputs and mark them as passed or failed.
-        </Text>
-      </div>
+      {/* Header - only show when module is selected */}
+      {selectedModule && (
+        <div>
+          <Text variant="headingLg" className="mb-1 block">
+            Test Cases for Module: {getModuleDisplayName(selectedModule)}
+          </Text>
+          <button
+            onClick={() => setSelectedModule(null)}
+            className="text-[#6849EE] hover:underline mb-4 block border-none bg-transparent p-0"
+          >
+            <Text variant="bodySm" className="text-[#6849EE]">
+              &lt; Change Module
+            </Text>
+          </button>
+        </div>
+      )}
+
 
       {/* Error display */}
       {error && (
@@ -504,92 +514,254 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
       {/* Test Case Flow */}
       {selectedModule && (
         <div className="space-y-6">
-          {/* Module header with progress */}
-          <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg border border-purple-200">
+          {/* Test Case Number and Language Selectors */}
+          <div className="flex items-center justify-between">
             <div>
-              <Text variant="headingMd">
-                {getModuleDisplayName(selectedModule)}
-              </Text>
-              <Text variant="bodySm" className="text-gray-600">
-                {currentModuleProgress?.testCaseCount || 0} / 3 test cases completed
-              </Text>
+              <Tag
+                variation="filled"
+                fillColor="#E5E7EB"
+                textColor="#374151"
+              >
+                <Text variant="bodySm" fontWeight="medium">
+                  Test Case: {(currentModuleProgress?.testCaseCount || 0) + 1}
+                </Text>
+              </Tag>
             </div>
-            <div className="flex gap-3">
-              <Button kind="secondary" onClick={() => setSelectedModule(null)}>
-                Change Module
-              </Button>
+            {supportedLanguages && supportedLanguages.length > 1 && (
+              <div className="flex gap-4">
+                <div className="w-48">
+                  <Select
+                    name="sourceLanguage"
+                    label="Source Language"
+                    labelHidden
+                    options={LANGUAGE_OPTIONS.filter((opt) => supportedLanguages.includes(opt.value))}
+                    value={sourceLanguage}
+                    onChange={setSourceLanguage}
+                    placeholder="Select"
+                  />
+                </div>
+                <div className="w-48">
+                  <Select
+                    name="targetLanguage"
+                    label="Target Language"
+                    labelHidden
+                    options={LANGUAGE_OPTIONS.filter((opt) => supportedLanguages.includes(opt.value))}
+                    value={targetLanguage}
+                    onChange={setTargetLanguage}
+                    placeholder="Select"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Input and Output Panels Side by Side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Input Panel */}
+            <div className="manual-eval-input-panel p-6 bg-white">
+              <Text variant="bodyMd" fontWeight="medium" className="mb-4 block">
+                Input
+              </Text>
+              <TextField
+                name="inputPrompt"
+                label="Input Prompt"
+                labelHidden
+                multiline={12}
+                value={inputPrompt}
+                onChange={setInputPrompt}
+                placeholder="Type your prompt here"
+              />
+              <div className="flex justify-end mt-4">
+                <Button
+                  kind="primary"
+                  onClick={handleCallModel}
+                  disabled={!inputPrompt.trim() || isCallingModel}
+                  className="bg-[#6849EE] hover:bg-[#6849EE] text-white hover:text-white disabled:text-gray-400"
+                >
+                  {isCallingModel ? 'Calling...' : 'Submit'}
+                </Button>
+              </div>
+            </div>
+
+            {/* Output Panel */}
+            <div className="manual-eval-input-panel p-6 bg-white">
+              <div className="flex items-center justify-between mb-4">
+                <Text variant="bodyMd" fontWeight="medium">
+                  Output
+                </Text>
+                {latencyMs && (
+                  <Tag variation="outlined" textColor="#6B7280" borderColor="#D1D5DB">
+                    {latencyMs.toFixed(0)}ms
+                  </Tag>
+                )}
+              </div>
+              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 min-h-[200px] max-h-[400px] overflow-y-auto mb-4">
+                <div className="-ml-4">
+                  {hasCalledModel ? (
+                    modelOutput ? (
+                      <RichTextRenderer content={modelOutput} />
+                    ) : (
+                      <Text variant="bodySm">No output received</Text>
+                    )
+                  ) : (
+                    <Text variant="bodySm" className="text-gray-500">
+                      Output will appear here after submitting the prompt
+                    </Text>
+                  )}
+                </div>
+              </div>
+              {hasCalledModel && (
+                <div className="flex justify-end gap-3">
+                  <Button
+                    kind="secondary"
+                    onClick={() => setStatus('PASSED')}
+                    className={
+                      status === 'PASSED'
+                        ? 'border-2 border-green-600 bg-green-50 text-green-700'
+                        : ''
+                    }
+                  >
+                    ✓ Passed
+                  </Button>
+                  <Button
+                    kind="secondary"
+                    onClick={() => setStatus('FAILED')}
+                    className={
+                      status === 'FAILED'
+                        ? 'border-2 border-red-600 bg-red-50 text-red-700'
+                        : ''
+                    }
+                  >
+                    ✕ Failed
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Provide Issue Details */}
+          {hasCalledModel && status === 'FAILED' && (
+            <div className="space-y-6 p-6 bg-white rounded-lg border border-gray-200">
+              <div className="text-center">
+                <Text variant="headingMd" className="block">
+                  Provide Issue Details
+                </Text>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left Column: Issue and Risk Severity */}
+                <div className="space-y-6">
+                  <div>
+                    <Label className="audit-form-label">
+                      <Text variant="bodyMd" fontWeight="medium">
+                        Issue <span className="text-red-500">*</span>
+                      </Text>
+                    </Label>
+                    <div className="mt-2">
+                      <Select
+                        name="issueType"
+                        label="Issue"
+                        labelHidden
+                        options={subModules.map((sm) => ({
+                          value: sm.name,
+                          label: sm.displayName,
+                        }))}
+                        value={issueType}
+                        onChange={setIssueType}
+                        placeholder="Select"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="audit-form-label">
+                      <Text variant="bodyMd" fontWeight="medium">
+                        Risk Severity <span className="text-red-500">*</span>
+                      </Text>
+                    </Label>
+                    <div className="mt-2">
+                      <Select
+                        name="severity"
+                        label="Risk Severity"
+                        labelHidden
+                        options={SEVERITY_OPTIONS}
+                        value={severity}
+                        onChange={setSeverity}
+                        placeholder="Select"
+                      />
+                    </div>
+                  </div>
+                </div>
+                {/* Middle Column: Comments */}
+                <div>
+                  <Label className="audit-form-label">
+                    <Text variant="bodyMd" fontWeight="medium">
+                      Comments
+                    </Text>
+                  </Label>
+                  <div className="comments-textfield-wrapper mt-2">
+                    <TextField
+                      name="comments"
+                      label="Comments"
+                      labelHidden
+                      multiline={12}
+                      value={comments}
+                      onChange={setComments}
+                      placeholder="Type here"
+                    />
+                  </div>
+                </div>
+                {/* Right Column: Ideal Output */}
+                <div>
+                  <Label className="audit-form-label">
+                    <Text variant="bodyMd" fontWeight="medium">
+                      What would an ideal output look like?
+                    </Text>
+                  </Label>
+                  <div className="comments-textfield-wrapper mt-2">
+                    <TextField
+                      name="idealOutput"
+                      label="Ideal Output"
+                      labelHidden
+                      multiline={12}
+                      value={idealOutput}
+                      onChange={setIdealOutput}
+                      placeholder="Type here"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Save and Next Test Case Button */}
+          {hasCalledModel && status && (
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={handleSubmitTestCase}
+                disabled={isSubmitting || (status === 'FAILED' && (!issueType || !severity))}
+                className="bg-transparent hover:bg-transparent border-none shadow-none text-black hover:text-black px-0 py-0 disabled:text-gray-400 disabled:opacity-50 cursor-pointer flex items-center gap-2"
+              >
+                <span className="save-next-test-case-text">
+                  {isSubmitting ? 'Saving...' : 'Save and Next Test Case'}
+                </span>
+                <IconCircleArrowRight 
+                  className="text-[#0A0704]" 
+                  width={24} 
+                  height={24} 
+                  stroke={1.5}
+                  color="#0A0704"
+                />
+              </button>
               {currentModuleProgress && currentModuleProgress.testCaseCount >= 3 && (
                 <Button
                   kind="primary"
                   onClick={() => setShowModuleRecommendationModal(true)}
                   disabled={isCompletingModule}
+                  className="bg-[#6849EE] hover:bg-[#6849EE] text-white hover:text-white px-8 py-3"
                 >
                   {isCompletingModule ? 'Completing...' : 'Complete Module'}
                 </Button>
               )}
             </div>
-          </div>
-
-          {/* Test Case Number */}
-          <Tag variation="outlined" textColor="#7C3AED" borderColor="#C4B5FD">
-            <Text variant="bodySm" fontWeight="medium">
-              Test Case #{(currentModuleProgress?.testCaseCount || 0) + 1}
-            </Text>
-          </Tag>
-
-          {/* Input Section */}
-          <TestCaseInput
-            moduleName={selectedModule}
-            moduleDisplayName={getModuleDisplayName(selectedModule)}
-            supportedLanguages={supportedLanguages}
-            sourceLanguage={sourceLanguage}
-            targetLanguage={targetLanguage}
-            inputPrompt={inputPrompt}
-            isCallingModel={isCallingModel}
-            onSourceLanguageChange={setSourceLanguage}
-            onTargetLanguageChange={setTargetLanguage}
-            onInputPromptChange={setInputPrompt}
-            onSubmitPrompt={handleCallModel}
-          />
-
-          {/* Output and Evaluation */}
-          {hasCalledModel && (
-            <>
-              <ModelOutputDisplay
-                output={modelOutput}
-                latencyMs={latencyMs}
-                status={status}
-                onStatusChange={setStatus}
-              />
-
-              {/* Failure Details */}
-              {status === 'FAILED' && (
-                <FailureDetails
-                  subModules={subModules}
-                  issueType={issueType}
-                  severity={severity}
-                  comments={comments}
-                  idealOutput={idealOutput}
-                  onIssueTypeChange={setIssueType}
-                  onSeverityChange={setSeverity}
-                  onCommentsChange={setComments}
-                  onIdealOutputChange={setIdealOutput}
-                />
-              )}
-
-              {/* Submit Button */}
-              {status && (
-                <div className="flex justify-center">
-                  <Button
-                    kind="primary"
-                    onClick={handleSubmitTestCase}
-                    disabled={isSubmitting || (status === 'FAILED' && (!issueType || !severity))}
-                  >
-                    {isSubmitting ? 'Submitting...' : 'Submit & Next Test Case'}
-                  </Button>
-                </div>
-              )}
-            </>
           )}
 
           {/* Test Case History */}
@@ -603,17 +775,6 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
 
       {/* Navigation */}
       <div className="flex items-center justify-center gap-6 pt-8 border-t border-gray-200">
-        <Button kind="secondary" onClick={onPrevious} className="previous-button">
-          <Image
-            src="/images/icons/circle-arrow-left.png"
-            alt="Previous"
-            width={18}
-            height={18}
-            className="object-contain previous-icon"
-          />
-          <span className="previous-text">Previous</span>
-        </Button>
-
         <Button
           kind="primary"
           onClick={() => setShowOverallRecommendationModal(true)}

@@ -3105,57 +3105,6 @@ html.mobile-menu-open .breadcrumbs-ml {
   border-bottom: 1px solid #999999;
 }
 
-/* Previous button styling */
-.previous-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 16px;
-  justify-content: center;
-  border: none;
-  white-space: nowrap;
-}
-
-.previous-button [class*="Button"] {
-  border: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 16px;
-  column-gap: 16px;
-  white-space: nowrap;
-}
-
-/* Disabled state for Previous button in first step - match grey-light pagination style */
-.previous-button-disabled {
-  color: #c4c4c4; /* grey-light from design (#C4C4C4) */
-}
-
-.previous-button-disabled[disabled] {
-  opacity: 1; /* keep full opacity while using grey color */
-  cursor: default;
-}
-
-.previous-icon {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  object-fit: contain;
-  display: inline-block;
-  vertical-align: middle;
-  margin-right: 1px;
-}
-
-.previous-text {
-  font-weight: 500;
-  font-size: 14px;
-  line-height: 20px;
-  letter-spacing: 0px;
-  color: inherit;
-  white-space: nowrap;
-  display: inline-block;
-  vertical-align: middle;
-  margin-left: 0;
-}
-
 /* Add Test Cases button styling */
 .add-test-cases-button {
   display: inline-flex;
@@ -3245,7 +3194,7 @@ html.mobile-menu-open .breadcrumbs-ml {
 
 .audit-form-label {
   display: block;
-  margin-bottom: 8px;
+  /* Margin handled via utility classes (e.g., Tailwind) to allow per-form control */
   font-weight: 500;
   font-size: 14px;
   line-height: 20px;
@@ -4105,6 +4054,70 @@ html.mobile-menu-open .breadcrumbs-ml {
   margin-bottom: 8px;
 }
 
+/* Comments TextField Styling */
+.comments-textfield-wrapper {
+  width: 100%;
+  border: 1px solid #C4C4C4;
+  border-radius: 8px;
+  background-color: #FFFFFF;
+  padding: 8px 12px;
+  box-sizing: border-box;
+}
+
+.comments-textfield-wrapper [class*="TextField"],
+.comments-textfield-wrapper [class*="TextField"] > div {
+  width: 100%;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  box-shadow: none;
+}
+
+.comments-textfield-wrapper [class*="TextField"] textarea,
+.comments-textfield-wrapper textarea {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  outline: none;
+  resize: none;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+.comments-textfield-wrapper [class*="TextField"]:focus,
+.comments-textfield-wrapper [class*="TextField"]:focus-within,
+.comments-textfield-wrapper [class*="TextField"] > div:focus {
+  border: none;
+  border-color: transparent;
+  box-shadow: none;
+  outline: none;
+}
+
+/* Test Case Card Styling */
+.test-case-card {
+  border-radius: 16px !important;
+  border: 1px solid #C4B8F3 !important;
+  background-color: #FFFFFF;
+  padding: 24px;
+}
+
+.test-case-card *,
+.test-case-card *::before,
+.test-case-card *::after {
+  border: none !important;
+  outline: none !important;
+}
+
+.test-case-card {
+  border: 1px solid #C4B8F3 !important;
+}
+
 /* Enter Your Own Test Cases Heading Styling */
 .enter-test-cases-heading {
   margin-bottom: 8px;
@@ -4841,4 +4854,25 @@ html.mobile-menu-open .breadcrumbs-ml {
   .audit-content .tag-wrapper {
     margin-bottom: 1.5rem;
   }
+}
+
+/* Manual Evaluation Input Panel Border */
+.manual-eval-input-panel {
+  border: 1px solid #C4B8F3;
+  border-radius: 16px;
+}
+
+/* Test Case Card Border */
+.test-case-card-border {
+  border: 1px solid #C4B8F3 !important;
+  border-radius: 16px;
+}
+
+/* Save and Next Test Case Text Styling */
+.save-next-test-case-text {
+  color: #0A0704;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0px;
 }

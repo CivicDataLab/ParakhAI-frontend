@@ -38,7 +38,7 @@ const TestCaseInput: React.FC<TestCaseInputProps> = ({
     : LANGUAGE_OPTIONS;
 
   return (
-    <div className="space-y-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
+    <div className="space-y-6 py-6 bg-gray-50 rounded-lg border border-gray-200">
       <div className="flex items-center justify-between">
         <Text variant="headingMd">
           Testing: {moduleDisplayName}
@@ -83,20 +83,22 @@ const TestCaseInput: React.FC<TestCaseInputProps> = ({
       )}
 
       <div>
-        <Label className="audit-form-label">
+        <Label className="audit-form-label mb-1 block">
           <Text variant="bodyMd" fontWeight="medium">
             Input Prompt <span className="text-red-500">*</span>
           </Text>
         </Label>
-        <TextField
-          name="inputPrompt"
-          label="Input Prompt"
-          labelHidden
-          multiline={4}
-          value={inputPrompt}
-          onChange={onInputPromptChange}
-          placeholder="Enter your test prompt here..."
-        />
+        <div className="mt-2">
+          <TextField
+            name="inputPrompt"
+            label="Input Prompt"
+            labelHidden
+            multiline={4}
+            value={inputPrompt}
+            onChange={onInputPromptChange}
+            placeholder="Enter your test prompt here..."
+          />
+        </div>
       </div>
 
       <Button
