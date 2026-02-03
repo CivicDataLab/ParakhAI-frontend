@@ -32,7 +32,7 @@ type AIModel = {
   displayName: string;
   description: string;
   version: string;
-  auditCount: number;
+  auditsCount: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -56,7 +56,7 @@ const AIMakerDashboard = () => {
         displayName
         version
         description
-        auditCount
+        auditsCount
         createdAt
         updatedAt
       }
@@ -285,8 +285,8 @@ const AIMakerDashboard = () => {
                 {
                   icon: Icons.testPipe,
                   label: "Evaluations",
-                  value: `${model.auditCount} evaluations`,
-                  tooltip: `${model.auditCount} evaluations`,
+                  value: `${model.auditsCount} evaluations`,
+                  tooltip: `${model.auditsCount} evaluations`,
                 },
                 {
                   icon: Icons.discountCheck,

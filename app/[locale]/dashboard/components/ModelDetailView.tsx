@@ -41,7 +41,7 @@ export type AIModel = {
   status: string;
   isPublic: boolean;
   isActive: boolean;
-  auditCount: number;
+  auditsCount: number;
   createdAt: string;
   updatedAt: string;
   sectors: string[];
@@ -112,7 +112,7 @@ export const GET_AI_MODEL_QUERY = `
       status
       isPublic
       isActive
-      auditCount
+      auditsCount
       createdAt
       updatedAt
       sectors
