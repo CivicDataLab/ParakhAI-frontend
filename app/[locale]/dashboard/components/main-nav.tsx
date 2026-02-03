@@ -13,9 +13,6 @@ import MobileNav from "./mobile-nav";
 
 const buildNavigationLinks = () => {
   return [
-    { label: "Models", href: "/models" },
-    { label: "AI Makers", href: "#" },
-    { label: "Experts", href: "/auditors" },
     { label: "Resources", href: "/resources" },
     { label: "Dashboard", href: "/dashboard" },
   ];
@@ -68,18 +65,8 @@ const MainNav = () => {
               </div>
             </div>
 
-            {/* RIGHT: Search + Navigation Links + Avatar/Profile (desktop only) */}
+            {/* RIGHT: Navigation Links + Avatar/Profile (desktop only) */}
             <div className="hidden lg:flex items-center gap-6">
-              {/* Search Icon */}
-              <IconButton
-                icon={Icons.search}
-                size="slim"
-                color="onBgDefault"
-                className="text-white hover:opacity-80 transition-opacity"
-              >
-                Search
-              </IconButton>
-
               {/* Navigation Links */}
               {navigationLinks.map((link) => {
                 const isExternal =
