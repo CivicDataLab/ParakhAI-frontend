@@ -72,15 +72,16 @@ const AIMakerDashboard = () => {
       audits(limit: $limit) {
         id
         name
+        modelId
         status
+        auditType
+        evaluationMode
         totalTests
         passedTests
         failedTests
         skippedTests
-        createdAt
-        startedAt
-        completedAt
         modelName
+        successRate
       }
     }
   `;

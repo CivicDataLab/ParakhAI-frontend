@@ -261,7 +261,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const urlVersionId = searchParams.get("versionId");
   const urlAuditId = searchParams.get("auditId");
 
-  const [auditType, setAuditType] = useState<AuditType>("technical");
+  const [auditType, setAuditType] = useState<AuditType>("Technical");
   const [activeTab, setActiveTab] = useState<"config" | "test">("config");
   const [auditName, setAuditName] = useState(generateDefaultAuditName);
   const isAutoSaved = true;
@@ -349,7 +349,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
   // Automatically set mode of evaluation to "manual" when domain or cultural evaluation is selected
   useEffect(() => {
-    if ((auditType === "domain" || auditType === "cultural") && modeOfEvaluation !== "manual") {
+    if ((auditType === "Domain" || auditType === "Cultural") && modeOfEvaluation !== "manual") {
       setModeOfEvaluation("manual");
     }
   }, [auditType, modeOfEvaluation]);
@@ -480,11 +480,11 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
           if (audit.auditType) {
             const auditTypeMap: Record<string, AuditType> = {
-              TECHNICAL_AUDIT: "technical",
-              DOMAIN_AUDIT: "domain",
-              CULTURAL_AUDIT: "cultural",
+              TECHNICAL_AUDIT: "Technical",
+              DOMAIN_AUDIT: "Domain",
+              CULTURAL_AUDIT: "Cultural",
             };
-            setAuditType(auditTypeMap[audit.auditType] || "technical");
+            setAuditType(auditTypeMap[audit.auditType] || "Technical");
           }
 
           if (audit.auditObjective) setAuditObjective(audit.auditObjective);
@@ -1422,9 +1422,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                 style={{ borderRadius: '4px', overflow: 'hidden' }}
               >
                 <Tag variation="filled" fillColor="#E2F5C4" textColor="#0A0704">
-                  {auditType === "technical"
+                  {auditType === "Technical"
                     ? "Technical Evaluation"
-                    : auditType === "domain"
+                    : auditType === "Domain"
                       ? "Domain Evaluation"
                       : "Cultural Evaluation"}
                 </Tag>

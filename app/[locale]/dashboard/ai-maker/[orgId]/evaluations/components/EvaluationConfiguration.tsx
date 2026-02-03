@@ -5,7 +5,7 @@ import { Text, TextField, Label, Select, Combobox, Spinner } from "opub-ui";
 import type { SelectOption } from "./types";
 import styles from "./styles.module.scss";
 
-type AuditType = "technical" | "domain" | "cultural";
+type AuditType = "Technical" | "Domain" | "Cultural";
 
 type Module = {
   name: string;
@@ -100,7 +100,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
 
   // Automatically set mode of evaluation to "manual" when domain or cultural evaluation is selected
   useEffect(() => {
-    if ((auditType === "domain" || auditType === "cultural") && modeOfEvaluation !== "manual") {
+    if ((auditType === "Domain" || auditType === "Cultural") && modeOfEvaluation !== "manual") {
       setModeOfEvaluation("manual");
     }
   }, [auditType, modeOfEvaluation, setModeOfEvaluation]);
@@ -133,14 +133,14 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
         {/* Technical Audit Option */}
         <label
           className={`flex items-start gap-3 cursor-pointer transition-all ${styles.technicalAuditCard} ${
-            auditType === "technical" ? "" : ""
+            auditType === "Technical" ? "" : ""
           }`}
         >
           <input
             type="radio"
             name="auditType"
-            value="technical"
-            checked={auditType === "technical"}
+            value="Technical"
+            checked={auditType === "Technical"}
             onChange={(e) => setAuditType(e.target.value as AuditType)}
             className="mt-1 w-4 h-4 text-primary-purple focus:ring-primary-purple focus:ring-2"
           />
@@ -164,14 +164,14 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
         {/* Domain Audit Option */}
         <label
           className={`flex items-start gap-3 cursor-pointer transition-all ${styles.domainAuditCard} ${
-            auditType === "domain" ? "" : ""
+            auditType === "Domain" ? "" : ""
           }`}
         >
           <input
             type="radio"
             name="auditType"
-            value="domain"
-            checked={auditType === "domain"}
+            value="Domain"
+            checked={auditType === "Domain"}
             onChange={(e) => setAuditType(e.target.value as AuditType)}
             className="mt-1 w-4 h-4 text-primary-purple focus:ring-primary-purple focus:ring-2"
           />
@@ -195,14 +195,14 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
         {/* Cultural Audit Option */}
         <label
           className={`flex items-start gap-3 cursor-pointer transition-all ${styles.culturalAuditCard} ${
-            auditType === "cultural" ? "" : ""
+            auditType === "Cultural" ? "" : ""
           }`}
         >
           <input
             type="radio"
             name="auditType"
-            value="cultural"
-            checked={auditType === "cultural"}
+            value="Cultural"
+            checked={auditType === "Cultural"}
             onChange={(e) => setAuditType(e.target.value as AuditType)}
             className="mt-1 w-4 h-4 text-primary-purple focus:ring-primary-purple focus:ring-2"
           />
@@ -225,7 +225,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
       </div>
 
       {/* Audit Configuration Form - Show when Technical, Domain, or Cultural Audit is selected */}
-      {(auditType === "technical" || auditType === "domain" || auditType === "cultural") && (
+      {(auditType === "Technical" || auditType === "Domain" || auditType === "Cultural") && (
         <div className={`${styles.auditConfigForm} mt-8`}>
           {/* Auditor Information Section */}
           <div className="mb-6">
@@ -583,7 +583,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                   }}
                   placeholder="Click to select from dropdown"
                   error={validationErrors.modeOfEvaluation}
-                  disabled={auditType === "domain" || auditType === "cultural"}
+                  disabled={auditType === "Domain" || auditType === "Cultural"}
                 />
               </div>
             </div>
