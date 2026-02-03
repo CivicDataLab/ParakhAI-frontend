@@ -615,22 +615,14 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                   <Button
                     kind="secondary"
                     onClick={() => setStatus('PASSED')}
-                    className={
-                      status === 'PASSED'
-                        ? 'border-2 border-green-600 bg-green-50 text-green-700'
-                        : ''
-                    }
+                    className={`test-input-button ${status === 'PASSED' ? 'test-input-button-selected' : ''}`}
                   >
                     ✓ Passed
                   </Button>
                   <Button
                     kind="secondary"
                     onClick={() => setStatus('FAILED')}
-                    className={
-                      status === 'FAILED'
-                        ? 'border-2 border-red-600 bg-red-50 text-red-700'
-                        : ''
-                    }
+                    className={`test-input-button ${status === 'FAILED' ? 'test-input-button-selected' : ''}`}
                   >
                     ✕ Failed
                   </Button>
