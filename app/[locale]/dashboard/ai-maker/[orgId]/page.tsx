@@ -35,6 +35,8 @@ type AIModel = {
   auditsCount: number;
   createdAt: string;
   updatedAt: string;
+  testCasesCount: number;
+  modelType: string;
 };
 
 const AIMakerDashboard = () => {
@@ -57,8 +59,10 @@ const AIMakerDashboard = () => {
         version
         description
         auditsCount
+        testCasesCount
         createdAt
         updatedAt
+        modelType
       }
     }
   `;
@@ -80,6 +84,19 @@ const AIMakerDashboard = () => {
       }
     }
   `;
+  
+  const modelTypeLabels: Record<string, string> = {
+    TRANSLATION: "Translation",
+    TEXT_GENERATION: "Text Generation",
+    SUMMARIZATION: "Summarisation",
+    QUESTION_ANSWERING: "Question Answering",
+    SENTIMENT_ANALYSIS: "Sentiment Analysis",
+    TEXT_CLASSIFICATION: "Text Classification",
+    NAMED_ENTITY_RECOGNITION: "Named Entity Recognition",
+    TEXT_TO_SPEECH: "Text to Speech",
+    SPEECH_TO_TEXT: "Speech to Text",
+    OTHER: "Other",
+  };
 
   // GraphQL hook
   const { request } = useGraphQL();
@@ -90,6 +107,19 @@ const AIMakerDashboard = () => {
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const formatDate = (dateString?: string | null) => {
+    if (!dateString) return "--";
+
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "--";
+
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
 
   // Fetch data on component mount
   useEffect(() => {
@@ -129,9 +159,9 @@ const AIMakerDashboard = () => {
   );
 
   const metrics = [
-    { label: "Audit Runs", value: evaluations.length.toString() || "--" },
+    { label: "Evaluation Runs", value: evaluations.length.toString() || "--" },
     { label: "Test Cases", value: totalTestCases.toString() || "--" },
-    { label: "Models Covered", value: models.length.toString() || "--" },
+    { label: "Models", value: models.length.toString() || "--" },
     { label: "Issues Flagged", value: totalIssues.toString() || "--" },
   ];
 
@@ -279,20 +309,20 @@ const AIMakerDashboard = () => {
                 {
                   icon: Icons.calendar,
                   label: "Created",
-                  value: new Date(model.createdAt).toLocaleDateString(),
-                  tooltip: new Date(model.createdAt).toLocaleDateString(),
+                  value: formatDate(model.updatedAt),
+                  tooltip: formatDate(model.updatedAt),
                 },
                 {
                   icon: Icons.testPipe,
-                  label: "Evaluations",
-                  value: `${model.auditsCount} evaluations`,
-                  tooltip: `${model.auditsCount} evaluations`,
+                  label: "Test Cases",
+                  value: `${model.testCasesCount || 0} test cases`,
+                  tooltip: `${model.testCasesCount || 0} test cases`,
                 },
                 {
                   icon: Icons.discountCheck,
-                  label: "Version",
-                  value: model.version || "N/A",
-                  tooltip: model.version || "N/A",
+                  label: "Audits",
+                  value: `${model.auditsCount || 0} evaluations`,
+                  tooltip: `${model.auditsCount || 0} evaluations`,
                 },
               ] as any;
 
@@ -305,7 +335,7 @@ const AIMakerDashboard = () => {
                 },
               ];
 
-              const type = ["AI Model"].map((tag: string) => ({
+              const type = [modelTypeLabels[model.modelType] || model.modelType].map((tag: string) => ({
                 label: tag,
                 fillColor: "#E2F5C4",
                 borderColor: "#E2F5C4",
@@ -317,9 +347,8 @@ const AIMakerDashboard = () => {
                 variation: "collapsed" as const,
                 iconColor: "highlight" as const,
                 metadataContent,
-                footerContent,
+                // footerContent,
                 type,
-                tag: ["AI Model"],
               };
 
               return (
