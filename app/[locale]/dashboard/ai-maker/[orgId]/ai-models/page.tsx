@@ -590,7 +590,7 @@ const AIModelsPage = () => {
                   },
                   {
                     icon: Icons.discountCheck,
-                    label: "Audits",
+                    label: "Evaluations",
                     value: auditsValue,
                   },
                 ] as any;
