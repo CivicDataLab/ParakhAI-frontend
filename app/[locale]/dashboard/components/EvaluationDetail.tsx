@@ -50,6 +50,24 @@ const GET_AUDIT_RESULTS_QUERY = `
   }
 `;
 
+const GET_MANUAL_TEST_CASES_QUERY = `
+  query ManualTestCases($auditId: ID!) {
+    manualTestCases(auditId: $auditId) {
+      id
+      module
+      subModule
+      inputPrompt
+      modelOutput
+      status
+      issueType
+      severity
+      comments
+      idealOutput
+      createdAt
+    }
+  }
+`;
+
 const GET_AI_MODEL_NAME_QUERY = `
   query GetAiModelName($model_id: ID!) {
     aiModel(modelId: $model_id) {
@@ -241,6 +259,11 @@ const EvaluationDetail = ({
     url: string;
   } | null>(null);
   const [testCasesData, setTestCasesData] = useState<TestCase[]>([]);
+  const [manualTestCases, setManualTestCases] = useState<Array<{
+    id: string;
+    severity?: 'LOW' | 'MEDIUM' | 'HIGH';
+    status: 'PASSED' | 'FAILED';
+  }>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -249,6 +272,28 @@ const EvaluationDetail = ({
   const isFetchingRef = useRef(false);
   const lastFetchedAuditIdRef = useRef<string | null>(null);
   const isReportReady = Boolean(auditReport?.url);
+
+  // Fetch manual test cases
+  const fetchManualTestCases = async () => {
+    try {
+      const requestOptions = orgId ? { organization: orgId } : undefined;
+
+      const data = await request<{
+        manualTestCases: Array<{
+          id: string;
+          severity?: 'LOW' | 'MEDIUM' | 'HIGH';
+          status: 'PASSED' | 'FAILED';
+        }>;
+      }>(GET_MANUAL_TEST_CASES_QUERY, { auditId: evaluationId }, requestOptions);
+
+      if (data?.manualTestCases) {
+        setManualTestCases(data.manualTestCases);
+      }
+    } catch (err: any) {
+      console.error("Error fetching manual test cases:", err);
+      // Don't set error state here as manual test cases are optional
+    }
+  };
 
   // Fetch audit results
   const fetchResults = async () => {
@@ -336,6 +381,7 @@ const EvaluationDetail = ({
 
           if (data.audit.status === "COMPLETED" || data.audit.completedAt) {
             await fetchResults();
+            await fetchManualTestCases();
             await fetchAuditSummary();
             return;
           }
@@ -418,6 +464,7 @@ const EvaluationDetail = ({
           auditData.audit.completedAt
         ) {
           await fetchResults();
+          await fetchManualTestCases();
           await fetchAuditSummary();
         } else if (
           auditData.audit.status === "RUNNING" ||
@@ -497,7 +544,7 @@ const EvaluationDetail = ({
     return "critical";
   };
 
-  // Risk severity summary derived from testCasesData
+  // Risk severity summary derived from testCasesData and manualTestCases
   const riskSummary = testCasesData.reduce(
     (acc, testCase) => {
       switch (testCase.riskSeverity) {
@@ -517,6 +564,25 @@ const EvaluationDetail = ({
     },
     { low: 0, medium: 0, high: 0 }
   );
+
+  // Add manual test cases to risk summary (only count FAILED ones with severity)
+  manualTestCases.forEach((testCase) => {
+    if (testCase.status === 'FAILED' && testCase.severity) {
+      switch (testCase.severity) {
+        case 'LOW':
+          riskSummary.low += 1;
+          break;
+        case 'MEDIUM':
+          riskSummary.medium += 1;
+          break;
+        case 'HIGH':
+          riskSummary.high += 1;
+          break;
+        default:
+          break;
+      }
+    }
+  });
 
   const totalIssuesIdentified =
     riskSummary.low + riskSummary.medium + riskSummary.high;
@@ -791,13 +857,9 @@ const EvaluationDetail = ({
               </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Risk Severity Summary - Total Issues Identified */}
-      {(audit.status === "COMPLETED" || audit.completedAt) &&
-        totalIssuesIdentified > 0 && (
-          <div className="mb-8 border-solid border-1 border-baseGraySlateAlpha7 rounded-4 p-4 sm:p-6 bg-white">
+          {/* Risk Severity Summary - Total Issues Identified */}
+          <div className="mt-6 manual-eval-input-panel p-4 sm:p-6 bg-white">
             <div className="mb-4 flex items-baseline gap-2">
               <Text variant="bodyMd" className="text-gray-900">
                 Total Issues Identified:
@@ -864,7 +926,8 @@ const EvaluationDetail = ({
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
       {/* Test Cases */}
       <div className="p-6 bg-white rounded-2xl border border-[#C4B8F3]">
