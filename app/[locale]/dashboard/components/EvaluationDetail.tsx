@@ -497,6 +497,30 @@ const EvaluationDetail = ({
     return "critical";
   };
 
+  // Risk severity summary derived from testCasesData
+  const riskSummary = testCasesData.reduce(
+    (acc, testCase) => {
+      switch (testCase.riskSeverity) {
+        case "Low":
+          acc.low += 1;
+          break;
+        case "Medium":
+          acc.medium += 1;
+          break;
+        case "High":
+          acc.high += 1;
+          break;
+        default:
+          break;
+      }
+      return acc;
+    },
+    { low: 0, medium: 0, high: 0 }
+  );
+
+  const totalIssuesIdentified =
+    riskSummary.low + riskSummary.medium + riskSummary.high;
+
   if (isSessionLoading || isLoading) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-20">
@@ -769,6 +793,78 @@ const EvaluationDetail = ({
           </div>
         </div>
       )}
+
+      {/* Risk Severity Summary - Total Issues Identified */}
+      {(audit.status === "COMPLETED" || audit.completedAt) &&
+        totalIssuesIdentified > 0 && (
+          <div className="mb-8 manual-eval-input-panel p-4 sm:p-6 bg-white">
+            <div className="mb-4 flex items-baseline gap-2">
+              <Text variant="bodyMd" className="text-gray-900">
+                Total Issues Identified:
+              </Text>
+              <Text variant="bodyMd" className="text-[#E11D48] font-semibold">
+                {totalIssuesIdentified}{" "}
+                {totalIssuesIdentified === 1 ? "Issue" : "Issues"}
+              </Text>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Low Risk */}
+              <div className="rounded-[16px] bg-[#EFF6FF] px-6 py-4 flex flex-col justify-center">
+                <Text
+                  variant="bodySm"
+                  fontWeight="semibold"
+                  className="text-xs text-gray-500 mb-2"
+                >
+                  LOW RISK
+                </Text>
+                <Text
+                  variant="headingLg"
+                  fontWeight="bold"
+                  className="text-[#2563EB] text-2xl"
+                >
+                  {riskSummary.low}
+                </Text>
+              </div>
+
+              {/* Medium Risk */}
+              <div className="rounded-[16px] bg-[#FFFBEB] px-6 py-4 flex flex-col justify-center">
+                <Text
+                  variant="bodySm"
+                  fontWeight="semibold"
+                  className="text-xs text-gray-500 mb-2"
+                >
+                  MEDIUM RISK
+                </Text>
+                <Text
+                  variant="headingLg"
+                  fontWeight="bold"
+                  className="text-[#92400E] text-2xl"
+                >
+                  {riskSummary.medium}
+                </Text>
+              </div>
+
+              {/* High Risk */}
+              <div className="rounded-[16px] bg-[#FEF2F2] px-6 py-4 flex flex-col justify-center">
+                <Text
+                  variant="bodySm"
+                  fontWeight="semibold"
+                  className="text-xs text-gray-500 mb-2"
+                >
+                  HIGH RISK
+                </Text>
+                <Text
+                  variant="headingLg"
+                  fontWeight="bold"
+                  className="text-[#E11D48] text-2xl"
+                >
+                  {riskSummary.high}
+                </Text>
+              </div>
+            </div>
+          </div>
+        )}
 
       {/* Test Cases */}
       <div className="p-6 bg-white rounded-2xl border border-[#C4B8F3]">
