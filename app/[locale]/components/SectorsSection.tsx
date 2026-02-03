@@ -130,8 +130,12 @@ const SectorsSection = () => {
     <section className="bg-[#F5F2FF] py-12 md:py-12 lg:py-17">
       <div className="container mx-auto px-4 md:px-8 lg:px-10">
         <div className="mb-8 lg:mb-10">
-          <Text variant="headingXl" className="text-gray-900">
-            Improving AI across sectors
+          <Text
+            variant="headingXl"
+            fontWeight="regular"
+            className="text-gray-900"
+          >
+            Improving AI across domains
           </Text>
         </div>
 
@@ -145,12 +149,12 @@ const SectorsSection = () => {
             ))}
           </div>
         ) : (
-          <div className="flex flex-row gap-6 w-full overflow-x-auto [&::-webkit-scrollbar]:w-1 h-[140px] [&::-webkit-scrollbar-thumb]:bg-baseGraySlateAlpha4 pt-2 [&::-webkit-scrollbar-track]:bg-baseGraySlateAlpha1">
+          <div className="flex flex-row gap-6 w-full flex-wrap justify-center   pt-2 ">
             {AllSectors.map((sector: any) => (
               <Link
                 href={`/models?sector=${sector.slug}`}
                 key={sector.id}
-                className="group border-1 h-[80px] border-solid md:min-w-[300px] lg:w-1/3 rounded-2 bg-white hover:scale-[1.02]  transition-all duration-300"
+                className="group border-1 h-[80px] border-solid md:min-w-[300px] rounded-2 bg-white  transition-all duration-300"
               >
                 <div className="flex items-center gap-4 p-5 justify-center ">
                   {/* Sector Info */}
