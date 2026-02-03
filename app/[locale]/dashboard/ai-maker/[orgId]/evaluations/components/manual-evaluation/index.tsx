@@ -2,7 +2,6 @@
 
 import { useGraphQL } from '@/lib/api';
 import RichTextRenderer from '@/components/RichTextRenderer';
-import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { Button, Label, Select, Spinner, Tag, Text, TextField } from 'opub-ui';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -576,7 +575,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                   kind="primary"
                   onClick={handleCallModel}
                   disabled={!inputPrompt.trim() || isCallingModel}
-                  className="bg-[#6849EE] hover:bg-[#6849EE] text-white hover:text-white disabled:text-gray-400"
+                  className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white disabled:text-gray-400 px-8 py-3 rounded-[8px] font-bold text-base"
                 >
                   {isCallingModel ? 'Calling...' : 'Submit'}
                 </Button>
@@ -748,7 +747,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                   kind="primary"
                   onClick={() => setShowModuleRecommendationModal(true)}
                   disabled={isCompletingModule}
-                  className="bg-[#6849EE] hover:bg-[#6849EE] text-white hover:text-white px-8 py-3"
+                  className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
                 >
                   {isCompletingModule ? 'Completing...' : 'Complete Module'}
                 </Button>
@@ -771,18 +770,9 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           kind="primary"
           onClick={() => setShowOverallRecommendationModal(true)}
           disabled={!canFinishEvaluation || isRequestingAudit}
-          className="run-audit-button"
+          className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
         >
-          <span className="run-audit-text">
-            {isRequestingAudit ? 'Finishing...' : 'Finish Evaluation'}
-          </span>
-          <Image
-            src="/images/icons/circle-arrow-right.png"
-            alt="Finish"
-            width={18}
-            height={18}
-            className="object-contain run-audit-icon"
-          />
+          {isRequestingAudit ? 'Finishing...' : 'Finish Evaluation'}
         </Button>
       </div>
 

@@ -381,7 +381,7 @@ const AuditorsPage = () => {
         </div>
         <button
           type="button"
-          className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base border-none"
+          className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base border-none"
           onClick={() => setIsAddModalOpen(true)}
         >
           Add Auditor

@@ -257,7 +257,7 @@ const ModelSelectionModal = ({
             kind="primary"
             onClick={handleStart}
             disabled={!canStart || isSubmitting}
-            className="bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
+            className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
           >
             {isSubmitting ? "Starting..." : "Start"}
           </Button>
