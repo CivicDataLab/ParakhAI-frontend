@@ -274,11 +274,13 @@ module.exports = {
   transparent: '#FFFFFF00',
   borderOnBGSubdued: 'var(--base-gray-slate-solid-11)',
   primaryPurple: 'var(--purple-primary-color)',
+  primaryPurple2: 'var(--primary-purple-color2)',
+  secondaryYellow: 'var(--secondary-yellow-color)',
   secondaryGreen: 'var(--green-secondary-color)',
   greyExtralight: 'var(--grey-extralight)',
   white: 'var(--white)',
   tertiaryAccent: 'var(--accent-tertiary-color)',
   primaryText: 'var(--blue-primary-text)',
   secondaryText: 'var(--orange-secondary-text)',
-    
+
 }

@@ -1,171 +1,88 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import { useState } from "react";
 
 const features = [
   {
     image: "/images/home/Automated eval.png",
     title: "Automation-assisted Eval Environment",
     subtitle: "Scalable, Guided Testing",
+    description:
+      "Run scalable, guided evaluations in one workspace to consistently understand and compare AI behavior.",
   },
   {
     image: "/images/home/Expert eval.png",
     title: "Expert-led Evaluations",
     subtitle: "Human Insight, Applied",
+    description:
+      "Apply human expertise to assess real-world AI risks with context-aware judgment and oversight.",
   },
   {
     image: "/images/home/test cases.png",
     title: "Sector-specific, High Quality Test Cases",
     subtitle: "Built for Domain Relevance",
+    description:
+      "Test your AI models using domain-relevant test cases that reflect real-world usage and edge cases.",
   },
   {
     image: "/images/home/eval history and reports.png",
     title: "Evaluation History & Reports",
     subtitle: "Transparent Timeline of Results & Insights",
+    description:
+      "Track evaluation results over time to support transparency, comparison, and informed decision-making.",
   },
 ];
 
-interface FeatureCardProps {
+const TAB_TITLES = [
+  "Automation-assisted Environment",
+  "Expert-led Evaluations",
+  "Sector-specific Test Cases",
+  "Evaluation History & Reports",
+];
+
+interface TabPanelProps {
   feature: (typeof features)[0];
-  index: number;
-  isExpanded: boolean;
-  cardRef: (el: HTMLDivElement | null) => void;
-  onToggle: () => void;
 }
 
-const FeatureCard = ({
-  feature,
-  index,
-  isExpanded,
-  cardRef,
-  onToggle,
-}: FeatureCardProps) => {
+const TabPanel = ({ feature }: TabPanelProps) => {
   return (
-    <div ref={cardRef} className="mb-4">
-      <motion.div
-        className={`rounded-2xl moving-landing-card-border overflow-hidden border transition-colors duration-300 cursor-pointer ${
-          isExpanded
-            ? "border-[#E8E4FF] shadow-md"
-            : "bg-white border-gray-200 hover:border-gray-300"
-        }`}
-        onClick={onToggle}
-      >
-        {/* Header - Always Visible */}
-        <div className="p-5 md:p-6">
-          <h3
-            className={`text-base md:text-lg font-bold transition-colors duration-300 ${
-              isExpanded ? "text-gray-900" : "text-gray-800"
-            }`}
-          >
-            {feature.title}
-          </h3>
-          <p
-            className={`text-sm mt-1 transition-all duration-300 ${
-              isExpanded ? "text-[#6849EE]" : "text-[#6849EE]"
-            }`}
-          >
-            {feature.subtitle}
-          </p>
+    <div className="flex flex-row gap-4 items-center">
+      <div className="p-5 md:p-6 w-1/2">
+        <h1
+          className="text-base md:text-lg font-bold text-gray-900 text-[20px]
+"
+        >
+          {feature.description}
+        </h1>
+        {/* <p className="text-sm mt-1 text-[#6849EE]">{feature.subtitle}</p> */}
+      </div>
+      <div className="px-6 pb-6">
+        <div className="relative w-full rounded-xl overflow-hidden bg-white shadow-sm">
+          <img
+            src={feature.image}
+            alt={feature.title}
+            width={600}
+            height={400}
+            className=" object-contain rounded"
+          />
         </div>
-
-        {/* Collapsible Image Section */}
-        <AnimatePresence initial={false}>
-          {isExpanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-              className="overflow-hidden"
-            >
-              <div className="px-6 pb-6">
-                <div
-                  className="relative w-full rounded-xl overflow-hidden bg-white shadow-sm"
-                  // style={{ aspectRatio: "16/10" }}
-                >
-                  <img
-                    src={feature.image}
-                    alt={feature.title}
-                    className="w-full h-full object-cover rounded"
-                  />
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+      </div>
     </div>
   );
 };
 
 const HowItWorksSection = () => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const sectionRef = useRef<HTMLElement>(null);
-  const lastScrollY = useRef(0);
-  const isTransitioning = useRef(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (isTransitioning.current) return;
-
-      const currentScrollY = window.scrollY;
-      const isScrollingDown = currentScrollY > lastScrollY.current;
-      lastScrollY.current = currentScrollY;
-
-      const triggerPoint = window.innerHeight * 0.3;
-
-      if (isScrollingDown) {
-        const activeCard = cardRefs.current[activeIndex];
-        if (activeCard) {
-          const rect = activeCard.getBoundingClientRect();
-
-          if (
-            rect.top < triggerPoint - 100 &&
-            activeIndex < features.length - 1
-          ) {
-            isTransitioning.current = true;
-            setActiveIndex(activeIndex + 1);
-
-            setTimeout(() => {
-              isTransitioning.current = false;
-            }, 500);
-          }
-        }
-      } else {
-        if (activeIndex > 0) {
-          const currentCard = cardRefs.current[activeIndex];
-          if (currentCard) {
-            const rect = currentCard.getBoundingClientRect();
-
-            if (rect.top > triggerPoint + 50) {
-              isTransitioning.current = true;
-              setActiveIndex(activeIndex - 1);
-
-              setTimeout(() => {
-                isTransitioning.current = false;
-              }, 500);
-            }
-          }
-        }
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [activeIndex]);
+  const activeFeature = features[activeIndex];
 
   return (
-    <section ref={sectionRef} className="bg-white py-12 md:py-16 lg:py-20">
+    <section className="bg-white py-12 md:py-16 lg:py-20">
       <div className="container mx-auto px-4 md:px-8 lg:px-12">
-        <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 justify-between">
-          <div className="lg:w-[35%] lg:sticky lg:top-32 lg:self-start lg:h-fit">
+        <div className="flex flex-col lg:flex-col gap-12 lg:gap-10 justify-between">
+          <div className="w-full ">
             <h2
-              className=" text-red-900 mb-6 text-2xl md:text-3xl lg:text-4xl font-regular"
+              className="text-red-900 mb-6 text-2xl md:text-3xl lg:text-4xl font-regular"
               style={{
                 fontSize: "clamp(1.5rem, 3vw, 3.5rem)",
                 lineHeight: 1.1,
@@ -173,25 +90,29 @@ const HowItWorksSection = () => {
             >
               ParakhAI helps you catch biases early.
             </h2>
-            <p className="text-base md:text-lg text-gray-600 leading-relaxed">
-              Test your AI during development and early deployment to identify
-              biases and risks, so that your users get trustworthy AI.
-            </p>
           </div>
 
-          <div ref={containerRef} className="lg:w-[55%] flex flex-col">
-            {features.map((feature, index) => (
-              <FeatureCard
-                key={index}
-                feature={feature}
-                index={index}
-                isExpanded={activeIndex === index}
-                cardRef={(el: HTMLDivElement | null) => {
-                  cardRefs.current[index] = el;
-                }}
-                onToggle={() => setActiveIndex(index)}
-              />
-            ))}
+          <div className=" flex flex-col w-ful">
+            {/* Tab buttons */}
+            <div className="flex flex-wrap gap-2 mb-6 gap-5 lg:gap-10">
+              {TAB_TITLES.map((title, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => setActiveIndex(index)}
+                  className={`px-3 py-2 border-baseGraySlateAlpha4 rounded-4 text-sm font-medium transition-colors duration-200 ${
+                    activeIndex === index
+                      ? "bg-[#E8E4FF] text-[#6849EE]"
+                      : "text-gray-900 bg-baseGraySlateAlpha1 hover:bg-baseGraySlateAlpha4"
+                  }`}
+                >
+                  {title}
+                </button>
+              ))}
+            </div>
+
+            {/* Only the active tab's content is rendered */}
+            <TabPanel feature={activeFeature} />
           </div>
         </div>
       </div>

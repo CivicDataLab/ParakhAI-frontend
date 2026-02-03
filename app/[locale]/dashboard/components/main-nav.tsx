@@ -1,23 +1,23 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { signIn, useSession } from 'next-auth/react';
-import { Spinner, Icon, IconButton } from 'opub-ui';
+import React from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
+import { Spinner, Icon, IconButton } from "opub-ui";
 
-import { Icons } from '@/components/icons';
-import { ProfileMenu } from '@/components/ProfileMenu';
-import MobileNav from './mobile-nav';
+import { Icons } from "@/components/icons";
+import { ProfileMenu } from "@/components/ProfileMenu";
+import MobileNav from "./mobile-nav";
 
 const buildNavigationLinks = () => {
   return [
-    { label: 'Models', href: '/models' },
-    { label: 'AI Makers', href: '#' },
-    { label: 'Experts', href: '/auditors' },
-    { label: 'Resources', href: '/resources' },
-    { label: 'Dashboard', href: '/dashboard' },
+    { label: "Models", href: "/models" },
+    { label: "AI Makers", href: "#" },
+    { label: "Experts", href: "/auditors" },
+    { label: "Resources", href: "/resources" },
+    { label: "Dashboard", href: "/dashboard" },
   ];
 };
 
@@ -28,7 +28,7 @@ const MainNav = () => {
 
   return (
     <>
-      <nav className="bg-primaryPurple sticky top-0 z-[99999] w-full">
+      <nav className="bg-primaryPurple2 sticky top-0 z-[99999] w-full">
         <div className="w-full px-3 sm:px-4 lg:px-8">
           {/* Top bar container */}
           <div className="flex items-center justify-between min-h-[80px] py-4 lg:min-h-[60px] lg:py-3 gap-4">
@@ -45,7 +45,11 @@ const MainNav = () => {
 
               {/* Logo - always visible */}
               <div className="flex items-center flex-shrink-0">
-                <Link href="/" className="flex items-center" aria-label="ParakhAI Home">
+                <Link
+                  href="/"
+                  className="flex items-center"
+                  aria-label="ParakhAI Home"
+                >
                   <div
                     className="relative overflow-hidden 
                                 h-6 w-[100px] 
@@ -79,12 +83,13 @@ const MainNav = () => {
               {/* Navigation Links */}
               {navigationLinks.map((link) => {
                 const isExternal =
-                  link.href.startsWith('http://') || link.href.startsWith('https://');
+                  link.href.startsWith("http://") ||
+                  link.href.startsWith("https://");
                 const normalizedPath = (() => {
-                  if (!pathname) return '/';
+                  if (!pathname) return "/";
                   // Strip the leading locale segment if present: "/en/dashboard" -> "/dashboard"
-                  const withoutLocale = pathname.replace(/^\/[^/]+(?=\/)/, '');
-                  return withoutLocale || '/';
+                  const withoutLocale = pathname.replace(/^\/[^/]+(?=\/)/, "");
+                  return withoutLocale || "/";
                 })();
                 const isActive =
                   !isExternal &&
@@ -94,15 +99,15 @@ const MainNav = () => {
                   <Link
                     key={link.href}
                     href={link.href}
-                    target={isExternal ? '_blank' : undefined}
-                    rel={isExternal ? 'noopener noreferrer' : undefined}
+                    target={isExternal ? "_blank" : undefined}
+                    rel={isExternal ? "noopener noreferrer" : undefined}
                     className={`inline-flex items-center h-6 py-[2px] px-[5px] rounded hover:opacity-80 transition-opacity whitespace-nowrap ${
-                      isActive ? 'underline decoration-secondaryGreen' : ''
+                      isActive ? "underline decoration-secondaryGreen" : ""
                     }`}
                   >
                     <span
                       className={`text-base font-semibold leading-6 ${
-                        isActive ? 'text-secondaryGreen' : 'text-white'
+                        isActive ? "text-secondaryGreen" : "text-white"
                       }`}
                     >
                       {link.label}
@@ -113,11 +118,14 @@ const MainNav = () => {
 
               {/* Profile/Sign In */}
               <div className="flex items-center gap-3 ml-6">
-                {status === 'loading' ? (
+                {status === "loading" ? (
                   <Spinner />
                 ) : session ? (
                   <ProfileMenu
-                    user={{ name: session.user?.name, email: session.user?.email }}
+                    user={{
+                      name: session.user?.name,
+                      email: session.user?.email,
+                    }}
                     align="end"
                     side="bottom"
                     sideOffset={4}
@@ -125,7 +133,7 @@ const MainNav = () => {
                   />
                 ) : (
                   <button
-                    onClick={() => signIn('keycloak')}
+                    onClick={() => signIn("keycloak")}
                     className="bg-borderHighlightSubdued text-baseVioletSolid12 
                                text-base font-semibold uppercase tracking-[0.08em] 
                                py-3 px-6 rounded-lg border border-transparent 
@@ -145,5 +153,5 @@ const MainNav = () => {
     </>
   );
 };
-  
+
 export default MainNav;
