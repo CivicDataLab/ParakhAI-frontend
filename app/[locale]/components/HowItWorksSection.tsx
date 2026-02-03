@@ -47,8 +47,8 @@ interface TabPanelProps {
 
 const TabPanel = ({ feature }: TabPanelProps) => {
   return (
-    <div className="flex flex-row gap-4 items-center">
-      <div className="p-5 md:p-6 w-1/2">
+    <div className="flex flex-row gap-4 items-center flex-wrap">
+      <div className="p-5 md:p-6 w-full md:w-1/2">
         <h1
           className="text-base md:text-lg font-bold text-gray-900 text-[20px]
 "
@@ -57,8 +57,8 @@ const TabPanel = ({ feature }: TabPanelProps) => {
         </h1>
         {/* <p className="text-sm mt-1 text-[#6849EE]">{feature.subtitle}</p> */}
       </div>
-      <div className="px-6 pb-6">
-        <div className="relative w-full rounded-xl overflow-hidden bg-white shadow-sm">
+      <div className="md:px-6 pb-6">
+        <div className="relative w-full rounded-xl overflow-hidden shadow-sm">
           <img
             src={feature.image}
             alt={feature.title}
@@ -79,7 +79,7 @@ const HowItWorksSection = () => {
   return (
     <section className="bg-white py-12 md:py-16 lg:py-20">
       <div className="container mx-auto px-4 md:px-8 lg:px-12">
-        <div className="flex flex-col lg:flex-col gap-12 lg:gap-10 justify-between">
+        <div className="flex flex-col lg:flex-col gap-2 justify-between">
           <div className="w-full ">
             <h2
               className="text-red-900 mb-6 text-2xl md:text-3xl lg:text-4xl font-regular"
@@ -92,9 +92,9 @@ const HowItWorksSection = () => {
             </h2>
           </div>
 
-          <div className=" flex flex-col w-ful">
+          <div className=" flex flex-col w-full   ">
             {/* Tab buttons */}
-            <div className="flex flex-wrap gap-2 mb-6 gap-5 lg:gap-10">
+            <div className="flex justify-center flex-wrap gap-2 mb-6 gap-5 lg:gap-10">
               {TAB_TITLES.map((title, index) => (
                 <button
                   key={index}
