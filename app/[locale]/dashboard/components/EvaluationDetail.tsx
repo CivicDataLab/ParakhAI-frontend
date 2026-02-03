@@ -797,7 +797,7 @@ const EvaluationDetail = ({
       {/* Risk Severity Summary - Total Issues Identified */}
       {(audit.status === "COMPLETED" || audit.completedAt) &&
         totalIssuesIdentified > 0 && (
-          <div className="mb-8 manual-eval-input-panel p-4 sm:p-6 bg-white">
+          <div className="mb-8 border-solid border-1 border-baseGraySlateAlpha7 rounded-4 p-4 sm:p-6 bg-white">
             <div className="mb-4 flex items-baseline gap-2">
               <Text variant="bodyMd" className="text-gray-900">
                 Total Issues Identified:
