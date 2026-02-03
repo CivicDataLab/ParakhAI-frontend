@@ -48,6 +48,7 @@ const AI_MODELS_QUERY = `
       modelType
       isPublic
       organization
+      updatedAt
     }
   }
 `;
@@ -122,6 +123,20 @@ const tagOptions = [
   "Localization QA",
 ];
 
+type Audit = {
+  status: string;
+  totalTests: number;
+};
+
+const GET_AUDITS_STATS_QUERY = `
+  query GettestCases($modelId: ID) {
+    audits(modelId: $modelId, status: null, limit: 50) {
+      status
+      totalTests
+    }
+  }
+`;
+
 const AIModelsPage = () => {
   const SearchIcon = Icons.search;
   const ClearIcon = Icons.cross;
@@ -147,6 +162,18 @@ const AIModelsPage = () => {
   const { organization } = useOrganization();
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const modelTypeLabels: Record<string, string> = {
+    TRANSLATION: "Translation",
+    TEXT_GENERATION: "Text Generation",
+    SUMMARIZATION: "Summarisation",
+    QUESTION_ANSWERING: "Question Answering",
+    SENTIMENT_ANALYSIS: "Sentiment Analysis",
+    TEXT_CLASSIFICATION: "Text Classification",
+    NAMED_ENTITY_RECOGNITION: "Named Entity Recognition",
+    TEXT_TO_SPEECH: "Text to Speech",
+    SPEECH_TO_TEXT: "Speech to Text",
+    OTHER: "Other",
+  };
 
   const handleToggleSelection = (
     value: string,
@@ -157,6 +184,44 @@ const AIModelsPage = () => {
         ? prev.filter((item) => item !== value)
         : [...prev, value],
     );
+  };
+
+  const formatDate = (dateString?: string | null) => {
+    if (!dateString) return "--";
+
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "--";
+
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const fetchAuditStats = async (modelId: string) => {
+    const response = await request<{
+      audits: Audit[];
+    }>(
+      GET_AUDITS_STATS_QUERY,
+      { modelId },
+      { organization: params.orgId as string }
+    );
+
+    const audits = response?.audits ?? [];
+
+    let testCasesCount = 0;
+    let auditsCount = 0;
+
+    for (const audit of audits) {
+      testCasesCount += audit.totalTests ?? 0;
+
+      if (audit.status === "COMPLETED") {
+        auditsCount += 1;
+      }
+    }
+
+    return { testCasesCount, auditsCount };
   };
 
   // Fetch AI models from DataSpace
@@ -177,6 +242,7 @@ const AIModelsPage = () => {
             modelType: string;
             isPublic: boolean;
             organization?: string;
+            updatedAt?: string;
           }>;
         }>(
           AI_MODELS_QUERY,
@@ -202,10 +268,31 @@ const AIModelsPage = () => {
           organization: model.organization,
           testCasesCount: Math.floor(Math.random() * 2000) + 100, // Placeholder
           auditsCount: Math.floor(Math.random() * 50) + 1, // Placeholder
-          tags: [model.modelType, model.organization || "General"],
+          tags: [modelTypeLabels[model.modelType] || model.modelType],
           owner: model.organization || "ParakhAI",
-          updatedAt: "19 July 2024", // Placeholder
+          updatedAt: model.updatedAt, // Placeholder
         }));
+        // const formatted: AIModel[] = await Promise.all(
+        //   models.map(async (model) => {
+        //     const { testCasesCount, auditsCount } =
+        //       await fetchAuditStats(model.id);
+
+        //     return {
+        //       id: model.id,
+        //       name: model.name,
+        //       displayName: model.displayName,
+        //       version: model.version,
+        //       modelType: model.modelType,
+        //       isPublic: model.isPublic,
+        //       organization: model.organization,
+        //       testCasesCount: testCasesCount || 0,          // ✅ real data
+        //       auditsCount: auditsCount || 0,             // ✅ real data
+        //       tags: [modelTypeLabels[model.modelType] || model.modelType],
+        //       owner: model.organization || "ParakhAI",
+        //       updatedAt: model.updatedAt,
+        //     };
+        //   })
+        // );
 
         setAiModels(formatted);
       } catch (error: any) {
@@ -520,7 +607,7 @@ const AIModelsPage = () => {
               </div>
             ) : (
               paginatedModels.map((model, index) => {
-                const updatedValue = model.updatedAt || "Unknown";
+                const updatedValue = formatDate(model.updatedAt) || "Unknown";
                 const testCasesValue = `${formatNumber(model.testCasesCount || 0)} test cases`;
                 const auditsValue = `${formatNumber(model.auditsCount || 0)} audits`;
 
@@ -549,16 +636,16 @@ const AIModelsPage = () => {
                     : "/images/icons/CDL.png";
                 const rightLabel = index % 2 === 0 ? "Parakh" : "CDL";
 
-                const footerContent = [
-                  {
-                    icon: "/images/icons/Disaster.png",
-                    label: "Disaster",
-                  },
-                  {
-                    icon: rightIcon,
-                    label: rightLabel,
-                  },
-                ];
+                // const footerContent = [
+                //   // {
+                //   //   icon: "/images/icons/Disaster.png",
+                //   //   label: "Disaster",
+                //   // },
+                //   {
+                //     icon: rightIcon,
+                //     label: rightLabel,
+                //   },
+                // ];
 
                 const type = (model.tags || []).map((tag) => ({
                   label: tag,
@@ -575,11 +662,11 @@ const AIModelsPage = () => {
                     >
                       <Card
                         title={model.displayName}
-                        description={`${model.modelType} - Version ${model.version}`}
+                        // description={`${modelTypeLabels[model.modelType] || model.modelType} - Version ${model.version}`}
                         variation="collapsed"
                         iconColor="highlight"
                         metadataContent={metadataContent}
-                        footerContent={footerContent}
+                        // footerContent={footerContent}
                         type={type}
                         tag={model.tags || []}
                       />
