@@ -49,6 +49,8 @@ const AI_MODELS_QUERY = `
       isPublic
       organization
       updatedAt
+      testCasesCount
+      auditsCount
     }
   }
 `;
@@ -123,20 +125,6 @@ const tagOptions = [
   "Localization QA",
 ];
 
-type Audit = {
-  status: string;
-  totalTests: number;
-};
-
-const GET_AUDITS_STATS_QUERY = `
-  query GettestCases($modelId: ID) {
-    audits(modelId: $modelId, status: null, limit: 50) {
-      status
-      totalTests
-    }
-  }
-`;
-
 const AIModelsPage = () => {
   const SearchIcon = Icons.search;
   const ClearIcon = Icons.cross;
@@ -199,30 +187,6 @@ const AIModelsPage = () => {
     });
   };
 
-  const fetchAuditStats = async (modelId: string) => {
-    const response = await request<{
-      audits: Audit[];
-    }>(
-      GET_AUDITS_STATS_QUERY,
-      { modelId },
-      { organization: params.orgId as string }
-    );
-
-    const audits = response?.audits ?? [];
-
-    let testCasesCount = 0;
-    let auditsCount = 0;
-
-    for (const audit of audits) {
-      testCasesCount += audit.totalTests ?? 0;
-
-      if (audit.status === "COMPLETED") {
-        auditsCount += 1;
-      }
-    }
-
-    return { testCasesCount, auditsCount };
-  };
 
   // Fetch AI models from DataSpace
   React.useEffect(() => {
@@ -243,6 +207,8 @@ const AIModelsPage = () => {
             isPublic: boolean;
             organization?: string;
             updatedAt?: string;
+            testCasesCount?: number;
+            auditsCount?: number;
           }>;
         }>(
           AI_MODELS_QUERY,
@@ -266,8 +232,8 @@ const AIModelsPage = () => {
           modelType: model.modelType,
           isPublic: model.isPublic,
           organization: model.organization,
-          testCasesCount: Math.floor(Math.random() * 2000) + 100, // Placeholder
-          auditsCount: Math.floor(Math.random() * 50) + 1, // Placeholder
+          testCasesCount: model.testCasesCount, // Placeholder
+          auditsCount: model.auditsCount, // Placeholder
           tags: [modelTypeLabels[model.modelType] || model.modelType],
           owner: model.organization || "ParakhAI",
           updatedAt: model.updatedAt, // Placeholder
