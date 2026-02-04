@@ -3811,17 +3811,7 @@ html.mobile-menu-open .breadcrumbs-ml {
   background-color: white;
 }
 
-.test-input-button-selected [class*="Button"] {
-  background-color: #26007b;
-  color: white;
-  border-color: #26007b;
-}
 
-.test-input-button-selected [class*="Button"]:hover {
-  background-color: #6849EE;
-  color: white;
-  border-color: #6849EE;
-}
 
 .test-input-button [class*="Icon"] svg,
 .test-input-button [class*="Icon"] {
