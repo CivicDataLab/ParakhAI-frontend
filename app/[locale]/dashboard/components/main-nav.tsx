@@ -13,7 +13,7 @@ import MobileNav from "./mobile-nav";
 
 const buildNavigationLinks = () => {
   return [
-    { label: "Resources", href: "/resources" },
+    // { label: "Resources", href: "/resources" },
     { label: "Evaluation Workspace", href: "/dashboard" },
   ];
 };
