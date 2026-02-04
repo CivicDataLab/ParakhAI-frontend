@@ -31,9 +31,9 @@ const MainFooter = () => {
   return (
     <div className="bg-primaryPurple2 w-full">
       <div className="footer-container w-full px-3 sm:px-4 lg:px-8 h-[88px]">
-        <div className="footer-inner flex items-center justify-between h-full">
+        <div className="footer-inner flex items-center justify-center h-full">
           {/* Left: Footer Links */}
-          <div className="footer-links flex items-center gap-6">
+          {/* <div className="footer-links flex items-center gap-6">
             <Link
               href={"/sitemap"}
               className="hover:opacity-80 transition-opacity text-white text-[14px] leading-5 font-normal"
@@ -58,7 +58,7 @@ const MainFooter = () => {
             >
               TERMS & PRIVACY
             </Link>
-          </div>
+          </div> */}
 
           {/* Right: Made by CivicDataLab and Social Media Icons */}
           <div className="footer-center flex items-center gap-1">
