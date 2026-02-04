@@ -620,7 +620,7 @@ const EvaluationDetail = ({
   return (
     <>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 mt-10">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
           <div className="flex flex-col sm:flex-row sm:items-end gap-1">
             <Text variant="bodyMd" className="text-gray-500">

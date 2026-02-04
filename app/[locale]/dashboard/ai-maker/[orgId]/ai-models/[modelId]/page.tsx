@@ -728,7 +728,11 @@ const ModelDetailPage = () => {
               <Text variant="bodyMd" className="text-gray-500 mb-4">
                 No evaluations yet for this model.
               </Text>
-              <Button kind="primary" onClick={() => handleNewEvaluation()}>
+              <Button 
+                kind="primary" 
+                onClick={() => handleNewEvaluation()}
+                className="bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white px-8 py-3 rounded-[8px] font-bold text-base"
+              >
                 Start First Evaluation
               </Button>
             </div>
