@@ -29,7 +29,6 @@ const AI_MODELS_QUERY = `
     $status: String
     $modelType: String
     $provider: String
-    $isPublic: Boolean
     $limit: Int
     $offset: Int
   ) {
@@ -37,7 +36,6 @@ const AI_MODELS_QUERY = `
       status: $status
       modelType: $modelType
       provider: $provider
-      isPublic: $isPublic
       limit: $limit
       offset: $offset
     ) {
@@ -216,7 +214,6 @@ const AIModelsPage = () => {
             status: "ACTIVE",
             modelType: null,
             provider: null,
-            isPublic: true,
             limit: 50,
             offset: 0,
           },
