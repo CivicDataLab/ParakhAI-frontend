@@ -37,7 +37,7 @@ const UserDashboard = () => {
           { href: '/', label: 'Home' },
           {
             href: '/dashboard',
-            label: 'User Dashboard',
+            label: 'Evaluation Workspace',
           },
         ]}
       />

@@ -63,7 +63,7 @@ export default function AIMakerLayout({
         <BreadCrumbs
           data={[
             { href: "/", label: "Home" },
-            { href: "/dashboard", label: "User Dashboard" },
+            { href: "/dashboard", label: "Evaluation Workspace" },
             { href: `/${locale}/dashboard/ai-maker`, label: "AI Maker" },
             {
               href: `/${locale}/dashboard/ai-maker/${orgId}`,
