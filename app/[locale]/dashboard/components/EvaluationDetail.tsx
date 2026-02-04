@@ -259,11 +259,13 @@ const EvaluationDetail = ({
     url: string;
   } | null>(null);
   const [testCasesData, setTestCasesData] = useState<TestCase[]>([]);
-  const [manualTestCases, setManualTestCases] = useState<Array<{
-    id: string;
-    severity?: 'LOW' | 'MEDIUM' | 'HIGH';
-    status: 'PASSED' | 'FAILED';
-  }>>([]);
+  const [manualTestCases, setManualTestCases] = useState<
+    Array<{
+      id: string;
+      severity?: "LOW" | "MEDIUM" | "HIGH";
+      status: "PASSED" | "FAILED";
+    }>
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -281,10 +283,14 @@ const EvaluationDetail = ({
       const data = await request<{
         manualTestCases: Array<{
           id: string;
-          severity?: 'LOW' | 'MEDIUM' | 'HIGH';
-          status: 'PASSED' | 'FAILED';
+          severity?: "LOW" | "MEDIUM" | "HIGH";
+          status: "PASSED" | "FAILED";
         }>;
-      }>(GET_MANUAL_TEST_CASES_QUERY, { auditId: evaluationId }, requestOptions);
+      }>(
+        GET_MANUAL_TEST_CASES_QUERY,
+        { auditId: evaluationId },
+        requestOptions
+      );
 
       if (data?.manualTestCases) {
         setManualTestCases(data.manualTestCases);
@@ -567,15 +573,15 @@ const EvaluationDetail = ({
 
   // Add manual test cases to risk summary (only count FAILED ones with severity)
   manualTestCases.forEach((testCase) => {
-    if (testCase.status === 'FAILED' && testCase.severity) {
+    if (testCase.status === "FAILED" && testCase.severity) {
       switch (testCase.severity) {
-        case 'LOW':
+        case "LOW":
           riskSummary.low += 1;
           break;
-        case 'MEDIUM':
+        case "MEDIUM":
           riskSummary.medium += 1;
           break;
-        case 'HIGH':
+        case "HIGH":
           riskSummary.high += 1;
           break;
         default:
@@ -771,8 +777,8 @@ const EvaluationDetail = ({
 
       {/* Results Summary */}
       {(audit.status === "COMPLETED" || audit.completedAt) && (
-        <div className="mb-8 p-4 sm:p-6 bg-white rounded-2xl border border-[#C4B8F3]">
-          <div className="mb-4 sm:mb-5">
+        <div className="mb-8  bg-white rounded-2xl border border-[#C4B8F3]">
+          <div className="mb-4 sm:mb-5 pl-2">
             <Text variant="headingMd" fontWeight="bold">
               Evaluation Summary
             </Text>
