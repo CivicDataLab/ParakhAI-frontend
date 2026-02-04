@@ -45,7 +45,7 @@ const aiMakerNavItems: NavItem[] = [
     isImage: true,
     path: "/dashboard/ai-maker/auditors",
   },
-  { icon: "/images/icons/settings.png", label: "Settings", isImage: true },
+  // { icon: "/images/icons/settings.png", label: "Settings", isImage: true },
 ];
 
 export const auditorNavItems: NavItem[] = [

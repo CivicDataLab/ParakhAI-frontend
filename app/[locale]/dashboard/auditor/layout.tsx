@@ -17,7 +17,7 @@ export default function AuditorLayout({
       <BreadCrumbs
         data={[
           { href: "/", label: "Home" },
-          { href: "/dashboard", label: "User Dashboard" },
+          { href: "/dashboard", label: "Evaluation Workspace" },
           { href: `/${locale}/dashboard/auditor`, label: "Auditor" },
         ]}
       />

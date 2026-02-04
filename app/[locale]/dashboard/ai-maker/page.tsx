@@ -105,7 +105,7 @@ const OrganizationSelection = () => {
       <BreadCrumbs
         data={[
           { href: "/", label: "Home" },
-          { href: "/dashboard", label: "User Dashboard" },
+          { href: "/dashboard", label: "Evaluation Workspace" },
           { href: "#", label: "AI Maker" },
         ]}
       />

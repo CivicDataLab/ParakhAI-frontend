@@ -183,17 +183,7 @@ const AIMakerDashboard = () => {
   const columns = useMemo(
     () => [
       columnHelper.accessor("modelName", {
-        header: () => (
-          <div className="flex items-center gap-2">
-            <img
-              src="/images/icons/arrows-sort.png"
-              alt="Sort"
-              width={16}
-              height={16}
-            />
-            <span>Model</span>
-          </div>
-        ),
+        header: "Model",
         cell: (info) => {
           const modelName = info.getValue();
           return modelName ? (
@@ -207,7 +197,11 @@ const AIMakerDashboard = () => {
       }),
       columnHelper.accessor("createdAt", {
         header: "Evaluation Time",
-        cell: (info) => new Date(info.getValue()).toLocaleDateString(),
+        cell: (info) => (
+          <div className="ml-5">
+            {new Date(info.getValue()).toLocaleDateString()}
+          </div>
+        ),
       }),
       columnHelper.accessor("id", {
         header: "Evaluation ID",
@@ -418,7 +412,7 @@ const AIMakerDashboard = () => {
             rows={evaluations}
             columns={columns}
             hoverable={true}
-            sortColumns={["aiModel.displayName", "createdAt"]}
+            sortColumns={["modelName", "createdAt"]}
             defaultSortDirection="asc"
             hideSelection={true}
             hideFooter={true}
