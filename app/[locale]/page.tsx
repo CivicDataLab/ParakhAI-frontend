@@ -42,7 +42,7 @@ export default function Home() {
       <MainNav />
       <main className="flex-1">
         <HeroSection />
-        <SectorsSection />
+        {/* <SectorsSection /> */}
         <HowItWorksSection />
         <GetStartedSection />
       </main>
