@@ -286,7 +286,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           success: boolean;
           message: string;
           output?: string;
-          latencyMs?: number;
+          //latencyMs?: number;
         };
       }>(
         CALL_MODEL_MUTATION,
@@ -303,7 +303,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
 
       if (result?.callModelForManualEval?.success) {
         setModelOutput(result.callModelForManualEval.output || '');
-        setLatencyMs(result.callModelForManualEval.latencyMs);
+        //setLatencyMs(result.callModelForManualEval.latencyMs);
         setHasCalledModel(true);
       } else {
         setError(result?.callModelForManualEval?.message || 'Failed to call model');
@@ -462,7 +462,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Spinner/>
+        <Spinner />
         <Text variant="bodyMd" className="ml-3">
           Loading evaluation...
         </Text>
@@ -509,7 +509,16 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           getModuleDisplayName={getModuleDisplayName}
         />
       )}
-
+      {!canFinishEvaluation && (
+        <Text
+          variant="bodyMd"
+          fontWeight="medium"
+          className="mt-4 text-center text-[#2d2c2a]"
+        >
+          Note: Evaluate at least 3 test cases per module to complete the
+          evaluation.
+        </Text>
+      )}
       {/* Test Case Flow */}
       {selectedModule && (
         <div className="space-y-6">
@@ -553,14 +562,15 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
               </div>
             )}
           </div>
-
           {/* Input and Output Panels Side by Side */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Input Panel */}
             <div className="manual-eval-input-panel p-6 bg-white">
-              <Text variant="bodyMd" fontWeight="medium" className="mb-4 block">
-                Input
-              </Text>
+              <div className="flex items-center justify-between mb-4">
+                <Text variant="bodyMd" fontWeight="medium">
+                  Input
+                </Text>
+              </div>
               <TextField
                 name="inputPrompt"
                 label="Input Prompt"
@@ -584,7 +594,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
 
             {/* Output Panel */}
             <div className="manual-eval-input-panel p-6 bg-white">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mt-0 mb-4">
                 <Text variant="bodyMd" fontWeight="medium">
                   Output
                 </Text>
@@ -594,7 +604,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                   </Tag>
                 )}
               </div>
-              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 min-h-[200px] max-h-[400px] overflow-y-auto mb-4">
+              <div className="border border-gray-200 rounded-lg px-4 pt-0 pb-4 bg-gray-50 min-h-[200px] max-h-[400px] overflow-y-auto mb-4 mt-[-6px]">
                 <div className="-ml-4">
                   {hasCalledModel ? (
                     modelOutput ? (
@@ -609,8 +619,8 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                   )}
                 </div>
               </div>
-              {hasCalledModel && (
-                <div className="flex justify-end gap-3">
+                {hasCalledModel && (
+                 <div className="flex justify-end gap-3">
                   <Button
                     kind="secondary"
                     onClick={() => setStatus('PASSED')}
@@ -734,10 +744,10 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                 <span className="save-next-test-case-text">
                   {isSubmitting ? 'Saving...' : 'Save and Next Test Case'}
                 </span>
-                <IconCircleArrowRight 
-                  className="text-[#0A0704]" 
-                  width={24} 
-                  height={24} 
+                <IconCircleArrowRight
+                  className="text-[#0A0704]"
+                  width={24}
+                  height={24}
                   stroke={1.5}
                   color="#0A0704"
                 />
@@ -776,11 +786,6 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
         </Button>
       </div>
 
-      {!canFinishEvaluation && (
-        <Text variant="bodySm" className="text-center text-gray-500">
-          Complete at least 3 test cases for each module to finish the evaluation.
-        </Text>
-      )}
 
       {/* Module Recommendation Modal */}
       <RecommendationModal

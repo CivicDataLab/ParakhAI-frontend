@@ -56,7 +56,7 @@ const ModuleSelector: React.FC<ModuleSelectorProps> = ({
             <button
               key={module}
               onClick={() => onSelectModule(module)}
-              className={`${styles.evaluationModuleCard} text-left transition-all ${
+              className={`${styles.moduleselectioncard} text-left transition-all ${
                 isSelected
                   ? 'border-2 border-purple-600 bg-purple-50'
                   : isComplete
