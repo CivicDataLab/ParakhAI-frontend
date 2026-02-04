@@ -91,7 +91,7 @@ const AIMakerDashboard = () => {
       }
     }
   `;
-  
+
   const modelTypeLabels: Record<string, string> = {
     TRANSLATION: "Translation",
     TEXT_GENERATION: "Text Generation",
@@ -339,7 +339,9 @@ const AIMakerDashboard = () => {
                 },
               ];
 
-              const type = [modelTypeLabels[model.modelType] || model.modelType].map((tag: string) => ({
+              const type = [
+                modelTypeLabels[model.modelType] || model.modelType,
+              ].map((tag: string) => ({
                 label: tag,
                 fillColor: "#E2F5C4",
                 borderColor: "#E2F5C4",
@@ -351,6 +353,7 @@ const AIMakerDashboard = () => {
                 variation: "collapsed" as const,
                 iconColor: "highlight" as const,
                 metadataContent,
+
                 // footerContent,
                 type,
               };
@@ -361,7 +364,12 @@ const AIMakerDashboard = () => {
                   className="w-full cursor-pointer"
                   onClick={() => handleCardClick(model.id)}
                 >
-                  <Card {...commonProps} />
+                  <Card
+                    {...commonProps}
+                    // shadow="light"
+                    hover="shadowHighlight"
+                    shadow="light"
+                  />
                 </div>
               );
             })}
@@ -422,7 +430,11 @@ const AIMakerDashboard = () => {
             <Text variant="bodySm" className="text-gray-600 mb-4">
               No evaluations yet. Start by running your first evaluation.
             </Text>
-            <Button kind="primary" onClick={() => setIsModalOpen(true)} className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base">
+            <Button
+              kind="primary"
+              onClick={() => setIsModalOpen(true)}
+              className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base"
+            >
               Start New Evaluation
             </Button>
           </div>

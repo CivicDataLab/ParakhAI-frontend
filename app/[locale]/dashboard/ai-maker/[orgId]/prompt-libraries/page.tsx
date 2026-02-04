@@ -5,7 +5,16 @@ import { Pagination } from "@/components/Pagination/Pagination";
 import { useGraphQL } from "@/lib/api";
 import { IconChevronDown, IconMinus, IconX } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
-import { Button, Card, DataTable, Dialog, Popover, Spinner, Tag, Text } from "opub-ui";
+import {
+  Button,
+  Card,
+  DataTable,
+  Dialog,
+  Popover,
+  Spinner,
+  Tag,
+  Text,
+} from "opub-ui";
 import React from "react";
 import { useOrganization } from "../OrganizationContext";
 
@@ -313,281 +322,282 @@ const PromptLibrariesPage = () => {
 
   return (
     <>
-
       <div className="prompt-libraries-content">
-          <div className="prompt-page-header mt-10">
-            <Text as="h1" className="prompt-page-title" fontWeight="bold">
-              Prompt Libraries
-            </Text>
-          </div>
+        <div className="prompt-page-header mt-10">
+          <Text as="h1" className="prompt-page-title" fontWeight="bold">
+            Prompt Libraries
+          </Text>
+        </div>
 
-          <div className="prompt-search-row">
-            <div className="prompt-search-input">
-              <label htmlFor="promptSearch" className="sr-only">
-                Search prompt libraries
-              </label>
-              <div className="prompt-search-box">
-                <SearchIcon
-                  size={18}
-                  className="prompt-search-icon"
-                  aria-hidden
-                />
-                <input
-                  id="promptSearch"
-                  type="text"
-                  value={searchValue}
-                  placeholder="Search by name"
-                  onChange={(event) => setSearchValue(event.target.value)}
-                  className="prompt-search-field"
-                />
-                {searchValue && (
-                  <button
-                    type="button"
-                    className="prompt-search-clear"
-                    onClick={() => setSearchValue("")}
-                    aria-label="Clear search"
+        <div className="prompt-search-row">
+          <div className="prompt-search-input">
+            <label htmlFor="promptSearch" className="sr-only">
+              Search prompt libraries
+            </label>
+            <div className="prompt-search-box">
+              <SearchIcon
+                size={18}
+                className="prompt-search-icon"
+                aria-hidden
+              />
+              <input
+                id="promptSearch"
+                type="text"
+                value={searchValue}
+                placeholder="Search by name"
+                onChange={(event) => setSearchValue(event.target.value)}
+                className="prompt-search-field"
+              />
+              {searchValue && (
+                <button
+                  type="button"
+                  className="prompt-search-clear"
+                  onClick={() => setSearchValue("")}
+                  aria-label="Clear search"
+                >
+                  <ClearIcon size={16} aria-hidden />
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="prompt-search-actions">
+            <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
+              <Popover.Trigger asChild>
+                <button type="button" className="prompt-add-filters-link">
+                  Add Filters
+                </button>
+              </Popover.Trigger>
+              <Popover.Content
+                side="bottom"
+                align="end"
+                alignOffset={10}
+                className="prompt-filter-popover"
+              >
+                <div className="prompt-filter-popover-header">
+                  <Text as="span" className="prompt-filter-popover-title">
+                    FILTERS
+                  </Text>
+                  <Button
+                    kind="tertiary"
+                    size="slim"
+                    onClick={() => {
+                      setSelectedSectors([]);
+                      setSelectedTags([]);
+                    }}
                   >
-                    <ClearIcon size={16} aria-hidden />
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className="prompt-search-actions">
-              <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
-                <Popover.Trigger asChild>
-                  <button type="button" className="prompt-add-filters-link">
-                    Add Filters
-                  </button>
-                </Popover.Trigger>
-                <Popover.Content
-                  side="bottom"
-                  align="end"
-                  alignOffset={10}
-                  className="prompt-filter-popover"
-                >
-                  <div className="prompt-filter-popover-header">
-                    <Text as="span" className="prompt-filter-popover-title">
-                      FILTERS
-                    </Text>
-                    <Button
-                      kind="tertiary"
-                      size="slim"
-                      onClick={() => {
-                        setSelectedSectors([]);
-                        setSelectedTags([]);
-                      }}
+                    Reset
+                  </Button>
+                </div>
+                <div className="prompt-filter-popover-scroll">
+                  <div className="prompt-filter-section">
+                    <button
+                      type="button"
+                      className="prompt-filter-section-header"
+                      onClick={() => setSectorsExpanded((prev) => !prev)}
+                      aria-expanded={sectorsExpanded}
                     >
-                      Reset
-                    </Button>
-                  </div>
-                  <div className="prompt-filter-popover-scroll">
-                    <div className="prompt-filter-section">
-                      <button
-                        type="button"
-                        className="prompt-filter-section-header"
-                        onClick={() => setSectorsExpanded((prev) => !prev)}
-                        aria-expanded={sectorsExpanded}
-                      >
-                        <span className="prompt-filter-section-title">
-                          Sectors ({sectorOptions.length})
-                        </span>
-                        {sectorsExpanded ? (
-                          <IconMinus size={16} />
-                        ) : (
-                          <IconChevronDown size={16} />
-                        )}
-                      </button>
-                      {sectorsExpanded && (
-                        <div className="prompt-filter-section-options prompt-filter-section-options--scrollable">
-                          {sectorOptions.map((sector) => (
-                            <label
-                              key={sector}
-                              className="prompt-filter-checkbox"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={selectedSectors.includes(sector)}
-                                onChange={() =>
-                                  handleToggleSelection(
-                                    sector,
-                                    setSelectedSectors
-                                  )
-                                }
-                              />
-                              <span>{sector}</span>
-                            </label>
-                          ))}
-                        </div>
+                      <span className="prompt-filter-section-title">
+                        Sectors ({sectorOptions.length})
+                      </span>
+                      {sectorsExpanded ? (
+                        <IconMinus size={16} />
+                      ) : (
+                        <IconChevronDown size={16} />
                       )}
-                    </div>
-
-                    <div className="prompt-filter-section">
-                      <button
-                        type="button"
-                        className="prompt-filter-section-header"
-                        onClick={() => setTagsExpanded((prev) => !prev)}
-                        aria-expanded={tagsExpanded}
-                      >
-                        <span className="prompt-filter-section-title">
-                          Tags ({tagOptions.length})
-                        </span>
-                        {tagsExpanded ? (
-                          <IconMinus size={16} />
-                        ) : (
-                          <IconChevronDown size={16} />
-                        )}
-                      </button>
-                      {tagsExpanded && (
-                        <div className="prompt-filter-section-options prompt-filter-section-options--scrollable">
-                          {tagOptions.map((tag) => (
-                            <label key={tag} className="prompt-filter-checkbox">
-                              <input
-                                type="checkbox"
-                                checked={selectedTags.includes(tag)}
-                                onChange={() =>
-                                  handleToggleSelection(tag, setSelectedTags)
-                                }
-                              />
-                              <span>{tag}</span>
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    </button>
+                    {sectorsExpanded && (
+                      <div className="prompt-filter-section-options prompt-filter-section-options--scrollable">
+                        {sectorOptions.map((sector) => (
+                          <label
+                            key={sector}
+                            className="prompt-filter-checkbox"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedSectors.includes(sector)}
+                              onChange={() =>
+                                handleToggleSelection(
+                                  sector,
+                                  setSelectedSectors
+                                )
+                              }
+                            />
+                            <span>{sector}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </Popover.Content>
-              </Popover>
-            </div>
-          </div>
-          <div className="prompt-active-filters">
-            {selectedSectors.concat(selectedTags).map((filter) => (
-              <div key={filter} className="prompt-filter-tag">
-                <Tag
-                  value={filter}
-                  variation="filled"
-                  fillColor="#E2F5C4"
-                  textColor="#0A0704"
-                  onRemove={() => {
-                    if (selectedSectors.includes(filter)) {
-                      setSelectedSectors((prev) =>
-                        prev.filter((sector) => sector !== filter)
-                      );
-                    } else {
-                      setSelectedTags((prev) =>
-                        prev.filter((tag) => tag !== filter)
-                      );
-                    }
-                  }}
-                >
-                  {filter}
-                </Tag>
-              </div>
-            ))}
-          </div>
 
-          <div className="prompt-card-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8 items-stretch">
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center gap-4 py-8 col-span-full">
-                <Spinner />
-                <Text variant="bodySm" className="text-gray-600">
-                  Loading prompt libraries...
-                </Text>
-              </div>
-            ) : error ? (
-              <div className="py-8 text-center col-span-full">
-                <Text variant="bodySm" className="text-red-600">
-                  {error}
-                </Text>
-              </div>
-            ) : paginatedLibraries.length === 0 ? (
-              <div className="py-8 text-center col-span-full">
-                <Text variant="bodySm" className="text-gray-600">
-                  No prompt libraries found.
-                </Text>
-              </div>
-            ) : (
-              paginatedLibraries.map((library, index) => {
-                const updatedValue = library.updatedAt || "Unknown";
-                const testCasesValue = `${formatNumber(library.promptsCount || 0)} test cases`;
-                const auditsValue = `${formatNumber(library.auditsCount || 0)} audits`;
-
-                const metadataContent = [
-                  {
-                    icon: Icons.calendar,
-                    label: "Updated",
-                    value: updatedValue,
-                  },
-                  {
-                    icon: Icons.testPipe,
-                    label: "Test cases",
-                    value: testCasesValue,
-                  },
-                  {
-                    icon: Icons.discountCheck,
-                    label: "Audits",
-                    value: auditsValue,
-                  },
-                ] as any;
-
-                // Alternate between Parakh and CDL for different cards
-                const rightIcon =
-                  index % 2 === 0
-                    ? "/images/icons/Parakh.png"
-                    : "/images/icons/CDL.png";
-                const rightLabel = index % 2 === 0 ? "Parakh" : "CDL";
-
-                const footerContent = [
-                  {
-                    icon: "/images/icons/Disaster.png",
-                    label: "Disaster",
-                  },
-                  {
-                    icon: rightIcon,
-                    label: rightLabel,
-                  },
-                ];
-
-                const type = (library.sectors || []).map((sector) => ({
-                  label: sector,
-                  fillColor: "#D7CFF9",
-                  borderColor: "#D7CFF9",
-                }));
-
-                return (
-                  <div key={library.id} className="ai-models-card-wrapper">
-                    <div
-                      onClick={() => handleCardClick(library)}
-                      className="cursor-pointer h-full"
+                  <div className="prompt-filter-section">
+                    <button
+                      type="button"
+                      className="prompt-filter-section-header"
+                      onClick={() => setTagsExpanded((prev) => !prev)}
+                      aria-expanded={tagsExpanded}
                     >
-                      <Card
-                        title={library.title}
-                        description={library.description || ""}
-                        variation="collapsed"
-                        iconColor="highlight"
-                        metadataContent={metadataContent}
-                        footerContent={footerContent}
-                        type={type}
-                        tag={library.tags || []}
-                      />
-                    </div>
+                      <span className="prompt-filter-section-title">
+                        Tags ({tagOptions.length})
+                      </span>
+                      {tagsExpanded ? (
+                        <IconMinus size={16} />
+                      ) : (
+                        <IconChevronDown size={16} />
+                      )}
+                    </button>
+                    {tagsExpanded && (
+                      <div className="prompt-filter-section-options prompt-filter-section-options--scrollable">
+                        {tagOptions.map((tag) => (
+                          <label key={tag} className="prompt-filter-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={selectedTags.includes(tag)}
+                              onChange={() =>
+                                handleToggleSelection(tag, setSelectedTags)
+                              }
+                            />
+                            <span>{tag}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                );
-              })
-            )}
+                </div>
+              </Popover.Content>
+            </Popover>
           </div>
+        </div>
+        <div className="prompt-active-filters">
+          {selectedSectors.concat(selectedTags).map((filter) => (
+            <div key={filter} className="prompt-filter-tag">
+              <Tag
+                value={filter}
+                variation="filled"
+                fillColor="#E2F5C4"
+                textColor="#0A0704"
+                onRemove={() => {
+                  if (selectedSectors.includes(filter)) {
+                    setSelectedSectors((prev) =>
+                      prev.filter((sector) => sector !== filter)
+                    );
+                  } else {
+                    setSelectedTags((prev) =>
+                      prev.filter((tag) => tag !== filter)
+                    );
+                  }
+                }}
+              >
+                {filter}
+              </Tag>
+            </div>
+          ))}
+        </div>
 
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            pageSize={itemsPerPage}
-            pageSizeOptions={[9, 18, 27]}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={(newPageSize) => {
-              setResultsPerPage(String(newPageSize));
-              setCurrentPage(1);
-            }}
-            label="Results per page"
-          />
+        <div className="prompt-card-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8 items-stretch">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center gap-4 py-8 col-span-full">
+              <Spinner />
+              <Text variant="bodySm" className="text-gray-600">
+                Loading prompt libraries...
+              </Text>
+            </div>
+          ) : error ? (
+            <div className="py-8 text-center col-span-full">
+              <Text variant="bodySm" className="text-red-600">
+                {error}
+              </Text>
+            </div>
+          ) : paginatedLibraries.length === 0 ? (
+            <div className="py-8 text-center col-span-full">
+              <Text variant="bodySm" className="text-gray-600">
+                No prompt libraries found.
+              </Text>
+            </div>
+          ) : (
+            paginatedLibraries.map((library, index) => {
+              const updatedValue = library.updatedAt || "Unknown";
+              const testCasesValue = `${formatNumber(library.promptsCount || 0)} test cases`;
+              const auditsValue = `${formatNumber(library.auditsCount || 0)} audits`;
+
+              const metadataContent = [
+                {
+                  icon: Icons.calendar,
+                  label: "Updated",
+                  value: updatedValue,
+                },
+                {
+                  icon: Icons.testPipe,
+                  label: "Test cases",
+                  value: testCasesValue,
+                },
+                {
+                  icon: Icons.discountCheck,
+                  label: "Audits",
+                  value: auditsValue,
+                },
+              ] as any;
+
+              // Alternate between Parakh and CDL for different cards
+              const rightIcon =
+                index % 2 === 0
+                  ? "/images/icons/Parakh.png"
+                  : "/images/icons/CDL.png";
+              const rightLabel = index % 2 === 0 ? "Parakh" : "CDL";
+
+              const footerContent = [
+                {
+                  icon: "/images/icons/Disaster.png",
+                  label: "Disaster",
+                },
+                {
+                  icon: rightIcon,
+                  label: rightLabel,
+                },
+              ];
+
+              const type = (library.sectors || []).map((sector) => ({
+                label: sector,
+                fillColor: "#D7CFF9",
+                borderColor: "#D7CFF9",
+              }));
+
+              return (
+                <div key={library.id} className="ai-models-card-wrapper">
+                  <div
+                    onClick={() => handleCardClick(library)}
+                    className="cursor-pointer h-full"
+                  >
+                    <Card
+                      title={library.title}
+                      description={library.description || ""}
+                      variation="collapsed"
+                      iconColor="highlight"
+                      metadataContent={metadataContent}
+                      footerContent={footerContent}
+                      type={type}
+                      tag={library.tags || []}
+                      hover="shadowHighlight"
+                      shadow="light"
+                    />
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          pageSize={itemsPerPage}
+          pageSizeOptions={[9, 18, 27]}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newPageSize) => {
+            setResultsPerPage(String(newPageSize));
+            setCurrentPage(1);
+          }}
+          label="Results per page"
+        />
       </div>
 
       {/* Dialog for showing library details */}
