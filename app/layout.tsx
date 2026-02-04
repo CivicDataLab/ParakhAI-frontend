@@ -9,7 +9,7 @@ const inter = Inter({
 
 export const metadata = {
   title: "ParakhAI",
-  description: "ParakhAI Authentication Platform",
+  description: "Paricipatory AI Evaluation",
 };
 
 export default function RootLayout({
