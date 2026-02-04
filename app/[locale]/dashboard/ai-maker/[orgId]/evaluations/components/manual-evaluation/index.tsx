@@ -286,7 +286,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           success: boolean;
           message: string;
           output?: string;
-          //latencyMs?: number;
+          latencyMs?: number;
         };
       }>(
         CALL_MODEL_MUTATION,
@@ -303,7 +303,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
 
       if (result?.callModelForManualEval?.success) {
         setModelOutput(result.callModelForManualEval.output || '');
-        //setLatencyMs(result.callModelForManualEval.latencyMs);
+        setLatencyMs(result.callModelForManualEval.latencyMs);
         setHasCalledModel(true);
       } else {
         setError(result?.callModelForManualEval?.message || 'Failed to call model');
@@ -469,7 +469,6 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
       </div>
     );
   }
-
   return (
     <div className="space-y-8">
       {/* Header - only show when module is selected */}
@@ -585,53 +584,53 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                   kind="primary"
                   onClick={handleCallModel}
                   disabled={!inputPrompt.trim() || isCallingModel}
-                  className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white disabled:text-gray-400 px-8 py-3 rounded-[8px] font-bold text-base"
+                  className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white disabled:text-gray-400 px-6 py-2 rounded-[6px] font-bold text-base"
                 >
-                  {isCallingModel ? 'Calling...' : 'Submit'}
+                  {isCallingModel ? 'Please Wait...' : 'Submit'}
                 </Button>
               </div>
             </div>
 
             {/* Output Panel */}
-            <div className="manual-eval-input-panel p-6 bg-white">
-              <div className="flex items-center justify-between mt-0 mb-4">
+            <div className="relative manual-eval-input-panel p-6  pb-[4rem] bg-white">
+              <div className="flex items-center justify-between mb-2">
                 <Text variant="bodyMd" fontWeight="medium">
                   Output
                 </Text>
                 {latencyMs && (
-                  <Tag variation="outlined" textColor="#6B7280" borderColor="#D1D5DB">
-                    {latencyMs.toFixed(0)}ms
-                  </Tag>
+                  <span className='bg-gray-200 text-gray-600 px-2 bg-baseIndigoSolid4 text-[14px] rounded-[3px] border'>
+                    {(latencyMs / 1000).toFixed(0)} sec
+                  </span>
                 )}
               </div>
-              <div className="border border-gray-200 rounded-lg px-4 pt-0 pb-4 bg-gray-50 min-h-[200px] max-h-[400px] overflow-y-auto mb-4 mt-[-6px]">
+              <div className=" border border-gray-200 rounded-lg px-4 py-0 bg-gray-50 min-h-[200px] max-h-[300px] overflow-y-auto mb-4">
                 <div className="-ml-4">
                   {hasCalledModel ? (
                     modelOutput ? (
                       <RichTextRenderer content={modelOutput} />
                     ) : (
-                      <Text variant="bodySm">No output received</Text>
+                      <Text variant="bodyMd">No output received</Text>
                     )
                   ) : (
-                    <Text variant="bodySm" className="text-gray-500">
+                    <Text variant="bodyMd" className="text-gray-500">
                       Output will appear here after submitting the prompt
                     </Text>
                   )}
                 </div>
               </div>
-                {hasCalledModel && (
-                 <div className="flex justify-end gap-3">
+              {hasCalledModel && (
+                <div className="absolute bottom-[1.5rem] right-[1.5rem] flex justify-end gap-3">
                   <Button
                     kind="secondary"
                     onClick={() => setStatus('PASSED')}
-                    className={`test-input-button ${status === 'PASSED' ? 'test-input-button-selected' : ''}`}
+                    className={`rounded-[6px] ${status === 'PASSED' ? 'bg-[#26007b] text-white hover:bg-[#4003c4] hover:text-white' : ''}`}
                   >
                     ✓ Passed
                   </Button>
                   <Button
                     kind="secondary"
                     onClick={() => setStatus('FAILED')}
-                    className={`test-input-button ${status === 'FAILED' ? 'test-input-button-selected' : ''}`}
+                    className={`rounded-[6px] ${status === 'FAILED' ? 'bg-[#26007b] text-white hover:bg-[#4003c4] hover:text-white' : ''}`}
                   >
                     ✕ Failed
                   </Button>
