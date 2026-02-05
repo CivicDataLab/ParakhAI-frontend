@@ -373,10 +373,10 @@ const AuditorsPage = () => {
       <div className="flex items-center justify-between mb-8 mt-10">
         <div>
           <Text variant="headingLg" as="h1" fontWeight="bold">
-            Auditors
+            Evaluators
           </Text>
           <Text variant="bodySm" className="text-gray-600 mt-1">
-            Manage auditors who can evaluate your AI models
+            Manage evaluators who can evaluate your AI models
           </Text>
         </div>
         <button
@@ -384,7 +384,7 @@ const AuditorsPage = () => {
           className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base border-none"
           onClick={() => setIsAddModalOpen(true)}
         >
-          Add Auditor
+          Add Evaluator
         </button>
       </div>
 

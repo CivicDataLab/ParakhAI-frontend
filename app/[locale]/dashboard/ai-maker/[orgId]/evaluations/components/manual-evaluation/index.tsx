@@ -701,19 +701,9 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                           value: sm.name,
                           label: sm.displayName,
                         }))}
-                        selectedValue={
-                          issueType
-                            ? toTitleCase(issueType.toLowerCase())
-                            : issueType
-                        }
-                        onChange={(value) => {
-                          const match = subModules.find(
-                            (sm) =>
-                              sm.name === value || sm.displayName === value
-                          );
-                          // Store canonical name (for API), but show title case via selectedValue
-                          setIssueType(match ? match.name : value);
-                        }}
+                        creatable
+                        selectedValue={issueType}
+                        onChange={setIssueType}
                       />
                     </div>
                   </div>

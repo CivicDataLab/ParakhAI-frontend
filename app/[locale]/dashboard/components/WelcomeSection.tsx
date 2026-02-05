@@ -41,7 +41,7 @@ const aiMakerNavItems: NavItem[] = [
   },
   {
     icon: "/images/icons/users-group.png",
-    label: "Auditors",
+    label: "Evaluators",
     isImage: true,
     path: "/dashboard/ai-maker/auditors",
   },
