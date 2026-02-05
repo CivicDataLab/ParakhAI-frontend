@@ -19,6 +19,8 @@ const AUDITS_QUERY = `
       status
       modules
       metrics
+      evaluationMode
+      auditType
       totalTests
       passedTests
       failedTests
@@ -39,6 +41,8 @@ type Audit = {
   totalTests: number;
   passedTests: number;
   failedTests: number;
+  evaluationMode: string;
+  auditType: string;
   createdAt: string;
   startedAt: string | null;
   completedAt: string | null;
@@ -173,6 +177,20 @@ const AuditsListPage = () => {
         );
       },
     }),
+    columnHelper.accessor("evaluationMode", {
+      header: "Evaluation Mode",
+      cell: (info) => {
+        const evaluationMode = info.getValue();
+        return <Text variant="bodySm">{evaluationMode}</Text>;
+      },
+    }),
+    columnHelper.accessor("auditType", {
+      header: "Audit Type",
+      cell: (info) => {
+        const auditType = info.getValue();
+        return <Text variant="bodySm">{auditType}</Text>;
+      },
+    }),
     columnHelper.accessor("totalTests", {
       header: "Tests",
       cell: (info) => {
@@ -210,12 +228,12 @@ const AuditsListPage = () => {
     //     );
     //   },
     // }),
-    columnHelper.accessor("createdAt", {
-      header: "Created",
-      cell: (info) => (
-        <Text variant="bodySm">{formatDate(info.getValue())}</Text>
-      ),
-    }),
+    // columnHelper.accessor("createdAt", {
+    //   header: "Created",
+    //   cell: (info) => (
+    //     <Text variant="bodySm">{formatDate(info.getValue())}</Text>
+    //   ),
+    // }),
     columnHelper.accessor("completedAt", {
       header: "Completed",
       cell: (info) => (
@@ -236,7 +254,11 @@ const AuditsListPage = () => {
         <Text variant="headingLg" as="h1" fontWeight="bold">
           Evaluations
         </Text>
-        <Button kind="secondary" onClick={handleNewAudit} className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base">
+        <Button
+          kind="secondary"
+          onClick={handleNewAudit}
+          className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
+        >
           New Evaluation
         </Button>
       </div>
@@ -272,7 +294,11 @@ const AuditsListPage = () => {
             <br />
             Start your first evaluation to see results here.
           </Text>
-          <Button kind="primary" onClick={handleNewAudit} className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base">
+          <Button
+            kind="primary"
+            onClick={handleNewAudit}
+            className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base"
+          >
             Start New Evaluation
           </Button>
         </div>
@@ -281,7 +307,15 @@ const AuditsListPage = () => {
           rows={audits}
           columns={columns}
           hoverable
-          sortColumns={["name", "status", "createdAt", "completedAt"]}
+          // hasZebraStripingOnData
+          sortColumns={[
+            "name",
+            "status",
+            "evaluationMode",
+            "auditType",
+            // "createdAt",
+            "completedAt",
+          ]}
           defaultSortDirection="desc"
           hideSelection
           truncate
