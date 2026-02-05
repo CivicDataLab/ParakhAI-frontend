@@ -1,11 +1,23 @@
 "use client";
 
 import { useGraphQL } from "@/lib/api";
-import { IconDownload } from "@tabler/icons-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { IconDownload, IconMinus, IconPlus } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import Image from "next/image";
 import Link from "next/link";
-import { Button, DataTable, Icon, Spinner, Tag, Text } from "opub-ui";
+import {
+  Button,
+  Icon,
+  Spinner,
+  Tab,
+  TabList,
+  TabPanel,
+  Tabs,
+  Tag,
+  Text,
+} from "opub-ui";
 import { useEffect, useRef, useState } from "react";
 
 const GET_AUDIT_QUERY = `
@@ -28,6 +40,7 @@ const GET_AUDIT_QUERY = `
       createdAt
       startedAt
       completedAt
+      evaluationMode
     }
   }
 `;
@@ -44,6 +57,49 @@ const GET_AUDIT_RESULTS_QUERY = `
         test {
           testInput
           actualOutput
+        }
+      }
+    }
+  }
+`;
+
+const GET_AUDIT_RESULTS_SUMMARY_QUERY = `
+  query GetAuditResultSamples($auditId: ID!) {
+    resultSamples(auditId: $auditId) {
+      __typename
+
+      ... on ManualModuleSamples {
+        name
+        displayName
+        metrics {
+          name
+          displayName
+          samples {
+            testInput
+            actualOutput
+            comments
+            severity
+          }
+        }
+      }
+
+      ... on AutomatedModuleSamples {
+        name
+        displayName
+        metrics {
+          name
+          displayName
+          samples {
+            test {
+              testInput
+              actualOutput
+            }
+            result {
+              riskLevel
+              reason
+              score
+            }
+          }
         }
       }
     }
@@ -113,6 +169,7 @@ const GET_AUDIT_SUMMARY = `
 `;
 
 export type Audit = {
+  evaluationMode: string;
   id: string;
   name: string;
   modelId: string;
@@ -140,6 +197,17 @@ export type TestCase = {
   evaluationMetric: string;
   riskSeverity: "High" | "Medium" | "Low" | "No risk";
   reason: string;
+};
+
+type ModuleIssue = {
+  id: string;
+  module: string;
+  severity: "LOW" | "MEDIUM" | "HIGH";
+  status: "PASSED" | "FAILED";
+  issueType: string;
+  input: string;
+  output: string;
+  comments?: string;
 };
 
 export const formatModuleName = (moduleName: string): string => {
@@ -170,6 +238,31 @@ export const getStatusColor = (status: string) => {
     case "FAILED":
     case "ERROR":
       return { fillColor: "#FEE2E2", textColor: "#DC2626" };
+    default:
+      return { fillColor: "#F3F4F6", textColor: "#374151" };
+  }
+};
+
+/**
+ * Tag colors for issue severity.
+ * Matches the old table legend where:
+ * - High  => red (#EF4444)
+ * - Medium => orange (#F97316)
+ * - Low => green (#10B981)
+ */
+export const getSeverityTagColors = (
+  severity: "LOW" | "MEDIUM" | "HIGH"
+): { fillColor: string; textColor: string } => {
+  switch (severity?.toUpperCase()) {
+    case "HIGH":
+      // Red
+      return { fillColor: "#FEE2E2", textColor: "#EF4444" };
+    case "MEDIUM":
+      // Orange
+      return { fillColor: "#FFEDD5", textColor: "#F97316" };
+    case "LOW":
+      // Green
+      return { fillColor: "#DCFCE7", textColor: "#10B981" };
     default:
       return { fillColor: "#F3F4F6", textColor: "#374151" };
   }
@@ -266,10 +359,14 @@ const EvaluationDetail = ({
       status: "PASSED" | "FAILED";
     }>
   >([]);
+  const [apiModuleIssues, setApiModuleIssues] = useState<ModuleIssue[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resultsError, setResultsError] = useState<string | null>(null);
+  const [expandedIssueIds, setExpandedIssueIds] = useState<Set<string>>(
+    new Set()
+  );
 
   const isFetchingRef = useRef(false);
   const lastFetchedAuditIdRef = useRef<string | null>(null);
@@ -389,6 +486,7 @@ const EvaluationDetail = ({
             await fetchResults();
             await fetchManualTestCases();
             await fetchAuditSummary();
+            await fetchResultSamples();
             return;
           }
 
@@ -472,6 +570,7 @@ const EvaluationDetail = ({
           await fetchResults();
           await fetchManualTestCases();
           await fetchAuditSummary();
+          await fetchResultSamples();
         } else if (
           auditData.audit.status === "RUNNING" ||
           auditData.audit.status === "PENDING"
@@ -534,6 +633,7 @@ const EvaluationDetail = ({
   };
 
   const statusColors = getStatusColor(audit?.status || "");
+  const evaluationMode = getStatusColor(audit?.evaluationMode || "");
   const duration = getDuration();
   const isRunning = audit?.status === "RUNNING" || audit?.status === "PENDING";
 
@@ -593,6 +693,143 @@ const EvaluationDetail = ({
   const totalIssuesIdentified =
     riskSummary.low + riskSummary.medium + riskSummary.high;
 
+  const toggleIssueCard = (issueId: string) => {
+    setExpandedIssueIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(issueId)) {
+        newSet.delete(issueId);
+      } else {
+        newSet.add(issueId);
+      }
+      return newSet;
+    });
+  };
+
+  const fetchResultSamples = async () => {
+    const requestOptions = orgId ? { organization: orgId } : undefined;
+    try {
+      const data = await request<{
+        resultSamples: Array<
+          | {
+              __typename: "ManualModuleSamples";
+              name: string;
+              displayName: string;
+              metrics: Array<{
+                name: string;
+                displayName: string;
+                samples: Array<{
+                  testInput: string;
+                  actualOutput: string;
+                  comments?: string | null;
+                  severity?: "LOW" | "MEDIUM" | "HIGH" | null;
+                }>;
+              }>;
+            }
+          | {
+              __typename: "AutomatedModuleSamples";
+              name: string;
+              displayName: string;
+              metrics: Array<{
+                name: string;
+                displayName: string;
+                samples: Array<{
+                  test: {
+                    testInput: string;
+                    actualOutput: string;
+                  };
+                  result: {
+                    riskLevel: string;
+                    reason: string;
+                    score: number | null;
+                  };
+                }>;
+              }>;
+            }
+        >;
+      }>(
+        GET_AUDIT_RESULTS_SUMMARY_QUERY,
+        { auditId: evaluationId },
+        requestOptions
+      );
+
+      const collectedIssues: ModuleIssue[] = [];
+
+      (data?.resultSamples || []).forEach((sampleGroup) => {
+        if (!sampleGroup) return;
+
+        const resolveModuleId = () => {
+          if (!audit?.modules?.length) return sampleGroup.name;
+          const modules = audit.modules;
+
+          const exact = modules.find((m) => m === sampleGroup.name);
+          if (exact) return exact;
+
+          const byDisplay = modules.find(
+            (m) =>
+              formatModuleName(m).toLowerCase() ===
+              sampleGroup.displayName.toLowerCase()
+          );
+          return byDisplay || sampleGroup.name;
+        };
+
+        const moduleId = resolveModuleId();
+
+        if (sampleGroup.__typename === "ManualModuleSamples") {
+          sampleGroup.metrics?.forEach((metric) => {
+            metric.samples?.forEach((sample, index) => {
+              collectedIssues.push({
+                id: `${moduleId}-${metric.name}-manual-${index}`,
+                module: moduleId,
+                severity: (sample.severity || "LOW") as
+                  | "LOW"
+                  | "MEDIUM"
+                  | "HIGH",
+                status: "FAILED",
+                issueType: metric.displayName || metric.name,
+                input: sample.testInput,
+                output: sample.actualOutput,
+                comments: sample.comments || undefined,
+              });
+            });
+          });
+        }
+
+        if (sampleGroup.__typename === "AutomatedModuleSamples") {
+          sampleGroup.metrics?.forEach((metric) => {
+            metric.samples?.forEach((sample, index) => {
+              const riskLevel = sample.result?.riskLevel || "";
+
+              // Skip clearly no-risk samples from "issues" list
+              if (riskLevel.toUpperCase() === "NO_RISK") {
+                return;
+              }
+
+              let severity: "LOW" | "MEDIUM" | "HIGH" = "LOW";
+              const upperRisk = riskLevel.toUpperCase();
+              if (upperRisk.includes("HIGH")) severity = "HIGH";
+              else if (upperRisk.includes("MEDIUM")) severity = "MEDIUM";
+
+              collectedIssues.push({
+                id: `${moduleId}-${metric.name}-auto-${index}`,
+                module: moduleId,
+                severity,
+                status: "FAILED",
+                issueType: metric.displayName || metric.name,
+                input: sample.test?.testInput || "",
+                output: sample.test?.actualOutput || "",
+                comments: sample.result?.reason || undefined,
+              });
+            });
+          });
+        }
+      });
+
+      setApiModuleIssues(collectedIssues);
+    } catch (err) {
+      console.error("Error fetching result samples:", err);
+    }
+  };
+
   if (isSessionLoading || isLoading) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-20">
@@ -616,6 +853,8 @@ const EvaluationDetail = ({
       </div>
     );
   }
+
+  console.log("apiModuleIssues", apiModuleIssues);
 
   return (
     <>
@@ -642,6 +881,15 @@ const EvaluationDetail = ({
               textColor={statusColors.textColor}
             >
               {audit.status}
+            </Tag>
+          </span>
+          <span className="self-start sm:self-auto">
+            <Tag
+              variation="filled"
+              fillColor={evaluationMode.fillColor}
+              textColor={evaluationMode.textColor}
+            >
+              {audit.evaluationMode}
             </Tag>
           </span>
         </div>
@@ -932,57 +1180,196 @@ const EvaluationDetail = ({
               </div>
             </div>
           </div>
+
+          {/* Module-wise Results - Sample Issues (using dummy data for now) */}
+          {audit.modules && audit.modules.length > 0 && (
+            <div className="mt-8 pt-4 bg-white">
+              <div className="mb-4">
+                <Text variant="headingMd" fontWeight="bold">
+                  Module-wise Results
+                </Text>
+              </div>
+
+              {/* Module Tabs - styled similar to NewEvaluationContent */}
+              <div className="mb-4 max-[1023px]:mb-3 border-solid border-1 border-baseGraySlateAlpha4 rounded-2 max-[640px]:mb-2">
+                <Tabs defaultValue={audit.modules[0]}>
+                  <TabList>
+                    {audit.modules.map((moduleName) => {
+                      return (
+                        <Tab value={moduleName}>
+                          {formatModuleName(moduleName)}
+                        </Tab>
+                      );
+                    })}
+                  </TabList>
+                  {audit.modules.map((moduleName) => {
+                    return (
+                      <TabPanel key={moduleName} value={moduleName}>
+                        <div className="mt-5 m-5">
+                          <Text
+                            variant="bodyLg"
+                            fontWeight="bold"
+                            className="mb-3 block text-gray-900"
+                          >
+                            Sample Issues
+                          </Text>
+
+                          <div className="flex flex-col gap-4">
+                            {(() => {
+                              const issuesForModule = apiModuleIssues.filter(
+                                (issue) => issue.module === moduleName
+                              );
+
+                              if (issuesForModule.length === 0) {
+                                return (
+                                  <Text
+                                    variant="bodySm"
+                                    className="text-gray-600"
+                                  >
+                                    No issues found for this module.
+                                  </Text>
+                                );
+                              }
+
+                              return issuesForModule.map(
+                                (issue, index: number) => {
+                                  const isExpanded = expandedIssueIds.has(
+                                    issue.id
+                                  );
+                                  const isFailed = issue.status === "FAILED";
+                                  const tagColors =
+                                    isFailed && issue.severity
+                                      ? getSeverityTagColors(issue.severity)
+                                      : {
+                                          fillColor: "#BBF7D0",
+                                          textColor: "#15803D",
+                                        };
+
+                                  return (
+                                    <div
+                                      key={issue.id}
+                                      className="test-case-card-border bg-white p-6 mt-2"
+                                    >
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          toggleIssueCard(issue.id)
+                                        }
+                                        className="w-full flex items-center justify-between text-left mb-0 border-none outline-none bg-transparent"
+                                      >
+                                        <div className="flex items-center gap-3">
+                                          <Text
+                                            variant="bodyLg"
+                                            fontWeight="bold"
+                                          >
+                                            Issue {index + 1}
+                                          </Text>
+                                          <Tag
+                                            variation="filled"
+                                            fillColor={tagColors.fillColor}
+                                            textColor={tagColors.textColor}
+                                          >
+                                            {isFailed &&
+                                            issue.severity &&
+                                            issue.issueType
+                                              ? `${
+                                                  issue.severity.charAt(0) +
+                                                  issue.severity
+                                                    .slice(1)
+                                                    .toLowerCase()
+                                                } risk - ${issue.issueType}`
+                                              : issue.status}
+                                          </Tag>
+                                        </div>
+                                        {isExpanded ? (
+                                          <IconMinus
+                                            className="text-gray-600"
+                                            size={20}
+                                          />
+                                        ) : (
+                                          <IconPlus
+                                            className="text-gray-600"
+                                            size={20}
+                                          />
+                                        )}
+                                      </button>
+
+                                      {isExpanded && (
+                                        <div className="mt-5 space-y-4 ml-1">
+                                          <div>
+                                            <Text
+                                              variant="bodyLg"
+                                              fontWeight="semibold"
+                                              className="mb-2 block"
+                                            >
+                                              Input
+                                            </Text>
+                                            <div className="prose prose-sm max-w-none ml-2 overflow-x-hidden break-words text-gray-900">
+                                              <ReactMarkdown
+                                                remarkPlugins={[remarkGfm]}
+                                              >
+                                                {issue.input || ""}
+                                              </ReactMarkdown>
+                                            </div>
+                                          </div>
+
+                                          <div>
+                                            <Text
+                                              variant="bodyLg"
+                                              fontWeight="semibold"
+                                              className="mb-2 block"
+                                            >
+                                              Output
+                                            </Text>
+                                            <div className="prose prose-sm max-w-none overflow-x-hidden ml-2 break-words text-gray-900">
+                                              <ReactMarkdown
+                                                remarkPlugins={[remarkGfm]}
+                                              >
+                                                {issue.output || ""}
+                                              </ReactMarkdown>
+                                            </div>
+                                          </div>
+
+                                          {issue.comments && (
+                                            <div>
+                                              <Text
+                                                variant="bodyLg"
+                                                fontWeight="semibold"
+                                                className="mb-2 block"
+                                              >
+                                                Comments
+                                              </Text>
+                                              <div className="prose prose-sm max-w-none ml-2 overflow-x-hidden break-words text-gray-900">
+                                                <ReactMarkdown
+                                                  remarkPlugins={[remarkGfm]}
+                                                >
+                                                  {issue.comments}
+                                                </ReactMarkdown>
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                }
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      </TabPanel>
+                    );
+                  })}
+                </Tabs>
+              </div>
+
+              {/* Sample Issues List */}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Test Cases */}
-      <div className="p-6 bg-white rounded-2xl border border-[#C4B8F3]">
-        <div className="mb-5">
-          <Text variant="headingMd" fontWeight="bold">
-            Test Cases
-          </Text>
-        </div>
-
-        {isLoadingResults ? (
-          <div className="flex flex-col items-center justify-center gap-4 py-8">
-            <Spinner />
-            <Text variant="bodySm" className="text-gray-600">
-              Loading results...
-            </Text>
-          </div>
-        ) : resultsError ? (
-          <Text variant="bodySm" className="text-red-600 py-4">
-            {resultsError}
-          </Text>
-        ) : isRunning ? (
-          <div className="block">
-            <Text variant="bodySm" className="text-gray-600 whitespace-nowrap">
-              Results will appear here once the evaluation is complete.
-            </Text>
-          </div>
-        ) : testCasesData.length > 0 ? (
-          <DataTable
-            defaultRowCount={100}
-            rows={testCasesData}
-            columns={testCasesColumns}
-            truncate={true}
-            hoverable={true}
-            sortColumns={[
-              "input",
-              "output",
-              "evaluationModule",
-              "evaluationMetric",
-              "riskSeverity",
-            ]}
-            hideFooter={true}
-            hideSelection={true}
-          />
-        ) : (
-          <Text variant="bodySm" className="py-4 text-gray-600">
-            No test results found.
-          </Text>
-        )}
-      </div>
+      {/* Test Cases table removed in favour of module-wise samples */}
 
       {/* Action Buttons */}
       <div className="flex flex-col items-center gap-4 pt-8">
