@@ -442,7 +442,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                 <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg flex flex-col items-center gap-4">
                   <Spinner />
                   <Text variant="bodySm" className="text-gray-600">
-                    Loading auditors...
+                    Loading evaluators...
                   </Text>
                 </div>
               ) : availableAuditors.length > 0 ? (
@@ -465,7 +465,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
               ) : (
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <Text variant="bodySm" className="text-yellow-800">
-                    No available auditors. All auditors are already assigned or you need to add new auditors to your organization.
+                    No available evaluators. All evaluators are already assigned or you need to add new evaluators to your organization.
                   </Text>
                 </div>
               )}
@@ -600,10 +600,10 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div>
           <Text variant="headingMd" fontWeight="bold">
-            Assigned Auditors
+            Assigned Evaluators
           </Text>
           <Text variant="bodySm" className="text-gray-600 mt-1">
-            Invite auditors to evaluate this model version
+            Invite evaluators to evaluate this model version
           </Text>
         </div>
         <Button
@@ -626,7 +626,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
         <div className="text-center py-8 bg-gray-50 rounded-lg">
           <IconUserCheck size={32} className="mx-auto text-gray-400" />
           <Text variant="bodySm" className="text-gray-500 mt-2">
-            No auditors assigned yet
+            No evaluators assigned yet
           </Text>
         </div>
       ) : (
