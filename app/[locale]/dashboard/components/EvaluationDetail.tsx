@@ -241,11 +241,14 @@ export const getStatusColor = (status: string) => {
     case "FAILED":
     case "ERROR":
       return { fillColor: "#FEE2E2", textColor: "#DC2626" };
+    case "MANUAL":
+      return { fillColor: "#d6d7d8", textColor: "#374151" };
+    case "AUTOMATED":
+      return { fillColor: "#d6d7d8", textColor: "#374151" };
     default:
-      return { fillColor: "#F3F4F6", textColor: "#374151" };
+      return { fillColor: "#d6d7d8", textColor: "#374151" };
   }
 };
-
 /**
  * Tag colors for issue severity.
  * Matches the old table legend where:
@@ -983,7 +986,7 @@ const EvaluationDetail = ({
 
       {/* Results Summary */}
       {(audit.status === "COMPLETED" || audit.completedAt) && (
-        <div className="mb-8  bg-white rounded-2xl border border-[#C4B8F3]">
+        <div className="mb-8 rounded-2xl border border-[#C4B8F3]">
           <div className="mb-4 sm:mb-5 pl-2">
             <Text variant="headingMd" fontWeight="bold">
               Evaluation Summary
@@ -1141,7 +1144,7 @@ const EvaluationDetail = ({
 
           {/* Module-wise Results - Sample Issues (using dummy data for now) */}
           {audit.modules && audit.modules.length > 0 && (
-            <div className="mt-8 pt-4 bg-white">
+            <div className="mt-8 pt-4">
               <div className="mb-4">
                 <Text variant="headingMd" fontWeight="bold">
                   Module-wise Results
@@ -1149,7 +1152,7 @@ const EvaluationDetail = ({
               </div>
 
               {/* Module Tabs - styled similar to NewEvaluationContent */}
-              <div className="mb-4 max-[1023px]:mb-3 border-solid border-1 border-baseGraySlateAlpha4 rounded-2 max-[640px]:mb-2">
+              <div className="mb-4 max-[1023px]:mb-3  bg-white border-solid border-1 border-baseGraySlateAlpha4 rounded-2 max-[640px]:mb-2">
                 <Tabs defaultValue={audit.modules[0]}>
                   <TabList>
                     {audit.modules.map((moduleName) => {

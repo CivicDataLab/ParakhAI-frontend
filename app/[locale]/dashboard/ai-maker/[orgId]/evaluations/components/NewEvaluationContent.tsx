@@ -6,7 +6,16 @@ import { toTitleCase } from "@/lib/utils";
 import { IconX } from "@tabler/icons-react";
 import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Button, Icon, Label, Select, Spinner, Tag, Text, TextField } from "opub-ui";
+import {
+  Button,
+  Icon,
+  Label,
+  Select,
+  Spinner,
+  Tag,
+  Text,
+  TextField,
+} from "opub-ui";
 import { useEffect, useRef, useState } from "react";
 import { useOrganization } from "../../OrganizationContext";
 import EvaluationConfiguration from "./EvaluationConfiguration";
@@ -267,7 +276,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const isAutoSaved = true;
 
   // Current audit ID - persisted in URL
-  const [currentAuditId, setCurrentAuditId] = useState<string | null>(urlAuditId);
+  const [currentAuditId, setCurrentAuditId] = useState<string | null>(
+    urlAuditId
+  );
   const [isCreatingAudit, setIsCreatingAudit] = useState(false);
   const [isLoadingAuditDetails, setIsLoadingAuditDetails] = useState(false);
 
@@ -300,19 +311,26 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   const [auditModelName, setAuditModelName] = useState<string | null>(null);
-  const [auditModelVersion, setAuditModelVersion] = useState<string | null>(null);
+  const [auditModelVersion, setAuditModelVersion] = useState<string | null>(
+    null
+  );
 
   // Computed values from selected model
   const selectedModel = aiModels.find((m) => m.id === selectedModelId);
-  const modelName = auditModelName || selectedModel?.displayName || selectedModel?.name || "";
+  const modelName =
+    auditModelName || selectedModel?.displayName || selectedModel?.name || "";
   // Get version display from selected version or latest version
   const selectedVersion = selectedModel?.versions?.find(
     (v) => v.id === selectedVersionId
   );
   const latestVersion = selectedModel?.versions?.find((v) => v.isLatest);
-  const modelVersion = auditModelVersion || selectedVersion?.version || latestVersion?.version || "";
+  const modelVersion =
+    auditModelVersion ||
+    selectedVersion?.version ||
+    latestVersion?.version ||
+    "";
   const modelType = selectedModel?.modelType || "TEXT_GENERATION";
 
   // GraphQL API hook for authenticated requests
@@ -349,7 +367,10 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
   // Automatically set mode of evaluation to "manual" when domain or cultural evaluation is selected
   useEffect(() => {
-    if ((auditType === "Domain" || auditType === "Cultural") && modeOfEvaluation !== "manual") {
+    if (
+      (auditType === "Domain" || auditType === "Cultural") &&
+      modeOfEvaluation !== "manual"
+    ) {
       setModeOfEvaluation("manual");
     }
   }, [auditType, modeOfEvaluation]);
@@ -452,20 +473,26 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                     status: string;
                   }>;
                 } | null;
-              }>(AI_MODEL_BY_ID_QUERY, { modelId: audit.modelId }, { organization: orgId });
+              }>(
+                AI_MODEL_BY_ID_QUERY,
+                { modelId: audit.modelId },
+                { organization: orgId }
+              );
 
               if (modelResult?.aiModel) {
                 const model = modelResult.aiModel;
                 setAuditModelName(model.displayName || model.name);
-                
+
                 // Find the version string for the selected version
                 if (audit.modelVersionId && model.versions) {
-                  const version = model.versions.find((v) => v.id === audit.modelVersionId);
+                  const version = model.versions.find(
+                    (v) => v.id === audit.modelVersionId
+                  );
                   if (version) {
                     setAuditModelVersion(version.version);
                   }
                 }
-                
+
                 // Add the model to aiModels so version info is available
                 setAiModels((prev) => {
                   const exists = prev.find((m) => m.id === model.id);
@@ -480,28 +507,45 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                       name: string;
                       displayName?: string;
                       description?: string;
-                      metrics: Array<{ name: string; displayName?: string; description?: string }>;
+                      metrics: Array<{
+                        name: string;
+                        displayName?: string;
+                        description?: string;
+                      }>;
                     }>;
-                  }>(METRICS_BY_MODEL_TYPE_QUERY, { modelType: model.modelType });
+                  }>(METRICS_BY_MODEL_TYPE_QUERY, {
+                    modelType: model.modelType,
+                  });
 
                   const metricsData = metricsResp?.metricsByModelType || [];
-                  
+
                   // Convert to Module format and set all modules
-                  const allModules: Module[] = metricsData.map((moduleData: any) => ({
-                    name: moduleData.name,
-                    displayName: moduleData.displayName || toTitleCase(moduleData.name.replace(/_/g, " ")),
-                    description: moduleData.description || "",
-                    metrics: (moduleData.metrics || []).map((metric: any) => ({
-                      name: metric.name,
-                      displayName: metric.displayName || toTitleCase(metric.name.replace(/_/g, " ")),
-                      description: metric.description || "",
-                    })),
-                  }));
+                  const allModules: Module[] = metricsData.map(
+                    (moduleData: any) => ({
+                      name: moduleData.name,
+                      displayName:
+                        moduleData.displayName ||
+                        toTitleCase(moduleData.name.replace(/_/g, " ")),
+                      description: moduleData.description || "",
+                      metrics: (moduleData.metrics || []).map(
+                        (metric: any) => ({
+                          name: metric.name,
+                          displayName:
+                            metric.displayName ||
+                            toTitleCase(metric.name.replace(/_/g, " ")),
+                          description: metric.description || "",
+                        })
+                      ),
+                    })
+                  );
 
                   setModules(allModules);
 
                   // Build module metrics options from the fetched data
-                  const moduleMetricsOptionsMap: Record<string, SelectOption[]> = {};
+                  const moduleMetricsOptionsMap: Record<
+                    string,
+                    SelectOption[]
+                  > = {};
                   metricsData.forEach((moduleMetrics: any) => {
                     if (
                       moduleMetrics?.name &&
@@ -516,7 +560,8 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                             toTitleCase(metric.name.replace(/_/g, " ")),
                         })
                       );
-                      moduleMetricsOptionsMap[moduleMetrics.name] = metricsOptions;
+                      moduleMetricsOptionsMap[moduleMetrics.name] =
+                        metricsOptions;
                     }
                   });
                   setModuleMetricsOptions(moduleMetricsOptionsMap);
@@ -531,19 +576,25 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
                     // Set selected metrics based on draft data
                     if (audit.metrics && audit.metrics.length > 0) {
-                      const selectedMetricsMap: Record<string, SelectOption[]> = {};
-                      
+                      const selectedMetricsMap: Record<string, SelectOption[]> =
+                        {};
+
                       // For each selected module, find matching metrics from draft
                       audit.modules.forEach((moduleName: string) => {
-                        const moduleMetrics = moduleMetricsOptionsMap[moduleName] || [];
+                        const moduleMetrics =
+                          moduleMetricsOptionsMap[moduleName] || [];
                         // Filter metrics that exist in both draft and module's available metrics
-                        const draftMetrics = audit.metrics.filter((metricName: string) =>
-                          moduleMetrics.some((opt: SelectOption) => opt.value === metricName)
+                        const draftMetrics = audit.metrics.filter(
+                          (metricName: string) =>
+                            moduleMetrics.some(
+                              (opt: SelectOption) => opt.value === metricName
+                            )
                         );
-                        
+
                         if (draftMetrics.length > 0) {
-                          selectedMetricsMap[moduleName] = moduleMetrics.filter((opt: SelectOption) =>
-                            draftMetrics.includes(opt.value)
+                          selectedMetricsMap[moduleName] = moduleMetrics.filter(
+                            (opt: SelectOption) =>
+                              draftMetrics.includes(opt.value)
                           );
                         } else if (moduleMetrics.length > 0) {
                           // If no matching metrics found, select all available metrics for this module
@@ -562,15 +613,20 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                   isFetchingRef.current = false;
                   lastModelTypeRef.current = model.modelType;
                 } catch (metricsError) {
-                  console.warn("Failed to fetch modules/metrics for draft:", metricsError);
+                  console.warn(
+                    "Failed to fetch modules/metrics for draft:",
+                    metricsError
+                  );
                   // Fallback to basic module construction if fetch fails
                   if (audit.modules && audit.modules.length > 0) {
-                    const draftModules: Module[] = audit.modules.map((moduleName: string) => ({
-                      name: moduleName,
-                      displayName: toTitleCase(moduleName.replace(/_/g, " ")),
-                      description: "",
-                      metrics: [],
-                    }));
+                    const draftModules: Module[] = audit.modules.map(
+                      (moduleName: string) => ({
+                        name: moduleName,
+                        displayName: toTitleCase(moduleName.replace(/_/g, " ")),
+                        description: "",
+                        metrics: [],
+                      })
+                    );
                     setModules(draftModules);
 
                     const modulesMap: Record<string, boolean> = {};
@@ -602,7 +658,8 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
           const config = audit.configuration || {};
           if (config.auditorName) setAuditorName(config.auditorName);
-          if (config.organisationName) setOrganisationName(config.organisationName);
+          if (config.organisationName)
+            setOrganisationName(config.organisationName);
 
           // Note: Modules and metrics are now loaded in the model fetch section above
           // using MetricsByModelType query to show all available modules
@@ -637,7 +694,10 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   };
 
   // Create a blank audit when model is selected
-  const createBlankAudit = async (modelId: string, versionId: number | null): Promise<string | null> => {
+  const createBlankAudit = async (
+    modelId: string,
+    versionId: number | null
+  ): Promise<string | null> => {
     if (!isAuthenticated || isCreatingAudit) return null;
 
     setIsCreatingAudit(true);
@@ -677,11 +737,14 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   };
 
   // Update audit with current configuration
-  const updateAuditConfig = async (auditIdOverride?: string): Promise<boolean> => {
+  const updateAuditConfig = async (
+    auditIdOverride?: string
+  ): Promise<boolean> => {
     const auditId = auditIdOverride || currentAuditId;
     if (!auditId || !isAuthenticated) return false;
 
-    const { modules: modulesList, metrics: metricsList } = buildModulesAndMetrics();
+    const { modules: modulesList, metrics: metricsList } =
+      buildModulesAndMetrics();
 
     try {
       const result = await request<{
@@ -706,7 +769,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       );
 
       if (!result?.updateAudit?.success) {
-        setAuditError(result?.updateAudit?.message || "Failed to update evaluation.");
+        setAuditError(
+          result?.updateAudit?.message || "Failed to update evaluation."
+        );
         return false;
       }
 
@@ -1206,7 +1271,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
     // Ensure we have an audit ID
     let auditId = currentAuditId;
-    
+
     if (!auditId && selectedModelId) {
       // Create audit if not exists
       auditId = await createBlankAudit(selectedModelId, selectedVersionId);
@@ -1334,7 +1399,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   return (
     <>
       <div
-        className={`flex-1 ${styles.auditContent} p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0 bg-white`}
+        className={`flex-1 ${styles.auditContent} p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0`}
       >
         {/* Invalid Model/Version Error */}
         {invalidModelError && (
@@ -1392,109 +1457,110 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
         {/* Model Name and Owner Section - Hide while loading audit details */}
         {!(urlAuditId && isLoadingAuditDetails) && (
-        <div className="mb-6">
-          {/* Model Selector - Only show if no URL params and no audit loaded */}
-          {!urlModelId && !currentAuditId && (
-            <div className="mb-4 max-w-md">
-              {isLoadingModels ? (
-                <div className="flex flex-col items-center gap-4">
-                  <Spinner />
-                  <Text variant="bodySm" className="text-gray-600">
-                    Loading models...
-                  </Text>
-                </div>
-              ) : modelsError ? (
-                <div>
-                  <Text variant="bodySm" className="text-red-600">
-                    {modelsError}
-                  </Text>
-                </div>
-              ) : aiModels.length > 0 ? (
-                <div className="flex flex-col gap-4">
-                  <Select
-                    name="modelSelect"
-                    label="Select AI Model"
-                    options={aiModels.map((model) => ({
-                      value: model.id,
-                      label: model.displayName || model.name,
-                    }))}
-                    value={selectedModelId || ""}
-                    onChange={(value) => {
-                      setSelectedModelId(value);
-                      const model = aiModels.find((m) => m.id === value);
-                      const latestVer = model?.versions?.find(
-                        (v) => v.isLatest
-                      );
-                      setSelectedVersionId(latestVer?.id || null);
-                    }}
-                    disabled={
-                      typeof activeTab !== "undefined" && activeTab !== "config"
-                    }
-                  />
-                  {selectedModel &&
-                    selectedModel.versions &&
-                    selectedModel.versions.length > 0 && (
-                      <Select
-                        name="versionSelect"
-                        label="Select Model Version"
-                        options={selectedModel.versions.map((ver) => ({
-                          value: String(ver.id),
-                          label: `${ver.version}${ver.isLatest ? " (Latest)" : ""}`,
-                        }))}
-                        value={
-                          selectedVersionId ? String(selectedVersionId) : ""
-                        }
-                        onChange={(value) =>
-                          setSelectedVersionId(value ? Number(value) : null)
-                        }
-                        disabled={
-                          typeof activeTab !== "undefined" &&
-                          activeTab !== "config"
-                        }
-                      />
-                    )}
-                </div>
-              ) : (
-                <div>
-                  <Text variant="bodySm" className="text-gray-600">
-                    No models available. Please check your backend
-                    configuration.
-                  </Text>
-                </div>
-              )}
-            </div>
-          )}
+          <div className="mb-6">
+            {/* Model Selector - Only show if no URL params and no audit loaded */}
+            {!urlModelId && !currentAuditId && (
+              <div className="mb-4 max-w-md">
+                {isLoadingModels ? (
+                  <div className="flex flex-col items-center gap-4">
+                    <Spinner />
+                    <Text variant="bodySm" className="text-gray-600">
+                      Loading models...
+                    </Text>
+                  </div>
+                ) : modelsError ? (
+                  <div>
+                    <Text variant="bodySm" className="text-red-600">
+                      {modelsError}
+                    </Text>
+                  </div>
+                ) : aiModels.length > 0 ? (
+                  <div className="flex flex-col gap-4">
+                    <Select
+                      name="modelSelect"
+                      label="Select AI Model"
+                      options={aiModels.map((model) => ({
+                        value: model.id,
+                        label: model.displayName || model.name,
+                      }))}
+                      value={selectedModelId || ""}
+                      onChange={(value) => {
+                        setSelectedModelId(value);
+                        const model = aiModels.find((m) => m.id === value);
+                        const latestVer = model?.versions?.find(
+                          (v) => v.isLatest
+                        );
+                        setSelectedVersionId(latestVer?.id || null);
+                      }}
+                      disabled={
+                        typeof activeTab !== "undefined" &&
+                        activeTab !== "config"
+                      }
+                    />
+                    {selectedModel &&
+                      selectedModel.versions &&
+                      selectedModel.versions.length > 0 && (
+                        <Select
+                          name="versionSelect"
+                          label="Select Model Version"
+                          options={selectedModel.versions.map((ver) => ({
+                            value: String(ver.id),
+                            label: `${ver.version}${ver.isLatest ? " (Latest)" : ""}`,
+                          }))}
+                          value={
+                            selectedVersionId ? String(selectedVersionId) : ""
+                          }
+                          onChange={(value) =>
+                            setSelectedVersionId(value ? Number(value) : null)
+                          }
+                          disabled={
+                            typeof activeTab !== "undefined" &&
+                            activeTab !== "config"
+                          }
+                        />
+                      )}
+                  </div>
+                ) : (
+                  <div>
+                    <Text variant="bodySm" className="text-gray-600">
+                      No models available. Please check your backend
+                      configuration.
+                    </Text>
+                  </div>
+                )}
+              </div>
+            )}
 
-          {/* Model Name label + value */}
-          <div className={`mb-4 ${styles.modelNameContainer}`}>
-            <Text
-              variant="bodySm"
-              className="text-sm leading-5 font-medium text-[#60646C] mb-1 text-right"
-            >
-              Model Name
-            </Text>
-            <div className="flex items-center gap-4">
-              <Text as="h1" className={styles.modelNameText}>
-                {modelName}
+            {/* Model Name label + value */}
+            <div className={`mb-4 ${styles.modelNameContainer}`}>
+              <Text
+                variant="bodySm"
+                className="text-sm leading-5 font-medium text-[#60646C] mb-1 text-right"
+              >
+                Model Name
               </Text>
-              {modelVersion && (
-                <Text as="h2" className={styles.modelNameText}>
-                  {modelVersion}
+              <div className="flex items-center gap-4">
+                <Text as="h1" className={styles.modelNameText}>
+                  {modelName}
                 </Text>
-              )}
+                {modelVersion && (
+                  <Text as="h2" className={styles.modelNameText}>
+                    {modelVersion}
+                  </Text>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-gray-600">
+              <Text variant="bodyMd">Owner:</Text>
+              <Image
+                src="/images/icons/CDL.png"
+                alt="CDL"
+                width={36}
+                height={36}
+                className={`object-contain ${styles.cdlLogo}`}
+              />
             </div>
           </div>
-          <div className="flex items-center gap-2 text-gray-600">
-            <Text variant="bodyMd">Owner:</Text>
-            <Image
-              src="/images/icons/CDL.png"
-              alt="CDL"
-              width={36}
-              height={36}
-              className={`object-contain ${styles.cdlLogo}`}
-            />
-          </div>
-        </div>
         )}
 
         {/* Audit Name, Tag, and Status Section */}
@@ -1521,9 +1587,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               />
             </div>
             <div className="flex-shrink-0 max-[640px]:w-full max-[640px]:flex max-[640px]:items-start">
-              <div 
+              <div
                 className={`${styles.tagWrapper} ${styles.auditTag}`}
-                style={{ borderRadius: '4px', overflow: 'hidden' }}
+                style={{ borderRadius: "4px", overflow: "hidden" }}
               >
                 <Tag variation="filled" fillColor="#E2F5C4" textColor="#0A0704">
                   {auditType === "Technical"
@@ -1684,7 +1750,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             )}
           </div>
         )}
-
 
         {/* Navigation Buttons - Audit Configuration tab */}
         {activeTab === "config" && (

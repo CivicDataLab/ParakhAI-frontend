@@ -606,8 +606,9 @@ const PromptLibrariesPage = () => {
           title=""
           headerHidden
           large
-          className="PromptDlg"
-          style={{ maxHeight: "85vh" }}
+          // limitHeight
+          className="PromptDlg h-full p-2"
+          // style={{ maxHeight: "60vh" }}
           primaryAction={{
             content: "",
             onAction: () => {},

@@ -26,7 +26,7 @@ const EntityCard = ({ org, locale }: { org: Organization; locale: string }) => {
     <Link
       key={org.name}
       href={`/${locale}/dashboard/ai-maker/${org.id}`}
-      className="flex h-72 w-56 flex-col items-center gap-3 rounded-2 border-2 border-solid border-baseGraySlateSolid4 px-4 py-5 text-center transition-all hover:border-highlight group"
+      className="flex h-72 w-56 flex-col items-center bg-white gap-3 rounded-2 border-2 border-solid border-baseGraySlateSolid4 px-4 py-5 text-center transition-all hover:border-highlight group"
     >
       <div className="flex h-full w-full items-center justify-center rounded-2">
         <div className="rounded-2">
@@ -68,7 +68,7 @@ const OrganizationSelection = () => {
   const locale = params?.locale || "en";
   const { request } = useGraphQL();
   const { setAllEntityDetails } = useDashboardStore();
-  
+
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -101,7 +101,7 @@ const OrganizationSelection = () => {
   }, [request]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-[var(--page-background)]">
       <BreadCrumbs
         data={[
           { href: "/", label: "Home" },
@@ -111,7 +111,7 @@ const OrganizationSelection = () => {
       />
 
       <div className="flex-1 container mb-40">
-        <div className="flex flex-col gap-6 py-10">
+        <div className="flex flex-col gap-6 py-12">
           <Text variant="headingXl">Select Organization</Text>
           <Text variant="bodyMd" className="text-gray-600">
             Choose an organization to access its AI Maker dashboard.
@@ -123,9 +123,9 @@ const OrganizationSelection = () => {
         ) : (
           <div className="flex flex-wrap gap-6">
             {organizations.map((org) => (
-      <EntityCard key={org.id} org={org} locale={locale as string} />
+              <EntityCard key={org.id} org={org} locale={locale as string} />
             ))}
-            
+
             {organizations.length === 0 && (
               <div className="col-span-full w-full py-20 text-center bg-gray-50 rounded-4">
                 <Text variant="bodyLg" className="text-gray-500">

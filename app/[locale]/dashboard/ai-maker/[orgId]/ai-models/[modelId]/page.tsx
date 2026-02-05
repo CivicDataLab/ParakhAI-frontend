@@ -303,7 +303,7 @@ const ModelDetailPage = () => {
 
   return (
     <>
-      <div className="flex-1 lg:py-10 bg-white overflow-hidden">
+      <div className="flex-1 lg:py-10 overflow-hidden">
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1 min-w-0  lg:border-r border-gray-100">
             <div className="flex flex-col gap-4">
@@ -728,8 +728,8 @@ const ModelDetailPage = () => {
               <Text variant="bodyMd" className="text-gray-500 mb-4">
                 No evaluations yet for this model.
               </Text>
-              <Button 
-                kind="primary" 
+              <Button
+                kind="primary"
                 onClick={() => handleNewEvaluation()}
                 className="bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white px-8 py-3 rounded-[8px] font-bold text-base"
               >

@@ -24,7 +24,11 @@ export default function AIMakerLayout({
 }) {
   const params = useParams();
   const orgId = params?.orgId as string;
-  const { request, isAuthenticated, isLoading: isSessionLoading } = useGraphQL();
+  const {
+    request,
+    isAuthenticated,
+    isLoading: isSessionLoading,
+  } = useGraphQL();
 
   const [organization, setOrganization] = useState<{
     name: string;
@@ -59,7 +63,7 @@ export default function AIMakerLayout({
 
   return (
     <OrganizationContext.Provider value={{ organization, isLoading }}>
-      <div className="flex flex-col min-h-screen bg-white overflow-x-visible">
+      <div className="flex flex-col min-h-screen bg-[var(--page-background)] overflow-x-visible">
         <BreadCrumbs
           data={[
             { href: "/", label: "Home" },
@@ -73,12 +77,14 @@ export default function AIMakerLayout({
         />
         <div className="flex-1 w-full px-4 sm:px-6 lg:px-10 overflow-x-visible flex">
           <div className="flex w-full flex-col lg:flex-row lg:items-stretch gap-6 md:gap-8 h-full">
-            <WelcomeSection
-              orgName={organization?.name}
-              orgLogo={organization?.logoUrl}
-            />
+            <div className="flex-shrink-0 self-start lg:sticky lg:top-4">
+              <WelcomeSection
+                orgName={organization?.name}
+                orgLogo={organization?.logoUrl}
+              />
+            </div>
 
-            <div className="flex-1 max-w-full bg-gray-50 p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0 overflow-x-auto h-full">
+            <div className="flex-1 min-w-0 max-w-full bg-gray-50 p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0 overflow-x-auto h-full">
               {children}
             </div>
           </div>
@@ -87,4 +93,3 @@ export default function AIMakerLayout({
     </OrganizationContext.Provider>
   );
 }
-
