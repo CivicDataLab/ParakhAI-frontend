@@ -4,6 +4,7 @@ import { Tag, Text } from 'opub-ui';
 import React, { useState } from 'react';
 import { IconMinus, IconPlus } from '@tabler/icons-react';
 import type { ManualTestCase } from './types';
+import { toTitleCase } from '@/lib/utils';
 
 interface TestCaseHistoryProps {
   testCases: ManualTestCase[];
@@ -36,7 +37,7 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
   };
 
   return (
-  <div className="mt-6">
+  <div>
       <Text variant="headingMd" className="mb-4">
         Previous Test Cases for {moduleDisplayName}
       </Text>
@@ -59,12 +60,34 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
                   </Text>
                   <Tag
                     variation="filled"
-                    fillColor={tc.status === 'PASSED' ? '#BBF7D0' : '#FECACA'}
-                    textColor={tc.status === 'PASSED' ? '#15803D' : '#DC2626'}
+                    fillColor={
+                      tc.status === 'PASSED'
+                        ? '#BBF7D0'
+                        : tc.severity === 'HIGH'
+                          ? '#E93D82'
+                          : tc.severity === 'MEDIUM'
+                            ? '#F5D08C'
+                            : tc.severity === 'LOW'
+                              ? '#5EB0EF'
+                              : '#FECACA'
+                    }
+                    textColor={
+                      tc.status === 'PASSED'
+                        ? '#15803D'
+                        : tc.severity === 'HIGH'
+                          ? '#FFFFFF'
+                          : tc.severity === 'MEDIUM'
+                            ? '#0A0704'
+                            : tc.severity === 'LOW'
+                              ? '#FFFFFF'
+                              : '#DC2626'
+                    }
                   >
                     {tc.status === 'FAILED' && tc.severity && tc.issueType
-                      ? `${tc.severity.charAt(0) + tc.severity.slice(1).toLowerCase()} risk - ${tc.issueType}`
-                      : tc.status}
+                      ? `${tc.severity.charAt(0) + tc.severity.slice(1).toLowerCase()} risk - ${toTitleCase(
+                          tc.issueType.toLowerCase()
+                        )}`
+                      : toTitleCase(tc.status.toLowerCase())}
                   </Tag>
                 </div>
                 {isExpanded ? (

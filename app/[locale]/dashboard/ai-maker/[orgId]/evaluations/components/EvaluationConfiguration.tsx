@@ -592,6 +592,15 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                 />
               </div>
             </div>
+            {(auditType === "Domain" || auditType === "Cultural") && (
+              <Text
+                variant="bodySm"
+                className="mt-2"
+                style={{ color: "#60646C" }}
+              >
+                Only Manual Mode for Domain and Cultural Evaluations
+              </Text>
+            )}
             {validationErrors.modeOfEvaluation && (
               <Text
                 variant="bodySm"

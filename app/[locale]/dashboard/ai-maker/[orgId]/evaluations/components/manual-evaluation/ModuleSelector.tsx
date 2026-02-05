@@ -1,6 +1,6 @@
 'use client';
 
-import { Tag, Text } from 'opub-ui';
+import { Tag, Text, Tooltip } from 'opub-ui';
 import React from 'react';
 import type { ModuleProgress } from './types';
 import styles from '../styles.module.scss';
@@ -72,16 +72,34 @@ const ModuleSelector: React.FC<ModuleSelectorProps> = ({
                 {getModuleDescription(module)}
               </Text>
 
-              <div className="flex gap-2 flex-wrap">
-                <Tag variation="filled" fillColor="#E5E7EB" textColor="#374151">
-                  {testCount} Test Cases
-                </Tag>
-                <Tag variation="filled" fillColor="#EC4899" textColor="#FFFFFF">
-                  {failedCount} Failed
-                </Tag>
-                <Tag variation="filled" fillColor="#D9F99D" textColor="#15803D">
-                  {passedCount} Passed
-                </Tag>
+              <div className="flex gap-2 flex-nowrap overflow-x-auto">
+                <Tooltip content={`${testCount} Test Cases`}>
+                  <Tag
+                    variation="filled"
+                    fillColor="#E5E7EB"
+                    textColor="#374151"
+                  >
+                    {testCount} Test Cases
+                  </Tag>
+                </Tooltip>
+                <Tooltip content={`${failedCount} Failed`}>
+                  <Tag
+                    variation="filled"
+                    fillColor="#EC4899"
+                    textColor="#FFFFFF"
+                  >
+                    {failedCount} Failed
+                  </Tag>
+                </Tooltip>
+                <Tooltip content={`${passedCount} Passed`}>
+                  <Tag
+                    variation="filled"
+                    fillColor="#D9F99D"
+                    textColor="#15803D"
+                  >
+                    {passedCount} Passed
+                  </Tag>
+                </Tooltip>
               </div>
             </button>
           );
