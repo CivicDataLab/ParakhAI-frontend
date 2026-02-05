@@ -472,6 +472,114 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                   if (exists) return prev;
                   return [...prev, model];
                 });
+
+                // Fetch all modules and metrics for this model type using MetricsByModelType
+                try {
+                  const metricsResp = await request<{
+                    metricsByModelType: Array<{
+                      name: string;
+                      displayName?: string;
+                      description?: string;
+                      metrics: Array<{ name: string; displayName?: string; description?: string }>;
+                    }>;
+                  }>(METRICS_BY_MODEL_TYPE_QUERY, { modelType: model.modelType });
+
+                  const metricsData = metricsResp?.metricsByModelType || [];
+                  
+                  // Convert to Module format and set all modules
+                  const allModules: Module[] = metricsData.map((moduleData: any) => ({
+                    name: moduleData.name,
+                    displayName: moduleData.displayName || toTitleCase(moduleData.name.replace(/_/g, " ")),
+                    description: moduleData.description || "",
+                    metrics: (moduleData.metrics || []).map((metric: any) => ({
+                      name: metric.name,
+                      displayName: metric.displayName || toTitleCase(metric.name.replace(/_/g, " ")),
+                      description: metric.description || "",
+                    })),
+                  }));
+
+                  setModules(allModules);
+
+                  // Build module metrics options from the fetched data
+                  const moduleMetricsOptionsMap: Record<string, SelectOption[]> = {};
+                  metricsData.forEach((moduleMetrics: any) => {
+                    if (
+                      moduleMetrics?.name &&
+                      Array.isArray(moduleMetrics.metrics) &&
+                      moduleMetrics.metrics.length > 0
+                    ) {
+                      const metricsOptions = moduleMetrics.metrics.map(
+                        (metric: any) => ({
+                          value: metric.name,
+                          label:
+                            metric.displayName ||
+                            toTitleCase(metric.name.replace(/_/g, " ")),
+                        })
+                      );
+                      moduleMetricsOptionsMap[moduleMetrics.name] = metricsOptions;
+                    }
+                  });
+                  setModuleMetricsOptions(moduleMetricsOptionsMap);
+
+                  // Now set selected modules and metrics based on draft data
+                  if (audit.modules && audit.modules.length > 0) {
+                    const modulesMap: Record<string, boolean> = {};
+                    audit.modules.forEach((mod: string) => {
+                      modulesMap[mod] = true;
+                    });
+                    setSelectedModules(modulesMap);
+
+                    // Set selected metrics based on draft data
+                    if (audit.metrics && audit.metrics.length > 0) {
+                      const selectedMetricsMap: Record<string, SelectOption[]> = {};
+                      
+                      // For each selected module, find matching metrics from draft
+                      audit.modules.forEach((moduleName: string) => {
+                        const moduleMetrics = moduleMetricsOptionsMap[moduleName] || [];
+                        // Filter metrics that exist in both draft and module's available metrics
+                        const draftMetrics = audit.metrics.filter((metricName: string) =>
+                          moduleMetrics.some((opt: SelectOption) => opt.value === metricName)
+                        );
+                        
+                        if (draftMetrics.length > 0) {
+                          selectedMetricsMap[moduleName] = moduleMetrics.filter((opt: SelectOption) =>
+                            draftMetrics.includes(opt.value)
+                          );
+                        } else if (moduleMetrics.length > 0) {
+                          // If no matching metrics found, select all available metrics for this module
+                          selectedMetricsMap[moduleName] = moduleMetrics;
+                        }
+                      });
+
+                      if (Object.keys(selectedMetricsMap).length > 0) {
+                        setSelectedMetrics(selectedMetricsMap);
+                      }
+                    }
+                  }
+
+                  // Mark modules as fetched to prevent regular useEffect from overwriting draft selections
+                  modulesFetchedRef.current = true;
+                  isFetchingRef.current = false;
+                  lastModelTypeRef.current = model.modelType;
+                } catch (metricsError) {
+                  console.warn("Failed to fetch modules/metrics for draft:", metricsError);
+                  // Fallback to basic module construction if fetch fails
+                  if (audit.modules && audit.modules.length > 0) {
+                    const draftModules: Module[] = audit.modules.map((moduleName: string) => ({
+                      name: moduleName,
+                      displayName: toTitleCase(moduleName.replace(/_/g, " ")),
+                      description: "",
+                      metrics: [],
+                    }));
+                    setModules(draftModules);
+
+                    const modulesMap: Record<string, boolean> = {};
+                    audit.modules.forEach((mod: string) => {
+                      modulesMap[mod] = true;
+                    });
+                    setSelectedModules(modulesMap);
+                  }
+                }
               }
             } catch (modelError) {
               console.error("Error fetching model details:", modelError);
@@ -496,13 +604,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           if (config.auditorName) setAuditorName(config.auditorName);
           if (config.organisationName) setOrganisationName(config.organisationName);
 
-          if (audit.modules && audit.modules.length > 0) {
-            const modulesMap: Record<string, boolean> = {};
-            audit.modules.forEach((mod: string) => {
-              modulesMap[mod] = true;
-            });
-            setSelectedModules(modulesMap);
-          }
+          // Note: Modules and metrics are now loaded in the model fetch section above
+          // using MetricsByModelType query to show all available modules
+          // Only selected modules/metrics from draft are marked as selected
         }
       } catch (error) {
         console.error("Error fetching audit details:", error);
