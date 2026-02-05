@@ -110,8 +110,8 @@ const OrganizationSelection = () => {
         ]}
       />
 
-      <div className="flex-1 container mb-40">
-        <div className="flex flex-col gap-6 py-12">
+      <div className="flex-1 container mb-40 mt-10 mx-10">
+        <div className="flex flex-col gap-6 py-10">
           <Text variant="headingXl">Select Organization</Text>
           <Text variant="bodyMd" className="text-gray-600">
             Choose an organization to access its AI Maker dashboard.

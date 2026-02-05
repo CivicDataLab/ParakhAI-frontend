@@ -15,6 +15,7 @@ import {
 } from "opub-ui";
 import React, { useCallback, useEffect, useState } from "react";
 import { IconCircleArrowRight } from "@tabler/icons-react";
+import { toTitleCase } from "@/lib/utils";
 import FailureDetails from "./FailureDetails";
 import ModelOutputDisplay from "./ModelOutputDisplay";
 import ModuleSelector from "./ModuleSelector";
@@ -562,14 +563,14 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
       {selectedModule && (
         <div className="space-y-6">
           {/* Test Case Number and Language Selectors */}
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between mb-0">
+            {/* <div>
               <Tag variation="filled" fillColor="#E5E7EB" textColor="#374151">
                 <Text variant="bodySm" fontWeight="medium">
                   Test Case: {(currentModuleProgress?.testCaseCount || 0) + 1}
                 </Text>
               </Tag>
-            </div>
+            </div> */}
             {supportedLanguages && supportedLanguages.length > 1 && (
               <div className="flex gap-4">
                 <div className="w-48">
@@ -602,7 +603,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
             )}
           </div>
           {/* Input and Output Panels Side by Side */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 !-mt-2">
             {/* Input Panel */}
             <div className="manual-eval-input-panel p-6 bg-white">
               <div className="flex items-center justify-between mb-4">
@@ -700,9 +701,19 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                           value: sm.name,
                           label: sm.displayName,
                         }))}
-                        creatable
-                        selectedValue={issueType}
-                        onChange={setIssueType}
+                        selectedValue={
+                          issueType
+                            ? toTitleCase(issueType.toLowerCase())
+                            : issueType
+                        }
+                        onChange={(value) => {
+                          const match = subModules.find(
+                            (sm) =>
+                              sm.name === value || sm.displayName === value
+                          );
+                          // Store canonical name (for API), but show title case via selectedValue
+                          setIssueType(match ? match.name : value);
+                        }}
                       />
                     </div>
                   </div>
@@ -804,11 +815,13 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           )}
 
           {/* Test Case History */}
-          <TestCaseHistory
-            testCases={testCases}
-            moduleName={selectedModule}
-            moduleDisplayName={getModuleDisplayName(selectedModule)}
-          />
+          <div className="mt-12">
+            <TestCaseHistory
+              testCases={testCases}
+              moduleName={selectedModule}
+              moduleDisplayName={getModuleDisplayName(selectedModule)}
+            />
+          </div>
         </div>
       )}
 

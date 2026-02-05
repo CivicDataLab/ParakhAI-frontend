@@ -67,7 +67,7 @@ export const auditorNavItems: NavItem[] = [
     isImage: true,
     path: "/dashboard/auditor/evaluations",
   },
-  { icon: "/images/icons/settings.png", label: "Settings", isImage: true },
+  // { icon: "/images/icons/settings.png", label: "Settings", isImage: true },
 ];
 
 export type DashboardType = "ai-maker" | "auditor";

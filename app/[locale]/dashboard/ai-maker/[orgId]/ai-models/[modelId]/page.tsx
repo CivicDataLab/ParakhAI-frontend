@@ -263,19 +263,19 @@ const ModelDetailPage = () => {
         );
       },
     }),
-    columnHelper.accessor("requestedByName", {
-      header: "Expert",
-      cell: (info) => (
-        <div className="flex items-center gap-2">
-          <Avatar
-            showInitials
-            name={info.getValue() || "Expert"}
-            size="extraSmall"
-          />
-          <Text variant="bodySm">{info.getValue() || "Unknown"}</Text>
-        </div>
-      ),
-    }),
+    // columnHelper.accessor("requestedByName", {
+    //   header: "Expert",
+    //   cell: (info) => (
+    //     <div className="flex items-center gap-2">
+    //       <Avatar
+    //         showInitials
+    //         name={info.getValue() || "Expert"}
+    //         size="extraSmall"
+    //       />
+    //       <Text variant="bodySm">{info.getValue() || "Unknown"}</Text>
+    //     </div>
+    //   ),
+    // }),
   ];
 
   if (loading) {

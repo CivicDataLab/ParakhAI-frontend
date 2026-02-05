@@ -46,24 +46,16 @@ const UserDashboard = () => {
         <Loading />
       ) : (
         <div className="role-selection-container max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-32 pb-10 pt-6 overflow-visible">
-          <div className="flex flex-col items-start pt-4 sm:pt-6 md:pt-8 overflow-visible relative">
+          <div className="flex flex-col items-start pt-4 sm:pt-6 md:pt-8">
             {/* Main Title */}
-            <div
-              className="role-selection-title text-left w-full mb-8 sm:mb-10 md:mb-12 lg:mb-16 
-                            sm:relative sm:left-0 sm:ml-0
-                            lg:absolute lg:left-[-60px] lg:w-[1216px] lg:ml-0"
-            >
+            <div className="role-selection-title text-left w-full mb-8 sm:mb-10 md:mb-12 lg:mb-16">
               <h1 className="font-bold text-2xl sm:text-3xl md:text-[32px] leading-tight sm:leading-[40px] text-[#0A0704]">
                 Select Your Role
               </h1>
             </div>
 
             {/* Role Selection Cards */}
-            <div
-              className="role-cards-wrapper flex flex-col sm:flex-row gap-4 sm:gap-6 md:gap-8 w-full justify-start overflow-visible
-                            sm:relative sm:left-0 sm:top-0 sm:ml-0
-                            lg:absolute lg:left-[-60px] lg:top-[120px]"
-            >
+            <div className="role-cards-wrapper flex flex-col md:flex-row gap-4 sm:gap-6 md:gap-8 w-full justify-start">
               {list.map((item, index) => {
                 const isExternal =
                   item.path.startsWith("http://") ||
