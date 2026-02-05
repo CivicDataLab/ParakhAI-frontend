@@ -1,17 +1,26 @@
-'use client';
+"use client";
 
-import { useGraphQL } from '@/lib/api';
-import RichTextRenderer from '@/components/RichTextRenderer';
-import { useParams, useRouter } from 'next/navigation';
-import { Button, Label, Select, Spinner, Tag, Text, TextField } from 'opub-ui';
-import React, { useCallback, useEffect, useState } from 'react';
-import { IconCircleArrowRight } from '@tabler/icons-react';
-import FailureDetails from './FailureDetails';
-import ModelOutputDisplay from './ModelOutputDisplay';
-import ModuleSelector from './ModuleSelector';
-import RecommendationModal from './RecommendationModal';
-import TestCaseHistory from './TestCaseHistory';
-import TestCaseInput from './TestCaseInput';
+import { useGraphQL } from "@/lib/api";
+import RichTextRenderer from "@/components/RichTextRenderer";
+import { useParams, useRouter } from "next/navigation";
+import {
+  Button,
+  Combobox,
+  Label,
+  Select,
+  Spinner,
+  Tag,
+  Text,
+  TextField,
+} from "opub-ui";
+import React, { useCallback, useEffect, useState } from "react";
+import { IconCircleArrowRight } from "@tabler/icons-react";
+import FailureDetails from "./FailureDetails";
+import ModelOutputDisplay from "./ModelOutputDisplay";
+import ModuleSelector from "./ModuleSelector";
+import RecommendationModal from "./RecommendationModal";
+import TestCaseHistory from "./TestCaseHistory";
+import TestCaseInput from "./TestCaseInput";
 import {
   LANGUAGE_OPTIONS,
   SEVERITY_OPTIONS,
@@ -19,7 +28,7 @@ import {
   type ManualTestCase,
   type ModuleProgress,
   type SubModuleInfo,
-} from './types';
+} from "./types";
 
 // GraphQL Queries and Mutations
 const CALL_MODEL_MUTATION = `
@@ -145,9 +154,9 @@ interface ManualEvaluationFlowProps {
 }
 
 const MODULE_DISPLAY_NAMES: Record<string, string> = {
-  BIAS_FAIRNESS: 'Bias and Fairness',
-  HALLUCINATION_MISINFORMATION: 'Hallucination and Misinformation',
-  PRIVACY_SAFETY: 'Privacy and Safety',
+  BIAS_FAIRNESS: "Bias and Fairness",
+  HALLUCINATION_MISINFORMATION: "Hallucination and Misinformation",
+  PRIVACY_SAFETY: "Privacy and Safety",
 };
 
 const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
@@ -162,7 +171,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   // Router and params for navigation
   const router = useRouter();
   const params = useParams();
-  const locale = params?.locale || 'en';
+  const locale = params?.locale || "en";
 
   // GraphQL hook for authenticated requests
   const { request } = useGraphQL();
@@ -175,25 +184,27 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   const [canFinishEvaluation, setCanFinishEvaluation] = useState(false);
 
   // Test case input state
-  const [sourceLanguage, setSourceLanguage] = useState('en');
-  const [targetLanguage, setTargetLanguage] = useState('');
-  const [inputPrompt, setInputPrompt] = useState('');
+  const [sourceLanguage, setSourceLanguage] = useState("en");
+  const [targetLanguage, setTargetLanguage] = useState("");
+  const [inputPrompt, setInputPrompt] = useState("");
 
   // Model output state
-  const [modelOutput, setModelOutput] = useState('');
+  const [modelOutput, setModelOutput] = useState("");
   const [latencyMs, setLatencyMs] = useState<number | undefined>();
   const [hasCalledModel, setHasCalledModel] = useState(false);
 
   // Evaluation state
-  const [status, setStatus] = useState<'PASSED' | 'FAILED' | null>(null);
-  const [issueType, setIssueType] = useState('');
-  const [severity, setSeverity] = useState('');
-  const [comments, setComments] = useState('');
-  const [idealOutput, setIdealOutput] = useState('');
+  const [status, setStatus] = useState<"PASSED" | "FAILED" | null>(null);
+  const [issueType, setIssueType] = useState("");
+  const [severity, setSeverity] = useState("");
+  const [comments, setComments] = useState("");
+  const [idealOutput, setIdealOutput] = useState("");
 
   // Modal state for recommendations
-  const [showModuleRecommendationModal, setShowModuleRecommendationModal] = useState(false);
-  const [showOverallRecommendationModal, setShowOverallRecommendationModal] = useState(false);
+  const [showModuleRecommendationModal, setShowModuleRecommendationModal] =
+    useState(false);
+  const [showOverallRecommendationModal, setShowOverallRecommendationModal] =
+    useState(false);
 
   // Loading states
   const [isCallingModel, setIsCallingModel] = useState(false);
@@ -203,7 +214,10 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const getModuleDisplayName = useCallback((name: string) => {
-    return MODULE_DISPLAY_NAMES[name] || name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    return (
+      MODULE_DISPLAY_NAMES[name] ||
+      name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+    );
   }, []);
 
   // Fetch evaluation status
@@ -215,31 +229,40 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
 
       if (result?.manualEvaluationStatus) {
         setModuleProgress(result.manualEvaluationStatus.moduleProgress);
-        setCanFinishEvaluation(result.manualEvaluationStatus.canFinishEvaluation);
+        setCanFinishEvaluation(
+          result.manualEvaluationStatus.canFinishEvaluation
+        );
       }
     } catch (err) {
-      console.error('Error fetching evaluation status:', err);
+      console.error("Error fetching evaluation status:", err);
     }
   }, [auditId, orgId, request]);
 
   // Fetch sub-modules for selected module
-  const fetchSubModules = useCallback(async (moduleName: string) => {
-    try {
-      const result = await request<{
-        moduleSubModules: {
-          subModules: SubModuleInfo[];
-        };
-      }>(GET_SUB_MODULES_QUERY, { moduleName, modelType }, { organization: orgId });
+  const fetchSubModules = useCallback(
+    async (moduleName: string) => {
+      try {
+        const result = await request<{
+          moduleSubModules: {
+            subModules: SubModuleInfo[];
+          };
+        }>(
+          GET_SUB_MODULES_QUERY,
+          { moduleName, modelType },
+          { organization: orgId }
+        );
 
-      if (result?.moduleSubModules?.subModules) {
-        setSubModules(result.moduleSubModules.subModules);
+        if (result?.moduleSubModules?.subModules) {
+          setSubModules(result.moduleSubModules.subModules);
+        }
+      } catch (err) {
+        console.error("Error fetching sub-modules:", err);
+        // Use fallback sub-modules
+        setSubModules(getFallbackSubModules(moduleName));
       }
-    } catch (err) {
-      console.error('Error fetching sub-modules:', err);
-      // Use fallback sub-modules
-      setSubModules(getFallbackSubModules(moduleName));
-    }
-  }, [modelType, orgId, request]);
+    },
+    [modelType, orgId, request]
+  );
 
   // Fetch test cases
   const fetchTestCases = useCallback(async () => {
@@ -252,7 +275,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
         setTestCases(result.manualTestCases);
       }
     } catch (err) {
-      console.error('Error fetching test cases:', err);
+      console.error("Error fetching test cases:", err);
     }
   }, [auditId, orgId, request]);
 
@@ -302,14 +325,16 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
       );
 
       if (result?.callModelForManualEval?.success) {
-        setModelOutput(result.callModelForManualEval.output || '');
+        setModelOutput(result.callModelForManualEval.output || "");
         setLatencyMs(result.callModelForManualEval.latencyMs);
         setHasCalledModel(true);
       } else {
-        setError(result?.callModelForManualEval?.message || 'Failed to call model');
+        setError(
+          result?.callModelForManualEval?.message || "Failed to call model"
+        );
       }
     } catch (err: any) {
-      setError(err.message || 'Error calling model');
+      setError(err.message || "Error calling model");
     } finally {
       setIsCallingModel(false);
     }
@@ -320,8 +345,8 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
     if (!selectedModule || !status) return;
 
     // Validate failed test case
-    if (status === 'FAILED' && (!issueType || !severity)) {
-      setError('Please select issue type and severity for failed test cases');
+    if (status === "FAILED" && (!issueType || !severity)) {
+      setError("Please select issue type and severity for failed test cases");
       return;
     }
 
@@ -351,10 +376,10 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
             inputPrompt: inputPrompt.trim(),
             modelOutput,
             status,
-            issueType: status === 'FAILED' ? issueType : null,
-            severity: status === 'FAILED' ? severity : null,
+            issueType: status === "FAILED" ? issueType : null,
+            severity: status === "FAILED" ? severity : null,
             comments: comments || null,
-            idealOutput: status === 'FAILED' ? idealOutput : null,
+            idealOutput: status === "FAILED" ? idealOutput : null,
           },
         },
         { organization: orgId }
@@ -366,10 +391,12 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
         // Refresh data
         await Promise.all([fetchEvaluationStatus(), fetchTestCases()]);
       } else {
-        setError(result?.submitManualTestCase?.message || 'Failed to submit test case');
+        setError(
+          result?.submitManualTestCase?.message || "Failed to submit test case"
+        );
       }
     } catch (err: any) {
-      setError(err.message || 'Error submitting test case');
+      setError(err.message || "Error submitting test case");
     } finally {
       setIsSubmitting(false);
     }
@@ -380,7 +407,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
 
     const progress = moduleProgress.find((p) => p.module === selectedModule);
     if (!progress || progress.testCaseCount < 3) {
-      setError('Module requires at least 3 test cases');
+      setError("Module requires at least 3 test cases");
       return;
     }
 
@@ -407,15 +434,20 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
       );
 
       if (result?.completeModuleEvaluation?.success) {
-        setCanFinishEvaluation(result.completeModuleEvaluation.canFinishEvaluation);
+        setCanFinishEvaluation(
+          result.completeModuleEvaluation.canFinishEvaluation
+        );
         setSelectedModule(null);
         setShowModuleRecommendationModal(false);
         await fetchEvaluationStatus();
       } else {
-        setError(result?.completeModuleEvaluation?.message || 'Failed to complete module');
+        setError(
+          result?.completeModuleEvaluation?.message ||
+            "Failed to complete module"
+        );
       }
     } catch (err: any) {
-      setError(err.message || 'Error completing module');
+      setError(err.message || "Error completing module");
     } finally {
       setIsCompletingModule(false);
     }
@@ -429,29 +461,38 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           message: string;
           auditId?: number;
         };
-      }>(FINISH_EVALUATION_MUTATION, { input: { auditId, recommendation: recommendation || null } }, { organization: orgId });
+      }>(
+        FINISH_EVALUATION_MUTATION,
+        { input: { auditId, recommendation: recommendation || null } },
+        { organization: orgId }
+      );
 
       if (result?.finishManualEvaluation?.success) {
         setShowOverallRecommendationModal(false);
-        router.push(`/${locale}/dashboard/ai-maker/${orgId}/evaluations/${auditId}`);
+        router.push(
+          `/${locale}/dashboard/ai-maker/${orgId}/evaluations/${auditId}`
+        );
       } else {
-        setError(result?.finishManualEvaluation?.message || 'Failed to finish evaluation');
+        setError(
+          result?.finishManualEvaluation?.message ||
+            "Failed to finish evaluation"
+        );
       }
     } catch (err: any) {
-      setError(err.message || 'Error finishing evaluation');
+      setError(err.message || "Error finishing evaluation");
     }
   };
 
   const resetTestCaseForm = () => {
-    setInputPrompt('');
-    setModelOutput('');
+    setInputPrompt("");
+    setModelOutput("");
     setLatencyMs(undefined);
     setHasCalledModel(false);
     setStatus(null);
-    setIssueType('');
-    setSeverity('');
-    setComments('');
-    setIdealOutput('');
+    setIssueType("");
+    setSeverity("");
+    setComments("");
+    setIdealOutput("");
   };
 
   // Get current module progress
@@ -488,7 +529,6 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
         </div>
       )}
 
-
       {/* Error display */}
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -524,11 +564,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           {/* Test Case Number and Language Selectors */}
           <div className="flex items-center justify-between">
             <div>
-              <Tag
-                variation="filled"
-                fillColor="#E5E7EB"
-                textColor="#374151"
-              >
+              <Tag variation="filled" fillColor="#E5E7EB" textColor="#374151">
                 <Text variant="bodySm" fontWeight="medium">
                   Test Case: {(currentModuleProgress?.testCaseCount || 0) + 1}
                 </Text>
@@ -541,7 +577,9 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                     name="sourceLanguage"
                     label="Source Language"
                     labelHidden
-                    options={LANGUAGE_OPTIONS.filter((opt) => supportedLanguages.includes(opt.value))}
+                    options={LANGUAGE_OPTIONS.filter((opt) =>
+                      supportedLanguages.includes(opt.value)
+                    )}
                     value={sourceLanguage}
                     onChange={setSourceLanguage}
                     placeholder="Select"
@@ -552,7 +590,9 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                     name="targetLanguage"
                     label="Target Language"
                     labelHidden
-                    options={LANGUAGE_OPTIONS.filter((opt) => supportedLanguages.includes(opt.value))}
+                    options={LANGUAGE_OPTIONS.filter((opt) =>
+                      supportedLanguages.includes(opt.value)
+                    )}
                     value={targetLanguage}
                     onChange={setTargetLanguage}
                     placeholder="Select"
@@ -586,7 +626,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                   disabled={!inputPrompt.trim() || isCallingModel}
                   className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white disabled:text-gray-400 px-6 py-2 rounded-[6px] font-bold text-base"
                 >
-                  {isCallingModel ? 'Please Wait...' : 'Submit'}
+                  {isCallingModel ? "Please Wait..." : "Submit"}
                 </Button>
               </div>
             </div>
@@ -598,7 +638,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                   Output
                 </Text>
                 {latencyMs && (
-                  <span className='bg-gray-200 text-gray-600 px-2 bg-baseIndigoSolid4 text-[14px] rounded-[3px] border'>
+                  <span className="bg-gray-200 text-gray-600 px-2 bg-baseIndigoSolid4 text-[14px] rounded-[3px] border">
                     {(latencyMs / 1000).toFixed(0)} sec
                   </span>
                 )}
@@ -622,15 +662,15 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                 <div className="absolute bottom-[1.5rem] right-[1.5rem] flex justify-end gap-3">
                   <Button
                     kind="secondary"
-                    onClick={() => setStatus('PASSED')}
-                    className={`rounded-[6px] ${status === 'PASSED' ? 'bg-[#26007b] text-white hover:bg-[#4003c4] hover:text-white' : ''}`}
+                    onClick={() => setStatus("PASSED")}
+                    className={`rounded-[6px] ${status === "PASSED" ? "bg-[#26007b] text-white hover:bg-[#4003c4] hover:text-white" : ""}`}
                   >
                     ✓ Passed
                   </Button>
                   <Button
                     kind="secondary"
-                    onClick={() => setStatus('FAILED')}
-                    className={`rounded-[6px] ${status === 'FAILED' ? 'bg-[#26007b] text-white hover:bg-[#4003c4] hover:text-white' : ''}`}
+                    onClick={() => setStatus("FAILED")}
+                    className={`rounded-[6px] ${status === "FAILED" ? "bg-[#26007b] text-white hover:bg-[#4003c4] hover:text-white" : ""}`}
                   >
                     ✕ Failed
                   </Button>
@@ -640,7 +680,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           </div>
 
           {/* Provide Issue Details */}
-          {hasCalledModel && status === 'FAILED' && (
+          {hasCalledModel && status === "FAILED" && (
             <div className="space-y-6 p-6 bg-white rounded-lg border border-gray-200">
               <div className="text-center">
                 <Text variant="headingMd" className="block">
@@ -651,23 +691,18 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                 {/* Left Column: Issue and Risk Severity */}
                 <div className="space-y-6">
                   <div>
-                    <Label className="audit-form-label">
-                      <Text variant="bodyMd" fontWeight="medium">
-                        Issue <span className="text-red-500">*</span>
-                      </Text>
-                    </Label>
                     <div className="mt-2">
-                      <Select
+                      <Combobox
+                        label="Issue *"
                         name="issueType"
-                        label="Issue"
-                        labelHidden
-                        options={subModules.map((sm) => ({
+                        required
+                        list={subModules.map((sm) => ({
                           value: sm.name,
                           label: sm.displayName,
                         }))}
-                        value={issueType}
+                        creatable
+                        selectedValue={issueType}
                         onChange={setIssueType}
-                        placeholder="Select"
                       />
                     </div>
                   </div>
@@ -737,11 +772,14 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
             <div className="flex justify-center gap-4">
               <button
                 onClick={handleSubmitTestCase}
-                disabled={isSubmitting || (status === 'FAILED' && (!issueType || !severity))}
+                disabled={
+                  isSubmitting ||
+                  (status === "FAILED" && (!issueType || !severity))
+                }
                 className="bg-transparent hover:bg-transparent border-none shadow-none text-black hover:text-black px-0 py-0 disabled:text-gray-400 disabled:opacity-50 cursor-pointer flex items-center gap-2"
               >
                 <span className="save-next-test-case-text">
-                  {isSubmitting ? 'Saving...' : 'Save and Next Test Case'}
+                  {isSubmitting ? "Saving..." : "Save and Next Test Case"}
                 </span>
                 <IconCircleArrowRight
                   className="text-[#0A0704]"
@@ -751,16 +789,17 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                   color="#0A0704"
                 />
               </button>
-              {currentModuleProgress && currentModuleProgress.testCaseCount >= 3 && (
-                <Button
-                  kind="primary"
-                  onClick={() => setShowModuleRecommendationModal(true)}
-                  disabled={isCompletingModule}
-                  className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
-                >
-                  {isCompletingModule ? 'Completing...' : 'Complete Module'}
-                </Button>
-              )}
+              {currentModuleProgress &&
+                currentModuleProgress.testCaseCount >= 3 && (
+                  <Button
+                    kind="primary"
+                    onClick={() => setShowModuleRecommendationModal(true)}
+                    disabled={isCompletingModule}
+                    className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
+                  >
+                    {isCompletingModule ? "Completing..." : "Complete Module"}
+                  </Button>
+                )}
             </div>
           )}
 
@@ -781,17 +820,16 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           disabled={!canFinishEvaluation || isRequestingAudit}
           className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
         >
-          {isRequestingAudit ? 'Finishing...' : 'Finish Evaluation'}
+          {isRequestingAudit ? "Finishing..." : "Finish Evaluation"}
         </Button>
       </div>
-
 
       {/* Module Recommendation Modal */}
       <RecommendationModal
         open={showModuleRecommendationModal}
         onOpenChange={setShowModuleRecommendationModal}
         title="Module Recommendation"
-        description={`Enter your recommendation for the ${selectedModule ? getModuleDisplayName(selectedModule) : ''} module.`}
+        description={`Enter your recommendation for the ${selectedModule ? getModuleDisplayName(selectedModule) : ""} module.`}
         placeholder="Enter your recommendation for this module (optional)"
         onSubmit={handleCompleteModule}
         isSubmitting={isCompletingModule}
@@ -817,21 +855,21 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
 function getFallbackSubModules(moduleName: string): SubModuleInfo[] {
   const fallbacks: Record<string, SubModuleInfo[]> = {
     BIAS_FAIRNESS: [
-      { name: 'GENDER_BIAS', displayName: 'Gender Bias' },
-      { name: 'CASTE_BIAS', displayName: 'Caste Bias' },
-      { name: 'REGIONAL_BIAS', displayName: 'Regional Bias' },
-      { name: 'RELIGION_BIAS', displayName: 'Religion Bias' },
-      { name: 'SOCIO_ECONOMIC_BIAS', displayName: 'Socio-economic Bias' },
+      { name: "GENDER_BIAS", displayName: "Gender Bias" },
+      { name: "CASTE_BIAS", displayName: "Caste Bias" },
+      { name: "REGIONAL_BIAS", displayName: "Regional Bias" },
+      { name: "RELIGION_BIAS", displayName: "Religion Bias" },
+      { name: "SOCIO_ECONOMIC_BIAS", displayName: "Socio-economic Bias" },
     ],
     HALLUCINATION_MISINFORMATION: [
-      { name: 'HALLUCINATION', displayName: 'Hallucination' },
-      { name: 'FACTUAL_ERROR', displayName: 'Factual Error' },
-      { name: 'MISLEADING_INFO', displayName: 'Misleading Information' },
+      { name: "HALLUCINATION", displayName: "Hallucination" },
+      { name: "FACTUAL_ERROR", displayName: "Factual Error" },
+      { name: "MISLEADING_INFO", displayName: "Misleading Information" },
     ],
     PRIVACY_SAFETY: [
-      { name: 'PII_LEAKAGE', displayName: 'PII Leakage' },
-      { name: 'UNSAFE_CONTENT', displayName: 'Unsafe Content' },
-      { name: 'TOXICITY', displayName: 'Toxicity' },
+      { name: "PII_LEAKAGE", displayName: "PII Leakage" },
+      { name: "UNSAFE_CONTENT", displayName: "Unsafe Content" },
+      { name: "TOXICITY", displayName: "Toxicity" },
     ],
   };
   return fallbacks[moduleName] || [];
