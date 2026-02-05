@@ -78,10 +78,16 @@ const MainNav = () => {
                   const withoutLocale = pathname.replace(/^\/[^/]+(?=\/)/, "");
                   return withoutLocale || "/";
                 })();
+
+                // Keep "Evaluation Workspace" highlighted for all nested Evaluation Workspace routes
+                const isDashboardLink = link.href === "/dashboard";
                 const isActive =
                   !isExternal &&
-                  (normalizedPath === link.href ||
-                    normalizedPath.startsWith(`${link.href}/`));
+                  (isDashboardLink
+                    ? normalizedPath.startsWith("/dashboard") ||
+                      (pathname && pathname.includes("/dashboard"))
+                    : normalizedPath === link.href ||
+                      normalizedPath.startsWith(`${link.href}/`));
                 return (
                   <Link
                     key={link.href}
