@@ -318,6 +318,12 @@ html.mobile-menu-open .breadcrumbs-ml {
   display: none;
 }
 
+html,
+body {
+  background-color: var(--page-background) !important;
+  min-height: 100%;
+}
+
 /* Role card styles - flex-shrink was the issue, not the approach */
 .role-card {
   width: 592px;
@@ -357,7 +363,8 @@ html.mobile-menu-open .breadcrumbs-ml {
 }
 
 .overview-evaluation-section {
-  background-color: #faf9f9;
+  /* background-color: #faf9f9; */
+  background-color: #ffffff;
   border-radius: 16px;
   border: 1px solid rgba(209, 213, 219, 1.4);
 }
@@ -367,7 +374,8 @@ html.mobile-menu-open .breadcrumbs-ml {
   border-radius: 16px;
 }
 .result-summary-evaluation-section {
-  background-color: #faf9f9;
+  /* background-color: #faf9f9; */
+  background-color: #ffffff;
   border-radius: 16px;
   border: 1px solid rgba(209, 213, 219, 1.4);
 }
@@ -651,13 +659,22 @@ html.mobile-menu-open .breadcrumbs-ml {
 }
 
 /* Dialog header extra action: flag icon left to the X */
-/* Custom Dialog layout */
-.PromptDlg[data-radix-dialog-content] {
+/* Custom Dialog layout - ensure scroll works: Radix Content contains .PromptDlg inner div */
+[data-radix-dialog-content]:has(.PromptDlg) {
   display: flex;
   flex-direction: column;
   max-height: 85vh;
   width: min(1100px, 96vw);
   padding: 16px;
+  overflow: hidden;
+}
+
+.PromptDlg {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .PromptDlg__hdr {
@@ -894,7 +911,7 @@ html.mobile-menu-open .breadcrumbs-ml {
 }
 
 /* 3) Dialog/Modal safety on phones (header fixed, body scrolls) */
-.PromptDlg[data-radix-dialog-content] {
+[data-radix-dialog-content]:has(.PromptDlg) {
   display: flex;
   flex-direction: column;
   max-height: 85vh;
@@ -914,7 +931,7 @@ html.mobile-menu-open .breadcrumbs-ml {
 }
 
 @media (max-width: 640px) {
-  .PromptDlg[data-radix-dialog-content] {
+  [data-radix-dialog-content]:has(.PromptDlg) {
     width: calc(100vw - 24px);
     max-height: 88vh;
     padding: 12px;
@@ -1220,7 +1237,7 @@ html.mobile-menu-open .breadcrumbs-ml {
   }
 
   /* Dialog on mobile - comfortable padding and safe height */
-  .PromptDlg[data-radix-dialog-content] {
+  [data-radix-dialog-content]:has(.PromptDlg) {
     width: calc(100vw - 24px);
     max-width: calc(100vw - 24px);
     padding: 12px;
@@ -2888,7 +2905,6 @@ html.mobile-menu-open .breadcrumbs-ml {
   }
 }
 
-
 /* Audit Name Label - prevent wrapping */
 .audit-name-label {
   font-weight: 400;
@@ -3607,7 +3623,7 @@ html.mobile-menu-open .breadcrumbs-ml {
   outline: none;
   box-shadow: none;
 }
-  
+
 /* Evaluation Module Cards */
 .evaluation-module-card {
   display: block;
@@ -3818,8 +3834,6 @@ html.mobile-menu-open .breadcrumbs-ml {
   border: 1px solid #e5e7eb;
   background-color: white;
 }
-
-
 
 .test-input-button [class*="Icon"] svg,
 .test-input-button [class*="Icon"] {
@@ -4055,9 +4069,9 @@ html.mobile-menu-open .breadcrumbs-ml {
 /* Comments TextField Styling */
 .comments-textfield-wrapper {
   width: 100%;
-  border: 1px solid #C4C4C4;
+  border: 1px solid #c4c4c4;
   border-radius: 8px;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   padding: 8px 12px;
   box-sizing: border-box;
 }
@@ -4100,8 +4114,8 @@ html.mobile-menu-open .breadcrumbs-ml {
 /* Test Case Card Styling */
 .test-case-card {
   border-radius: 16px !important;
-  border: 1px solid #C4B8F3 !important;
-  background-color: #FFFFFF;
+  border: 1px solid #c4b8f3 !important;
+  background-color: #ffffff;
   padding: 24px;
 }
 
@@ -4113,7 +4127,7 @@ html.mobile-menu-open .breadcrumbs-ml {
 }
 
 .test-case-card {
-  border: 1px solid #C4B8F3 !important;
+  border: 1px solid #c4b8f3 !important;
 }
 
 /* Enter Your Own Test Cases Heading Styling */
@@ -4239,7 +4253,7 @@ html.mobile-menu-open .breadcrumbs-ml {
 }
 
 .resources-page-heading {
-  font-size: 30px ;
+  font-size: 30px;
   font-weight: bold;
   color: #111827;
 }
@@ -4862,19 +4876,19 @@ html.mobile-menu-open .breadcrumbs-ml {
 
 /* Manual Evaluation Input Panel Border */
 .manual-eval-input-panel {
-  border: 1px solid #C4B8F3;
+  border: 1px solid #c4b8f3;
   border-radius: 16px;
 }
 
 /* Test Case Card Border */
 .test-case-card-border {
-  border: 1px solid #C4B8F3 !important;
+  border: 1px solid #c4b8f3 !important;
   border-radius: 16px;
 }
 
 /* Save and Next Test Case Text Styling */
 .save-next-test-case-text {
-  color: #0A0704;
+  color: #0a0704;
   font-weight: 400;
   font-size: 14px;
   line-height: 20px;

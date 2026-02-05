@@ -89,8 +89,14 @@ const WelcomeSection = ({
   basePath,
   orgIdInPath: customOrgId,
 }: WelcomeSectionProps) => {
-  const baseNavItems = customNavItems || (dashboardType === "auditor" ? auditorNavItems : aiMakerNavItems);
-  const dashboardBasePath = basePath || (dashboardType === "auditor" ? "/dashboard/auditor" : "/dashboard/ai-maker");
+  const baseNavItems =
+    customNavItems ||
+    (dashboardType === "auditor" ? auditorNavItems : aiMakerNavItems);
+  const dashboardBasePath =
+    basePath ||
+    (dashboardType === "auditor"
+      ? "/dashboard/auditor"
+      : "/dashboard/ai-maker");
   const pathname = usePathname();
   const { user } = useAppSession();
   const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || "";
@@ -118,15 +124,17 @@ const WelcomeSection = ({
 
   const orgIdFromPath = useMemo(() => {
     if (customOrgId !== undefined) return customOrgId;
-    
+
     if (dashboardType !== "ai-maker") return null;
-    
+
     const parts = normalizedPath.split("/");
     if (
       parts[1] === "dashboard" &&
       parts[2] === "ai-maker" &&
       parts[3] &&
-      !["ai-models", "evaluations", "prompt-libraries", "auditors"].includes(parts[3])
+      !["ai-models", "evaluations", "prompt-libraries", "auditors"].includes(
+        parts[3]
+      )
     ) {
       return parts[3];
     }
@@ -233,7 +241,10 @@ const WelcomeSection = ({
         </div>
 
         <p className="welcome-text sm:pt-4 md:pt-0">
-          Welcome, {user?.name || orgName || (dashboardType === "auditor" ? "Auditor" : "CivicDataLab")}
+          Welcome,{" "}
+          {user?.name ||
+            orgName ||
+            (dashboardType === "auditor" ? "Auditor" : "CivicDataLab")}
         </p>
 
         <Link
@@ -260,20 +271,20 @@ const WelcomeSection = ({
                 }
                 setSelectedItem(item.label);
               }}
-              className={`py-2 text-left transition whitespace-nowrap block nav-item-link ${
+              className={`py-2 text-left transition whitespace-nowrap flex items-center block nav-item-link ${
                 isActive
-                  ? "font-semibold bg-primaryPurple text-white rounded-[8px] -mx-3 w-[calc(100%+24px)] px-6"
-                  : "hover:bg-gray-100 rounded-md text-[#60646C] font-medium px-3 w-full"
+                  ? "font-semibold text-black bg-[#3b00ff0d] -mx-3 w-[calc(100%+24px)] border-solid border-primaryPurple border-l-4 px-6"
+                  : "hover:bg-gray-100 rounded-md text-[#60646C] pl-4 font-medium px-3 w-full"
               }`}
             >
-              <span className="mr-2.5 inline-block">
+              <span className="mr-2.5 pt-1 inline-block">
                 {item.isImage ? (
                   <Image
                     src={item.icon}
                     alt={item.label}
                     width={16}
                     height={16}
-                    className={`inline ${isActive ? "nav-icon-active" : "nav-icon-inactive"}`}
+                    className={`nav-icon-inactive`}
                   />
                 ) : (
                   item.icon

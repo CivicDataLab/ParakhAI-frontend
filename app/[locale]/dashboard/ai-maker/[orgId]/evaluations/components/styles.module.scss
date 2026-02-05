@@ -1259,24 +1259,31 @@
   }
 }
 
-/* Module selector status tags - enforce specific colors */
-.moduleselectioncard [class*="Tag"] {
-  background-color: transparent;
+/* Module selector status tags - enforce specific colors, prevent truncation */
+.moduleStatusTags [class*="Tag"] {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
-.moduleselectioncard [class*="Tag"]:nth-child(1) {
+.moduleStatusTags [class*="Tag"]:nth-child(1),
+.moduleStatusTags [class*="Tag"]:nth-child(1) * {
   background-color: #e5e7eb !important;
   color: #374151 !important;
+  border-color: #e5e7eb !important;
 }
 
-.moduleselectioncard [class*="Tag"]:nth-child(2) {
+.moduleStatusTags [class*="Tag"]:nth-child(2),
+.moduleStatusTags [class*="Tag"]:nth-child(2) * {
   background-color: #ec4899 !important;
   color: #ffffff !important;
+  border-color: #ec4899 !important;
 }
 
-.moduleselectioncard [class*="Tag"]:nth-child(3) {
+.moduleStatusTags [class*="Tag"]:nth-child(3),
+.moduleStatusTags [class*="Tag"]:nth-child(3) * {
   background-color: #d9f99d !important;
   color: #15803d !important;
+  border-color: #d9f99d !important;
 }
 
 .evaluationModuleCheckbox {
