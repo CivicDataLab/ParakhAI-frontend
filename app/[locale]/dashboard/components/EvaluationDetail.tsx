@@ -31,6 +31,8 @@ const GET_AUDIT_QUERY = `
       modules
       metrics
       configuration
+      evaluationMode
+      auditType
       totalTests
       passedTests
       failedTests
@@ -169,6 +171,7 @@ const GET_AUDIT_SUMMARY = `
 `;
 
 export type Audit = {
+  auditType: string;
   evaluationMode: string;
   id: string;
   name: string;
@@ -267,62 +270,6 @@ export const getSeverityTagColors = (
       return { fillColor: "#F3F4F6", textColor: "#374151" };
   }
 };
-
-export const testCasesColumns: ColumnDef<TestCase>[] = [
-  {
-    accessorKey: "input",
-    header: "Input",
-    enableSorting: true,
-    cell: ({ getValue }) => getValue<string>(),
-  },
-  {
-    accessorKey: "output",
-    header: "Output",
-    enableSorting: true,
-    cell: ({ getValue }) => getValue<string>(),
-  },
-  {
-    accessorKey: "evaluationModule",
-    header: "Evaluation Module",
-    enableSorting: true,
-  },
-  {
-    accessorKey: "evaluationMetric",
-    header: "Evaluation Metric",
-    enableSorting: true,
-  },
-  {
-    accessorKey: "riskSeverity",
-    header: "Risk Severity",
-    enableSorting: true,
-    cell: ({ getValue }) => {
-      const severity = getValue<"High" | "Medium" | "Low" | "No risk">();
-
-      const colorMap = {
-        High: { textColor: "#EF4444" },
-        Medium: { textColor: "#F97316" },
-        Low: { textColor: "#10B981" },
-        "No risk": { textColor: "#000000" },
-      };
-      const colors = colorMap[severity as keyof typeof colorMap];
-      return (
-        <Tag
-          variation="outlined"
-          textColor={colors.textColor}
-          borderColor="transparent"
-        >
-          {severity}
-        </Tag>
-      );
-    },
-  },
-  {
-    accessorKey: "reason",
-    header: "Reason",
-    enableSorting: false,
-    cell: ({ getValue }) => getValue<string>(),
-  },
-];
 
 type EvaluationDetailProps = {
   evaluationId: string;
@@ -1004,6 +951,17 @@ const EvaluationDetail = ({
                   </Text>
                 </div>
               )}
+              <div>
+                <Text variant="bodyMd" className="text-gray-500">
+                  Evaluation Type :{" "}
+                </Text>
+                <Text
+                  variant="bodyMd"
+                  className="text-gray-900 font-medium break-words"
+                >
+                  {audit.auditType}
+                </Text>
+              </div>
             </div>
 
             <div className="space-y-4 sm:col-span-2 md:col-span-1">
