@@ -36,9 +36,9 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
   };
 
   return (
-    <div className="mt-6">
+  <div className="mt-6">
       <Text variant="headingMd" className="mb-4">
-        Completed Test Cases for {moduleDisplayName}
+        Previous Test Cases for {moduleDisplayName}
       </Text>
 
       <div className="flex flex-col gap-5">
