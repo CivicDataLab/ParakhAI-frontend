@@ -569,6 +569,11 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                   labelHidden
                   options={modeOfEvaluationOptions}
                   value={modeOfEvaluation}
+                  className={
+                    auditType === "Domain" || auditType === "Cultural"
+                      ? "mode-of-evaluation-select-disabled"
+                      : undefined
+                  }
                   onChange={(value) => {
                     setModeOfEvaluation(value);
                     if (

@@ -3777,6 +3777,14 @@ html.mobile-menu-open .breadcrumbs-ml {
   box-shadow: 0 0 0 2px rgba(100, 79, 193, 0.1);
 }
 
+/* Disabled text color for Mode of Evaluation select (match disabled Expert name) */
+.mode-of-evaluation-select-disabled,
+.mode-of-evaluation-select-disabled [class*="Select"],
+.mode-of-evaluation-select-disabled select,
+.mode-of-evaluation-select-disabled [class*="Select"] * {
+  color: #9ca3af !important;
+}
+
 /* Test Input Buttons Styling */
 .test-input-buttons-container {
   display: flex;

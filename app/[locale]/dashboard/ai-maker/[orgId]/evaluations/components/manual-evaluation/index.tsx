@@ -563,13 +563,13 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
         <div className="space-y-6">
           {/* Test Case Number and Language Selectors */}
           <div className="flex items-center justify-between">
-            <div>
+            {/* <div>
               <Tag variation="filled" fillColor="#E5E7EB" textColor="#374151">
                 <Text variant="bodySm" fontWeight="medium">
                   Test Case: {(currentModuleProgress?.testCaseCount || 0) + 1}
                 </Text>
               </Tag>
-            </div>
+            </div> */}
             {supportedLanguages && supportedLanguages.length > 1 && (
               <div className="flex gap-4">
                 <div className="w-48">
