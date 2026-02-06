@@ -262,13 +262,13 @@ export const getSeverityTagColors = (
   switch (severity?.toUpperCase()) {
     case "HIGH":
       // Red
-      return { fillColor: "#FEE2E2", textColor: "#EF4444" };
+      return { fillColor: "#FEF2F2", textColor: "#E11D48" };
     case "MEDIUM":
       // Orange
-      return { fillColor: "#FFEDD5", textColor: "#F97316" };
+      return { fillColor: "#FFFBEB", textColor: "#92400E" };
     case "LOW":
       // Green
-      return { fillColor: "#DCFCE7", textColor: "#10B981" };
+      return { fillColor: "#EFF6FF", textColor: "#2563EB" };
     default:
       return { fillColor: "#F3F4F6", textColor: "#374151" };
   }
@@ -804,8 +804,6 @@ const EvaluationDetail = ({
     );
   }
 
-  console.log("apiModuleIssues", apiModuleIssues);
-
   return (
     <>
       {/* Header */}
@@ -1155,17 +1153,17 @@ const EvaluationDetail = ({
               <div className="mb-4 max-[1023px]:mb-3  bg-white border-solid border-1 border-baseGraySlateAlpha4 rounded-2 max-[640px]:mb-2">
                 <Tabs defaultValue={audit.modules[0]}>
                   <TabList>
-                    {audit.modules.map((moduleName) => {
+                    {audit.modules.map((moduleName, index) => {
                       return (
-                        <Tab value={moduleName}>
+                        <Tab value={moduleName} key={index}>
                           {formatModuleName(moduleName)}
                         </Tab>
                       );
                     })}
                   </TabList>
-                  {audit.modules.map((moduleName) => {
+                  {audit.modules.map((moduleName, index) => {
                     return (
-                      <TabPanel key={moduleName} value={moduleName}>
+                      <TabPanel key={index} value={moduleName}>
                         <div className="mt-5 m-5">
                           <Text
                             variant="bodyLg"
