@@ -804,8 +804,6 @@ const EvaluationDetail = ({
     );
   }
 
-  console.log("apiModuleIssues", apiModuleIssues);
-
   return (
     <>
       {/* Header */}
@@ -1155,17 +1153,17 @@ const EvaluationDetail = ({
               <div className="mb-4 max-[1023px]:mb-3  bg-white border-solid border-1 border-baseGraySlateAlpha4 rounded-2 max-[640px]:mb-2">
                 <Tabs defaultValue={audit.modules[0]}>
                   <TabList>
-                    {audit.modules.map((moduleName) => {
+                    {audit.modules.map((moduleName, index) => {
                       return (
-                        <Tab value={moduleName}>
+                        <Tab value={moduleName} key={index}>
                           {formatModuleName(moduleName)}
                         </Tab>
                       );
                     })}
                   </TabList>
-                  {audit.modules.map((moduleName) => {
+                  {audit.modules.map((moduleName, index) => {
                     return (
-                      <TabPanel key={moduleName} value={moduleName}>
+                      <TabPanel key={index} value={moduleName}>
                         <div className="mt-5 m-5">
                           <Text
                             variant="bodyLg"
