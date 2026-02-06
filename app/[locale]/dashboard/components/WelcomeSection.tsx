@@ -57,7 +57,7 @@ export const auditorNavItems: NavItem[] = [
   },
   {
     icon: "/images/icons/topology-star-ring.png",
-    label: "My Assignments",
+    label: "Assigned Models",
     isImage: true,
     path: "/dashboard/auditor/assignments",
   },

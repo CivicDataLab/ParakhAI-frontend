@@ -195,6 +195,15 @@ const AuditorDashboard = () => {
   const activeAssignments = assignments.filter(
     (a) => a.status === "ACCEPTED" || a.status === "IN_PROGRESS"
   );
+  const completedAssignments = assignments.filter((a) => a.status === "COMPLETED");
+
+  // Calculate metrics for Overview section
+  const metrics = [
+    { label: "Invitations Received", value: assignments.length.toString() },
+    { label: "Evaluation Runs", value: completedAssignments.length.toString() },
+    { label: "Test Cases", value: "0" }, // TODO: Fetch from evaluations when available
+    { label: "Issues Flagged", value: "0" }, // TODO: Fetch from evaluations when available
+  ];
 
   const columnHelper = createColumnHelper<AuditorAssignment>();
 
@@ -370,7 +379,23 @@ const AuditorDashboard = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-8 mt-10">
+      {/* Header with Title */}
+      <div className="flex items-center justify-between mb-6 mt-10">
+        <h1 className="text-gray-900 overview-heading">Overview</h1>
+      </div>
+
+      {/* Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 sm:mb-10 lg:mb-12">
+        {metrics.map((m) => (
+          <div key={m.label} className="metric-card">
+            <p className="metric-card-label">{m.label}</p>
+            <p className="metric-card-value">{m.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Dashboard Header */}
+      {/* <div className="flex items-center justify-between mb-8">
         <div>
           <Text variant="headingLg" as="h1" fontWeight="bold">
             Evaluator Dashboard
@@ -379,14 +404,18 @@ const AuditorDashboard = () => {
             Manage your evaluation assignments and evaluations
           </Text>
         </div>
-      </div>
+      </div> */}
 
       {/* Pending Invitations Section */}
       <div className="mb-10">
         <div className="flex items-center gap-3 mb-4">
-          <IconClock size={24} className="text-yellow-600" />
-          <Text variant="headingMd" fontWeight="bold">
-            Pending Invitations
+          {/* <IconClock size={24} className="text-yellow-600" /> */}
+          <Text 
+            variant="headingMd" 
+            fontWeight="bold"
+            className="text-[20px] leading-[26px] text-[#1C2024]"
+          >
+            Pending Invitations (Most Recent)
           </Text>
           {pendingAssignments.length > 0 && (
             <Badge status="warning">{String(pendingAssignments.length)}</Badge>
@@ -419,9 +448,13 @@ const AuditorDashboard = () => {
       {/* Active Assignments Section */}
       <div>
         <div className="flex items-center gap-3 mb-4">
-          <IconPlayerPlay size={24} className="text-green-600" />
-          <Text variant="headingMd" fontWeight="bold">
-            Active Assignments
+          {/* <IconPlayerPlay size={24} className="text-green-600" /> */}
+          <Text 
+            variant="headingMd" 
+            fontWeight="bold"
+            className="text-[20px] leading-[26px] text-[#1C2024]"
+          >
+            Active Assignments (Most Recent)
           </Text>
           {activeAssignments.length > 0 && (
             <Badge status="success">{String(activeAssignments.length)}</Badge>

@@ -200,7 +200,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
           setAssignments(assignmentsResponse.auditorAssignments || []);
         }
       } catch (err) {
-        console.error("Error fetching auditor data:", err);
+        console.error("Error fetching evaluator data:", err);
       } finally {
         setLoading(false);
       }
@@ -347,7 +347,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
 
         setToast({
           show: true,
-          message: "Auditor assigned successfully",
+          message: "Evaluator assigned successfully",
           type: "success",
         });
 
@@ -357,14 +357,14 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
       } else {
         setToast({
           show: true,
-          message: response?.assignAuditorToVersion?.message || "Failed to assign auditor",
+          message: response?.assignAuditorToVersion?.message || "Failed to assign evaluator",
           type: "error",
         });
       }
     } catch (err: any) {
       setToast({
         show: true,
-        message: err?.message || "Error assigning auditor",
+        message: err?.message || "Error assigning evaluator",
         type: "error",
       });
     } finally {
@@ -373,7 +373,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   };
 
   const auditorOptions = [
-    { label: "Select an auditor...", value: "" },
+    { label: "Select an evaluator...", value: "" },
     ...availableAuditors.map((auditor) => {
       const displayName = auditor.firstName && auditor.lastName
         ? `${auditor.firstName} ${auditor.lastName}`
@@ -406,16 +406,17 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   const inviteDialog = (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <Dialog.Content
-        title={versionLabel ? `Invite Auditor for Version ${versionLabel}` : "Invite Auditor"}
+        title={versionLabel ? `Invite Evaluator for Version ${versionLabel}` : "Invite Evaluator"}
         footer={<></>}
         primaryAction={{
           content: showAddNew
-            ? isAddingNew ? "Adding..." : "Add & Assign Auditor"
-            : isAssigning ? "Assigning..." : "Assign Auditor",
+            ? isAddingNew ? "Adding..." : "Add & Assign Evaluator"
+            : isAssigning ? "Assigning..." : "Assign Evaluator",
           onAction: showAddNew ? handleAddNewAuditor : () => handleAssignAuditor(),
           disabled: showAddNew
             ? !searchResult?.found || isAddingNew
             : !selectedAuditorId || isAssigning,
+            
         }}
         secondaryActions={[
           {

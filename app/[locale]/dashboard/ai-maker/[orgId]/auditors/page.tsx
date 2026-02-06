@@ -381,7 +381,7 @@ const AuditorsPage = () => {
         </div>
         <button
           type="button"
-          className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base border-none"
+          className="bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white  px-8 py-3 rounded-[8px] font-bold text-base border-none"
           onClick={() => setIsAddModalOpen(true)}
         >
           Add Evaluator
@@ -418,6 +418,7 @@ const AuditorsPage = () => {
           </Text>
           <Button
             kind="primary"
+            className="bg-primaryPurple2 hover:bg-[#6849EE]"
             onClick={() => setIsAddModalOpen(true)}
           >
             <IconPlus size={18} className="mr-1" /> Add Your First Auditor
