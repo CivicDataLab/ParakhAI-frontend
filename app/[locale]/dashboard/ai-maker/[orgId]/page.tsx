@@ -155,7 +155,7 @@ const AIMakerDashboard = () => {
           request(GET_AI_MODELS, { limit: 10 }, { organization: orgId }),
           request(GET_EVALUATIONS, { limit: 5 }, { organization: orgId }),
         ]);
-        const auditMetricsResponse = await request(AUDIT_METRICS_QUERY);
+        const auditMetricsResponse = await request(AUDIT_METRICS_QUERY, {}, { organization: orgId });
         const auditMetrics = auditMetricsResponse?.auditMetrics || [];
         setAuditMetrics(auditMetrics);
 
