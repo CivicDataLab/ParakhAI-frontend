@@ -13,7 +13,7 @@ export default function AuditorLayout({
   const locale = params?.locale || "en";
 
   return (
-    <div className="flex flex-col min-h-screen bg-white overflow-x-visible">
+    <div className="flex flex-col min-h-screen overflow-x-visible bg-[var(--page-background)]">
       <BreadCrumbs
         data={[
           { href: "/", label: "Home" },
@@ -25,7 +25,7 @@ export default function AuditorLayout({
         <div className="flex w-full flex-col lg:flex-row lg:items-stretch gap-6 md:gap-8 h-full">
           <WelcomeSection dashboardType="auditor" />
 
-          <div className="flex-1 max-w-full bg-gray-50 p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0 overflow-x-auto h-full">
+          <div className="flex-1 max-w-full p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0 overflow-x-auto h-full">
             {children}
           </div>
         </div>
