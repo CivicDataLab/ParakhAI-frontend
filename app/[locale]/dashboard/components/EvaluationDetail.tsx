@@ -262,13 +262,13 @@ export const getSeverityTagColors = (
   switch (severity?.toUpperCase()) {
     case "HIGH":
       // Red
-      return { fillColor: "#FEE2E2", textColor: "#EF4444" };
+      return { fillColor: "#FEF2F2", textColor: "#E11D48" };
     case "MEDIUM":
       // Orange
-      return { fillColor: "#FFEDD5", textColor: "#F97316" };
+      return { fillColor: "#FFFBEB", textColor: "#92400E" };
     case "LOW":
       // Green
-      return { fillColor: "#DCFCE7", textColor: "#10B981" };
+      return { fillColor: "#EFF6FF", textColor: "#2563EB" };
     default:
       return { fillColor: "#F3F4F6", textColor: "#374151" };
   }
