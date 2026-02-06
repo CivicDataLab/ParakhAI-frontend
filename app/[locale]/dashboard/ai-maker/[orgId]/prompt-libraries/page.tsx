@@ -517,7 +517,7 @@ const PromptLibrariesPage = () => {
             paginatedLibraries.map((library, index) => {
               const updatedValue = library.updatedAt || "Unknown";
               const testCasesValue = `${formatNumber(library.promptsCount || 0)} test cases`;
-              const auditsValue = `${formatNumber(library.auditsCount || 0)} audits`;
+              const auditsValue = `${formatNumber(library.auditsCount || 0)} evaluations`;
 
               const metadataContent = [
                 {

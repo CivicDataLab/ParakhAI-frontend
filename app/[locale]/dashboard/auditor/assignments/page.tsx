@@ -359,7 +359,7 @@ const AssignmentsPage = () => {
             My Assignments
           </Text>
           <Text variant="bodySm" className="text-gray-600 mt-1">
-            All your audit assignments across organizations
+            All your evaluation assignments across organizations
           </Text>
         </div>
       </div>
@@ -405,7 +405,7 @@ const AssignmentsPage = () => {
           </Text>
           <Text variant="bodySm" className="text-gray-500 mt-1">
             {statusFilter === "ALL"
-              ? "You'll see your audit assignments here when organizations invite you"
+              ? "You'll see your evaluation assignments here when organizations invite you"
               : "Try selecting a different filter"}
           </Text>
         </div>

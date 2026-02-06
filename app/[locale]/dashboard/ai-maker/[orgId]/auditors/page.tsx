@@ -179,7 +179,7 @@ const AuditorsPage = () => {
         }
       } catch (err: any) {
         console.error("Error fetching data:", err);
-        setError(err?.message || "Failed to load auditors");
+        setError(err?.message || "Failed to load evaluators");
       } finally {
         setLoading(false);
       }
@@ -243,7 +243,7 @@ const AuditorsPage = () => {
 
         setToast({
           show: true,
-          message: response.addAuditorToOrganization.message || "Auditor added successfully",
+          message: response.addAuditorToOrganization.message || "Evaluator added successfully",
           type: "success",
         });
 
@@ -270,7 +270,7 @@ const AuditorsPage = () => {
   };
 
   const handleRemoveAuditor = async (userId: string) => {
-    if (!confirm("Are you sure you want to remove this auditor?")) return;
+    if (!confirm("Are you sure you want to remove this evaluator?")) return;
 
     try {
       const response = await request(
@@ -283,20 +283,20 @@ const AuditorsPage = () => {
         setAuditors((prev) => prev.filter((a) => a.id !== userId));
         setToast({
           show: true,
-          message: "Auditor removed successfully",
+          message: "Evaluator removed successfully",
           type: "success",
         });
       } else {
         setToast({
           show: true,
-          message: response?.removeAuditorFromOrganization?.message || "Failed to remove auditor",
+          message: response?.removeAuditorFromOrganization?.message || "Failed to remove evaluator",
           type: "error",
         });
       }
     } catch (err: any) {
       setToast({
         show: true,
-        message: err?.message || "Error removing auditor",
+        message: err?.message || "Error removing evaluator",
         type: "error",
       });
     }
@@ -392,7 +392,7 @@ const AuditorsPage = () => {
         <div className="flex flex-col items-center justify-center gap-4 py-20">
           <Spinner />
           <Text variant="bodySm" className="text-gray-600">
-            Loading auditors...
+            Loading evaluators...
           </Text>
         </div>
       ) : error ? (
@@ -410,11 +410,11 @@ const AuditorsPage = () => {
             <IconUser size={32} className="text-purple-600" />
           </div>
           <Text variant="bodyMd" className="text-gray-600 mb-2">
-            No auditors yet
+            No evaluators yet
           </Text>
           <Text variant="bodySm" className="text-gray-500 mb-4 text-center max-w-md">
-            Add auditors to your organization so they can evaluate your AI models.
-            Auditors must have an account in CivicDataSpace.
+            Add evaluators to your organization so they can evaluate your AI models.
+            Evaluators must have an account in CivicDataSpace.
           </Text>
           <Button
             kind="primary"
@@ -437,10 +437,10 @@ const AuditorsPage = () => {
 
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <Dialog.Content
-          title="Add Auditor"
+          title="Add Evaluator"
           footer={<></>}
           primaryAction={{
-            content: isAdding ? "Adding..." : "Add Auditor",
+            content: isAdding ? "Adding..." : "Add Evaluator",
             onAction: handleAddAuditor,
             disabled: !searchResult?.found || isAdding,
           }}
@@ -458,7 +458,7 @@ const AuditorsPage = () => {
           <div className="space-y-4">
             <Text variant="bodySm" className="text-gray-600">
               Search for a user by their email address. The user must have an account
-              in CivicDataSpace to be added as an auditor.
+              in CivicDataSpace to be added as an evaluator.
             </Text>
 
             <div className="flex gap-2">
@@ -470,7 +470,7 @@ const AuditorsPage = () => {
                   type="email"
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder="auditor@example.com"
+                  placeholder="evaluator@example.com"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
               </div>

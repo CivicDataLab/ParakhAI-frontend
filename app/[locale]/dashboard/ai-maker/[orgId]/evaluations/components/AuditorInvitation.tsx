@@ -293,7 +293,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
         } else {
           setToast({
             show: true,
-            message: errorMessage || "Failed to add auditor",
+            message: errorMessage || "Failed to add evaluator",
             type: "error",
           });
         }
@@ -301,7 +301,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
     } catch (err: any) {
       setToast({
         show: true,
-        message: err?.message || "Error adding auditor",
+        message: err?.message || "Error adding evaluator",
         type: "error",
       });
     } finally {
@@ -508,7 +508,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                     type="email"
                     value={emailInput}
                     onChange={(e) => setEmailInput(e.target.value)}
-                    placeholder="auditor@example.com"
+                    placeholder="evaluator@example.com"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
                 </div>
