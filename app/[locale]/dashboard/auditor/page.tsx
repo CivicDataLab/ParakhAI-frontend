@@ -376,7 +376,7 @@ const AuditorDashboard = () => {
             Evaluator Dashboard
           </Text>
           <Text variant="bodySm" className="text-gray-600 mt-1">
-            Manage your audit assignments and evaluations
+            Manage your evaluation assignments and evaluations
           </Text>
         </div>
       </div>
@@ -400,8 +400,7 @@ const AuditorDashboard = () => {
               No pending invitations
             </Text>
             <Text variant="bodySm" className="text-gray-500 mt-1">
-              You&apos;ll see new audit invitations here when organizations
-              invite you
+              You&apos;ll see new evaluation invitations here when organizations invite you
             </Text>
           </div>
         ) : (
