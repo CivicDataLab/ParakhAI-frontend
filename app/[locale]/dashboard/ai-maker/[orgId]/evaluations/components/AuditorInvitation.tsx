@@ -435,7 +435,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
           {!showAddNew ? (
             <>
               <Text variant="bodySm" className="text-gray-600">
-                Select an auditor from your organization to assign to this model version.
+                Select an evaluator from your organization to assign to this model version.
               </Text>
 
               {loading ? (
@@ -448,7 +448,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
               ) : availableAuditors.length > 0 ? (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Select Auditor
+                    Select Evaluator
                   </label>
                   <select
                     value={selectedAuditorId}

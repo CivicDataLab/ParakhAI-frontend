@@ -365,7 +365,7 @@ const AuditorDashboard = () => {
       <div className="flex items-center justify-between mb-8 mt-10">
         <div>
           <Text variant="headingLg" as="h1" fontWeight="bold">
-            Auditor Dashboard
+            Evaluator Dashboard
           </Text>
           <Text variant="bodySm" className="text-gray-600 mt-1">
             Manage your audit assignments and evaluations

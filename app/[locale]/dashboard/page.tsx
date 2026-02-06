@@ -24,7 +24,7 @@ const UserDashboard = () => {
       path: aiMakerLink,
     },
     {
-      label: "Auditor",
+      label: "Evaluator",
       icon: "/images/icons/file-analytics.png",
       path: "/dashboard/auditor",
     },
