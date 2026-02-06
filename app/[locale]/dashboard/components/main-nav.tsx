@@ -94,13 +94,15 @@ const MainNav = () => {
                     href={link.href}
                     target={isExternal ? "_blank" : undefined}
                     rel={isExternal ? "noopener noreferrer" : undefined}
-                    className={`inline-flex items-center h-6 py-[2px] px-[5px] rounded hover:opacity-80 transition-opacity whitespace-nowrap ${
-                      isActive ? "underline decoration-secondaryGreen" : ""
+                    className={`inline-flex items-center h-11 py-3 px-6 rounded-[8px] gap-[10px] whitespace-nowrap transition-colors duration-150 ${
+                      isActive
+                        ? "bg-[rgba(237,233,254,0.15)]" // active pill background with 15% opacity
+                        : "hover:bg-[#3A199C]" // subtle hover for inactive
                     }`}
                   >
                     <span
                       className={`text-base font-semibold leading-6 ${
-                        isActive ? "text-secondaryGreen" : "text-white"
+                        isActive ? "text-[#F5FFCC]" : "text-white"
                       }`}
                     >
                       {link.label}

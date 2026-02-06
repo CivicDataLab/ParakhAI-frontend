@@ -18,7 +18,7 @@ export default function AuditorLayout({
         data={[
           { href: "/", label: "Home" },
           { href: "/dashboard", label: "Evaluation Workspace" },
-          { href: `/${locale}/dashboard/auditor`, label: "Auditor" },
+          { href: `/${locale}/dashboard/auditor`, label: "Evaluator" },
         ]}
       />
       <div className="flex-1 w-full px-4 sm:px-6 lg:px-10 overflow-x-visible flex">
