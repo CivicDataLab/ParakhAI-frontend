@@ -620,8 +620,8 @@ const AIModelsPage = () => {
 
               const type = (model.tags || []).map((tag) => ({
                 label: tag,
-                fillColor: "#D7CFF9",
-                borderColor: "#D7CFF9",
+                fillColor: "#E2F5C4",
+                borderColor: "#E2F5C4",
               }));
 
               return (
