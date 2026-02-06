@@ -43,6 +43,24 @@ type AIModel = {
   modelType: string;
 };
 
+const AUDIT_METRICS_QUERY = `
+      query AuditMetrics {
+        auditMetrics {
+          evaluationRuns
+          testCasesCount
+          models
+          issuesFlagged
+        }
+      }
+    `;
+
+type AuditMetrics = {
+  evaluationRuns: number;
+  testCasesCount: number;
+  models: number;
+  issuesFlagged: number;
+};
+
 const AIMakerDashboard = () => {
   const params = useParams();
   const router = useRouter();
@@ -52,6 +70,7 @@ const AIMakerDashboard = () => {
     process.env.NEXT_PUBLIC_AI_MAKER_URL ||
     "https://dev.civicdataspace.in/dashboard";
   const addModelUrl = aiMakerBaseUrl.replace(/\/$/, "");
+  const [auditMetrics, setAuditMetrics] = useState<AuditMetrics | null>(null);
 
   // GraphQL queries
   const GET_AI_MODELS = `
@@ -136,6 +155,9 @@ const AIMakerDashboard = () => {
           request(GET_AI_MODELS, { limit: 10 }, { organization: orgId }),
           request(GET_EVALUATIONS, { limit: 5 }, { organization: orgId }),
         ]);
+        const auditMetricsResponse = await request(AUDIT_METRICS_QUERY);
+        const auditMetrics = auditMetricsResponse?.auditMetrics || [];
+        setAuditMetrics(auditMetrics);
 
         const modelsData = modelsResponse?.aiModels || [];
         const evaluationsData = evaluationsResponse?.audits || [];
@@ -155,21 +177,20 @@ const AIMakerDashboard = () => {
   const hasModels = models.length > 0;
   const hasEvaluations = evaluations.length > 0;
 
-  // Calculate metrics
-  const totalTestCases = evaluations.reduce(
-    (sum, evaluation) => sum + (evaluation.totalTests || 0),
-    0
-  );
-  const totalIssues = evaluations.reduce(
-    (sum, evaluation) => sum + (evaluation.failedTests || 0),
-    0
-  );
-
   const metrics = [
-    { label: "Evaluation Runs", value: evaluations.length.toString() || "--" },
-    { label: "Test Cases", value: totalTestCases.toString() || "--" },
-    { label: "Models", value: models.length.toString() || "--" },
-    { label: "Issues Flagged", value: totalIssues.toString() || "--" },
+    {
+      label: "Evaluation Runs",
+      value: auditMetrics?.evaluationRuns.toString() || "--",
+    },
+    {
+      label: "Test Cases",
+      value: auditMetrics?.testCasesCount.toString() || "--",
+    },
+    { label: "Models", value: auditMetrics?.models.toString() || "--" },
+    {
+      label: "Issues Flagged",
+      value: auditMetrics?.issuesFlagged.toString() || "--",
+    },
   ];
 
   const handleCardClick = (modelId: string) => {
