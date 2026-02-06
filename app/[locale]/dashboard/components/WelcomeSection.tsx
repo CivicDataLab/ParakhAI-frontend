@@ -218,7 +218,9 @@ const WelcomeSection = ({
     <div className="welcome-section mt-14">
       <div className="text-center sm:pt-4 md:pt-0">
         <div className="mb-2 flex justify-center">
-          <div className="cdl-logo-container">
+          <div
+            className={`cdl-logo-container ${dashboardType === "auditor" ? "bg-[var(--primary-purple-color2)]" : ""}`}
+          >
             {orgLogo && isImageValid ? (
               <Image
                 src={`${dataspaceUrl.replace(/\/$/, "")}${orgLogo}`}

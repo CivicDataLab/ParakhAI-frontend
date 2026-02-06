@@ -3,11 +3,11 @@
 import { useGraphQL } from "@/lib/api";
 import { useAppSession } from "@/lib/session";
 import {
-    IconCheck,
-    IconClock,
-    IconEye,
-    IconPlayerPlay,
-    IconX,
+  IconCheck,
+  IconClock,
+  IconEye,
+  IconPlayerPlay,
+  IconX,
 } from "@tabler/icons-react";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
@@ -86,7 +86,11 @@ const AuditorDashboard = () => {
   const params = useParams();
   const router = useRouter();
   const locale = params?.locale || "en";
-  const { request, isAuthenticated, isLoading: isSessionLoading } = useGraphQL();
+  const {
+    request,
+    isAuthenticated,
+    isLoading: isSessionLoading,
+  } = useGraphQL();
   const { user } = useAppSession();
 
   const [assignments, setAssignments] = useState<AuditorAssignment[]>([]);
@@ -209,7 +213,9 @@ const AuditorDashboard = () => {
     columnHelper.accessor("versionLabel", {
       header: "Version",
       cell: (info) => (
-        <Badge>{info.getValue() || `v${info.row.original.modelVersionId}`}</Badge>
+        <Badge>
+          {info.getValue() || `v${info.row.original.modelVersionId}`}
+        </Badge>
       ),
     }),
     columnHelper.accessor("organizationName", {
@@ -277,7 +283,9 @@ const AuditorDashboard = () => {
     columnHelper.accessor("versionLabel", {
       header: "Version",
       cell: (info) => (
-        <Badge>{info.getValue() || `v${info.row.original.modelVersionId}`}</Badge>
+        <Badge>
+          {info.getValue() || `v${info.row.original.modelVersionId}`}
+        </Badge>
       ),
     }),
     columnHelper.accessor("organizationName", {
@@ -386,13 +394,14 @@ const AuditorDashboard = () => {
         </div>
 
         {pendingAssignments.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 bg-white rounded-lg border border-gray-200">
+          <div className="flex flex-col items-center justify-center py-12 rounded-lg border border-gray-200">
             <IconClock size={32} className="text-gray-400 mb-3" />
             <Text variant="bodyMd" className="text-gray-600">
               No pending invitations
             </Text>
             <Text variant="bodySm" className="text-gray-500 mt-1">
-              You&apos;ll see new audit invitations here when organizations invite you
+              You&apos;ll see new audit invitations here when organizations
+              invite you
             </Text>
           </div>
         ) : (
@@ -421,7 +430,7 @@ const AuditorDashboard = () => {
         </div>
 
         {activeAssignments.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 bg-white rounded-lg border border-gray-200">
+          <div className="flex flex-col items-center justify-center py-12 rounded-lg border border-gray-200">
             <IconPlayerPlay size={32} className="text-gray-400 mb-3" />
             <Text variant="bodyMd" className="text-gray-600">
               No active assignments
@@ -431,7 +440,7 @@ const AuditorDashboard = () => {
             </Text>
           </div>
         ) : (
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="rounded-lg border border-gray-200 overflow-hidden">
             <DataTable
               rows={activeAssignments}
               columns={activeColumns}
