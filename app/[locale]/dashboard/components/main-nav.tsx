@@ -130,10 +130,11 @@ const MainNav = () => {
                   <button
                     onClick={() => signIn("keycloak")}
                     className="bg-secondaryGreen text-black 
-                               text-base font-semibold uppercase tracking-[0.08em] 
+                               text-base font-medium uppercase 
                                py-3 px-6 rounded-lg border border-transparent 
                                inline-flex items-center justify-center 
-                               transition-all duration-150 ease
+                               transition-all duration-150 ease 
+                               rounded-2
                                hover:opacity-80
                                focus:outline-none focus:ring-2 focus:ring-baseVioletSolid6 focus:ring-offset-0"
                   >
