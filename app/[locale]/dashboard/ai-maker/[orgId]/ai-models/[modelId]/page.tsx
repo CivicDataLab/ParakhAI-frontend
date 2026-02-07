@@ -299,8 +299,6 @@ const ModelDetailPage = () => {
     );
   }
 
-  console.log("v", model.versions);
-
   return (
     <>
       <div className="flex-1 lg:py-10 overflow-hidden">

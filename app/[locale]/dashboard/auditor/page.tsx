@@ -2,6 +2,7 @@
 
 import { useGraphQL } from "@/lib/api";
 import { useAppSession } from "@/lib/session";
+import { statusColors } from "@/lib/statusColors";
 import {
   IconCheck,
   IconClock,
@@ -65,14 +66,6 @@ const UPDATE_ASSIGNMENT_STATUS = `
     }
   }
 `;
-
-const statusColors: Record<string, { bg: string; text: string }> = {
-  PENDING: { bg: "bg-yellow-100", text: "text-yellow-700" },
-  ACCEPTED: { bg: "bg-green-100", text: "text-green-700" },
-  DECLINED: { bg: "bg-red-100", text: "text-red-700" },
-  IN_PROGRESS: { bg: "bg-blue-100", text: "text-blue-700" },
-  COMPLETED: { bg: "bg-purple-100", text: "text-purple-700" },
-};
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString("en-GB", {
@@ -195,7 +188,9 @@ const AuditorDashboard = () => {
   const activeAssignments = assignments.filter(
     (a) => a.status === "ACCEPTED" || a.status === "IN_PROGRESS"
   );
-  const completedAssignments = assignments.filter((a) => a.status === "COMPLETED");
+  const completedAssignments = assignments.filter(
+    (a) => a.status === "COMPLETED"
+  );
 
   // Calculate metrics for Overview section
   const metrics = [
@@ -213,7 +208,7 @@ const AuditorDashboard = () => {
       cell: (info) => (
         <Link
           href={`/${locale}/dashboard/auditor/models/${info.row.original.modelId}`}
-          className="text-purple-600 hover:underline font-medium"
+          className="text-purple-600 hover:underline font-medium text-baseVioletSolid11"
         >
           {info.getValue() || `Model ${info.row.original.modelId.slice(0, 8)}`}
         </Link>
@@ -231,9 +226,23 @@ const AuditorDashboard = () => {
       header: "Organization",
       cell: (info) => (
         <Text variant="bodySm">
-          {info.getValue() || info.row.original.organizationId.slice(0, 8)}
+          ID #{info.getValue() || info.row.original.organizationId.slice(0, 8)}
         </Text>
       ),
+    }),
+    columnHelper.accessor("status", {
+      header: "Status",
+      cell: (info) => {
+        const status = info.getValue();
+        const colors = statusColors[status] || statusColors.PENDING;
+        return (
+          <span
+            className={`px-2 py-1 text-xs rounded-full ${colors.bg} ${colors.text}`}
+          >
+            {status.replace(/_/g, " ")}
+          </span>
+        );
+      },
     }),
     columnHelper.accessor("notes", {
       header: "Notes",
@@ -253,15 +262,17 @@ const AuditorDashboard = () => {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button
-            kind="primary"
+            kind="tertiary"
             size="slim"
             onClick={() => handleUpdateStatus(row.original.id, "ACCEPTED")}
             disabled={updatingId === row.original.id}
           >
-            <IconCheck size={16} className="mr-1" />
-            Accept
+            <div className="flex items-end gap-1">
+              <IconCheck color="#5746AF" size={16} className="mr-1" />
+              <span className="text-baseVioletSolid11 pt-0.4">Accept</span>
+            </div>
           </Button>
           <Button
             kind="tertiary"
@@ -269,8 +280,10 @@ const AuditorDashboard = () => {
             onClick={() => handleUpdateStatus(row.original.id, "DECLINED")}
             disabled={updatingId === row.original.id}
           >
-            <IconX size={16} className="mr-1" />
-            Decline
+            <div className="flex items-start justify-center gap-1">
+              <IconX color="#5746AF" size={16} className="mr-1" />
+              <span className="text-baseVioletSolid11 pt-0.4">Decline</span>
+            </div>
           </Button>
         </div>
       ),
@@ -283,7 +296,7 @@ const AuditorDashboard = () => {
       cell: (info) => (
         <Link
           href={`/${locale}/dashboard/auditor/models/${info.row.original.modelId}`}
-          className="text-purple-600 hover:underline font-medium"
+          className="text-baseVioletSolid11 hover:underline font-medium"
         >
           {info.getValue() || `Model ${info.row.original.modelId.slice(0, 8)}`}
         </Link>
@@ -301,7 +314,7 @@ const AuditorDashboard = () => {
       header: "Organization",
       cell: (info) => (
         <Text variant="bodySm">
-          {info.getValue() || info.row.original.organizationId.slice(0, 8)}
+          ID #{info.getValue() || info.row.original.organizationId.slice(0, 8)}
         </Text>
       ),
     }),
@@ -331,22 +344,28 @@ const AuditorDashboard = () => {
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Button
-            kind="primary"
+            kind="tertiary"
             size="slim"
             onClick={() => handleStartEvaluation(row.original)}
           >
-            <IconPlayerPlay size={16} className="mr-1" />
-            {row.original.status === "IN_PROGRESS"
-              ? "Continue"
-              : "Start Evaluation"}
+            <div className="flex items-center justify-center gap-1">
+              <IconPlayerPlay size={16} className="mr-1" />
+              <span className="pt-0.5">
+                {row.original.status === "IN_PROGRESS"
+                  ? "Continue"
+                  : "Start Evaluation"}
+              </span>
+            </div>
           </Button>
           <Button
             kind="tertiary"
             size="slim"
             onClick={() => handleViewModel(row.original)}
           >
-            <IconEye size={16} className="mr-1" />
-            View
+            <div className="flex items-center justify-center gap-1">
+              <IconEye size={16} className="mr-1" />
+              <span className="pt-0.5">View</span>
+            </div>
           </Button>
         </div>
       ),
@@ -410,16 +429,18 @@ const AuditorDashboard = () => {
       <div className="mb-10">
         <div className="flex items-center gap-3 mb-4">
           {/* <IconClock size={24} className="text-yellow-600" /> */}
-          <Text 
-            variant="headingMd" 
+          <Text
+            variant="headingMd"
             fontWeight="bold"
             className="text-[20px] leading-[26px] text-[#1C2024]"
           >
-            Pending Invitations (Most Recent)
+            Pending Invitations
           </Text>
-          {pendingAssignments.length > 0 && (
-            <Badge status="warning">{String(pendingAssignments.length)}</Badge>
-          )}
+          {/* {pendingAssignments.length > 0 && (
+            <Badge status="attention">
+              {String(pendingAssignments.length)}
+            </Badge>
+          )} */}
         </div>
 
         {pendingAssignments.length === 0 ? (
@@ -429,7 +450,8 @@ const AuditorDashboard = () => {
               No pending invitations
             </Text>
             <Text variant="bodySm" className="text-gray-500 mt-1">
-              You&apos;ll see new evaluation invitations here when organizations invite you
+              You&apos;ll see new evaluation invitations here when organizations
+              invite you
             </Text>
           </div>
         ) : (
@@ -439,6 +461,7 @@ const AuditorDashboard = () => {
               columns={pendingColumns}
               hoverable={true}
               hideSelection={true}
+              truncate={true}
               hideFooter={pendingAssignments.length <= 10}
             />
           </div>
@@ -449,16 +472,16 @@ const AuditorDashboard = () => {
       <div>
         <div className="flex items-center gap-3 mb-4">
           {/* <IconPlayerPlay size={24} className="text-green-600" /> */}
-          <Text 
-            variant="headingMd" 
+          <Text
+            variant="headingMd"
             fontWeight="bold"
             className="text-[20px] leading-[26px] text-[#1C2024]"
           >
             Active Assignments (Most Recent)
           </Text>
-          {activeAssignments.length > 0 && (
+          {/* {activeAssignments.length > 0 && (
             <Badge status="success">{String(activeAssignments.length)}</Badge>
-          )}
+          )} */}
         </div>
 
         {activeAssignments.length === 0 ? (

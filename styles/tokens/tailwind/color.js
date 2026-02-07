@@ -283,4 +283,17 @@ module.exports = {
   primaryText: 'var(--blue-primary-text)',
   secondaryText: 'var(--orange-secondary-text)',
 
+  // Status badge colors (auditor / assignment status)
+  statusPendingBg: 'var(--base-amber-solid-2)',
+  statusPendingText: 'var(--base-amber-solid-11)',
+  statusAcceptedBg: 'var(--base-green-solid-2)',
+  statusAcceptedText: 'var(--base-green-solid-11)',
+  statusDeclinedBg: 'var(--base-red-solid-2)',
+  statusDeclinedText: 'var(--base-red-solid-11)',
+  statusInProgressBg: 'var(--base-blue-solid-2)',
+  statusInProgressText: 'var(--base-blue-solid-11)',
+  statusCompletedBg: 'var(--base-violet-solid-2)',
+  statusCompletedText: 'var(--base-violet-solid-11)',
+  statusDraftBg: 'var(--base-gray-slate-solid-2)',
+  statusDraftText: 'var(--base-gray-slate-solid-11)',
 }

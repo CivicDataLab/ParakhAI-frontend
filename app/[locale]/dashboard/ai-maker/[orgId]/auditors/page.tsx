@@ -2,20 +2,26 @@
 
 import BreadCrumbs from "@/components/Breadcrumbs";
 import { useGraphQL } from "@/lib/api";
-import { IconPlus, IconSearch, IconTrash, IconUser, IconX } from "@tabler/icons-react";
+import {
+  IconPlus,
+  IconSearch,
+  IconTrash,
+  IconUser,
+  IconX,
+} from "@tabler/icons-react";
 import { useParams } from "next/navigation";
 import { Button, DataTable, Dialog, Spinner, Text } from "opub-ui";
 import { useEffect, useState } from "react";
 
 // Custom Avatar component with error handling
-const Avatar = ({ 
-  src, 
-  alt, 
-  username, 
-  size = 16 
-}: { 
-  src: string | null; 
-  alt: string; 
+const Avatar = ({
+  src,
+  alt,
+  username,
+  size = 16,
+}: {
+  src: string | null;
+  alt: string;
   username: string;
   size?: number;
 }) => {
@@ -131,7 +137,11 @@ const AuditorsPage = () => {
   const locale = params?.locale || "en";
   const orgId = params?.orgId as string;
 
-  const { request, isAuthenticated, isLoading: isSessionLoading } = useGraphQL();
+  const {
+    request,
+    isAuthenticated,
+    isLoading: isSessionLoading,
+  } = useGraphQL();
 
   // State
   const [organization, setOrganization] = useState<{
@@ -144,7 +154,9 @@ const AuditorsPage = () => {
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [emailInput, setEmailInput] = useState("");
-  const [searchResult, setSearchResult] = useState<SearchUserResult | null>(null);
+  const [searchResult, setSearchResult] = useState<SearchUserResult | null>(
+    null
+  );
   const [isSearching, setIsSearching] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
 
@@ -164,7 +176,11 @@ const AuditorsPage = () => {
 
         const [orgResponse, auditorsResponse] = await Promise.all([
           request(GET_ORG_DETAILS, { orgId }),
-          request(GET_ORGANIZATION_AUDITORS, { organizationId: orgId }, { organization: orgId }),
+          request(
+            GET_ORGANIZATION_AUDITORS,
+            { organizationId: orgId },
+            { organization: orgId }
+          ),
         ]);
 
         if (orgResponse?.organization) {
@@ -243,7 +259,9 @@ const AuditorsPage = () => {
 
         setToast({
           show: true,
-          message: response.addAuditorToOrganization.message || "Evaluator added successfully",
+          message:
+            response.addAuditorToOrganization.message ||
+            "Evaluator added successfully",
           type: "success",
         });
 
@@ -254,7 +272,9 @@ const AuditorsPage = () => {
       } else {
         setToast({
           show: true,
-          message: response?.addAuditorToOrganization?.message || "Failed to add auditor",
+          message:
+            response?.addAuditorToOrganization?.message ||
+            "Failed to add auditor",
           type: "error",
         });
       }
@@ -289,7 +309,9 @@ const AuditorsPage = () => {
       } else {
         setToast({
           show: true,
-          message: response?.removeAuditorFromOrganization?.message || "Failed to remove evaluator",
+          message:
+            response?.removeAuditorFromOrganization?.message ||
+            "Failed to remove evaluator",
           type: "error",
         });
       }
@@ -324,9 +346,7 @@ const AuditorsPage = () => {
     {
       accessorKey: "email",
       header: "Email",
-      cell: ({ getValue }: any) => (
-        <Text variant="bodySm">{getValue()}</Text>
-      ),
+      cell: ({ getValue }: any) => <Text variant="bodySm">{getValue()}</Text>,
     },
     {
       accessorKey: "name",
@@ -335,9 +355,7 @@ const AuditorsPage = () => {
         const firstName = row.original.firstName || "";
         const lastName = row.original.lastName || "";
         const fullName = `${firstName} ${lastName}`.trim();
-        return (
-          <Text variant="bodySm">{fullName || "-"}</Text>
-        );
+        return <Text variant="bodySm">{fullName || "-"}</Text>;
       },
     },
     {
@@ -347,9 +365,7 @@ const AuditorsPage = () => {
         const date = getValue();
         if (!date) return <Text variant="bodySm">-</Text>;
         return (
-          <Text variant="bodySm">
-            {new Date(date).toLocaleDateString()}
-          </Text>
+          <Text variant="bodySm">{new Date(date).toLocaleDateString()}</Text>
         );
       },
     },
@@ -381,7 +397,7 @@ const AuditorsPage = () => {
         </div>
         <button
           type="button"
-          className="bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white  px-8 py-3 rounded-[8px] font-bold text-base border-none"
+          className="bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white  px-8 py-3 rounded-[8px] font-medium  text-base border-none"
           onClick={() => setIsAddModalOpen(true)}
         >
           Add Evaluator
@@ -412,9 +428,12 @@ const AuditorsPage = () => {
           <Text variant="bodyMd" className="text-gray-600 mb-2">
             No evaluators yet
           </Text>
-          <Text variant="bodySm" className="text-gray-500 mb-4 text-center max-w-md">
-            Add evaluators to your organization so they can evaluate your AI models.
-            Evaluators must have an account in CivicDataSpace.
+          <Text
+            variant="bodySm"
+            className="text-gray-500 mb-4 text-center max-w-md"
+          >
+            Add evaluators to your organization so they can evaluate your AI
+            models. Evaluators must have an account in CivicDataSpace.
           </Text>
           <Button
             kind="primary"
@@ -458,8 +477,8 @@ const AuditorsPage = () => {
         >
           <div className="space-y-4">
             <Text variant="bodySm" className="text-gray-600">
-              Search for a user by their email address. The user must have an account
-              in CivicDataSpace to be added as an evaluator.
+              Search for a user by their email address. The user must have an
+              account in CivicDataSpace to be added as an evaluator.
             </Text>
 
             <div className="flex gap-2">
@@ -480,9 +499,12 @@ const AuditorsPage = () => {
                   kind="secondary"
                   onClick={handleSearchUser}
                   disabled={!emailInput.trim() || isSearching}
+                  className="bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white  px-8 py-3 rounded-[8px] font-medium text-base border-none"
                 >
-                  <IconSearch size={18} className="mr-1" />
-                  {isSearching ? "Searching..." : "Search"}
+                  <div className="flex items-end gap-2 h-full w-full">
+                    <IconSearch size={18} className="mr-1" />
+                    <div>{isSearching ? "Searching..." : "Search"}</div>
+                  </div>
                 </Button>
               </div>
             </div>
@@ -505,18 +527,27 @@ const AuditorsPage = () => {
                         size={20}
                       />
                     </div>
-                    <div>
+                    <div className="flex flex-col gap-0.5">
                       <Text variant="bodySm" fontWeight="medium">
-                        {searchResult.user.username}
+                        {searchResult.user.firstName ||
+                        searchResult.user.lastName
+                          ? `${[searchResult.user.firstName, searchResult.user.lastName].filter(Boolean).join(" ")}`
+                          : searchResult.user.username !==
+                              searchResult.user.email
+                            ? searchResult.user.username
+                            : searchResult.user.email.split("@")[0]}
                       </Text>
                       <Text variant="bodySm" className="text-gray-600">
                         {searchResult.user.email}
                       </Text>
-                      {(searchResult.user.firstName || searchResult.user.lastName) && (
-                        <Text variant="bodySm" className="text-gray-500">
-                          {`${searchResult.user.firstName || ""} ${searchResult.user.lastName || ""}`.trim()}
-                        </Text>
-                      )}
+                      {(searchResult.user.firstName ||
+                        searchResult.user.lastName) &&
+                        searchResult.user.username !==
+                          searchResult.user.email && (
+                          <Text variant="bodySm" className="text-gray-500">
+                            @{searchResult.user.username}
+                          </Text>
+                        )}
                     </div>
                   </div>
                 ) : (
@@ -533,7 +564,9 @@ const AuditorsPage = () => {
       {toast.show && (
         <div
           className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 ${
-            toast.type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"
+            toast.type === "success"
+              ? "bg-green-600 text-white"
+              : "bg-red-600 text-white"
           }`}
         >
           <span>{toast.message}</span>
