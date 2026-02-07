@@ -20,26 +20,27 @@ module.exports = {
   content: [
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './lib/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     // Spacing tokens - controls padding, margin, gap utilities
     space,
-    
+
     // Colors
     colors,
-    
+
     // Typography
     fontFamily,
     fontSize,
     fontWeight,
     lineHeight,
-    
+
     // Layout
     borderRadius,
     borderWidth,
     boxShadow,
     zIndex,
-    
+
     // Transitions
     transitionTimingFunction,
     transitionDuration,
@@ -52,14 +53,14 @@ module.exports = {
       pulse: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       bounce: 'bounce 1s infinite',
     },
-    
+
     // Aspect ratios
     aspectRatio: {
       auto: 'auto',
       square: '1 / 1',
       video: '16 / 9',
     },
-    
+
     // Responsive breakpoints - REQUIRED for sm:, md:, lg: to work
     screens: {
       sm: '640px',

@@ -4,7 +4,7 @@ import { useGraphQL } from "@/lib/api";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Button, DataTable, Spinner, Tag, Text } from "opub-ui";
+import { Badge, Button, DataTable, Spinner, Tag, Text } from "opub-ui";
 import { useEffect, useState } from "react";
 import { useOrganization } from "../OrganizationContext";
 import ModelSelectionModal from "./components/ModelSelectionModal";
@@ -188,7 +188,7 @@ const AuditsListPage = () => {
       header: "Audit Type",
       cell: (info) => {
         const auditType = info.getValue();
-        return <Text variant="bodySm">{auditType}</Text>;
+        return <Badge>{auditType}</Badge>;
       },
     }),
     columnHelper.accessor("totalTests", {
@@ -198,18 +198,25 @@ const AuditsListPage = () => {
         const passed = info.row.original.passedTests || 0;
         const failed = info.row.original.failedTests || 0;
 
-        if (total === 0) return <Text variant="bodySm">--</Text>;
+        // if (total === 0) return <Text variant="bodySm">--</Text>;
+        if (!total || passed == null || failed == null) {
+          return <Text variant="bodySm">--</Text>;
+        }
 
         return (
           <div className="flex items-center gap-2">
-            <Text variant="bodySm" className="text-green-600">
-              {passed} passed
-            </Text>
-            <Text variant="bodySm" className="text-gray-400">
-              /
-            </Text>
-            <Text variant="bodySm" className="text-red-600">
-              {failed} failed
+            <div className="test-result-bar">
+              <div
+                className="test-result-pass"
+                style={{ width: `${(passed / total) * 100}%` }}
+              />
+              <div
+                className="test-result-fail"
+                style={{ width: `${(failed / total) * 100}%` }}
+              />
+            </div>
+            <Text variant="bodySm">
+              {passed}/{total} passed
             </Text>
           </div>
         );

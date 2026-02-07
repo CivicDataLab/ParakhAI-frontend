@@ -155,7 +155,11 @@ const AIMakerDashboard = () => {
           request(GET_AI_MODELS, { limit: 10 }, { organization: orgId }),
           request(GET_EVALUATIONS, { limit: 5 }, { organization: orgId }),
         ]);
-        const auditMetricsResponse = await request(AUDIT_METRICS_QUERY, {}, { organization: orgId });
+        const auditMetricsResponse = await request(
+          AUDIT_METRICS_QUERY,
+          {},
+          { organization: orgId }
+        );
         const auditMetrics = auditMetricsResponse?.auditMetrics || [];
         setAuditMetrics(auditMetrics);
 
@@ -315,7 +319,7 @@ const AIMakerDashboard = () => {
                 href={addModelUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
+                className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-medium text-base"
                 style={{
                   textDecoration: "none",
                   display: "inline-block",

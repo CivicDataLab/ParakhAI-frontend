@@ -2,6 +2,7 @@
 
 import { useGraphQL } from "@/lib/api";
 import { useAppSession } from "@/lib/session";
+import { statusColors } from "@/lib/statusColors";
 import {
   IconCheck,
   IconEye,
@@ -10,9 +11,10 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { createColumnHelper } from "@tanstack/react-table";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Badge, Button, DataTable, Spinner, Text } from "opub-ui";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 // Types
 type AuditorAssignment = {
@@ -65,14 +67,6 @@ const UPDATE_ASSIGNMENT_STATUS = `
   }
 `;
 
-const statusColors: Record<string, { bg: string; text: string }> = {
-  PENDING: { bg: "bg-yellow-100", text: "text-yellow-700" },
-  ACCEPTED: { bg: "bg-green-100", text: "text-green-700" },
-  DECLINED: { bg: "bg-red-100", text: "text-red-700" },
-  IN_PROGRESS: { bg: "bg-blue-100", text: "text-blue-700" },
-  COMPLETED: { bg: "bg-purple-100", text: "text-purple-700" },
-};
-
 const statusOptions = [
   { label: "All", value: "ALL" },
   { label: "Pending", value: "PENDING" },
@@ -94,7 +88,11 @@ const AssignmentsPage = () => {
   const params = useParams();
   const router = useRouter();
   const locale = params?.locale || "en";
-  const { request, isAuthenticated, isLoading: isSessionLoading } = useGraphQL();
+  const {
+    request,
+    isAuthenticated,
+    isLoading: isSessionLoading,
+  } = useGraphQL();
   const { user } = useAppSession();
 
   const [assignments, setAssignments] = useState<AuditorAssignment[]>([]);
@@ -207,12 +205,18 @@ const AssignmentsPage = () => {
     columnHelper.accessor("modelName", {
       header: "Model",
       cell: (info) => (
-        <button
-          onClick={() => handleViewModel(info.row.original)}
-          className="text-purple-600 hover:underline font-medium text-left"
+        // <button
+        //   onClick={() => handleViewModel(info.row.original)}
+        //   className="text-purple-600 hover:underline font-medium text-left"
+        // >
+        //   {info.getValue() || `Model ${info.row.original.modelId.slice(0, 8)}`}
+        // </button>
+        <Link
+          href={`/${locale}/dashboard/auditor/models/${info.row.original.modelId}`}
+          className="text-purple-600 hover:underline font-medium text-baseVioletSolid11"
         >
           {info.getValue() || `Model ${info.row.original.modelId.slice(0, 8)}`}
-        </button>
+        </Link>
       ),
     }),
     columnHelper.accessor("versionLabel", {
@@ -227,7 +231,7 @@ const AssignmentsPage = () => {
       header: "Organization",
       cell: (info) => (
         <Text variant="bodySm">
-          {info.getValue() || info.row.original.organizationId.slice(0, 8)}
+          ID #{info.getValue() || info.row.original.organizationId.slice(0, 8)}
         </Text>
       ),
     }),
@@ -236,6 +240,7 @@ const AssignmentsPage = () => {
       cell: (info) => {
         const status = info.getValue();
         const colors = statusColors[status] || statusColors.PENDING;
+        console.log("info", info.row.original);
         return (
           <span
             className={`px-2 py-1 text-xs rounded-full ${colors.bg} ${colors.text}`}
@@ -254,7 +259,7 @@ const AssignmentsPage = () => {
       ),
     }),
     columnHelper.accessor("createdAt", {
-      header: "Assigned On",
+      header: "Invited On",
       cell: (info) => (
         <Text variant="bodySm">{formatDate(info.getValue())}</Text>
       ),
@@ -269,13 +274,15 @@ const AssignmentsPage = () => {
           return (
             <div className="flex items-center gap-2">
               <Button
-                kind="primary"
+                kind="tertiary"
                 size="slim"
                 onClick={() => handleUpdateStatus(row.original.id, "ACCEPTED")}
                 disabled={updatingId === row.original.id}
               >
-                <IconCheck size={16} className="mr-1" />
-                Accept
+                <div className="flex items-end gap-1">
+                  <IconCheck color="#5746AF" size={16} className="mr-1" />
+                  <span className="text-baseVioletSolid11 pt-0.4">Accept</span>
+                </div>
               </Button>
               <Button
                 kind="tertiary"
@@ -283,8 +290,10 @@ const AssignmentsPage = () => {
                 onClick={() => handleUpdateStatus(row.original.id, "DECLINED")}
                 disabled={updatingId === row.original.id}
               >
-                <IconX size={16} className="mr-1" />
-                Decline
+                <div className="flex items-start justify-center gap-1">
+                  <IconX color="#5746AF" size={16} className="mr-1" />
+                  <span className="text-baseVioletSolid11 pt-0.4">Decline</span>
+                </div>
               </Button>
             </div>
           );
@@ -292,22 +301,30 @@ const AssignmentsPage = () => {
 
         if (status === "ACCEPTED" || status === "IN_PROGRESS") {
           return (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mr-1">
               <Button
-                kind="primary"
+                kind="tertiary"
                 size="slim"
                 onClick={() => handleStartEvaluation(row.original)}
               >
-                <IconPlayerPlay size={16} className="mr-1" />
-                {status === "IN_PROGRESS" ? "Continue" : "Start"}
+                <div className="flex items-center justify-center gap-1 ">
+                  <IconPlayerPlay size={16} className="mr-1" />
+                  <span className="pt-0.5">
+                    {row.original.status === "IN_PROGRESS"
+                      ? "Continue"
+                      : "Start"}
+                  </span>
+                </div>
               </Button>
               <Button
                 kind="tertiary"
                 size="slim"
                 onClick={() => handleViewModel(row.original)}
               >
-                <IconEye size={16} className="mr-1" />
-                View
+                <div className="flex ml-4 items-center justify-center gap-1">
+                  <IconEye size={16} className="mr-1" />
+                  <span className="pt-0.5">View</span>
+                </div>
               </Button>
             </div>
           );
@@ -353,7 +370,7 @@ const AssignmentsPage = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-8 mt-10">
+      <div className="flex items-center justify-between mb-8 mt-10 pl-1">
         <div>
           <Text variant="headingLg" as="h1" fontWeight="bold">
             My Assignments
@@ -366,30 +383,33 @@ const AssignmentsPage = () => {
 
       {/* Filter Section */}
       <div className="mb-6 flex items-center gap-4">
-        <div className="flex items-center gap-2">
+        {/* <div className="flex items-center gap-2">
           <IconFilter size={18} className="text-gray-500" />
           <Text variant="bodySm" fontWeight="medium">
             Filter by status:
           </Text>
-        </div>
-        <div className="flex flex-wrap gap-2">
+        </div> */}
+        <div className="flex flex-wrap gap-2 pl-1">
           {statusOptions.map((option) => (
-            <button
+            <Button
+              kind="secondary"
+              size="slim"
               key={option.value}
               onClick={() => setStatusFilter(option.value)}
-              className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
+              className={`px-3 py-1.5 text-sm  transition-colors ${
                 statusFilter === option.value
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  ? "bg-primaryPurple2 text-white"
+                  : "bg-gray-100 text-gray-700 hover:primaryPurple2"
               }`}
             >
               {option.label}
               {option.value !== "ALL" && (
                 <span className="ml-1.5 text-xs">
-                  ({assignments.filter((a) => a.status === option.value).length})
+                  ({assignments.filter((a) => a.status === option.value).length}
+                  )
                 </span>
               )}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
