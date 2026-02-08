@@ -2,6 +2,7 @@
 
 import { Icons } from "@/components/icons";
 import { useGraphQL } from "@/lib/api";
+import { toTitleCase } from "@/lib/utils";
 import { IconCopy, IconEye, IconUpload } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import Image from "next/image";
@@ -159,7 +160,7 @@ const TestCases: React.FC<TestCasesProps> = ({
       header: "Task Type",
       cell: ({ getValue }) => {
         const value = getValue<string>();
-        return value ? value.replace(/_/g, " ") : "-";
+        return value ? toTitleCase(value.replace(/_/g, " ")) : "-";
       },
     },
     {
@@ -167,7 +168,7 @@ const TestCases: React.FC<TestCasesProps> = ({
       header: "Domain",
       cell: ({ getValue }) => {
         const value = getValue<string>();
-        return value || "-";
+        return toTitleCase(value) || "-";
       },
     },
     {
