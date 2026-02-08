@@ -243,7 +243,7 @@ const AIMakerDashboard = () => {
         header: "Status",
       }),
       columnHelper.accessor("auditType", {
-        header: "Audit Type",
+        header: "Evaluation Type",
       }),
       columnHelper.accessor("totalTests", {
         header: "Test Result",

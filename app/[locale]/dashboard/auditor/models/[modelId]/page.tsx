@@ -354,7 +354,7 @@ const AuditorModelDetailPage = () => {
       ),
     }),
     columnHelper.accessor("auditType", {
-      header: "Audit Type",
+      header: "Evaluation Type",
       cell: (info) => {
         const typeValue = info.getValue();
         return <Badge>{typeValue}</Badge>;
