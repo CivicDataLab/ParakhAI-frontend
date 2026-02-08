@@ -310,19 +310,8 @@ const ModelDetailPage = () => {
                   {model.displayName}
                 </Text>
 
-                <div className="flex flex-wrap gap-2">
-                  {model.sectors?.slice(0, 1).map((sector, index) => (
-                    <span className="self-start sm:self-auto">
-                      <Tag
-                        variation="filled"
-                        fillColor={"bg-purple-200"}
-                        textColor={"text-purple-800"}
-                      >
-                        {sector}
-                      </Tag>
-                    </span>
-                  ))}
-                  {model.tags?.slice(0, 1).map((tag, index) => (
+                {/* <div className="flex flex-wrap gap-2">
+                  {model.tags?.slice(0, 2).map((tag, index) => (
                     <span className="self-start sm:self-auto">
                       <Tag
                         variation="filled"
@@ -333,7 +322,7 @@ const ModelDetailPage = () => {
                       </Tag>
                     </span>
                   ))}
-                </div>
+                </div> */}
               </div>
 
               <div className="overflow-hidden flex flex-col gap-2 mt-8">
