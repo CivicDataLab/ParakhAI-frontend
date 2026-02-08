@@ -185,7 +185,7 @@ const AuditsListPage = () => {
       },
     }),
     columnHelper.accessor("auditType", {
-      header: "Audit Type",
+      header: "Evaluation Type",
       cell: (info) => {
         const auditType = info.getValue();
         return <Badge>{auditType}</Badge>;
