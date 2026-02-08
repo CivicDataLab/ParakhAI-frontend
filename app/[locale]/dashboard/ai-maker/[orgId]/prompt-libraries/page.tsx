@@ -189,6 +189,7 @@ const PromptLibrariesPage = () => {
             id: string;
             title: string;
             description?: string;
+            createdAt?: string
             promptMetadata?: {
               taskType?: string;
               domain?: string;
