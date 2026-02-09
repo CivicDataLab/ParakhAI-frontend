@@ -68,9 +68,8 @@ export function formatDate(input: string | number): string {
 }
 
 export function toTitleCase(str: string) {
-  return str
-    .toLowerCase()
-    .replace(/\b\p{L}/gu, (char) => char.toUpperCase());
+  if (!str) return "";
+  return str.toLowerCase().replace(/\b\p{L}/gu, (char) => char.toUpperCase());
 }
 
 const convertMap: any = {
