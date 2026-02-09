@@ -1,0 +1,51 @@
+/* Styles for ai-maker evaluations list page */
+
+/* Constrain "Evaluation Mode" column (3rd column) */
+.evaluations-table-evaluation-mode-col th:nth-child(3),
+.evaluations-table-evaluation-mode-col td:nth-child(3) {
+  width: var(--eval-mode-col-width, 140px);
+  max-width: var(--eval-mode-col-width, 140px);
+  min-width: var(--eval-mode-col-width, 140px);
+  box-sizing: border-box;
+}
+
+/* Smaller Status column (2nd column) – compact tag/cell */
+.evaluations-table-evaluation-mode-col th:nth-child(2),
+.evaluations-table-evaluation-mode-col td:nth-child(2) {
+  width: 14px;
+  max-width: 180px;
+  min-width: 100px;
+  box-sizing: border-box;
+}
+
+/* Smaller text and padding for Status cell content */
+.evaluations-table-evaluation-mode-col td:nth-child(2) {
+  font-size: 0.75rem;
+  line-height: 1.25;
+}
+
+.evaluations-table-evaluation-mode-col td:nth-child(2) > * {
+  font-size: inherit;
+  padding: 2px 8px;
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.evaluations-table-evaluation-mode-col th:nth-child(4),
+.evaluations-table-evaluation-mode-col td:nth-child(4) {
+  width: 180px;
+  max-width: 220px;
+  min-width: 160px;
+  box-sizing: border-box;
+}
+
+.evaluations-table-evaluation-mode-col th:nth-child(5),
+.evaluations-table-evaluation-mode-col td:nth-child(5) {
+  width: 180px;
+  max-width: 220px;
+  min-width: 160px;
+  box-sizing: border-box;
+}
