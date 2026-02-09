@@ -10,19 +10,19 @@ const steps = [
     icon: "/images/home/login.png",
     title: "Sign up on ParakhAI",
     description:
-      "Create your account to access tools, libraries, and workflows designed to help you evaluate your AI and improve how it behaves.",
+      "Create an account to access the open-source evaluation environment, prompt libraries, and workflows for participatory AI assessment.",
   },
   {
     icon: "/images/home/file-text-ai.png",
     title: "Add your AI Model",
     description:
-      "Connect your AI model by providing basic details and endpoints, so it can be tested safely both by developers and automated experts.",
+      "Register your AI model with basic details to enable automated-assisted and expert-led evaluations across the AI lifecycle.",
   },
   {
     icon: "/images/home/test-pipe.png",
     title: "Start testing",
     description:
-      "Run guided tests to identify biases and risks or hire expert evaluators, to get clear insights that help you improve your model responsibly.",
+      "Run guided evaluations to identify bias, misinformation, privacy, and safety risks, or invite experts to generate actionable insights for responsible AI deployment.",
   },
 ];
 
@@ -43,13 +43,13 @@ const GetStartedSection = () => {
     <section className="bg-secondaryYellow py-12 md:py-16 lg:py-20">
       <div className="container mx-auto px-4 md:px-8 lg:px-12">
         {/* Section Title */}
-        <div className="mb-10 lg:mb-14">
+        <div className="mb-10 lg:mb-14 text-center">
           <Text
             variant="headingXl"
             fontWeight="regular"
             className="text-gray-900 "
           >
-            Catch biases early. Start building trustworthy AI.
+             Start building trustworthy AI today.
           </Text>
         </div>
 

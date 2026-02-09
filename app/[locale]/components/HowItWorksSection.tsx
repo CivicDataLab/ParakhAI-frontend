@@ -9,33 +9,33 @@ const features = [
     title: "Automation-assisted Eval Environment",
     subtitle: "Scalable, Guided Testing",
     description:
-      "Run scalable, guided evaluations in one workspace to consistently understand and compare AI behavior.",
+      "Run scalable, guided evaluations in one workspace to identify bias, safety, and information integrity risks across AI models.",
   },
   {
     image: "/images/home/Expert eval.png",
     title: "Expert-led Evaluations",
     subtitle: "Human Insight, Applied",
     description:
-      "Apply human expertise to assess real-world AI risks with context-aware judgment and oversight.",
+      "Apply technical, domain, and cultural expertise to assess real-world AI risks with context-aware human judgment.",
   },
   {
     image: "/images/home/test cases.png",
     title: "Sector-specific, High Quality Test Cases",
     subtitle: "Built for Domain Relevance",
     description:
-      "Test your AI models using domain-relevant test cases that reflect real-world usage and edge cases.",
+      "Evaluate AI models using sectoral prompt datasets that reflect real-world contexts, risks, and edge cases.",
   },
   {
     image: "/images/home/eval history and reports.png",
     title: "Evaluation History & Reports",
     subtitle: "Transparent Timeline of Results & Insights",
     description:
-      "Track evaluation results over time to support transparency, comparison, and informed decision-making.",
+      "Track evaluation outcomes over time to support transparency, accountability, and continuous improvement of AI systems.",
   },
 ];
 
 const TAB_TITLES = [
-  "Automation-assisted Environment",
+  "Automation-assisted Evaluation Environment",
   "Expert-led Evaluations",
   "Sector-specific Test Cases",
   "Evaluation History & Reports",
@@ -82,13 +82,13 @@ const HowItWorksSection = () => {
         <div className="flex flex-col lg:flex-col gap-2 justify-between">
           <div className="w-full ">
             <h2
-              className="text-red-900 mb-6 text-2xl md:text-3xl lg:text-4xl font-regular"
+              className="text-red-900 mb-6 text-2xl md:text-3xl lg:text-4xl font-regular text-center"
               style={{
                 fontSize: "clamp(1.5rem, 3vw, 3.5rem)",
                 lineHeight: 1.1,
               }}
             >
-              ParakhAI helps you catch biases early.
+              ParakhAI helps you catch risks early.
             </h2>
           </div>
 
