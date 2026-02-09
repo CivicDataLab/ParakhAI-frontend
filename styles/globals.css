@@ -635,6 +635,15 @@ body {
   margin-bottom: 48px;
 }
 
+/* Constrain "Evaluation Mode" column (3rd column) in ai-maker evaluations table */
+.evaluations-table-evaluation-mode-col th:nth-child(3),
+.evaluations-table-evaluation-mode-col td:nth-child(3) {
+  width: var(--eval-mode-col-width, 140px);
+  max-width: var(--eval-mode-col-width, 140px);
+  min-width: var(--eval-mode-col-width, 140px);
+  box-sizing: border-box;
+}
+
 /* Homepage styles */
 .loading-container {
   display: flex;

@@ -8,6 +8,7 @@ import { Badge, Button, DataTable, Spinner, Tag, Text } from "opub-ui";
 import { useEffect, useState } from "react";
 import { useOrganization } from "../OrganizationContext";
 import ModelSelectionModal from "./components/ModelSelectionModal";
+import "./evaluations-page.css";
 
 // GraphQL query to fetch user's audits
 const AUDITS_QUERY = `
@@ -166,17 +167,17 @@ const AuditsListPage = () => {
         );
       },
     }),
-    columnHelper.accessor("modules", {
-      header: "Modules",
-      cell: (info) => {
-        const modules = info.getValue() || [];
-        return (
-          <Text variant="bodySm">
-            {modules.length > 0 ? modules.join(", ") : "--"}
-          </Text>
-        );
-      },
-    }),
+    // columnHelper.accessor("modules", {
+    //   header: "Modules",
+    //   cell: (info) => {
+    //     const modules = info.getValue() || [];
+    //     return (
+    //       <Text variant="bodySm">
+    //         {modules.length > 0 ? modules.join(", ") : "--"}
+    //       </Text>
+    //     );
+    //   },
+    // }),
     columnHelper.accessor("evaluationMode", {
       header: "Evaluation Mode",
       cell: (info) => {
@@ -184,13 +185,13 @@ const AuditsListPage = () => {
         return <Text variant="bodySm">{evaluationMode}</Text>;
       },
     }),
-    columnHelper.accessor("auditType", {
-      header: "Audit Type",
-      cell: (info) => {
-        const auditType = info.getValue();
-        return <Badge>{auditType}</Badge>;
-      },
-    }),
+    // columnHelper.accessor("auditType", {
+    //   header: "Audit Type",
+    //   cell: (info) => {
+    //     const auditType = info.getValue();
+    //     return <Badge>{auditType}</Badge>;
+    //   },
+    // }),
     columnHelper.accessor("totalTests", {
       header: "Tests",
       cell: (info) => {
@@ -310,23 +311,25 @@ const AuditsListPage = () => {
           </Button>
         </div>
       ) : (
-        <DataTable
-          rows={audits}
-          columns={columns}
-          hoverable
-          // hasZebraStripingOnData
-          sortColumns={[
-            "name",
-            "status",
-            "evaluationMode",
-            "auditType",
-            // "createdAt",
-            "completedAt",
-          ]}
-          defaultSortDirection="desc"
-          hideSelection
-          truncate
-        />
+        <div className="evaluations-table-evaluation-mode-col">
+          <DataTable
+            rows={audits}
+            columns={columns}
+            hoverable
+            sortColumns={[
+              "name",
+              "status",
+              "evaluationMode",
+              "auditType",
+              "completedAt",
+              // "createdAt",
+            ]}
+            initialSortColumnIndex={5}
+            defaultSortDirection="desc"
+            hideSelection
+            truncate
+          />
+        </div>
       )}
 
       {/* Model Selection Modal */}
