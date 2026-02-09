@@ -151,7 +151,7 @@ const EvaluationsPage = () => {
       ),
     }),
     columnHelper.accessor("auditType", {
-      header: "Audit Type",
+      header: "Evaluation Type",
       cell: (info) => {
         const typeValue = info.getValue();
         console.log("typeValue", typeValue);

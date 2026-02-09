@@ -5,6 +5,7 @@ import { Pagination } from "@/components/Pagination/Pagination";
 import { useGraphQL } from "@/lib/api";
 import { IconChevronDown, IconMinus, IconX } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
+import { toTitleCase } from "@/lib/utils";
 import {
   Button,
   Card,
@@ -26,7 +27,7 @@ type PromptLibrary = {
   domain?: string;
   resourceCount: number;
   promptFormat?: string;
-  updatedAt?: string;
+  createdAt?: string;
   promptsCount?: number;
   auditsCount?: number;
   sectors?: string[];
@@ -40,6 +41,7 @@ const PROMPT_DATASETS_QUERY = `
       id
       title
       description
+      createdAt
       promptMetadata {
         taskType
         domain
@@ -160,6 +162,19 @@ const PromptLibrariesPage = () => {
     );
   };
 
+  const formatDate = (dateString?: string | null) => {
+    if (!dateString) return "--";
+
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "--";
+
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
   // Fetch prompt datasets from DataSpace
   React.useEffect(() => {
     if (!isAuthenticated) return;
@@ -174,6 +189,7 @@ const PromptLibrariesPage = () => {
             id: string;
             title: string;
             description?: string;
+            createdAt?: string
             promptMetadata?: {
               taskType?: string;
               domain?: string;
@@ -211,7 +227,7 @@ const PromptLibrariesPage = () => {
             : ["General"],
           tags: ds.promptMetadata?.targetLanguages || ["English"],
           owner: "ParakhAI",
-          updatedAt: "19 July 2024", // Placeholder since API doesn't provide this
+          createdAt: ds.createdAt, // Placeholder since API doesn't provide this
         }));
 
         setPromptLibraries(formatted);
@@ -515,26 +531,26 @@ const PromptLibrariesPage = () => {
             </div>
           ) : (
             paginatedLibraries.map((library, index) => {
-              const updatedValue = library.updatedAt || "Unknown";
+              const createdValue = formatDate(library.createdAt) || "Unknown";
               const testCasesValue = `${formatNumber(library.promptsCount || 0)} test cases`;
               const auditsValue = `${formatNumber(library.auditsCount || 0)} evaluations`;
 
               const metadataContent = [
                 {
                   icon: Icons.calendar,
-                  label: "Updated",
-                  value: updatedValue,
+                  label: "Created",
+                  value: createdValue,
                 },
-                {
-                  icon: Icons.testPipe,
-                  label: "Test cases",
-                  value: testCasesValue,
-                },
-                {
-                  icon: Icons.discountCheck,
-                  label: "Audits",
-                  value: auditsValue,
-                },
+                // {
+                //   icon: Icons.testPipe,
+                //   label: "Test cases",
+                //   value: testCasesValue,
+                // },
+                // {
+                //   icon: Icons.discountCheck,
+                //   label: "Audits",
+                //   value: auditsValue,
+                // },
               ] as any;
 
               // Alternate between Parakh and CDL for different cards
@@ -556,9 +572,9 @@ const PromptLibrariesPage = () => {
               ];
 
               const type = (library.sectors || []).map((sector) => ({
-                label: sector,
-                fillColor: "#D7CFF9",
-                borderColor: "#D7CFF9",
+                label: toTitleCase(sector),
+                fillColor: "#E2F5C4",
+                borderColor: "#E2F5C4",
               }));
 
               return (
@@ -573,7 +589,7 @@ const PromptLibrariesPage = () => {
                       variation="collapsed"
                       iconColor="highlight"
                       metadataContent={metadataContent}
-                      footerContent={footerContent}
+                      // footerContent={footerContent}
                       type={type}
                       tag={library.tags || []}
                       hover="shadowHighlight"
