@@ -189,7 +189,7 @@ const PromptLibrariesPage = () => {
             id: string;
             title: string;
             description?: string;
-            createdAt?: string
+            createdAt?: string;
             promptMetadata?: {
               taskType?: string;
               domain?: string;
@@ -287,7 +287,7 @@ const PromptLibrariesPage = () => {
   // Handle card click to open dialog
   const handleCardClick = (library: PromptLibrary) => {
     setSelectedLibrary(library);
-    setDialogOpen(true);
+    // setDialogOpen(true);
   };
 
   // Sample table data - replace with actual API call based on selectedLibrary
@@ -654,7 +654,7 @@ const PromptLibrariesPage = () => {
               <button
                 className="PromptDlg__close"
                 aria-label="Close"
-                onClick={() => setDialogOpen(false)}
+                // onClick={() => setDialogOpen(false)}
               >
                 <IconX size={18} />
               </button>
