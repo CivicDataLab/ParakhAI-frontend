@@ -2,6 +2,7 @@
 
 import { useGraphQL } from "@/lib/api";
 import RichTextRenderer from "@/components/RichTextRenderer";
+import ReactMarkdown from "react-markdown";
 import { useParams, useRouter } from "next/navigation";
 import {
   Button,
@@ -30,6 +31,7 @@ import {
   type ModuleProgress,
   type SubModuleInfo,
 } from "./types";
+import remarkGfm from "remark-gfm";
 
 // GraphQL Queries and Mutations
 const CALL_MODEL_MUTATION = `
@@ -648,7 +650,9 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                 <div className="-ml-4">
                   {hasCalledModel ? (
                     modelOutput ? (
-                      <RichTextRenderer content={modelOutput} />
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {modelOutput || ""}
+                      </ReactMarkdown>
                     ) : (
                       <Text variant="bodyMd">No output received</Text>
                     )
