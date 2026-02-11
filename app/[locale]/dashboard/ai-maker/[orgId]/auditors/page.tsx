@@ -67,6 +67,7 @@ const GET_ORG_DETAILS = `
       id
       name
       logoUrl
+      slug
     }
   }
 `;

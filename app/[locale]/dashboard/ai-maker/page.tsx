@@ -15,6 +15,7 @@ type Organization = {
   name: string;
   description: string;
   logoUrl?: string;
+  slug?: string | null;
 };
 
 const EntityCard = ({ org, locale }: { org: Organization; locale: string }) => {
@@ -77,6 +78,7 @@ const OrganizationSelection = () => {
       myOrganizations {
         id
         name
+        slug
         description
         logoUrl
       }
