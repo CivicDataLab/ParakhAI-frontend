@@ -783,13 +783,15 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   };
 
   // Helper function to map module name keys to display names
+  // Prefer backend-provided displayName from modulesByModelType / metricsByModelType
   const getModuleDisplayName = (moduleName: string): string => {
-    const nameMap: Record<string, string> = {
-      bias_fairness: "Bias and Fairness",
-      hallucination: "Hallucination",
-      privacy_security: "Privacy and Security",
-    };
-    return nameMap[moduleName] || toTitleCase(moduleName.replace(/_/g, " "));
+    const moduleFromState = modules.find((m) => m.name === moduleName);
+    if (moduleFromState?.displayName) {
+      return moduleFromState.displayName;
+    }
+
+    // Fallback to a readable version of the enum-like name
+    return toTitleCase(moduleName.replace(/_/g, " "));
   };
 
   // Track if modules have been fetched to prevent duplicate calls
