@@ -7,15 +7,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
-  Avatar,
-  Badge,
-  Button,
-  DataTable,
-  Divider,
-  Spinner,
-  Tag,
-  Text,
-  Tooltip,
+    Avatar,
+    Badge,
+    Button,
+    DataTable,
+    Spinner,
+    Tag,
+    Text
 } from "opub-ui";
 import React from "react";
 import AuditorInvitation from "../../evaluations/components/AuditorInvitation";
@@ -202,11 +200,11 @@ const ModelDetailPage = () => {
       try {
         setLoading(true);
         const [modelResponse, evalResponse] = await Promise.all([
-          request<{ aiModel: AIModel }>(GET_AI_MODEL, { modelId }),
+          request<{ aiModel: AIModel }>(GET_AI_MODEL, { modelId }, { organization: orgId }),
           request<{ audits: Evaluation[] }>(GET_EVALUATIONS, {
             modelId,
             limit: 10,
-          }),
+          }, { organization: orgId }),
         ]);
 
         if (modelResponse?.aiModel) setModel(modelResponse.aiModel);

@@ -389,12 +389,7 @@ const AIMakerDashboard = () => {
                   className="w-full cursor-pointer"
                   onClick={() => handleCardClick(model.id)}
                 >
-                  <Card
-                    {...commonProps}
-                    // shadow="light"
-                    hover="shadowHighlight"
-                    shadow="light"
-                  />
+                  <Card {...commonProps} />
                 </div>
               );
             })}
@@ -418,7 +413,7 @@ const AIMakerDashboard = () => {
               href={addModelUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
+              className="bg-primaryPurple2 hover:!bg-[#6849EE] text-white hover:text-white px-8 py-3 rounded-[8px] font-bold text-base"
               style={{ textDecoration: "none", display: "inline-block" }}
             >
               Add A New Model
@@ -458,7 +453,7 @@ const AIMakerDashboard = () => {
             <Button
               kind="primary"
               onClick={() => setIsModalOpen(true)}
-              className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base"
+              className="bg-primaryPurple2 hover:!bg-[#6849EE] text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
             >
               Start New Evaluation
             </Button>
