@@ -159,6 +159,7 @@ const AuditorsPage = () => {
   );
   const [isSearching, setIsSearching] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
 
   const [toast, setToast] = useState<{
     show: boolean;
@@ -210,6 +211,7 @@ const AuditorsPage = () => {
     try {
       setIsSearching(true);
       setSearchResult(null);
+      setAddError(null);
 
       const response = await request(
         SEARCH_USER_BY_EMAIL,
@@ -235,6 +237,7 @@ const AuditorsPage = () => {
 
     try {
       setIsAdding(true);
+      setAddError(null);
 
       const response = await request(
         ADD_AUDITOR_MUTATION,
@@ -257,33 +260,20 @@ const AuditorsPage = () => {
           setAuditors(auditorsResponse.organizationAuditors.auditors || []);
         }
 
-        setToast({
-          show: true,
-          message:
-            response.addAuditorToOrganization.message ||
-            "Evaluator added successfully",
-          type: "success",
-        });
-
         // Close modal and reset
         setIsAddModalOpen(false);
         setEmailInput("");
         setSearchResult(null);
       } else {
-        setToast({
-          show: true,
-          message:
-            response?.addAuditorToOrganization?.message ||
-            "Failed to add auditor",
-          type: "error",
-        });
+        const errorMessage =
+          response?.addAuditorToOrganization?.message ||
+          "Failed to add auditor";
+
+        setAddError(errorMessage);
       }
     } catch (err: any) {
-      setToast({
-        show: true,
-        message: err?.message || "Error adding auditor",
-        type: "error",
-      });
+      const errorMessage = err?.message || "Error adding auditor";
+      setAddError(errorMessage);
     } finally {
       setIsAdding(false);
     }
@@ -455,7 +445,18 @@ const AuditorsPage = () => {
         </div>
       )}
 
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+      <Dialog
+        open={isAddModalOpen}
+        onOpenChange={(open) => {
+          setIsAddModalOpen(open);
+          if (!open) {
+            // Reset form and error state whenever the modal is closed
+            setEmailInput("");
+            setSearchResult(null);
+            setAddError(null);
+          }
+        }}
+      >
         <Dialog.Content
           title="Add Evaluator"
           footer={<></>}
@@ -471,6 +472,7 @@ const AuditorsPage = () => {
                 setIsAddModalOpen(false);
                 setEmailInput("");
                 setSearchResult(null);
+                setAddError(null);
               },
             },
           ]}
@@ -557,13 +559,23 @@ const AuditorsPage = () => {
                 )}
               </div>
             )}
+
+            {addError && (
+              <Text
+                variant="bodySm"
+                color="critical"
+                className="mt-2"
+              >
+                {addError}
+              </Text>
+            )}
           </div>
         </Dialog.Content>
       </Dialog>
 
       {toast.show && (
         <div
-          className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 ${
+          className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 ${
             toast.type === "success"
               ? "bg-green-600 text-white"
               : "bg-red-600 text-white"
