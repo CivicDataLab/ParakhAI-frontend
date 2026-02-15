@@ -5,7 +5,7 @@ import { Pagination } from "@/components/Pagination/Pagination";
 import { useGraphQL } from "@/lib/api";
 import { IconChevronDown, IconMinus, IconX } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
-import { toTitleCase } from "@/lib/utils";
+import { stripMarkdown, toTitleCase } from "@/lib/utils";
 import {
   Button,
   Card,
@@ -585,7 +585,9 @@ const PromptLibrariesPage = () => {
                   >
                     <Card
                       title={library.title}
-                      description={library.description || ""}
+                      description={
+                        stripMarkdown(library.description || "") || ""
+                      }
                       variation="collapsed"
                       iconColor="highlight"
                       metadataContent={metadataContent}
