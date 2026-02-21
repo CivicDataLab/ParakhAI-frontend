@@ -18,6 +18,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { SeverityBarChart } from "./SeverityBarChart";
 
 const GET_AUDIT_QUERY = `
   query GetAudit($auditId: ID!) {
@@ -311,6 +312,7 @@ const EvaluationDetail = ({
     }>
   >([]);
   const [apiModuleIssues, setApiModuleIssues] = useState<ModuleIssue[]>([]);
+  const [metricSummary, setMetricSummary] = useState<Record<string, Record<string, { risk_distribution: Record<string, number> }>>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -596,6 +598,7 @@ const EvaluationDetail = ({
       const data = await request<{
         auditSummaries: Array<{
           hasReport: boolean;
+          metricSummary: Record<string, Record<string, { risk_distribution: Record<string, number> }>> | null;
           auditReport: {
             name: string;
             size: number | null;
@@ -607,6 +610,9 @@ const EvaluationDetail = ({
       const summary = data?.auditSummaries?.[0];
       if (summary?.auditReport) {
         setAuditReport(summary.auditReport);
+      }
+      if (summary?.metricSummary) {
+        setMetricSummary(summary.metricSummary);
       }
     } catch (err) {
       console.error("Error fetching audit summary:", err);
@@ -1204,6 +1210,13 @@ const EvaluationDetail = ({
                     return (
                       <TabPanel key={index} value={moduleName}>
                         <div className="mt-5 m-5">
+                          <SeverityBarChart
+                            issues={apiModuleIssues.filter(
+                              (issue) => issue.module === moduleName
+                            )}
+                            metricSummary={metricSummary[moduleName]}
+                          />
+
                           <Text
                             variant="bodyLg"
                             fontWeight="bold"
