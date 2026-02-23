@@ -1,10 +1,7 @@
 "use client";
 
 import { useGraphQL } from "@/lib/api";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { IconDownload, IconMinus, IconPlus } from "@tabler/icons-react";
-import type { ColumnDef } from "@tanstack/react-table";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -19,6 +16,9 @@ import {
   Text,
 } from "opub-ui";
 import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { SeverityBarChart } from "./SeverityBarChart";
 
 const GET_AUDIT_QUERY = `
   query GetAudit($auditId: ID!) {
@@ -161,6 +161,7 @@ const GET_AUDIT_SUMMARY = `
       executiveSummary
       createdAt
       updatedAt
+      hasReport
       auditReport {
         name
         size
@@ -291,6 +292,7 @@ const EvaluationDetail = ({
 }: EvaluationDetailProps) => {
   const {
     request,
+    accessToken,
     isAuthenticated,
     isLoading: isSessionLoading,
   } = useGraphQL();
@@ -310,6 +312,7 @@ const EvaluationDetail = ({
     }>
   >([]);
   const [apiModuleIssues, setApiModuleIssues] = useState<ModuleIssue[]>([]);
+  const [metricSummary, setMetricSummary] = useState<Record<string, Record<string, { risk_distribution: Record<string, number> }>>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -320,7 +323,44 @@ const EvaluationDetail = ({
 
   const isFetchingRef = useRef(false);
   const lastFetchedAuditIdRef = useRef<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
   const isReportReady = Boolean(auditReport?.url);
+
+  const downloadReport = async () => {
+    if (!evaluationId || isDownloading) return;
+    setIsDownloading(true);
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_BASE_URL?.replace(/\/$/, "");
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
+      if (orgId) headers["organization"] = orgId;
+
+      const res = await fetch(
+        `${backendUrl}/api/audits/${evaluationId}/report/download/`,
+        { method: "GET", headers }
+      );
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.detail || `Download failed (${res.status})`);
+      }
+
+      const { url, name } = await res.json();
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name || "audit_report.pdf";
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (err: any) {
+      console.error("Report download failed:", err);
+      alert(err?.message || "Failed to download report. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   // Fetch manual test cases
   const fetchManualTestCases = async () => {
@@ -557,6 +597,8 @@ const EvaluationDetail = ({
     try {
       const data = await request<{
         auditSummaries: Array<{
+          hasReport: boolean;
+          metricSummary: Record<string, Record<string, { risk_distribution: Record<string, number> }>> | null;
           auditReport: {
             name: string;
             size: number | null;
@@ -568,6 +610,9 @@ const EvaluationDetail = ({
       const summary = data?.auditSummaries?.[0];
       if (summary?.auditReport) {
         setAuditReport(summary.auditReport);
+      }
+      if (summary?.metricSummary) {
+        setMetricSummary(summary.metricSummary);
       }
     } catch (err) {
       console.error("Error fetching audit summary:", err);
@@ -1165,6 +1210,13 @@ const EvaluationDetail = ({
                     return (
                       <TabPanel key={index} value={moduleName}>
                         <div className="mt-5 m-5">
+                          <SeverityBarChart
+                            issues={apiModuleIssues.filter(
+                              (issue) => issue.module === moduleName
+                            )}
+                            metricSummary={metricSummary[moduleName]}
+                          />
+
                           <Text
                             variant="bodyLg"
                             fontWeight="bold"
@@ -1334,7 +1386,7 @@ const EvaluationDetail = ({
       <div className="flex flex-col items-center gap-4 pt-8">
         <Button
           kind="secondary"
-          disabled={!isReportReady}
+          disabled={!isReportReady || isDownloading}
           icon={
             <Icon
               source={IconDownload}
@@ -1342,10 +1394,7 @@ const EvaluationDetail = ({
               className={isReportReady ? "text-white" : "text-black"}
             />
           }
-          onClick={() => {
-            if (!auditReport?.url) return;
-            window.open(auditReport.url, "_blank", "noopener,noreferrer");
-          }}
+          onClick={downloadReport}
           className={
             isReportReady
               ? "bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base [&_svg]:text-white [&_svg]:fill-white [&_svg]:stroke-white [&_*]:text-white [&_*]:fill-white [&_*]:stroke-white"
