@@ -62,20 +62,26 @@ const MainFooter = () => {
 
           {/* Right: Made by CivicDataLab and Social Media Icons */}
           <div className="footer-center flex items-center gap-1">
-            <Link
-              href={"https://www.civicdatalab.in"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:opacity-90 transition-opacity"
-            >
-              <Image
-                src="/images/logos/Made with logo.png"
-                alt="Made by CivicDataLab"
-                width={94}
-                height={32}
-                className="w-[94px] h-[32px]"
-              />
-            </Link>
+            <div className="logo-wrapper inline-flex items-center">
+              <Text className="text-white text-[14px] leading-5 font-normal mr-2">
+                made by
+              </Text>
+              <Link
+                href={"https://www.civicdatalab.in"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center hover:opacity-90 transition-opacity"
+                aria-label="CivicDataLab website"
+              >
+                <Image
+                  src="/images/logos/Full color.png"
+                  alt="CivicDataLab logo"
+                  width={94}
+                  height={32}
+                  className="w-[42px] h-[42px]"
+                />
+              </Link>
+            </div>
 
             {/* Social Media Icons */}
             <div className="footer-social flex items-center gap-[10px] ml-6">
