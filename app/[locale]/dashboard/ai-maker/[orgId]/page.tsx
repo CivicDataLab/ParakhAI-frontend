@@ -6,6 +6,7 @@ import { stripMarkdown } from "@/lib/utils";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { useAppSession } from "@/lib/session";
 import { Button, Card, DataTable, Spinner, Text } from "opub-ui";
 import { useEffect, useMemo, useState } from "react";
 import { useOrganization } from "./OrganizationContext";
@@ -66,10 +67,50 @@ const AIMakerDashboard = () => {
   const router = useRouter();
   const locale = params?.locale || "en";
   const orgId = params?.orgId as string;
-  const aiMakerBaseUrl =
+
+  // Build dynamic in-app URL using entityType/entitySlug (preferred).
+  // Fallback to current user's slug with entityType "self" when route params are missing.
+  const { user } = useAppSession();
+  const entityType = (params as any)?.entityType ?? "self";
+  // Safely read a slug-like value. `AppUser` type may not include `slug`,
+  // so cast `user` to `any` when accessing optional properties not declared on the type.
+  const rawEntitySlug =
+    (params as any)?.entitySlug ??
+    (user as any)?.slug ??
+    (user as any)?.username ??
+    (user as any)?.name ??
+    orgId ??
+    "";
+  const entitySlug = encodeURIComponent(String(rawEntitySlug).trim());
+
+  // If you want the link to go to the external dev site (e.g. dev.civicdataspace.in),
+  // set NEXT_PUBLIC_DATASPACE_HOST or NEXT_PUBLIC_AI_MAKER_URL in your environment.
+  // Otherwise the code will use an in-app path.
+  const externalHost =
+    process.env.NEXT_PUBLIC_DATASPACE_HOST ||
     process.env.NEXT_PUBLIC_AI_MAKER_URL ||
-    "https://dev.civicdataspace.in/dashboard";
-  const addModelUrl = aiMakerBaseUrl.replace(/\/$/, "");
+    "";
+
+  const inAppPath = `/${locale}/dashboard/${entityType}/${entitySlug}/aimodels?tab=registered`;
+
+  // Build external URL without duplicating "/dashboard" or the locale segment.
+  // External path should be: /dashboard/{entityType}/{entitySlug}/aimodels?tab=registered
+  const externalPath = `/dashboard/${entityType}/${entitySlug}/aimodels?tab=registered`;
+  let externalUrl = "";
+  if (externalHost.trim() !== "") {
+    const host = externalHost.replace(/\/$/, "");
+    if (/\/dashboard$/.test(host)) {
+      // host already ends with /dashboard -> don't add another /dashboard
+      externalUrl = `${host}${externalPath.replace(/^\/dashboard/, "")}`;
+    } else {
+      externalUrl = `${host}${externalPath}`;
+    }
+  }
+
+  // Final URL to use in the Add button:
+  // - If externalUrl is available use it (goes to dev.civicdataspace.in)
+  // - Otherwise use in-app path (keeps navigation internal)
+  const addModelUrl = externalUrl || inAppPath;
   const [auditMetrics, setAuditMetrics] = useState<AuditMetrics | null>(null);
 
   // GraphQL queries

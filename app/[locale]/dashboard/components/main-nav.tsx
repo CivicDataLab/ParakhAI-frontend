@@ -128,6 +128,7 @@ const MainNav = () => {
                   />
                 ) : (
                   <button
+                  type="button"
                     onClick={() => signIn("keycloak")}
                     className="bg-secondaryGreen text-black 
                                text-base font-medium uppercase 
