@@ -1,7 +1,8 @@
 'use client';
 
+import { logout } from '@/lib/auth-helpers';
 import { useAppSession } from '@/lib/session';
-import { signOut, useSession } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 interface SessionGuardProps {
@@ -42,10 +43,7 @@ export function SessionGuard({ children, fallback }: SessionGuardProps) {
       clearTimeout(validationTimeoutRef.current);
     }
     
-    await signOut({ 
-      callbackUrl: '/',
-      redirect: true 
-    });
+    await logout('/');
   }, []);
 
   // Check if token is expired client-side
@@ -265,7 +263,7 @@ export function useAuthErrorHandler() {
     if (isAuthError) {
       hasLoggedOut.current = true;
       console.warn('🔒 Auth error detected, logging out:', error?.message);
-      await signOut({ callbackUrl: '/', redirect: true });
+      await logout('/');
     }
   }, []);
 
