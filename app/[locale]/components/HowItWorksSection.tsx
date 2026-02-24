@@ -47,8 +47,8 @@ interface TabPanelProps {
 
 const TabPanel = ({ feature }: TabPanelProps) => {
   return (
-    <div className="flex flex-row gap-4 items-center flex-wrap">
-      <div className="p-5 md:p-6 w-full md:w-1/2">
+      <div className="flex flex-row gap-4 items-center flex-wrap">
+      <div className="p-0 md:p-6 w-full md:w-1/2">
         <h1
           className="text-base md:text-lg font-bold text-gray-900 text-[20px]
 "
@@ -57,14 +57,12 @@ const TabPanel = ({ feature }: TabPanelProps) => {
         </h1>
         {/* <p className="text-sm mt-1 text-[#6849EE]">{feature.subtitle}</p> */}
       </div>
-      <div className="md:px-6 pb-6">
+      <div className="px-0 pb-0 md:px-6 md:pb-6">
         <div className="relative w-full rounded-xl overflow-hidden shadow-sm">
           <img
             src={feature.image}
             alt={feature.title}
-            width={600}
-            height={400}
-            className=" object-contain rounded"
+            className="w-full md:w-[600px] h-[400px] object-contain rounded"
           />
         </div>
       </div>
@@ -94,7 +92,7 @@ const HowItWorksSection = () => {
 
           <div className=" flex flex-col w-full   ">
             {/* Tab buttons */}
-            <div className="flex justify-center flex-wrap gap-2 mb-6 gap-5 lg:gap-10">
+            <div className="flex justify-center flex-wrap gap-2 md:gap-5 lg:gap-10 mb-6">
               {TAB_TITLES.map((title, index) => (
                 <button
                   key={index}
