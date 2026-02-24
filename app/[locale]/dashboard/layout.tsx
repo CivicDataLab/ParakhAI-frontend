@@ -20,9 +20,7 @@ export default function DashboardLayout({
         <main className="flex-1 relative z-0">
           {children}
         </main>
-        <footer>
-          <MainFooter />
-        </footer>
+        <MainFooter />
       </div>
     </DashboardGuard>
   );
