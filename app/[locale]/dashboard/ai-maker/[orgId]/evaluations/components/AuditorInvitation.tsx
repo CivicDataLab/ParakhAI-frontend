@@ -1,7 +1,13 @@
 "use client";
 
 import { useGraphQL } from "@/lib/api";
-import { IconPlus, IconSearch, IconUser, IconUserCheck, IconX } from "@tabler/icons-react";
+import {
+  IconPlus,
+  IconSearch,
+  IconUser,
+  IconUserCheck,
+  IconX,
+} from "@tabler/icons-react";
 import { Button, Dialog, Spinner, Text } from "opub-ui";
 import { useEffect, useState } from "react";
 
@@ -38,6 +44,7 @@ type SearchUserResult = {
 interface AuditorInvitationProps {
   organizationId: string;
   modelId: string;
+  modelName: string;
   modelVersionId: number;
   onAssignmentCreated?: (assignment: AuditorAssignment) => void;
   isOpen?: boolean;
@@ -138,6 +145,7 @@ const ASSIGN_AUDITOR_TO_VERSION = `
 const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   organizationId,
   modelId,
+  modelName,
   modelVersionId,
   onAssignmentCreated,
   isOpen: externalIsOpen,
@@ -153,10 +161,12 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   const [loading, setLoading] = useState(true);
 
   const [internalIsOpen, setInternalIsOpen] = useState(false);
-  
+
   const isModalOpen = isControlled ? externalIsOpen : internalIsOpen;
-  const setIsModalOpen = isControlled 
-    ? (open: boolean) => { if (!open && externalOnClose) externalOnClose(); }
+  const setIsModalOpen = isControlled
+    ? (open: boolean) => {
+        if (!open && externalOnClose) externalOnClose();
+      }
     : setInternalIsOpen;
   const [selectedAuditorId, setSelectedAuditorId] = useState<string>("");
   const [notes, setNotes] = useState("");
@@ -164,7 +174,9 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
 
   const [showAddNew, setShowAddNew] = useState(false);
   const [emailInput, setEmailInput] = useState("");
-  const [searchResult, setSearchResult] = useState<SearchUserResult | null>(null);
+  const [searchResult, setSearchResult] = useState<SearchUserResult | null>(
+    null,
+  );
   const [isSearching, setIsSearching] = useState(false);
   const [isAddingNew, setIsAddingNew] = useState(false);
 
@@ -183,12 +195,12 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
           request(
             GET_ORGANIZATION_AUDITORS,
             { organizationId },
-            { organization: organizationId }
+            { organization: organizationId },
           ),
           request(
             GET_AUDITOR_ASSIGNMENTS,
             { modelId, modelVersionId },
-            { organization: organizationId }
+            { organization: organizationId },
           ),
         ]);
 
@@ -212,7 +224,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   }, [organizationId, modelId, modelVersionId, request, isModalOpen]);
 
   const availableAuditors = auditors.filter(
-    (auditor) => !assignments.some((a) => a.auditorEmail === auditor.email)
+    (auditor) => !assignments.some((a) => a.auditorEmail === auditor.email),
   );
 
   const handleSearchUser = async () => {
@@ -225,7 +237,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
       const response = await request(
         SEARCH_USER_BY_EMAIL,
         { email: emailInput.trim() },
-        { organization: organizationId }
+        { organization: organizationId },
       );
 
       if (response?.searchUserByEmail) {
@@ -247,10 +259,18 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
     try {
       setIsAddingNew(true);
 
-      const existingAuditor = auditors.find(a => a.id === searchResult.user?.id || a.email === searchResult.user?.email);
-      
+      const existingAuditor = auditors.find(
+        (a) =>
+          a.id === searchResult.user?.id ||
+          a.email === searchResult.user?.email,
+      );
+
       if (existingAuditor) {
-        await handleAssignAuditor(existingAuditor.id, existingAuditor.email, existingAuditor.username);
+        await handleAssignAuditor(
+          existingAuditor.id,
+          existingAuditor.email,
+          existingAuditor.username,
+        );
         setShowAddNew(false);
         setEmailInput("");
         setSearchResult(null);
@@ -263,31 +283,40 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
           organizationId,
           input: { email: searchResult.user.email },
         },
-        { organization: organizationId }
+        { organization: organizationId },
       );
 
       if (addResponse?.addAuditorToOrganization?.success) {
         const auditorsResponse = await request(
           GET_ORGANIZATION_AUDITORS,
           { organizationId },
-          { organization: organizationId }
+          { organization: organizationId },
         );
 
         if (auditorsResponse?.organizationAuditors) {
           setAuditors(auditorsResponse.organizationAuditors.auditors || []);
         }
 
-        await handleAssignAuditor(searchResult.user.id, searchResult.user.email, searchResult.user.username);
+        await handleAssignAuditor(
+          searchResult.user.id,
+          searchResult.user.email,
+          searchResult.user.username,
+        );
 
         setShowAddNew(false);
         setEmailInput("");
         setSearchResult(null);
       } else {
-        const errorMessage = addResponse?.addAuditorToOrganization?.message || "";
-        if (errorMessage.includes("already") && errorMessage.includes("member")) {
+        const errorMessage =
+          addResponse?.addAuditorToOrganization?.message || "";
+        if (
+          errorMessage.includes("already") &&
+          errorMessage.includes("member")
+        ) {
           setToast({
             show: true,
-            message: "This user is already a member of the organization with a different role. They need to be added as an auditor first.",
+            message:
+              "This user is already a member of the organization with a different role. They need to be added as an auditor first.",
             type: "error",
           });
         } else {
@@ -312,7 +341,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   const handleAssignAuditor = async (
     auditorId?: string,
     auditorEmail?: string,
-    auditorUsername?: string
+    auditorUsername?: string,
   ) => {
     const targetAuditorId = auditorId || selectedAuditorId;
     if (!targetAuditorId) return;
@@ -329,12 +358,13 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
         {
           input: {
             modelId,
+            modelName,
             modelVersionId,
             auditorEmail: email,
             notes,
           },
         },
-        { organization: organizationId }
+        { organization: organizationId },
       );
 
       if (response?.assignAuditorToVersion?.success) {
@@ -357,7 +387,9 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
       } else {
         setToast({
           show: true,
-          message: response?.assignAuditorToVersion?.message || "Failed to assign evaluator",
+          message:
+            response?.assignAuditorToVersion?.message ||
+            "Failed to assign evaluator",
           type: "error",
         });
       }
@@ -375,11 +407,12 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   const auditorOptions = [
     { label: "Select an evaluator...", value: "" },
     ...availableAuditors.map((auditor) => {
-      const displayName = auditor.firstName && auditor.lastName
-        ? `${auditor.firstName} ${auditor.lastName}`
-        : auditor.username !== auditor.email
-          ? auditor.username
-          : auditor.email.split('@')[0];
+      const displayName =
+        auditor.firstName && auditor.lastName
+          ? `${auditor.firstName} ${auditor.lastName}`
+          : auditor.username !== auditor.email
+            ? auditor.username
+            : auditor.email.split("@")[0];
       return {
         label: `${displayName} (${auditor.email})`,
         value: auditor.id,
@@ -390,7 +423,9 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   const toastNotification = toast.show && (
     <div
       className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 ${
-        toast.type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"
+        toast.type === "success"
+          ? "bg-green-600 text-white"
+          : "bg-red-600 text-white"
       }`}
     >
       <span>{toast.message}</span>
@@ -406,17 +441,26 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   const inviteDialog = (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <Dialog.Content
-        title={versionLabel ? `Invite Evaluator for Version ${versionLabel}` : "Invite Evaluator"}
+        title={
+          versionLabel
+            ? `Invite Evaluator for Version ${versionLabel}`
+            : "Invite Evaluator"
+        }
         footer={<></>}
         primaryAction={{
           content: showAddNew
-            ? isAddingNew ? "Adding..." : "Add & Assign Evaluator"
-            : isAssigning ? "Assigning..." : "Assign Evaluator",
-          onAction: showAddNew ? handleAddNewAuditor : () => handleAssignAuditor(),
+            ? isAddingNew
+              ? "Adding..."
+              : "Add & Assign Evaluator"
+            : isAssigning
+              ? "Assigning..."
+              : "Assign Evaluator",
+          onAction: showAddNew
+            ? handleAddNewAuditor
+            : () => handleAssignAuditor(),
           disabled: showAddNew
             ? !searchResult?.found || isAddingNew
             : !selectedAuditorId || isAssigning,
-            
         }}
         secondaryActions={[
           {
@@ -436,7 +480,8 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
           {!showAddNew ? (
             <>
               <Text variant="bodySm" className="text-gray-600">
-                Select an evaluator from your organization to assign to this model version.
+                Select an evaluator from your organization to assign to this
+                model version.
               </Text>
 
               {loading ? (
@@ -466,7 +511,8 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
               ) : (
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <Text variant="bodySm" className="text-yellow-800">
-                    No available evaluators. All evaluators are already assigned or you need to add new evaluators to your organization.
+                    No available evaluators. All evaluators are already assigned
+                    or you need to add new evaluators to your organization.
                   </Text>
                 </div>
               )}
@@ -485,10 +531,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
               </div>
 
               <div className="pt-2 border-t">
-                <Button
-                  kind="tertiary"
-                  onClick={() => setShowAddNew(true)}
-                >
+                <Button kind="tertiary" onClick={() => setShowAddNew(true)}>
                   Can&apos;t find the auditor? Add by email
                 </Button>
               </div>
@@ -496,8 +539,8 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
           ) : (
             <>
               <Text variant="bodySm" className="text-gray-600">
-                Search for a user by email. If found, they will be added as an auditor
-                to your organization and assigned to this model version.
+                Search for a user by email. If found, they will be added as an
+                auditor to your organization and assigned to this model version.
               </Text>
 
               <div className="flex gap-2">
@@ -542,11 +585,13 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                         </div>
                         <div>
                           <Text variant="bodySm" fontWeight="medium">
-                            {searchResult.user.firstName && searchResult.user.lastName
+                            {searchResult.user.firstName &&
+                            searchResult.user.lastName
                               ? `${searchResult.user.firstName} ${searchResult.user.lastName}`
-                              : searchResult.user.username !== searchResult.user.email
+                              : searchResult.user.username !==
+                                  searchResult.user.email
                                 ? searchResult.user.username
-                                : searchResult.user.email.split('@')[0]}
+                                : searchResult.user.email.split("@")[0]}
                           </Text>
                           <Text variant="bodySm" className="text-gray-600">
                             {searchResult.user.email}
@@ -555,14 +600,18 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                       </div>
                       <div className="flex items-center gap-2">
                         <IconUserCheck size={20} className="text-green-600" />
-                        <Text variant="bodySm" className="text-green-700 font-medium">
+                        <Text
+                          variant="bodySm"
+                          className="text-green-700 font-medium"
+                        >
                           Ready to assign
                         </Text>
                       </div>
                     </div>
                   ) : (
                     <Text variant="bodySm" className="text-red-700">
-                      {searchResult.message || "User not found. They must have a CivicDataSpace account."}
+                      {searchResult.message ||
+                        "User not found. They must have a CivicDataSpace account."}
                     </Text>
                   )}
                 </div>
@@ -656,10 +705,10 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                     assignment.status === "ACCEPTED"
                       ? "bg-green-100 text-green-700"
                       : assignment.status === "DECLINED"
-                      ? "bg-red-100 text-red-700"
-                      : assignment.status === "COMPLETED"
-                      ? "bg-blue-100 text-blue-700"
-                      : "bg-yellow-100 text-yellow-700"
+                        ? "bg-red-100 text-red-700"
+                        : assignment.status === "COMPLETED"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-yellow-100 text-yellow-700"
                   }`}
                 >
                   {assignment.status}

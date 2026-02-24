@@ -139,6 +139,7 @@ const GET_MY_ASSIGNMENTS_FOR_MODEL = `
       id
       organizationId
       modelId
+      modelName
       modelVersionId
       auditorId
       auditorEmail
@@ -282,7 +283,7 @@ const AuditorModelDetailPage = () => {
 
   const handleUpdateStatus = async (
     assignmentId: string,
-    newStatus: string
+    newStatus: string,
   ) => {
     try {
       setUpdatingId(assignmentId);
@@ -295,8 +296,8 @@ const AuditorModelDetailPage = () => {
       if (response?.updateAuditorAssignmentStatus?.success) {
         setAssignments((prev) =>
           prev.map((a) =>
-            a.id === assignmentId ? { ...a, status: newStatus } : a
-          )
+            a.id === assignmentId ? { ...a, status: newStatus } : a,
+          ),
         );
 
         setToast({
@@ -331,7 +332,7 @@ const AuditorModelDetailPage = () => {
   const handleStartEvaluation = (versionId: number) => {
     // Navigate to auditor's evaluation creation page
     router.push(
-      `/${locale}/dashboard/auditor/evaluations/new?modelId=${modelId}&versionId=${versionId}`
+      `/${locale}/dashboard/auditor/evaluations/new?modelId=${modelId}&versionId=${versionId}`,
     );
   };
 
@@ -533,7 +534,7 @@ const AuditorModelDetailPage = () => {
                   <div className="flex flex-col gap-4">
                     {assignedVersions.map((v) => {
                       const assignment = getAssignmentForVersion(
-                        parseInt(v.id)
+                        parseInt(v.id),
                       );
                       const isHighlighted = highlightVersionId === v.id;
                       const colors = assignment
@@ -602,7 +603,7 @@ const AuditorModelDetailPage = () => {
                                       e.stopPropagation();
                                       handleUpdateStatus(
                                         assignment.id,
-                                        "ACCEPTED"
+                                        "ACCEPTED",
                                       );
                                     }}
                                     disabled={updatingId === assignment.id}
@@ -625,7 +626,7 @@ const AuditorModelDetailPage = () => {
                                       e.stopPropagation();
                                       handleUpdateStatus(
                                         assignment.id,
-                                        "DECLINED"
+                                        "DECLINED",
                                       );
                                     }}
                                     disabled={updatingId === assignment.id}
@@ -708,7 +709,7 @@ const AuditorModelDetailPage = () => {
                                   {formatDateShort(
                                     v.createdAt ||
                                       model.updatedAt ||
-                                      new Date().toISOString()
+                                      new Date().toISOString(),
                                   )}
                                 </Text>
                               </div>
@@ -793,11 +794,11 @@ const AuditorModelDetailPage = () => {
                       onClick={() => {
                         if (assignedVersions[0]) {
                           handleStartEvaluation(
-                            parseInt(assignedVersions[0].id)
+                            parseInt(assignedVersions[0].id),
                           );
                         } else {
                           router.push(
-                            `/${locale}/dashboard/auditor/evaluations/new?modelId=${modelId}`
+                            `/${locale}/dashboard/auditor/evaluations/new?modelId=${modelId}`,
                           );
                         }
                       }}

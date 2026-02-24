@@ -40,6 +40,7 @@ const GET_MY_ASSIGNMENTS = `
       id
       organizationId
       modelId
+      modelName
       modelVersionId
       auditorId
       auditorEmail
@@ -134,7 +135,7 @@ const AssignmentsPage = () => {
 
   const handleUpdateStatus = async (
     assignmentId: string,
-    newStatus: string
+    newStatus: string,
   ) => {
     try {
       setUpdatingId(assignmentId);
@@ -154,8 +155,8 @@ const AssignmentsPage = () => {
                   updatedAt:
                     response.updateAuditorAssignmentStatus.assignment.updatedAt,
                 }
-              : a
-          )
+              : a,
+          ),
         );
 
         setToast({
@@ -185,7 +186,7 @@ const AssignmentsPage = () => {
 
   const handleStartEvaluation = (assignment: AuditorAssignment) => {
     router.push(
-      `/${locale}/dashboard/auditor/models/${assignment.modelId}?versionId=${assignment.modelVersionId}`
+      `/${locale}/dashboard/auditor/models/${assignment.modelId}?versionId=${assignment.modelVersionId}`,
     );
   };
 

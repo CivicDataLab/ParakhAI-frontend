@@ -6,15 +6,7 @@ import { createColumnHelper } from "@tanstack/react-table";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import {
-    Avatar,
-    Badge,
-    Button,
-    DataTable,
-    Spinner,
-    Tag,
-    Text
-} from "opub-ui";
+import { Avatar, Badge, Button, DataTable, Spinner, Tag, Text } from "opub-ui";
 import React from "react";
 import AuditorInvitation from "../../evaluations/components/AuditorInvitation";
 import { useOrganization } from "../../OrganizationContext";
@@ -200,11 +192,19 @@ const ModelDetailPage = () => {
       try {
         setLoading(true);
         const [modelResponse, evalResponse] = await Promise.all([
-          request<{ aiModel: AIModel }>(GET_AI_MODEL, { modelId }, { organization: orgId }),
-          request<{ audits: Evaluation[] }>(GET_EVALUATIONS, {
-            modelId,
-            limit: 10,
-          }, { organization: orgId }),
+          request<{ aiModel: AIModel }>(
+            GET_AI_MODEL,
+            { modelId },
+            { organization: orgId },
+          ),
+          request<{ audits: Evaluation[] }>(
+            GET_EVALUATIONS,
+            {
+              modelId,
+              limit: 10,
+            },
+            { organization: orgId },
+          ),
         ]);
 
         if (modelResponse?.aiModel) setModel(modelResponse.aiModel);
@@ -445,7 +445,7 @@ const ModelDetailPage = () => {
                               {formatDateShort(
                                 v.createdAt ||
                                   model.updatedAt ||
-                                  new Date().toISOString()
+                                  new Date().toISOString(),
                               )}
                             </Text>
                           </div>
@@ -730,6 +730,7 @@ const ModelDetailPage = () => {
         <AuditorInvitation
           organizationId={orgId}
           modelId={modelId}
+          modelName={model.displayName}
           modelVersionId={selectedVersionForAuditor.id}
           onAssignmentCreated={() => {
             // Optionally refresh data or show success message
