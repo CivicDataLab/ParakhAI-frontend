@@ -16,6 +16,7 @@ const GET_MY_ASSIGNMENTS_FOR_MODEL = `
       id
       organizationId
       modelId
+      modelName
       modelVersionId
       status
     }
@@ -36,6 +37,7 @@ type Assignment = {
   id: string;
   organizationId: string;
   modelId: string;
+  modelName: string;
   modelVersionId: number;
   status: string;
 };
@@ -45,7 +47,11 @@ const AuditorNewEvaluationPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const locale = params?.locale || "en";
-  const { request, isAuthenticated, isLoading: isSessionLoading } = useGraphQL();
+  const {
+    request,
+    isAuthenticated,
+    isLoading: isSessionLoading,
+  } = useGraphQL();
   const { user } = useAppSession();
 
   const modelId = searchParams.get("modelId");
@@ -53,15 +59,22 @@ const AuditorNewEvaluationPage = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [validAssignment, setValidAssignment] = useState<Assignment | null>(null);
-  const [organization, setOrganization] = useState<{ name: string; logoUrl: string | null } | null>(null);
+  const [validAssignment, setValidAssignment] = useState<Assignment | null>(
+    null,
+  );
+  const [organization, setOrganization] = useState<{
+    name: string;
+    logoUrl: string | null;
+  } | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated || isSessionLoading) return;
 
     const checkAssignment = async () => {
       if (!modelId) {
-        setError("No model specified. Please select a model from your assignments.");
+        setError(
+          "No model specified. Please select a model from your assignments.",
+        );
         setLoading(false);
         return;
       }
@@ -73,9 +86,10 @@ const AuditorNewEvaluationPage = () => {
         });
 
         const assignments = response?.myAssignments || [];
-        
+
         const assignment = assignments.find((a: any) => {
-          const statusValid = a.status === "ACCEPTED" || a.status === "IN_PROGRESS";
+          const statusValid =
+            a.status === "ACCEPTED" || a.status === "IN_PROGRESS";
           if (versionId) {
             return statusValid && a.modelVersionId === parseInt(versionId);
           }
@@ -84,7 +98,7 @@ const AuditorNewEvaluationPage = () => {
 
         if (assignment) {
           setValidAssignment(assignment);
-          
+
           // Fetch organization details for context
           try {
             const orgResponse = await request(GET_ORGANIZATION, {
@@ -101,7 +115,7 @@ const AuditorNewEvaluationPage = () => {
           }
         } else {
           setError(
-            "You don't have an accepted assignment for this model. Please accept the invitation first."
+            "You don't have an accepted assignment for this model. Please accept the invitation first.",
           );
         }
       } catch (err: any) {
@@ -170,7 +184,7 @@ const AuditorNewEvaluationPage = () => {
     // Render the evaluation form inline with organization context
     return (
       <OrganizationContext.Provider value={{ organization, isLoading: false }}>
-        <NewEvaluationContent 
+        <NewEvaluationContent
           orgId={validAssignment.organizationId}
           fromAuditor={true}
         />

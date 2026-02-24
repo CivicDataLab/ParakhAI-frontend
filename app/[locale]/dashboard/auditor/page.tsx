@@ -40,6 +40,7 @@ const GET_MY_ASSIGNMENTS = `
       id
       organizationId
       modelId
+      modelName
       modelVersionId
       auditorId
       auditorEmail
@@ -124,7 +125,7 @@ const AuditorDashboard = () => {
 
   const handleUpdateStatus = async (
     assignmentId: string,
-    newStatus: string
+    newStatus: string,
   ) => {
     try {
       setUpdatingId(assignmentId);
@@ -144,8 +145,8 @@ const AuditorDashboard = () => {
                   updatedAt:
                     response.updateAuditorAssignmentStatus.assignment.updatedAt,
                 }
-              : a
-          )
+              : a,
+          ),
         );
 
         setToast({
@@ -175,7 +176,7 @@ const AuditorDashboard = () => {
 
   const handleStartEvaluation = (assignment: AuditorAssignment) => {
     router.push(
-      `/${locale}/dashboard/auditor/evaluations/new?modelId=${assignment.modelId}&versionId=${assignment.modelVersionId}`
+      `/${locale}/dashboard/auditor/evaluations/new?modelId=${assignment.modelId}&versionId=${assignment.modelVersionId}`,
     );
   };
 
@@ -186,10 +187,10 @@ const AuditorDashboard = () => {
   // Filter assignments by status
   const pendingAssignments = assignments.filter((a) => a.status === "PENDING");
   const activeAssignments = assignments.filter(
-    (a) => a.status === "ACCEPTED" || a.status === "IN_PROGRESS"
+    (a) => a.status === "ACCEPTED" || a.status === "IN_PROGRESS",
   );
   const completedAssignments = assignments.filter(
-    (a) => a.status === "COMPLETED"
+    (a) => a.status === "COMPLETED",
   );
 
   // Calculate metrics for Overview section
@@ -298,7 +299,7 @@ const AuditorDashboard = () => {
           href={`/${locale}/dashboard/auditor/models/${info.row.original.modelId}`}
           className="text-baseVioletSolid11 hover:underline font-medium"
         >
-          {info.getValue() || `Model ${info.row.original.modelId.slice(0, 8)}`}
+          {info.getValue() || info.row.original.modelName}
         </Link>
       ),
     }),
