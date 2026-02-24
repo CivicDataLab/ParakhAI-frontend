@@ -54,80 +54,59 @@ const GetStartedSection = () => {
         </div>
 
         {/* Steps - responsive: stacked on small screens, row on md+ */}
-        <div className="flex flex-col md:flex-row items-stretch gap-3 lg:gap-4 mb-10">
+        <div className="flex flex-col md:flex-row items-center gap-2 md:gap-3 lg:gap-4 mb-10">
           {steps.map((step, index) => (
-            <div key={index} className="w-full md:flex-1 min-w-0">
+            <>
+              {/* Card */}
+              <div className="w-full md:flex-1 min-w-0">
               <div className="flex flex-col gap-3 items-center p-4 rounded-2 justify-between bg-white w-full min-w-0 md:h-[240px]">
-                {/* Icon */}
-                <div className="rounded-lg flex flex-col items-center gap-4 ">
-                  <Image
-                    src={step.icon}
-                    alt={step.title}
-                    width={60}
-                    height={60}
-                    className="object-contain"
-                  />
-                  {/* Step Content */}
+                  {/* Icon */}
+                  <div className="rounded-lg flex flex-col items-center gap-4 ">
+                    <Image
+                      src={step.icon}
+                      alt={step.title}
+                      width={60}
+                      height={60}
+                      className="object-contain"
+                    />
+                    {/* Step Content */}
                   <Text
                     variant="headingLg"
                     fontWeight="semibold"
                     className="text-gray-900 text-center"
                   >
-                    {step.title}
+                      {step.title}
+                    </Text>
+                  </div>
+
+                  <Text
+                    variant="bodyMd"
+                    className="text-gray-600 leading-relaxed text-md text-center md:text-left"
+                  >
+                    {step.description}
                   </Text>
                 </div>
-
-                <Text
-                  variant="bodyMd"
-                  className="text-gray-600 leading-relaxed text-md text-center"
-                >
-                  {step.description}
-                </Text>
               </div>
+
+              {/* Connector (right on md+, down on small screens) */}
               {index < steps.length - 1 && (
-                <>
-                  {/* Down arrow connector for small screens */}
-                  <div
-                    className="flex md:hidden flex-shrink-0 w-8 h-8 rounded-full bg-white items-center justify-center shadow-sm mx-auto my-2"
-                    aria-hidden
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="text-gray-600"
-                    >
+                <div className="flex-shrink-0 flex items-center justify-center">
+                  {/* Down arrow for small screens */}
+                <div className="md:hidden w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm mx-auto my-1" aria-hidden>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
                       <path d="M6 9l6 6 6-6" />
                     </svg>
                   </div>
 
-                  {/* Right arrow connector for md+ screens */}
-                  <div
-                    className="hidden md:flex flex-shrink-0 w-8 h-8 rounded-full bg-white items-center justify-center shadow-sm mx-auto md:mx-0"
-                    aria-hidden
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="text-gray-600"
-                    >
+                  {/* Right arrow for md+ */}
+                  <div className="hidden md:flex w-8 h-8 rounded-full bg-white items-center justify-center shadow-sm md:mx-0" aria-hidden>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
                       <path d="M9 18l6-6-6-6" />
                     </svg>
                   </div>
-                </>
+                </div>
               )}
-            </div>
+            </>
           ))}
         </div>
 
