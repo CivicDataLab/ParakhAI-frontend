@@ -1,21 +1,22 @@
 "use client";
 
-import React from "react";
-import Link from "next/link";
-import { Session } from "next-auth";
-import { signIn, signOut } from "next-auth/react";
-import {
-  Avatar,
-  Button,
-  Divider,
-  Icon,
-  IconButton,
-  Popover,
-  Sheet,
-  Spinner,
-  Text,
-} from "opub-ui";
 import { Icons } from "@/components/icons";
+import { logout } from "@/lib/auth-helpers";
+import { Session } from "next-auth";
+import { signIn } from "next-auth/react";
+import Link from "next/link";
+import {
+    Avatar,
+    Button,
+    Divider,
+    Icon,
+    IconButton,
+    Popover,
+    Sheet,
+    Spinner,
+    Text,
+} from "opub-ui";
+import React from "react";
 
 type NavItem = { label: string; href: string };
 
@@ -169,7 +170,7 @@ export function ProfileContent({
               onClick={() => {
                 setOpen(false);
                 onClose();
-                signOut({ callbackUrl: "/" });
+                logout("/");
               }}
               className={`${logoutButtonClasses} py-2`}
             >

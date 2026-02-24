@@ -253,95 +253,11 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
     }
   };
 
-  const handleAddNewAuditor = async () => {
-    if (!searchResult?.user) return;
-
-    try {
-      setIsAddingNew(true);
-
-      const existingAuditor = auditors.find(
-        (a) =>
-          a.id === searchResult.user?.id ||
-          a.email === searchResult.user?.email,
-      );
-
-      if (existingAuditor) {
-        await handleAssignAuditor(
-          existingAuditor.id,
-          existingAuditor.email,
-          existingAuditor.username,
-        );
-        setShowAddNew(false);
-        setEmailInput("");
-        setSearchResult(null);
-        return;
-      }
-
-      const addResponse = await request(
-        ADD_AUDITOR_MUTATION,
-        {
-          organizationId,
-          input: { email: searchResult.user.email },
-        },
-        { organization: organizationId },
-      );
-
-      if (addResponse?.addAuditorToOrganization?.success) {
-        const auditorsResponse = await request(
-          GET_ORGANIZATION_AUDITORS,
-          { organizationId },
-          { organization: organizationId },
-        );
-
-        if (auditorsResponse?.organizationAuditors) {
-          setAuditors(auditorsResponse.organizationAuditors.auditors || []);
-        }
-
-        await handleAssignAuditor(
-          searchResult.user.id,
-          searchResult.user.email,
-          searchResult.user.username,
-        );
-
-        setShowAddNew(false);
-        setEmailInput("");
-        setSearchResult(null);
-      } else {
-        const errorMessage =
-          addResponse?.addAuditorToOrganization?.message || "";
-        if (
-          errorMessage.includes("already") &&
-          errorMessage.includes("member")
-        ) {
-          setToast({
-            show: true,
-            message:
-              "This user is already a member of the organization with a different role. They need to be added as an auditor first.",
-            type: "error",
-          });
-        } else {
-          setToast({
-            show: true,
-            message: errorMessage || "Failed to add evaluator",
-            type: "error",
-          });
-        }
-      }
-    } catch (err: any) {
-      setToast({
-        show: true,
-        message: err?.message || "Error adding evaluator",
-        type: "error",
-      });
-    } finally {
-      setIsAddingNew(false);
-    }
-  };
-
   const handleAssignAuditor = async (
     auditorId?: string,
     auditorEmail?: string,
     auditorUsername?: string,
+    suppressSuccessToast: boolean = false
   ) => {
     const targetAuditorId = auditorId || selectedAuditorId;
     if (!targetAuditorId) return;
@@ -375,11 +291,13 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
           onAssignmentCreated(newAssignment);
         }
 
-        setToast({
-          show: true,
-          message: "Evaluator assigned successfully",
-          type: "success",
-        });
+        if (!suppressSuccessToast) {
+          setToast({
+            show: true,
+            message: "Evaluator assigned successfully",
+            type: "success",
+          });
+        }
 
         setIsModalOpen(false);
         setSelectedAuditorId("");
@@ -401,6 +319,91 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
       });
     } finally {
       setIsAssigning(false);
+    }
+  };
+
+  const handleAddNewAuditor = async () => {
+    if (!searchResult?.user) return;
+
+    try {
+      setIsAddingNew(true);
+
+      const existingAuditor = auditors.find(
+        (a) => a.id === searchResult.user?.id || a.email === searchResult.user?.email
+      );
+
+      if (existingAuditor) {
+        await handleAssignAuditor(
+          existingAuditor.id,
+          existingAuditor.email,
+          existingAuditor.username
+        );
+        setShowAddNew(false);
+        setEmailInput("");
+        setSearchResult(null);
+        return;
+      }
+
+      const addResponse = await request(
+        ADD_AUDITOR_MUTATION,
+        {
+          organizationId,
+          input: { email: searchResult.user.email },
+        },
+        { organization: organizationId }
+      );
+
+      if (addResponse?.addAuditorToOrganization?.success) {
+        const auditorsResponse = await request(
+          GET_ORGANIZATION_AUDITORS,
+          { organizationId },
+          { organization: organizationId }
+        );
+
+        if (auditorsResponse?.organizationAuditors) {
+          setAuditors(auditorsResponse.organizationAuditors.auditors || []);
+        }
+
+        // Show success message for adding auditor
+        setToast({
+          show: true,
+          message:
+            addResponse.addAuditorToOrganization.message ||
+            "Evaluator added successfully",
+          type: "success",
+        });
+
+        // Now assign the newly added auditor, but avoid double success toasts
+        await handleAssignAuditor(
+          searchResult.user.id,
+          searchResult.user.email,
+          searchResult.user.username,
+          true
+        );
+
+        setShowAddNew(false);
+        setEmailInput("");
+        setSearchResult(null);
+      } else {
+        const errorMessage =
+          addResponse?.addAuditorToOrganization?.message || "";
+
+        // Always surface backend error message in toast so the user
+        // can see the exact reason (e.g. "User is already a member...")
+        setToast({
+          show: true,
+          message: errorMessage || "Failed to add evaluator",
+          type: "error",
+        });
+      }
+    } catch (err: any) {
+      setToast({
+        show: true,
+        message: err?.message || "Error adding evaluator",
+        type: "error",
+      });
+    } finally {
+      setIsAddingNew(false);
     }
   };
 

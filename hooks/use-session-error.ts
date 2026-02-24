@@ -1,6 +1,7 @@
 'use client';
 
-import { signOut, useSession } from 'next-auth/react';
+import { logout } from '@/lib/auth-helpers';
+import { useSession } from 'next-auth/react';
 import { useEffect } from 'react';
 
 /**
@@ -14,7 +15,7 @@ export function useSessionError() {
   useEffect(() => {
     if (session?.error === 'RefreshAccessTokenError' || session?.error === 'RefreshTokenExpired') {
       console.warn('🔒 Session error detected, signing out:', session.error);
-      signOut({ callbackUrl: '/login' });
+      logout('/login');
     }
   }, [session?.error]);
 

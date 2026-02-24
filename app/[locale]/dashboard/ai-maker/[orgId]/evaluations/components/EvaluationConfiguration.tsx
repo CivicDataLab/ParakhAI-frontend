@@ -228,7 +228,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
       {(auditType === "Technical" || auditType === "Domain" || auditType === "Cultural") && (
         <div className={`${styles.auditConfigForm} mt-8`}>
           {/* Auditor Information Section */}
-          <div className="mb-6">
+          {/* <div className="mb-6">
             <div className="flex gap-6 flex-wrap">
               <div className={`flex-1 min-w-[300px] ${styles.auditorNameWrapper}`}>
                 <Label
@@ -298,7 +298,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Audit Details Section */}
           <div className="mb-6">

@@ -156,12 +156,6 @@ interface ManualEvaluationFlowProps {
   isRequestingAudit: boolean;
 }
 
-const MODULE_DISPLAY_NAMES: Record<string, string> = {
-  BIAS_FAIRNESS: "Bias and Fairness",
-  HALLUCINATION_MISINFORMATION: "Hallucination and Misinformation",
-  PRIVACY_SAFETY: "Privacy and Safety",
-};
-
 const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   auditId,
   modules,
@@ -216,12 +210,19 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const getModuleDisplayName = useCallback((name: string) => {
-    return (
-      MODULE_DISPLAY_NAMES[name] ||
-      name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-    );
-  }, []);
+  const getModuleDisplayName = useCallback(
+    (name: string) => {
+      // Prefer backend-provided displayName from manualEvaluationStatus
+      const progressEntry = moduleProgress.find((p) => p.module === name);
+      if (progressEntry?.moduleDisplayName) {
+        return progressEntry.moduleDisplayName;
+      }
+
+      // Fallback to a readable version of the enum-like name
+      return toTitleCase(name.replace(/_/g, " "));
+    },
+    [moduleProgress]
+  );
 
   // Fetch evaluation status
   const fetchEvaluationStatus = useCallback(async () => {

@@ -1,9 +1,9 @@
 "use client";
 
-import React from "react";
+import { logout } from "@/lib/auth-helpers";
 import Link from "next/link";
-import { signOut } from "next-auth/react";
 import { Avatar, Divider, Popover, Text } from "opub-ui";
+import React from "react";
 
 type Props = {
   user: { name?: string | null; email?: string | null };
@@ -26,7 +26,7 @@ export function ProfileMenu({
 
   const handleSignOut = async () => {
     setOpen(false);
-    await signOut({ callbackUrl: "/" });
+    await logout("/");
   };
 
   const logoutButtonClasses =
