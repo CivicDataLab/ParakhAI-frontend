@@ -24,8 +24,8 @@ const MainNav = () => {
   const navigationLinks = React.useMemo(buildNavigationLinks, []);
 
   return (
-    <>
-      <nav className="bg-primaryPurple2 sticky top-0 z-[99999] w-full">
+    <header className="sticky top-0 z-[99999]">
+      <nav className="bg-primaryPurple2 w-full">
         <div className="w-full px-3 sm:px-4 lg:px-8">
           {/* Top bar container */}
           <div className="flex items-center justify-between min-h-[80px] py-4 lg:min-h-[60px] lg:py-3 gap-4">
@@ -147,7 +147,7 @@ const MainNav = () => {
           </div>
         </div>
       </nav>
-    </>
+    </header>
   );
 };
 

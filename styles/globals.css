@@ -4894,3 +4894,12 @@ body {
   line-height: 20px;
   letter-spacing: 0px;
 }
+
+/* Accessibility/UX override: ensure breadcrumb links show pointer */
+/* Placed at end to override earlier breadcrumb cursor rules */
+.breadcrumbs-inner .breadcrumb-link-item,
+.breadcrumbs-inner .breadcrumb-link-item span,
+.breadcrumbs-inner [class*="BreadcrumbLink"],
+.breadcrumbs-inner [class*="BreadcrumbLink"] span {
+  cursor: pointer !important;
+}

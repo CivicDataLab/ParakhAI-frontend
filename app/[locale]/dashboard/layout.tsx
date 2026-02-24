@@ -16,15 +16,11 @@ export default function DashboardLayout({
   return (
     <DashboardGuard>
       <div className="min-h-screen flex flex-col bg-[var(--page-background)]">
-        <header className="sticky top-0 z-[99999]">
-          <MainNav />
-        </header>
+        <MainNav />
         <main className="flex-1 relative z-0">
           {children}
         </main>
-        <footer>
-          <MainFooter />
-        </footer>
+        <MainFooter />
       </div>
     </DashboardGuard>
   );

@@ -29,7 +29,7 @@ const MainFooter = () => {
   ];
 
   return (
-    <div className="bg-primaryPurple2 w-full">
+    <footer className="bg-primaryPurple2 w-full">
       <div className="footer-container w-full px-3 sm:px-4 lg:px-8 h-[88px]">
         <div className="footer-inner flex items-center justify-center h-full">
           {/* Left: Footer Links */}
@@ -100,7 +100,7 @@ const MainFooter = () => {
           </div>
         </div>
       </div>
-    </div>
+    </footer>
   );
 };
 

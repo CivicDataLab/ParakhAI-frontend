@@ -87,12 +87,12 @@ const BreadCrumbs: React.FC<BreadCrumbsProps> = ({ data }) => {
                     </BreadcrumbItem>
                   ) : (
                     <BreadcrumbItem>
-                      <BreadcrumbLink
+                    <BreadcrumbLink
                         href={href}
                         title={item.label}
-                        className="text-gray-600 hover:text-gray-800 breadcrumb-item breadcrumb-link-item"
+                        className="text-gray-600 hover:text-gray-800 breadcrumb-item breadcrumb-link-item cursor-pointer"
                       >
-                        <span className="text-base" title={item.label}>
+                        <span className="text-base cursor-pointer" title={item.label}>
                           {item.label}
                         </span>
                       </BreadcrumbLink>
@@ -138,9 +138,9 @@ const BreadCrumbs: React.FC<BreadCrumbsProps> = ({ data }) => {
                       <BreadcrumbLink
                         href={href}
                         title={item.label}
-                        className="text-gray-600 hover:text-gray-800 breadcrumb-item breadcrumb-link-item"
+                        className="text-gray-600 hover:text-gray-800 breadcrumb-item breadcrumb-link-item cursor-pointer"
                       >
-                        <span className="text-sm sm:text-base truncate max-w-[120px] sm:max-w-[200px] md:max-w-none" title={item.label}>
+                        <span className="text-sm sm:text-base truncate max-w-[120px] sm:max-w-[200px] md:max-w-none cursor-pointer" title={item.label}>
                           <span className="sm:hidden">{truncateTextForSmallScreen(item.label)}</span>
                           <span className="hidden sm:inline">{item.label}</span>
                         </span>
