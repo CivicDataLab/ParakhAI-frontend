@@ -53,11 +53,11 @@ const GetStartedSection = () => {
           </Text>
         </div>
 
-        {/* Steps - 3 Cards with left arrows between */}
-        <div className="flex items-center gap-3 lg:gap-4 mb-10">
+        {/* Steps - responsive: stacked on small screens, row on md+ */}
+        <div className="flex flex-col md:flex-row items-stretch gap-3 lg:gap-4 mb-10">
           {steps.map((step, index) => (
-            <div key={index} className="contents">
-              <div className="flex flex-1 min-w-0 bg-white h-[240px] flex-col gap-3 items-center p-4 rounded-2 justify-between">
+            <div key={index} className="w-full md:flex-1 min-w-0">
+              <div className="flex flex-col gap-3 items-center p-4 rounded-2 justify-between bg-white w-full min-w-0 md:h-[240px]">
                 {/* Icon */}
                 <div className="rounded-lg flex flex-col items-center gap-4 ">
                   <Image
@@ -71,7 +71,7 @@ const GetStartedSection = () => {
                   <Text
                     variant="headingLg"
                     fontWeight="semibold"
-                    className="text-gray-900"
+                    className="text-gray-900 text-center"
                   >
                     {step.title}
                   </Text>
@@ -79,30 +79,53 @@ const GetStartedSection = () => {
 
                 <Text
                   variant="bodyMd"
-                  className="text-gray-600 leading-relaxed text-md"
+                  className="text-gray-600 leading-relaxed text-md text-center"
                 >
                   {step.description}
                 </Text>
               </div>
               {index < steps.length - 1 && (
-                <div
-                  className="flex-shrink-0 w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm"
-                  aria-hidden
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-gray-600"
+                <>
+                  {/* Down arrow connector for small screens */}
+                  <div
+                    className="flex md:hidden flex-shrink-0 w-8 h-8 rounded-full bg-white items-center justify-center shadow-sm mx-auto my-2"
+                    aria-hidden
                   >
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                </div>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-gray-600"
+                    >
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </div>
+
+                  {/* Right arrow connector for md+ screens */}
+                  <div
+                    className="hidden md:flex flex-shrink-0 w-8 h-8 rounded-full bg-white items-center justify-center shadow-sm mx-auto md:mx-0"
+                    aria-hidden
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-gray-600"
+                    >
+                      <path d="M9 18l6-6-6-6" />
+                    </svg>
+                  </div>
+                </>
               )}
             </div>
           ))}
@@ -114,7 +137,7 @@ const GetStartedSection = () => {
           <Button
             onClick={handleGetStarted}
             kind="primary"
-            className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
+            className="bg-primaryPurple2 hover:bg-[#6849EE] text-white px-8 py-3 rounded-[8px] font-bold text-base"
           >
             Get Started →
           </Button>
