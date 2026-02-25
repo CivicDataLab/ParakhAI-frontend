@@ -10,6 +10,9 @@ const inter = Inter({
 export const metadata = {
   title: "ParakhAI",
   description: "Paricipatory AI Evaluation",
+  icons: {
+    icon: "/images/icons/Favicon1.svg",
+  },
 };
 
 export default function RootLayout({

@@ -63,7 +63,7 @@ const MainFooter = () => {
           {/* Right: Made by CivicDataLab and Social Media Icons */}
           <div className="footer-center flex items-center gap-1">
             <div className="logo-wrapper inline-flex items-center">
-              <Text className="text-white text-[14px] leading-5 font-normal mr-2">
+              <Text className="text-white text-[14px] leading-5 font-normal mr-0">
                 made by
               </Text>
               <Link
@@ -74,11 +74,11 @@ const MainFooter = () => {
                 aria-label="CivicDataLab website"
               >
                 <Image
-                  src="/images/logos/Full color.png"
+                  src="/images/logos/CDL_Logo-Single Color1.png"
                   alt="CivicDataLab logo"
-                  width={94}
-                  height={32}
-                  className="w-[42px] h-[42px]"
+                  width={54}
+                  height={52}
+                  className="object-contain w-[54] h-[52]"
                 />
               </Link>
             </div>
