@@ -59,7 +59,7 @@ const GetStartedSection = () => {
             <>
               {/* Card */}
               <div className="w-full md:flex-1 min-w-0">
-              <div className="flex flex-col gap-3 items-center p-4 rounded-2 justify-between bg-white w-full min-w-0 md:h-[240px]">
+              <div className="flex flex-col gap-3 items-center p-4 rounded-2 justify-between bg-white w-full min-w-0 md:h-auto min-h-[240px]">
                   {/* Icon */}
                   <div className="rounded-lg flex flex-col items-center gap-4 ">
                     <Image
