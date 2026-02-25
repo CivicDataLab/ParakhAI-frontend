@@ -511,7 +511,7 @@ body {
   display: flex;
   align-items: center;
   height: 100%;
-  margin-right: 34px; /* Move button slightly towards center */
+  margin-right: 3px; /* Move button slightly towards center */
 }
 
 .section-title-margin h2,
