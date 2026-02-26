@@ -75,7 +75,7 @@ export function ProfileMenu({
               onClick={() => setOpen(false)}
               className={`${dashboardLinkClasses} -mx-2`}
             >
-              Dashboard
+              Evaluation Workspace
             </Link>
 
             <Divider className="my-2 border-gray-200" />

@@ -11,11 +11,14 @@ import { Icons } from "@/components/icons";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import MobileNav from "./mobile-nav";
 
-const buildNavigationLinks = () => {
-  return [
-    // { label: "Resources", href: "/resources" },
-    { label: "Evaluation Workspace", href: "/dashboard" },
-  ];
+type NavLink = {
+  label: string;
+  href: string;
+};
+
+const buildNavigationLinks = (): NavLink[] => {
+  // Navigation links currently disabled (Evaluation Workspace removed)
+  return [];
 };
 
 const MainNav = () => {
