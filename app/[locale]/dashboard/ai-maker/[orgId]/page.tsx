@@ -6,8 +6,7 @@ import { stripMarkdown } from "@/lib/utils";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useAppSession } from "@/lib/session";
-import { Button, Card, DataTable, Spinner, Text } from "opub-ui";
+import { AlertDialog, Button, Card, DataTable, Spinner, Text } from "opub-ui";
 import { useEffect, useMemo, useState } from "react";
 import { useOrganization } from "./OrganizationContext";
 import ModelSelectionModal from "./evaluations/components/ModelSelectionModal";
@@ -68,48 +67,34 @@ const AIMakerDashboard = () => {
   const locale = params?.locale || "en";
   const orgId = params?.orgId as string;
 
-  // Build dynamic in-app URL using entityType/entitySlug (preferred).
-  // Fallback to current user's slug with entityType "self" when route params are missing.
-  const { user } = useAppSession();
-  const entityType = (params as any)?.entityType ?? "self";
-  // Safely read a slug-like value. `AppUser` type may not include `slug`,
-  // so cast `user` to `any` when accessing optional properties not declared on the type.
-  const rawEntitySlug =
-    (params as any)?.entitySlug ??
-    (user as any)?.slug ??
-    (user as any)?.username ??
-    (user as any)?.name ??
-    orgId ??
-    "";
-  const entitySlug = encodeURIComponent(String(rawEntitySlug).trim());
+  // Build URL to organization's AI models tab.
+  const { organization } = useOrganization();
+  const orgSlug = encodeURIComponent(
+    String(organization?.slug ?? orgId ?? "").trim()
+  );
 
-  // If you want the link to go to the external dev site (e.g. dev.civicdataspace.in),
-  // set NEXT_PUBLIC_DATASPACE_HOST or NEXT_PUBLIC_AI_MAKER_URL in your environment.
-  // Otherwise the code will use an in-app path.
+  const inAppPath = `/${locale}/dashboard/ai-maker/${orgId}/ai-models`;
+
+  // External (CivicDataSpace): /dashboard/organization/{orgSlug}/aimodels?tab=registered
+  // e.g. https://dev.civicdataspace.in/dashboard/organization/civicdatalab/aimodels?tab=registered
   const externalHost =
     process.env.NEXT_PUBLIC_DATASPACE_HOST ||
     process.env.NEXT_PUBLIC_AI_MAKER_URL ||
     "";
-
-  const inAppPath = `/${locale}/dashboard/${entityType}/${entitySlug}/aimodels?tab=registered`;
-
-  // Build external URL without duplicating "/dashboard" or the locale segment.
-  // External path should be: /dashboard/{entityType}/{entitySlug}/aimodels?tab=registered
-  const externalPath = `/dashboard/${entityType}/${entitySlug}/aimodels?tab=registered`;
+  const externalPath =
+    orgSlug
+      ? `/dashboard/organization/${orgSlug}/aimodels?tab=registered`
+      : "";
   let externalUrl = "";
-  if (externalHost.trim() !== "") {
+  if (externalHost.trim() !== "" && externalPath) {
     const host = externalHost.replace(/\/$/, "");
     if (/\/dashboard$/.test(host)) {
-      // host already ends with /dashboard -> don't add another /dashboard
       externalUrl = `${host}${externalPath.replace(/^\/dashboard/, "")}`;
     } else {
       externalUrl = `${host}${externalPath}`;
     }
   }
 
-  // Final URL to use in the Add button:
-  // - If externalUrl is available use it (goes to dev.civicdataspace.in)
-  // - Otherwise use in-app path (keeps navigation internal)
   const addModelUrl = externalUrl || inAppPath;
   const [auditMetrics, setAuditMetrics] = useState<AuditMetrics | null>(null);
 
@@ -169,11 +154,11 @@ const AIMakerDashboard = () => {
   const { request } = useGraphQL();
 
   // State for data and loading
-  const { organization } = useOrganization();
   const [models, setModels] = useState<AIModel[]>([]);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showRedirectPrompt, setShowRedirectPrompt] = useState(false);
 
   const formatDate = (dateString?: string | null) => {
     if (!dateString) return "--";
@@ -224,7 +209,7 @@ const AIMakerDashboard = () => {
 
   const metrics = [
     {
-      label: "Evaluation Runs",
+      label: "Evaluation\nRuns",
       value: auditMetrics?.evaluationRuns.toString() || "--",
     },
     {
@@ -233,7 +218,7 @@ const AIMakerDashboard = () => {
     },
     { label: "Models", value: auditMetrics?.models.toString() || "--" },
     {
-      label: "Issues Flagged",
+      label: "Issues\nFlagged",
       value: auditMetrics?.issuesFlagged.toString() || "--",
     },
   ];
@@ -335,12 +320,12 @@ const AIMakerDashboard = () => {
   return (
     <>
       {/* Header with Title */}
-      <div className="flex items-center justify-between mb-6 mt-10">
+      <div className="flex items-center justify-between mb-6 mt-10 w-full">
         <h1 className="text-gray-900 overview-heading">Overview</h1>
       </div>
 
       {/* Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 sm:mb-10 lg:mb-12">
+      <div className="overview-metrics-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8 sm:mb-10 lg:mb-12 w-full min-w-0">
         {metrics.map((m) => (
           <div key={m.label} className="metric-card">
             <p className="metric-card-label">{m.label}</p>
@@ -356,18 +341,12 @@ const AIMakerDashboard = () => {
           </Text>
           {hasModels && (
             <div className="add-model-button-wrapper">
-              <Link
-                href={addModelUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Button
+                onClick={() => setShowRedirectPrompt(true)}
                 className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-medium text-base"
-                style={{
-                  textDecoration: "none",
-                  display: "inline-block",
-                }}
               >
                 Add A New Model
-              </Link>
+              </Button>
             </div>
           )}
         </div>
@@ -450,15 +429,12 @@ const AIMakerDashboard = () => {
               <br />
               Register your first model to get started!
             </Text>
-            <Link
-              href={addModelUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Button
+              onClick={() => setShowRedirectPrompt(true)}
               className="bg-primaryPurple2 hover:!bg-[#6849EE] text-white hover:text-white px-8 py-3 rounded-[8px] font-bold text-base"
-              style={{ textDecoration: "none", display: "inline-block" }}
             >
               Add A New Model
-            </Link>
+            </Button>
           </div>
         )}
       </div>
@@ -501,6 +477,37 @@ const AIMakerDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Redirect confirmation */}
+      <AlertDialog open={showRedirectPrompt} onOpenChange={setShowRedirectPrompt}>
+        <AlertDialog.Content
+          title="Redirect to CivicDataSpace"
+          primaryAction={{
+            content: "Yes, continue",
+            onAction: () => {
+              setShowRedirectPrompt(false);
+              if (externalUrl) {
+                window.open(addModelUrl, "_blank", "noopener,noreferrer");
+              } else {
+                router.push(addModelUrl);
+              }
+            },
+            className:
+              "bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white",
+          } as any}
+          secondaryActions={[
+            {
+              content: "No",
+              onAction: () => setShowRedirectPrompt(false),
+              className:
+                "bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white",
+            } as any,
+          ]}
+        >
+          You are being redirected to CivicDataSpace to add a model. Do you want
+          to continue?
+        </AlertDialog.Content>
+      </AlertDialog>
 
       {/* Model Selection Modal */}
       <ModelSelectionModal

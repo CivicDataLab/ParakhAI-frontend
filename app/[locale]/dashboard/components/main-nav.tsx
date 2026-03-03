@@ -127,7 +127,6 @@ const MainNav = () => {
                     align="end"
                     side="bottom"
                     sideOffset={4}
-                    contentClassName="profile-popover-content bg-white border border-gray-200 shadow-lg rounded-xl z-[10000]"
                   />
                 ) : (
                   <button
