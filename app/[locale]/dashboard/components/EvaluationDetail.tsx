@@ -1036,7 +1036,7 @@ const EvaluationDetail = ({
             </Text>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 md:gap-8">
-            <div className="result-summary-evaluation-section sm:col-span-2 md:col-span-2 lg:col-span-2 flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 justify-center">
+            <div className="result-summary-evaluation-section flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 justify-center">
               <Text
                 variant="headingSm"
                 fontWeight="semibold"
@@ -1053,6 +1053,25 @@ const EvaluationDetail = ({
                   className="text-green-600 text-xl sm:text-2xl"
                 >
                   {getPassRate() || 0}%
+                </Text>
+              </div>
+            </div>
+            <div className="result-summary-evaluation-section flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 justify-center">
+              <Text
+                variant="headingSm"
+                fontWeight="semibold"
+                color="onBgDisabled"
+                className="text-gray-400 text-xs sm:text-sm"
+              >
+                TOTAL TEST CASES
+              </Text>
+              <div>
+                <Text
+                  variant="headingLg"
+                  fontWeight="bold"
+                  className="text-green-600 text-xl sm:text-2xl"
+                >
+                  {audit.totalTests || 0}
                 </Text>
               </div>
             </div>
