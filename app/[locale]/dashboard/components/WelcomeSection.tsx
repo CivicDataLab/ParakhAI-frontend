@@ -215,9 +215,9 @@ const WelcomeSection = ({
   }, [navItems, matchingPath]);
 
   return (
-    <div className="welcome-section mt-14">
+    <div className="welcome-section mt-12 sm:mt-8 lg:mt-14">
       <div className="text-center sm:pt-4 md:pt-0">
-        <div className="mb-4 flex justify-center">
+        <div className="mb-3 sm:mb-4 flex justify-center">
           <div
             className={`cdl-logo-container ${dashboardType === "auditor" ? "bg-[var(--primary-purple-color2)]" : ""}`}
           >
@@ -228,7 +228,7 @@ const WelcomeSection = ({
                 width={140}
                 height={140}
                 onError={() => setIsImageValid(false)}
-                className="object-contain"
+                className="object-contain w-full h-full"
               />
             ) : (
               <Image
@@ -236,7 +236,7 @@ const WelcomeSection = ({
                 alt="ParakhAI Logo"
                 width={140}
                 height={140}
-                className="object-contain"
+                className="object-contain w-full h-full"
               />
             )}
           </div>
@@ -244,23 +244,25 @@ const WelcomeSection = ({
 
         <p className="welcome-text sm:pt-4 md:pt-0">
           Welcome,{" "}
-          {user?.name ||
-            orgName ||
-            (dashboardType === "auditor" ? "Auditor" : "CivicDataLab")}
+          <span className="break-words">
+            {user?.name ||
+              orgName ||
+              (dashboardType === "auditor" ? "Auditor" : "CivicDataLab")}
+          </span>
         </p>
 
         <Link
           href="/dashboard"
-          className="mt-4 mb-4 inline-flex font-medium text-[#644FC1] underline transition-colors hover:opacity-90 switch-roles-link"
+          className="mt-3 sm:mt-4 mb-3 sm:mb-4 inline-flex font-medium text-[#644FC1] underline transition-colors hover:opacity-90 switch-roles-link"
         >
           Switch Roles
         </Link>
       </div>
 
-      <div className="welcome-divider mt-4 mb-4">
+      <div className="welcome-divider mt-3 sm:mt-4 mb-3 sm:mb-4">
         <Divider />
       </div>
-      <nav className="space-y-2 overflow-visible mx-1">
+      <nav className="space-y-1 sm:space-y-2 overflow-visible mx-0 sm:mx-1">
         {navItems.map((item) => {
           const isActive = selectedItem === item.label;
           return (
@@ -273,26 +275,26 @@ const WelcomeSection = ({
                 }
                 setSelectedItem(item.label);
               }}
-              className={`py-2 text-left transition whitespace-nowrap flex items-center block nav-item-link ${
+              className={`py-2.5 sm:py-2 text-left transition flex items-center nav-item-link min-w-0 ${
                 isActive
-                  ? "font-semibold text-black bg-[#3b00ff0d] -mx-3 w-[calc(100%+24px)] border-solid border-primaryPurple border-l-4 px-6"
-                  : "hover:bg-gray-100 rounded-md text-[#60646C] pl-4 font-medium px-3 w-full"
+                  ? "font-semibold text-black bg-[#3b00ff0d] -mx-2 sm:-mx-3 w-[calc(100%+16px)] sm:w-[calc(100%+24px)] border-solid border-primaryPurple border-l-4 px-4 sm:px-6"
+                  : "hover:bg-gray-100 rounded-md text-[#60646C] pl-3 sm:pl-4 font-medium px-2 sm:px-3 w-full"
               }`}
             >
-              <span className="mr-2.5 pt-1 inline-block">
+              <span className="mr-2 sm:mr-2.5 pt-1 inline-block shrink-0">
                 {item.isImage ? (
                   <Image
                     src={item.icon}
                     alt={item.label}
                     width={16}
                     height={16}
-                    className={`nav-icon-inactive`}
+                    className="nav-icon-inactive"
                   />
                 ) : (
                   item.icon
                 )}
               </span>
-              {item.label}
+              <span className="truncate">{item.label}</span>
             </Link>
           );
         })}

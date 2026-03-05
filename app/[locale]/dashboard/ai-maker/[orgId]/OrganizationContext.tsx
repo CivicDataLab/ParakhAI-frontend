@@ -6,6 +6,7 @@ export type OrganizationContextType = {
   organization: {
     name: string;
     logoUrl: string | null;
+    slug?: string;
   } | null;
   isLoading: boolean;
 };

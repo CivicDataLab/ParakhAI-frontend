@@ -10,7 +10,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
-import { Button, DataTable, Dialog, Spinner, Text } from "opub-ui";
+import { Button, DataTable, Dialog, Spinner, Tag, Text } from "opub-ui";
 import { useEffect, useState } from "react";
 
 // Custom Avatar component with error handling
@@ -58,6 +58,24 @@ type SearchUserResult = {
   found: boolean;
   message?: string;
   user?: Auditor;
+};
+
+const getUserDisplayName = (user: Auditor): string => {
+  const firstName = user.firstName?.trim() || "";
+  const lastName = user.lastName?.trim() || "";
+  const fullName = `${firstName} ${lastName}`.trim();
+
+  if (fullName) return fullName;
+
+  if (user.username && user.username !== user.email) {
+    return user.username;
+  }
+
+  if (user.email) {
+    return user.email.split("@")[0];
+  }
+
+  return "";
 };
 
 // GraphQL Queries
@@ -485,17 +503,42 @@ const AuditorsPage = () => {
             </Text>
 
             <div className="flex gap-2">
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Email Address
                 </label>
-                <input
-                  type="email"
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder="evaluator@example.com"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
+                <div className="relative min-w-0">
+                  <input
+                    type="email"
+                    value={
+                      searchResult?.found && searchResult.user
+                        ? ""
+                        : emailInput
+                    }
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    placeholder={
+                      searchResult?.found && searchResult.user
+                        ? ""
+                        : "evaluator@example.com"
+                    }
+                    readOnly={!!(searchResult?.found && searchResult.user)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                  {searchResult?.found && searchResult.user && (
+                    <div className="absolute inset-y-0 left-px flex items-center pl-3 pr-2 gap-2">
+                      <Tag
+                        value={searchResult.user.id}
+                        onRemove={() => {
+                          setSearchResult(null);
+                          setEmailInput("");
+                          setAddError(null);
+                        }}
+                      >
+                        {getUserDisplayName(searchResult.user)}
+                      </Tag>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex items-end">
                 <Button
@@ -532,13 +575,7 @@ const AuditorsPage = () => {
                     </div>
                     <div className="flex flex-col gap-0.5">
                       <Text variant="bodySm" fontWeight="medium">
-                        {searchResult.user.firstName ||
-                        searchResult.user.lastName
-                          ? `${[searchResult.user.firstName, searchResult.user.lastName].filter(Boolean).join(" ")}`
-                          : searchResult.user.username !==
-                              searchResult.user.email
-                            ? searchResult.user.username
-                            : searchResult.user.email.split("@")[0]}
+                        {getUserDisplayName(searchResult.user)}
                       </Text>
                       <Text variant="bodySm" className="text-gray-600">
                         {searchResult.user.email}
