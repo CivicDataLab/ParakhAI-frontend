@@ -688,6 +688,18 @@ const EvaluationDetail = ({
   const totalIssuesIdentified =
     riskSummary.low + riskSummary.medium + riskSummary.high;
 
+  const hasVisualizationDataForModule = (moduleName: string) => {
+    const issuesForModule = apiModuleIssues.filter(
+      (issue) => issue.module === moduleName
+    );
+    return issuesForModule.length > 0;
+  };
+
+  const modulesWithVisualizationData =
+    audit?.modules?.filter((moduleName) =>
+      hasVisualizationDataForModule(moduleName)
+    ) || [];
+
   const toggleIssueCard = (issueId: string) => {
     setExpandedIssueIds((prev) => {
       const newSet = new Set(prev);
@@ -1204,8 +1216,8 @@ const EvaluationDetail = ({
             </div>
           </div>
 
-          {/* Module-wise Results - Sample Issues (using dummy data for now) */}
-          {audit.modules && audit.modules.length > 0 && (
+          {/* Module-wise Results - Sample Issues */}
+          {modulesWithVisualizationData.length > 0 && (
             <div className="mt-8 pt-4">
               <div className="mb-4">
                 <Text variant="headingMd" fontWeight="bold">
@@ -1213,11 +1225,11 @@ const EvaluationDetail = ({
                 </Text>
               </div>
 
-              {/* Module Tabs - styled similar to NewEvaluationContent */}
+              {/* Module Tabs - styled similar to NewEvaluationContent, only for modules with data */}
               <div className="mb-4 max-[1023px]:mb-3  bg-white border-solid border-1 border-baseGraySlateAlpha4 rounded-2 max-[640px]:mb-2">
-                <Tabs defaultValue={audit.modules[0]}>
+                <Tabs defaultValue={modulesWithVisualizationData[0]}>
                   <TabList>
-                    {audit.modules.map((moduleName, index) => {
+                    {modulesWithVisualizationData.map((moduleName, index) => {
                       return (
                         <Tab value={moduleName} key={index}>
                           {formatModuleName(moduleName)}
@@ -1225,7 +1237,7 @@ const EvaluationDetail = ({
                       );
                     })}
                   </TabList>
-                  {audit.modules.map((moduleName, index) => {
+                  {modulesWithVisualizationData.map((moduleName, index) => {
                     return (
                       <TabPanel key={index} value={moduleName}>
                         <div className="mt-5 m-5">
