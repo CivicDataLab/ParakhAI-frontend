@@ -667,7 +667,14 @@ const EvaluationDetail = ({
   const saveEvaluationName = async () => {
     if (!audit || isSavingName) return;
     const trimmedName = editableName?.trim();
-    if (!trimmedName || trimmedName === audit.name) return;
+
+    // Frontend validation: show error toast, do not call backend
+    if (!trimmedName) {
+      toast.error("Evaluation name is required.");
+      return;
+    }
+
+    if (trimmedName === audit.name) return;
 
     try {
       setIsSavingName(true);
@@ -684,11 +691,6 @@ const EvaluationDetail = ({
           input: {
             auditId: audit.id,
             name: trimmedName,
-            auditType: audit.auditType,
-            evaluationMode: audit.evaluationMode,
-            modules: audit.modules,
-            metrics: audit.metrics,
-            configuration: audit.configuration,
           },
         },
         requestOptions
@@ -703,6 +705,7 @@ const EvaluationDetail = ({
         setAudit((prev) =>
           prev ? { ...prev, name: result.updateAudit.audit!.name } : prev
         );
+        toast.success("Evaluation name saved successfully.");
       }
     } catch (err) {
       const msg =
@@ -993,7 +996,13 @@ const EvaluationDetail = ({
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <Link href={backLink} className="w-full sm:w-auto">
+          <Link
+            href={backLink}
+            className="w-full sm:w-auto"
+            onClick={() => {
+              toast.dismiss();
+            }}
+          >
             <Button
               kind="primary"
               className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base w-full sm:w-auto"
