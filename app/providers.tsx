@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SessionProvider } from "next-auth/react";
 import React, { useState } from "react";
+import { Toaster } from "opub-ui";
 
 // Import Tooltip dynamically to avoid TypeScript issues
 const TooltipProvider = ({ children }: { children: React.ReactNode }) => {
@@ -59,6 +60,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <TooltipProvider>
           {children}
         </TooltipProvider>
+        <Toaster richColors position="bottom-right" />
       </QueryClientProvider>
     </SessionProvider>
   );

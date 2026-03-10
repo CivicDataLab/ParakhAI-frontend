@@ -14,6 +14,8 @@ import {
   Tabs,
   Tag,
   Text,
+  TextField,
+  toast,
 } from "opub-ui";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -171,6 +173,27 @@ const GET_AUDIT_SUMMARY = `
   }
 `;
 
+// Mutation to update an existing audit (same as NewEvaluationContent)
+const UPDATE_AUDIT_MUTATION = `
+  mutation UpdateAudit($input: UpdateAuditInput!) {
+    updateAudit(input: $input) {
+      success
+      message
+      audit {
+        id
+        name
+        status
+        modules
+        metrics
+        modelId
+        modelVersionId
+        testDatasetIds
+        configuration
+      }
+    }
+  }
+`;
+
 export type Audit = {
   auditType: string;
   evaluationMode: string;
@@ -320,6 +343,8 @@ const EvaluationDetail = ({
   const [expandedIssueIds, setExpandedIssueIds] = useState<Set<string>>(
     new Set()
   );
+  const [editableName, setEditableName] = useState<string>("");
+  const [isSavingName, setIsSavingName] = useState(false);
 
   const isFetchingRef = useRef(false);
   const lastFetchedAuditIdRef = useRef<string | null>(null);
@@ -632,6 +657,64 @@ const EvaluationDetail = ({
   const duration = getDuration();
   const isRunning = audit?.status === "RUNNING" || audit?.status === "PENDING";
 
+  useEffect(() => {
+    if (audit) {
+      const fallbackName = audit.id ? `Evaluation #${audit.id.slice(0, 8)}` : "";
+      setEditableName(audit.name || fallbackName);
+    }
+  }, [audit?.id, audit?.name]);
+
+  const saveEvaluationName = async () => {
+    if (!audit || isSavingName) return;
+    const trimmedName = editableName?.trim();
+    if (!trimmedName || trimmedName === audit.name) return;
+
+    try {
+      setIsSavingName(true);
+      const requestOptions = orgId ? { organization: orgId } : undefined;
+      const result = await request<{
+        updateAudit: {
+          success: boolean;
+          message?: string | null;
+          audit?: { id: string; name: string };
+        };
+      }>(
+        UPDATE_AUDIT_MUTATION,
+        {
+          input: {
+            auditId: audit.id,
+            name: trimmedName,
+            auditType: audit.auditType,
+            evaluationMode: audit.evaluationMode,
+            modules: audit.modules,
+            metrics: audit.metrics,
+            configuration: audit.configuration,
+          },
+        },
+        requestOptions
+      );
+
+      if (!result?.updateAudit?.success) {
+        const msg =
+          result?.updateAudit?.message ||
+          "Failed to save evaluation name on the server.";
+        toast.error(msg);
+      } else if (result.updateAudit.audit?.name) {
+        setAudit((prev) =>
+          prev ? { ...prev, name: result.updateAudit.audit!.name } : prev
+        );
+      }
+    } catch (err) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Failed to save evaluation name. Please try again.";
+      toast.error(msg);
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
   const getPassRate = () => {
     if (!audit?.totalTests || !audit?.passedTests) return 0;
     return ((audit.passedTests / audit.totalTests) * 100).toFixed(2);
@@ -866,18 +949,29 @@ const EvaluationDetail = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 mt-10">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-end gap-1">
-            <Text variant="bodyMd" className="text-gray-500">
+          <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1">
+            <Text variant="bodyMd" className="text-gray-500 whitespace-nowrap mr-2">
               Evaluation Name :{" "}
             </Text>
-            <Text
-              variant="headingMd"
-              as="h4"
-              fontWeight="semibold"
-              className="evaluation-name-text break-words"
+            <div
+              className="audit-name-input-wrapper max-w-xs"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  saveEvaluationName();
+                }
+              }}
             >
-              {audit.name || `Evaluation #${audit.id.slice(0, 8)}`}
-            </Text>
+              <TextField
+                id="evaluationName"
+                name="evaluationName"
+                label="Evaluation Name"
+                labelHidden
+                value={editableName}
+                onBlur={saveEvaluationName}
+                onChange={(value) => setEditableName(value)}
+              />
+            </div>
           </div>
           <span className="self-start sm:self-auto">
             <Tag
