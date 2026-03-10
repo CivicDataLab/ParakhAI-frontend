@@ -14,6 +14,8 @@ import {
   Tabs,
   Tag,
   Text,
+  TextField,
+  toast,
 } from "opub-ui";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -171,6 +173,27 @@ const GET_AUDIT_SUMMARY = `
   }
 `;
 
+// Mutation to update an existing audit (same as NewEvaluationContent)
+const UPDATE_AUDIT_MUTATION = `
+  mutation UpdateAudit($input: UpdateAuditInput!) {
+    updateAudit(input: $input) {
+      success
+      message
+      audit {
+        id
+        name
+        status
+        modules
+        metrics
+        modelId
+        modelVersionId
+        testDatasetIds
+        configuration
+      }
+    }
+  }
+`;
+
 export type Audit = {
   auditType: string;
   evaluationMode: string;
@@ -320,6 +343,8 @@ const EvaluationDetail = ({
   const [expandedIssueIds, setExpandedIssueIds] = useState<Set<string>>(
     new Set()
   );
+  const [editableName, setEditableName] = useState<string>("");
+  const [isSavingName, setIsSavingName] = useState(false);
 
   const isFetchingRef = useRef(false);
   const lastFetchedAuditIdRef = useRef<string | null>(null);
@@ -632,6 +657,64 @@ const EvaluationDetail = ({
   const duration = getDuration();
   const isRunning = audit?.status === "RUNNING" || audit?.status === "PENDING";
 
+  useEffect(() => {
+    if (audit) {
+      const fallbackName = audit.id ? `Evaluation #${audit.id.slice(0, 8)}` : "";
+      setEditableName(audit.name || fallbackName);
+    }
+  }, [audit?.id, audit?.name]);
+
+  const saveEvaluationName = async () => {
+    if (!audit || isSavingName) return;
+    const trimmedName = editableName?.trim();
+    if (!trimmedName || trimmedName === audit.name) return;
+
+    try {
+      setIsSavingName(true);
+      const requestOptions = orgId ? { organization: orgId } : undefined;
+      const result = await request<{
+        updateAudit: {
+          success: boolean;
+          message?: string | null;
+          audit?: { id: string; name: string };
+        };
+      }>(
+        UPDATE_AUDIT_MUTATION,
+        {
+          input: {
+            auditId: audit.id,
+            name: trimmedName,
+            auditType: audit.auditType,
+            evaluationMode: audit.evaluationMode,
+            modules: audit.modules,
+            metrics: audit.metrics,
+            configuration: audit.configuration,
+          },
+        },
+        requestOptions
+      );
+
+      if (!result?.updateAudit?.success) {
+        const msg =
+          result?.updateAudit?.message ||
+          "Failed to save evaluation name on the server.";
+        toast.error(msg);
+      } else if (result.updateAudit.audit?.name) {
+        setAudit((prev) =>
+          prev ? { ...prev, name: result.updateAudit.audit!.name } : prev
+        );
+      }
+    } catch (err) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Failed to save evaluation name. Please try again.";
+      toast.error(msg);
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
   const getPassRate = () => {
     if (!audit?.totalTests || !audit?.passedTests) return 0;
     return ((audit.passedTests / audit.totalTests) * 100).toFixed(2);
@@ -687,6 +770,18 @@ const EvaluationDetail = ({
 
   const totalIssuesIdentified =
     riskSummary.low + riskSummary.medium + riskSummary.high;
+
+  const hasVisualizationDataForModule = (moduleName: string) => {
+    const issuesForModule = apiModuleIssues.filter(
+      (issue) => issue.module === moduleName
+    );
+    return issuesForModule.length > 0;
+  };
+
+  const modulesWithVisualizationData =
+    audit?.modules?.filter((moduleName) =>
+      hasVisualizationDataForModule(moduleName)
+    ) || [];
 
   const toggleIssueCard = (issueId: string) => {
     setExpandedIssueIds((prev) => {
@@ -854,18 +949,29 @@ const EvaluationDetail = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 mt-10">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-end gap-1">
-            <Text variant="bodyMd" className="text-gray-500">
+          <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1">
+            <Text variant="bodyMd" className="text-gray-500 whitespace-nowrap mr-2">
               Evaluation Name :{" "}
             </Text>
-            <Text
-              variant="headingMd"
-              as="h4"
-              fontWeight="semibold"
-              className="evaluation-name-text break-words"
+            <div
+              className="audit-name-input-wrapper max-w-xs"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  saveEvaluationName();
+                }
+              }}
             >
-              {audit.name || `Evaluation #${audit.id.slice(0, 8)}`}
-            </Text>
+              <TextField
+                id="evaluationName"
+                name="evaluationName"
+                label="Evaluation Name"
+                labelHidden
+                value={editableName}
+                onBlur={saveEvaluationName}
+                onChange={(value) => setEditableName(value)}
+              />
+            </div>
           </div>
           <span className="self-start sm:self-auto">
             <Tag
@@ -1036,7 +1142,7 @@ const EvaluationDetail = ({
             </Text>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 md:gap-8">
-            <div className="result-summary-evaluation-section sm:col-span-2 md:col-span-2 lg:col-span-2 flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 justify-center">
+            <div className="result-summary-evaluation-section flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 justify-center">
               <Text
                 variant="headingSm"
                 fontWeight="semibold"
@@ -1053,6 +1159,25 @@ const EvaluationDetail = ({
                   className="text-green-600 text-xl sm:text-2xl"
                 >
                   {getPassRate() || 0}%
+                </Text>
+              </div>
+            </div>
+            <div className="result-summary-evaluation-section flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 justify-center">
+              <Text
+                variant="headingSm"
+                fontWeight="semibold"
+                color="onBgDisabled"
+                className="text-gray-400 text-xs sm:text-sm"
+              >
+                TOTAL TEST CASES
+              </Text>
+              <div>
+                <Text
+                  variant="headingLg"
+                  fontWeight="bold"
+                  className="text-green-600 text-xl sm:text-2xl"
+                >
+                  {audit.totalTests || 0}
                 </Text>
               </div>
             </div>
@@ -1185,8 +1310,8 @@ const EvaluationDetail = ({
             </div>
           </div>
 
-          {/* Module-wise Results - Sample Issues (using dummy data for now) */}
-          {audit.modules && audit.modules.length > 0 && (
+          {/* Module-wise Results - Sample Issues */}
+          {modulesWithVisualizationData.length > 0 && (
             <div className="mt-8 pt-4">
               <div className="mb-4">
                 <Text variant="headingMd" fontWeight="bold">
@@ -1194,11 +1319,11 @@ const EvaluationDetail = ({
                 </Text>
               </div>
 
-              {/* Module Tabs - styled similar to NewEvaluationContent */}
+              {/* Module Tabs - styled similar to NewEvaluationContent, only for modules with data */}
               <div className="mb-4 max-[1023px]:mb-3  bg-white border-solid border-1 border-baseGraySlateAlpha4 rounded-2 max-[640px]:mb-2">
-                <Tabs defaultValue={audit.modules[0]}>
+                <Tabs defaultValue={modulesWithVisualizationData[0]}>
                   <TabList>
-                    {audit.modules.map((moduleName, index) => {
+                    {modulesWithVisualizationData.map((moduleName, index) => {
                       return (
                         <Tab value={moduleName} key={index}>
                           {formatModuleName(moduleName)}
@@ -1206,7 +1331,7 @@ const EvaluationDetail = ({
                       );
                     })}
                   </TabList>
-                  {audit.modules.map((moduleName, index) => {
+                  {modulesWithVisualizationData.map((moduleName, index) => {
                     return (
                       <TabPanel key={index} value={moduleName}>
                         <div className="mt-5 m-5">
