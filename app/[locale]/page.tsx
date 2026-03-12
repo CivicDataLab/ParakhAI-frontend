@@ -40,12 +40,12 @@ export default function Home() {
   return (
     <div className="home-page-container min-h-screen flex flex-col">
       <MainNav />
-      <main className="flex-1">
+      <div className="flex-1">
         <HeroSection />
         {/* <SectorsSection /> */}
         <HowItWorksSection />
         <GetStartedSection />
-      </main>
+      </div>
       <MainFooter />
     </div>
   );

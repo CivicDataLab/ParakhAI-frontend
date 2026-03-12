@@ -125,6 +125,8 @@ const AuditsListPage = () => {
       case "FAILED":
       case "ERROR":
         return { fillColor: "#FEE2E2", textColor: "#DC2626" };
+      case "CANCELLED":
+        return { fillColor: "#F3F4F6", textColor: "#6B7280" };
       default:
         return { fillColor: "#F3F4F6", textColor: "#374151" };
     }

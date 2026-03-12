@@ -418,6 +418,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
   // Backend audit run state
   const [isRequestingAudit, setIsRequestingAudit] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [auditError, setAuditError] = useState<string | null>(null);
   const [auditOverview, setAuditOverview] = useState<{
     auditId: string | null;
@@ -779,6 +780,39 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     } catch (error: any) {
       setAuditError(error.message || "Error updating evaluation.");
       return false;
+    }
+  };
+
+  const handleCancelEvaluation = async () => {
+    if (!confirm("Are you sure you want to cancel this evaluation?")) return;
+    const auditId = currentAuditId;
+    if (!auditId) {
+      router.back();
+      return;
+    }
+    setIsCancelling(true);
+    setAuditError(null);
+    try {
+      const result = await request<{
+        updateAudit: { success: boolean; message: string };
+      }>(
+        UPDATE_AUDIT_MUTATION,
+        {
+          input: { auditId, status: "CANCELLED" },
+        },
+        { organization: orgId }
+      );
+      if (result?.updateAudit?.success) {
+        router.push(`/${locale}/dashboard/ai-maker/${orgId}/evaluations`);
+      } else {
+        setAuditError(
+          result?.updateAudit?.message || "Failed to cancel evaluation."
+        );
+      }
+    } catch (error: any) {
+      setAuditError(error?.message || "Failed to cancel evaluation.");
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -1622,14 +1656,11 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             <Button
               kind="tertiary"
               variant="critical"
-              onClick={() => {
-                if (confirm("Are you sure you want to cancel this audit?")) {
-                  window.history.back();
-                }
-              }}
+              onClick={handleCancelEvaluation}
+              disabled={isCancelling}
               className={`${styles.cancelAuditButton} flex-shrink-0 max-[640px]:ml-4`}
             >
-              Cancel Evaluation
+              {isCancelling ? "Cancelling..." : "Cancel Evaluation"}
               <Icon source={IconX} size={18} />
             </Button>
           </div>

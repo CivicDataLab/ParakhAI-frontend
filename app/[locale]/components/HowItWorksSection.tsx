@@ -49,12 +49,12 @@ const TabPanel = ({ feature }: TabPanelProps) => {
   return (
       <div className="flex flex-row gap-4 items-center flex-wrap">
       <div className="p-0 md:p-6 w-full md:w-1/2">
-        <h1
+        <p
           className="text-base md:text-lg font-bold text-gray-900 text-[20px]
 "
         >
           {feature.description}
-        </h1>
+        </p>
         {/* <p className="text-sm mt-1 text-[#6849EE]">{feature.subtitle}</p> */}
       </div>
       <div className="px-0 pb-0 md:px-6 md:pb-6">
