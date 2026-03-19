@@ -29,6 +29,10 @@ const HowItWorksSection = dynamic(
   () => import("@/app/[locale]/components/HowItWorksSection"),
   { ssr: false }
 );
+const TrendingSection = dynamic(
+  () => import("@/app/[locale]/components/TrendingSection"),
+  { ssr: false }
+);
 
 export default function Home() {
   const { status } = useSession();
@@ -45,6 +49,7 @@ export default function Home() {
         {/* <SectorsSection /> */}
         <HowItWorksSection />
         <GetStartedSection />
+        <TrendingSection />
       </div>
       <MainFooter />
     </div>

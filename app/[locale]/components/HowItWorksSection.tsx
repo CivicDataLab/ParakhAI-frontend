@@ -46,23 +46,31 @@ interface TabPanelProps {
 }
 
 const TabPanel = ({ feature }: TabPanelProps) => {
+  const descriptionLines =
+    feature.title === "Evaluation History & Reports"
+      ? [
+          "Track evaluation outcomes over time to support transparency,",
+          "accountability, and continuous improvement of AI systems.",
+        ]
+      : [feature.description];
+
   return (
-      <div className="flex flex-row gap-4 items-center flex-wrap">
-      <div className="p-0 md:p-6 w-full md:w-1/2">
-        <p
-          className="text-base md:text-lg font-bold text-gray-900 text-[20px]
-"
-        >
-          {feature.description}
+    <div className="flex flex-col items-center gap-4 md:gap-6 text-center">
+      <div className="w-full max-w-3xl px-0 md:px-6 mt-2 md:mt-3">
+        <p className="text-base md:text-lg font-normal text-gray-900 text-[20px]">
+          {descriptionLines.map((line, index) => (
+            <span key={index} className="block">
+              {line}
+            </span>
+          ))}
         </p>
-        {/* <p className="text-sm mt-1 text-[#6849EE]">{feature.subtitle}</p> */}
       </div>
-      <div className="px-0 pb-0 md:px-6 md:pb-6">
-        <div className="relative w-full rounded-xl overflow-hidden shadow-sm">
+      <div className="w-full flex justify-center px-0 pb-0 md:px-6 md:pb-6">
+        <div className="relative w-full max-w-3xl rounded-xl overflow-hidden shadow-sm">
           <img
             src={feature.image}
             alt={feature.title}
-            className="w-full md:w-[600px] h-[400px] object-contain rounded"
+            className="w-full h-auto md:h-[440px] object-contain rounded"
           />
         </div>
       </div>

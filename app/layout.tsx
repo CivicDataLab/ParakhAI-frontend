@@ -11,7 +11,7 @@ export const metadata = {
   title: "ParakhAI",
   description: "Paricipatory AI Evaluation",
   icons: {
-    icon: "/images/icons/Favicon1.svg",
+    icon: "/images/icons/Favicon.svg",
   },
 };
 
