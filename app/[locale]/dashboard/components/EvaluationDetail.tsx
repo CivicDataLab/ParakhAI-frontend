@@ -33,6 +33,7 @@ const GET_AUDIT_QUERY = `
       modelName
       status
       modules
+      auditScope
       metrics
       configuration
       evaluationMode
@@ -136,6 +137,7 @@ const GET_AI_MODEL_NAME_QUERY = `
       id
       name
       displayName
+      domain
     }
   }
 `;
@@ -199,6 +201,7 @@ const UPDATE_AUDIT_MUTATION = `
 export type Audit = {
   auditType: string;
   evaluationMode: string;
+  auditScope?: string | null;
   id: string;
   name: string;
   modelId: string;
@@ -347,6 +350,7 @@ const EvaluationDetail = ({
   );
   const [editableName, setEditableName] = useState<string>("");
   const [isSavingName, setIsSavingName] = useState(false);
+  const [modelDomain, setModelDomain] = useState<string | string[] | null>(null);
 
   const isFetchingRef = useRef(false);
   const lastFetchedAuditIdRef = useRef<string | null>(null);
@@ -550,17 +554,19 @@ const EvaluationDetail = ({
         setAudit(auditData.audit);
         lastFetchedAuditIdRef.current = evaluationId;
 
-        if (!auditData.audit.modelName && auditData.audit.modelId) {
+        if (auditData.audit.modelId) {
           try {
             const modelData = await request<{
               aiModel: {
                 id: string;
                 name: string | null;
                 displayName: string | null;
+                domain?: string | string[] | null;
               };
             }>(GET_AI_MODEL_NAME_QUERY, { model_id: auditData.audit.modelId });
 
             if (modelData?.aiModel) {
+              setModelDomain(modelData.aiModel.domain ?? null);
               const displayName =
                 modelData.aiModel.displayName ||
                 modelData.aiModel.name ||
@@ -658,6 +664,34 @@ const EvaluationDetail = ({
   const evaluationMode = getStatusColor(audit?.evaluationMode || "");
   const duration = getDuration();
   const isRunning = audit?.status === "RUNNING" || audit?.status === "PENDING";
+  const savedEvaluationScope =
+    audit?.auditScope ||
+    audit?.configuration?.auditScope ||
+    audit?.configuration?.audit_scope ||
+    null;
+  const evaluationScopeSource = savedEvaluationScope || modelDomain;
+  const evaluationScopeDisplay = Array.isArray(evaluationScopeSource)
+    ? evaluationScopeSource
+        .filter(Boolean)
+        .map((scope) =>
+          String(scope)
+            .split("_")
+            .map(
+              (word: string) =>
+                word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+            )
+            .join(" ")
+        )
+        .join(", ")
+    : evaluationScopeSource
+      ? String(evaluationScopeSource)
+          .split("_")
+          .map(
+            (word: string) =>
+              word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+          )
+          .join(" ")
+      : "--";
 
   useEffect(() => {
     if (audit) {
@@ -1141,6 +1175,17 @@ const EvaluationDetail = ({
                   className="text-gray-900 font-medium break-words"
                 >
                   {audit.modules?.map(formatModuleName).join(", ") || "--"}
+                </Text>
+              </div>
+              <div>
+                <Text variant="bodyMd" className="text-gray-500">
+                  Evaluation Scope :{" "}
+                </Text>
+                <Text
+                  variant="bodyMd"
+                  className="text-gray-900 font-medium break-words"
+                >
+                  {evaluationScopeDisplay}
                 </Text>
               </div>
             </div>

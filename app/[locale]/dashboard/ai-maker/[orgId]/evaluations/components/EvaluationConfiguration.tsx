@@ -27,6 +27,9 @@ interface EvaluationConfigurationProps {
   setOrganisationName: (value: string) => void;
   auditObjective: string;
   setAuditObjective: (value: string) => void;
+  auditScope: string;
+  setAuditScope: (value: string) => void;
+  evaluationScopeOptions: SelectOption[];
   modeOfEvaluation: string;
   setModeOfEvaluation: (value: string) => void;
   modules: Module[];
@@ -51,6 +54,7 @@ interface EvaluationConfigurationProps {
     auditorName?: string;
     organisationName?: string;
     auditObjective?: string;
+    auditScope?: string;
     modeOfEvaluation?: string;
     modules?: string;
     metrics?: string;
@@ -60,6 +64,7 @@ interface EvaluationConfigurationProps {
       auditorName?: string;
       organisationName?: string;
       auditObjective?: string;
+      auditScope?: string;
       modeOfEvaluation?: string;
       modules?: string;
       metrics?: string;
@@ -76,6 +81,9 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
   setOrganisationName,
   auditObjective,
   setAuditObjective,
+  auditScope,
+  setAuditScope,
+  evaluationScopeOptions,
   modeOfEvaluation,
   setModeOfEvaluation,
   modules,
@@ -338,6 +346,52 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
               </div>
             </div>
           </div>
+
+          {evaluationScopeOptions.length > 0 && (
+            <div className="mb-6">
+              <Label
+                htmlFor="auditScope"
+                className={`${styles.auditFormLabel} ${styles.auditObjectiveLabel}`}
+              >
+                <Text variant="bodyMd" fontWeight="medium">
+                  Evaluation Scope<span className="text-red-500">*</span>
+                </Text>
+              </Label>
+              {validationErrors.auditScope && (
+                <Text
+                  variant="bodySm"
+                  className="text-red-600 mt-1"
+                  color="critical"
+                >
+                  {validationErrors.auditScope}
+                </Text>
+              )}
+              <div className="mt-4">
+                <div
+                  className={`${styles.evaluationModuleDropdown} ${styles.modeOfEvaluationDropdown}`}
+                >
+                  <Select
+                    name="auditScope"
+                    label="Evaluation Scope"
+                    labelHidden
+                    options={evaluationScopeOptions}
+                    value={auditScope}
+                    placeholder="Select evaluation scope"
+                    onChange={(value) => {
+                      setAuditScope(value);
+
+                      if (setValidationErrors && validationErrors.auditScope) {
+                        setValidationErrors((prev) => ({
+                          ...prev,
+                          auditScope: undefined,
+                        }));
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Evaluation Modules Section */}
           <div className="mb-6">

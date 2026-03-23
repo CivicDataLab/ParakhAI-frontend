@@ -72,6 +72,7 @@ const AI_MODELS_QUERY = `
       name
       displayName
       modelType
+      domain
       isPublic
       versions {
         id
@@ -91,12 +92,21 @@ const AI_MODEL_BY_ID_QUERY = `
       name
       displayName
       modelType
+      domain
       versions {
         id
         version
         isLatest
         status
       }
+    }
+  }
+`;
+
+const AUDIT_DOMAIN_OPTIONS_QUERY = `
+  query AuditDomainOptions($domain: String!) {
+    auditDomainOptions(domain: $domain) {
+      domains
     }
   }
 `;
@@ -151,6 +161,7 @@ const UPDATE_AUDIT_MUTATION = `
         name
         status
         modules
+        auditScope
         metrics
         modelId
         modelVersionId
@@ -295,6 +306,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       name: string;
       displayName: string;
       modelType: string;
+      domain?: string | null | string[];
       organization?: string;
       versions?: Array<{
         id: number;
@@ -333,6 +345,13 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     "";
   const modelType = selectedModel?.modelType || "TEXT_GENERATION";
 
+  const [evaluationScopeOptions, setEvaluationScopeOptions] = useState<
+    SelectOption[]
+  >([]);
+  const evaluationScopeOptionsKey = evaluationScopeOptions
+    .map((o) => o.value)
+    .join("|");
+
   // GraphQL API hook for authenticated requests
   const {
     request,
@@ -343,6 +362,70 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
   // Get user session for expert name
   const { user } = useAppSession();
+
+  // Keep auditScope aligned with the selected model's available domains
+  useEffect(() => {
+    if (evaluationScopeOptions.length === 0) {
+      if (auditScope) setAuditScope("");
+      return;
+    }
+
+    const exists = evaluationScopeOptions.some((o) => o.value === auditScope);
+    if (!exists) {
+      setAuditScope("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedModelId, auditType, evaluationScopeOptionsKey]);
+
+  // Resolve evaluation scope options via:
+  // 1) GetAIModel -> domain
+  // 2) auditDomainOptions(domain) -> domains[]
+  useEffect(() => {
+    const fetchAuditDomainOptions = async () => {
+      if (!selectedModelId || !isAuthenticated || isSessionLoading) return;
+
+      try {
+        const modelResult = await request<{
+          aiModel: {
+            id: string;
+            domain?: string | string[] | null;
+          } | null;
+        }>(AI_MODEL_BY_ID_QUERY, { modelId: selectedModelId }, { organization: orgId });
+
+        const modelDomain = modelResult?.aiModel?.domain;
+        const domainInput = Array.isArray(modelDomain)
+          ? modelDomain.find(Boolean) || ""
+          : modelDomain || "";
+
+        if (!domainInput) {
+          setEvaluationScopeOptions([]);
+          return;
+        }
+
+        const domainOptionsResult = await request<{
+          auditDomainOptions: { domains?: string[] | null } | null;
+        }>(
+          AUDIT_DOMAIN_OPTIONS_QUERY,
+          { domain: domainInput },
+          { organization: orgId }
+        );
+
+        const domains = domainOptionsResult?.auditDomainOptions?.domains || [];
+        const options: SelectOption[] = Array.from(
+          new Set(domains.filter(Boolean))
+        ).map((d) => ({
+          value: d,
+          label: String(d),
+        }));
+
+        setEvaluationScopeOptions(options);
+      } catch {
+        setEvaluationScopeOptions([]);
+      }
+    };
+
+    fetchAuditDomainOptions();
+  }, [selectedModelId, isAuthenticated, isSessionLoading, request, orgId]);
 
   // Handle tab query parameter on mount
   useEffect(() => {
@@ -357,6 +440,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const [organisationName, setOrganisationName] = useState("");
   const [auditObjective, setAuditObjective] = useState("");
   const [modeOfEvaluation, setModeOfEvaluation] = useState<string>("");
+  const [auditScope, setAuditScope] = useState<string>("");
 
   // Prefill organisation name when org details are loaded
   useEffect(() => {
@@ -401,6 +485,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     auditorName?: string;
     organisationName?: string;
     auditObjective?: string;
+    auditScope?: string;
     modeOfEvaluation?: string;
     modules?: string;
     metrics?: string;
@@ -653,6 +738,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           }
 
           if (audit.auditObjective) setAuditObjective(audit.auditObjective);
+          if (audit.auditScope) setAuditScope(audit.auditScope);
+          // If backend has no auditScope yet, keep the current default derived
+          // from the selected model's domains instead of clearing it.
           if (audit.evaluationMode) {
             setModeOfEvaluation(audit.evaluationMode.toLowerCase());
           }
@@ -758,6 +846,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             name: auditName,
             auditType,
             evaluationMode: modeOfEvaluation || "automated",
+            auditScope: auditScope.trim() || null,
             modules: modulesList,
             metrics: metricsList,
             testDatasetIds: selectedPromptLibraries.map((item: any) => item.id),
@@ -1221,6 +1310,13 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
     if (!auditObjective.trim()) {
       errors.auditObjective = "Evaluation objective is required";
+    }
+
+    if (
+      evaluationScopeOptions.length > 0 &&
+      (!auditScope || auditScope.trim() === "")
+    ) {
+      errors.auditScope = "Evaluation scope is required";
     }
 
     if (!modeOfEvaluation || modeOfEvaluation.trim() === "") {
@@ -1730,6 +1826,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               setOrganisationName={setOrganisationName}
               auditObjective={auditObjective}
               setAuditObjective={setAuditObjective}
+              auditScope={auditScope}
+              setAuditScope={setAuditScope}
+              evaluationScopeOptions={evaluationScopeOptions}
               modeOfEvaluation={modeOfEvaluation}
               setModeOfEvaluation={setModeOfEvaluation}
               modules={modules}
