@@ -22,6 +22,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { SeverityBarChart } from "./SeverityBarChart";
 
+const EVALUATION_NAME_TOAST_ID = "evaluation-detail-name-save";
+
 const GET_AUDIT_QUERY = `
   query GetAudit($auditId: ID!) {
     audit(auditId: $auditId) {
@@ -670,7 +672,9 @@ const EvaluationDetail = ({
 
     // Frontend validation: show error toast, do not call backend
     if (!trimmedName) {
-      toast.error("Evaluation name is required.");
+      toast.error("Evaluation name is required.", {
+        id: EVALUATION_NAME_TOAST_ID,
+      });
       return;
     }
 
@@ -700,19 +704,21 @@ const EvaluationDetail = ({
         const msg =
           result?.updateAudit?.message ||
           "Failed to save evaluation name on the server.";
-        toast.error(msg);
+        toast.error(msg, { id: EVALUATION_NAME_TOAST_ID });
       } else if (result.updateAudit.audit?.name) {
         setAudit((prev) =>
           prev ? { ...prev, name: result.updateAudit.audit!.name } : prev
         );
-        toast.success("Evaluation name saved successfully.");
+        toast.success("Evaluation name saved successfully.", {
+          id: EVALUATION_NAME_TOAST_ID,
+        });
       }
     } catch (err) {
       const msg =
         err instanceof Error
           ? err.message
           : "Failed to save evaluation name. Please try again.";
-      toast.error(msg);
+      toast.error(msg, { id: EVALUATION_NAME_TOAST_ID });
     } finally {
       setIsSavingName(false);
     }
