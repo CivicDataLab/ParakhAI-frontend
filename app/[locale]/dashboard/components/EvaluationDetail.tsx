@@ -52,24 +52,6 @@ const GET_AUDIT_QUERY = `
   }
 `;
 
-const GET_AUDIT_RESULTS_QUERY = `
-  query GetAuditResults($auditId: ID!) {
-    auditResults(auditId: $auditId) {
-      id
-      riskLevel
-      reason
-      task {
-        moduleDisplayName
-        metricDisplayName
-        test {
-          testInput
-          actualOutput
-        }
-      }
-    }
-  }
-`;
-
 const GET_AUDIT_RESULTS_SUMMARY_QUERY = `
   query GetAuditResultSamples($auditId: ID!) {
     resultSamples(auditId: $auditId) {
@@ -109,24 +91,6 @@ const GET_AUDIT_RESULTS_SUMMARY_QUERY = `
           }
         }
       }
-    }
-  }
-`;
-
-const GET_MANUAL_TEST_CASES_QUERY = `
-  query ManualTestCases($auditId: ID!) {
-    manualTestCases(auditId: $auditId) {
-      id
-      module
-      subModule
-      inputPrompt
-      modelOutput
-      status
-      issueType
-      severity
-      comments
-      idealOutput
-      createdAt
     }
   }
 `;
@@ -331,20 +295,11 @@ const EvaluationDetail = ({
     size: number | null;
     url: string;
   } | null>(null);
-  const [testCasesData, setTestCasesData] = useState<TestCase[]>([]);
-  const [manualTestCases, setManualTestCases] = useState<
-    Array<{
-      id: string;
-      severity?: "LOW" | "MEDIUM" | "HIGH";
-      status: "PASSED" | "FAILED";
-    }>
-  >([]);
   const [apiModuleIssues, setApiModuleIssues] = useState<ModuleIssue[]>([]);
   const [metricSummary, setMetricSummary] = useState<Record<string, Record<string, { risk_distribution: Record<string, number> }>>>({});
+  const [riskDistribution, setRiskDistribution] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [resultsError, setResultsError] = useState<string | null>(null);
   const [expandedIssueIds, setExpandedIssueIds] = useState<Set<string>>(
     new Set()
   );
@@ -393,90 +348,6 @@ const EvaluationDetail = ({
     }
   };
 
-  // Fetch manual test cases
-  const fetchManualTestCases = async () => {
-    try {
-      const requestOptions = orgId ? { organization: orgId } : undefined;
-
-      const data = await request<{
-        manualTestCases: Array<{
-          id: string;
-          severity?: "LOW" | "MEDIUM" | "HIGH";
-          status: "PASSED" | "FAILED";
-        }>;
-      }>(
-        GET_MANUAL_TEST_CASES_QUERY,
-        { auditId: evaluationId },
-        requestOptions
-      );
-
-      if (data?.manualTestCases) {
-        setManualTestCases(data.manualTestCases);
-      }
-    } catch (err: any) {
-      console.error("Error fetching manual test cases:", err);
-      // Don't set error state here as manual test cases are optional
-    }
-  };
-
-  // Fetch audit results
-  const fetchResults = async () => {
-    try {
-      setIsLoadingResults(true);
-      setResultsError(null);
-
-      const requestOptions = orgId ? { organization: orgId } : undefined;
-
-      const data = await request<{
-        auditResults: Array<{
-          id: string;
-          riskLevel: string;
-          reason: string;
-          task: {
-            moduleDisplayName: string;
-            metricDisplayName: string;
-            test: {
-              testInput: string;
-              actualOutput: string;
-            };
-          };
-        }>;
-      }>(GET_AUDIT_RESULTS_QUERY, { auditId: evaluationId }, requestOptions);
-
-      const mappedResults: TestCase[] = (data?.auditResults || []).map(
-        (result) => {
-          const riskLevelMap: Record<
-            string,
-            "High" | "Medium" | "Low" | "No risk"
-          > = {
-            HIGH_RISK: "High",
-            MEDIUM_RISK: "Medium",
-            LOW_RISK: "Low",
-            NO_RISK: "No risk",
-            NONE: "No risk",
-          };
-
-          return {
-            id: result.id,
-            input: result.task?.test?.testInput || "",
-            output: result.task?.test?.actualOutput || "",
-            evaluationModule: result.task?.moduleDisplayName || "",
-            evaluationMetric: result.task?.metricDisplayName || "",
-            riskSeverity:
-              riskLevelMap[result.riskLevel?.toUpperCase()] || "No risk",
-            reason: result.reason || "",
-          };
-        }
-      );
-
-      setTestCasesData(mappedResults);
-    } catch (err: any) {
-      console.error("Error fetching results:", err);
-      setResultsError(err?.message || "Failed to load results");
-    } finally {
-      setIsLoadingResults(false);
-    }
-  };
 
   // Poll for audit completion
   const startPolling = () => {
@@ -504,8 +375,6 @@ const EvaluationDetail = ({
           }));
 
           if (data.audit.status === "COMPLETED" || data.audit.completedAt) {
-            await fetchResults();
-            await fetchManualTestCases();
             await fetchAuditSummary();
             await fetchResultSamples();
             return;
@@ -590,8 +459,6 @@ const EvaluationDetail = ({
           auditData.audit.status === "COMPLETED" ||
           auditData.audit.completedAt
         ) {
-          await fetchResults();
-          await fetchManualTestCases();
           await fetchAuditSummary();
           await fetchResultSamples();
         } else if (
@@ -631,6 +498,7 @@ const EvaluationDetail = ({
       const data = await request<{
         auditSummaries: Array<{
           hasReport: boolean;
+          riskDistribution: Record<string, number> | null;
           metricSummary: Record<string, Record<string, { risk_distribution: Record<string, number> }>> | null;
           auditReport: {
             name: string;
@@ -643,6 +511,9 @@ const EvaluationDetail = ({
       const summary = data?.auditSummaries?.[0];
       if (summary?.auditReport) {
         setAuditReport(summary.auditReport);
+      }
+      if (summary?.riskDistribution) {
+        setRiskDistribution(summary.riskDistribution);
       }
       if (summary?.metricSummary) {
         setMetricSummary(summary.metricSummary);
@@ -771,45 +642,11 @@ const EvaluationDetail = ({
     return "critical";
   };
 
-  // Risk severity summary derived from testCasesData and manualTestCases
-  const riskSummary = testCasesData.reduce(
-    (acc, testCase) => {
-      switch (testCase.riskSeverity) {
-        case "Low":
-          acc.low += 1;
-          break;
-        case "Medium":
-          acc.medium += 1;
-          break;
-        case "High":
-          acc.high += 1;
-          break;
-        default:
-          break;
-      }
-      return acc;
-    },
-    { low: 0, medium: 0, high: 0 }
-  );
-
-  // Add manual test cases to risk summary (only count FAILED ones with severity)
-  manualTestCases.forEach((testCase) => {
-    if (testCase.status === "FAILED" && testCase.severity) {
-      switch (testCase.severity) {
-        case "LOW":
-          riskSummary.low += 1;
-          break;
-        case "MEDIUM":
-          riskSummary.medium += 1;
-          break;
-        case "HIGH":
-          riskSummary.high += 1;
-          break;
-        default:
-          break;
-      }
-    }
-  });
+  const riskSummary = {
+    low: riskDistribution["LOW_RISK"] ?? 0,
+    medium: riskDistribution["MEDIUM_RISK"] ?? 0,
+    high: riskDistribution["HIGH_RISK"] ?? 0,
+  };
 
   const totalIssuesIdentified =
     riskSummary.low + riskSummary.medium + riskSummary.high;
