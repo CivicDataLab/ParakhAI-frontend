@@ -75,4 +75,4 @@ jobs:
           host: ${{ vars.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
-          script: rm -rf platform/ParakhAI-frontend/.next; rm -rf platform/ParakhAI-frontend/public; mv platform/ParakhAI-frontend/.next2 platform/ParakhAI-frontend/.next; mv platform/ParakhAI-frontend/public2 platform/ParakhAI-frontend/public; /home/ubuntu/.nvm/versions/node/v20.11.1/bin/pm2 restart parakh
+          script: rm -rf platform/ParakhAI-frontend/.next; rm -rf platform/ParakhAI-frontend/public; mv platform/ParakhAI-frontend/.next2 platform/ParakhAI-frontend/.next; mv platform/ParakhAI-frontend/public2 platform/ParakhAI-frontend/public; /home/ubuntu/.nvm/versions/node/v24.11.1/bin/pm2 restart parakh
