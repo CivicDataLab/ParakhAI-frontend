@@ -2,9 +2,9 @@
   "name": "parakh_ai",
   "version": "1.0.0",
   "private": true,
-    "scripts": {
+  "scripts": {
     "dev": "next dev -p 3000",
-    "dev:fresh": "graphql-codegen --config ./config/codegen.ts && next dev -p 3000",    
+    "dev:fresh": "graphql-codegen --config ./config/codegen.ts && next dev -p 3000",
     "dev:turbo": "next dev --turbo -p 3000",
     "build": "npm run generate:ci && next build",
     "start": "next start",
@@ -37,6 +37,7 @@
     "gtag": "^1.0.1",
     "holy-loader": "^2.2.10",
     "jwt-decode": "^4.0.0",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.544.0",
     "next": "^14.0.4",
     "next-auth": "^4.24.7",
@@ -47,6 +48,7 @@
     "react": "^18.2.0",
     "react-aria": "3.22.0",
     "react-dom": "^18.2.0",
+    "react-leaflet": "^4.2.1",
     "react-markdown": "^10.1.0",
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
