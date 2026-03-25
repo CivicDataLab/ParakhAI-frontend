@@ -11,13 +11,6 @@ const nextConfig = {
       },
     ],
   },
-  webpack: (config) => {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      'react-leaflet-fullscreen': false,
-    };
-    return config;
-  },
 };
 
 module.exports = nextConfig;

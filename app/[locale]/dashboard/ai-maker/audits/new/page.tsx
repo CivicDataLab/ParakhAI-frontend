@@ -11,8 +11,7 @@ import { toTitleCase } from '@/lib/utils';
 import { useGraphQL } from '@/lib/api';
 import AuditConfiguration from '../components/AuditConfiguration';
 import TestCases from '../components/TestCases';
-import dynamic from 'next/dynamic';
-const AuditResults = dynamic(() => import('../components/AuditResults'), { ssr: false });
+import AuditResults from '../components/AuditResults';
 import type { AuditType, SelectOption, Module } from '../components/types';
 
 // GraphQL queries for dynamic modules and metrics
