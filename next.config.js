@@ -2,7 +2,6 @@
 const nextConfig = {
   experimental: {
     optimizePackageImports: ['opub-ui', 'echarts', 'lucide-react'],
-    serverComponentsExternalPackages: ['leaflet', 'react-leaflet', 'react-leaflet-fullscreen'],
   },
   images: {
     remotePatterns: [
@@ -11,6 +10,13 @@ const nextConfig = {
         hostname: 'images.unsplash.com',
       },
     ],
+  },
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'react-leaflet-fullscreen': false,
+    };
+    return config;
   },
 };
 
