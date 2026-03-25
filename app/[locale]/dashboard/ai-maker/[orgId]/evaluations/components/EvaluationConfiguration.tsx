@@ -140,9 +140,8 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
       <div className={`flex gap-4 flex-wrap ${styles.auditOptionsContainer}`}>
         {/* Technical Audit Option */}
         <label
-          className={`flex items-start gap-3 cursor-pointer transition-all ${styles.technicalAuditCard} ${
-            auditType === "Technical" ? "" : ""
-          }`}
+          className={`flex items-start gap-3 cursor-pointer transition-all ${styles.technicalAuditCard} ${auditType === "Technical" ? "" : ""
+            }`}
         >
           <input
             type="radio"
@@ -171,9 +170,8 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
 
         {/* Domain Audit Option */}
         <label
-          className={`flex items-start gap-3 cursor-pointer transition-all ${styles.domainAuditCard} ${
-            auditType === "Domain" ? "" : ""
-          }`}
+          className={`flex items-start gap-3 cursor-pointer transition-all ${styles.domainAuditCard} ${auditType === "Domain" ? "" : ""
+            }`}
         >
           <input
             type="radio"
@@ -202,9 +200,8 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
 
         {/* Cultural Audit Option */}
         <label
-          className={`flex items-start gap-3 cursor-pointer transition-all ${styles.culturalAuditCard} ${
-            auditType === "Cultural" ? "" : ""
-          }`}
+          className={`flex items-start gap-3 cursor-pointer transition-all ${styles.culturalAuditCard} ${auditType === "Cultural" ? "" : ""
+            }`}
         >
           <input
             type="radio"
@@ -308,45 +305,6 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
             </div>
           </div> */}
 
-          {/* Audit Details Section */}
-          <div className="mb-6">
-            <div className="flex flex-col gap-6">
-              <div>
-                <Label
-                  htmlFor="auditObjective"
-                  className={`${styles.auditFormLabel} ${styles.auditObjectiveLabel}`}
-                >
-                  <Text variant="bodyMd" fontWeight="medium">
-                    Evaluation Objective<span className="text-red-500">*</span>
-                  </Text>
-                </Label>
-                <div className={`${styles.auditFormTextarea} ${styles.auditObjectiveTextarea}`}>
-                  <TextField
-                    id="auditObjective"
-                    name="auditObjective"
-                    label="Audit Objective"
-                    labelHidden
-                    multiline={4}
-                    value={auditObjective}
-                    onChange={(value) => {
-                      setAuditObjective(value);
-                      if (
-                        setValidationErrors &&
-                        validationErrors.auditObjective
-                      ) {
-                        setValidationErrors((prev) => ({
-                          ...prev,
-                          auditObjective: undefined,
-                        }));
-                      }
-                    }}
-                    error={validationErrors.auditObjective}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
           {evaluationScopeOptions.length > 0 && (
             <div className="mb-6">
               <Label
@@ -392,6 +350,45 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
               </div>
             </div>
           )}
+
+          {/* Audit Details Section */}
+          <div className="mb-6">
+            <div className="flex flex-col gap-6">
+              <div>
+                <Label
+                  htmlFor="auditObjective"
+                  className={`${styles.auditFormLabel} ${styles.auditObjectiveLabel}`}
+                >
+                  <Text variant="bodyMd" fontWeight="medium">
+                    Evaluation Objective<span className="text-red-500">*</span>
+                  </Text>
+                </Label>
+                <div className={`${styles.auditFormTextarea} ${styles.auditObjectiveTextarea}`}>
+                  <TextField
+                    id="auditObjective"
+                    name="auditObjective"
+                    label="Audit Objective"
+                    labelHidden
+                    multiline={4}
+                    value={auditObjective}
+                    onChange={(value) => {
+                      setAuditObjective(value);
+                      if (
+                        setValidationErrors &&
+                        validationErrors.auditObjective
+                      ) {
+                        setValidationErrors((prev) => ({
+                          ...prev,
+                          auditObjective: undefined,
+                        }));
+                      }
+                    }}
+                    error={validationErrors.auditObjective}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Evaluation Modules Section */}
           <div className="mb-6">
@@ -452,15 +449,15 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                         ? moduleMetricsOptions[moduleKey]
                         : Array.isArray(module.metrics)
                           ? module.metrics
-                              .map((metric) => ({
-                                value: metric?.name || "",
-                                label:
-                                  metric?.displayName ||
-                                  toTitleCase(
-                                    (metric?.name || "").replace(/_/g, " ")
-                                  ),
-                              }))
-                              .filter((opt) => opt.value) // Filter out invalid options
+                            .map((metric) => ({
+                              value: metric?.name || "",
+                              label:
+                                metric?.displayName ||
+                                toTitleCase(
+                                  (metric?.name || "").replace(/_/g, " ")
+                                ),
+                            }))
+                            .filter((opt) => opt.value) // Filter out invalid options
                           : [];
                     return (
                       <div
@@ -563,8 +560,8 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                                 const nextSelected = Array.isArray(value)
                                   ? value
                                   : metricOptions.filter(
-                                      (option) => option.value === value
-                                    );
+                                    (option) => option.value === value
+                                  );
 
                                 setSelectedMetrics((prev) => ({
                                   ...prev,

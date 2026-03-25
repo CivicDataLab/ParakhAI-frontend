@@ -33,6 +33,7 @@ interface TestCasesProps {
   setSelectedPromptLibraries: (selected: any[]) => void;
   uploadedFiles: File[];
   setUploadedFiles: (files: File[]) => void;
+  domain?: string | null;
   pastedTestCases: string;
   setPastedTestCases: (value: string) => void;
   testInputMode: "paste" | "upload";
@@ -42,8 +43,8 @@ interface TestCasesProps {
 }
 
 const PROMPT_DATASETS_QUERY = `
-  query GetPromptDatasets($limit: Int, $isPublic: Boolean) {
-    promptDatasets(limit: $limit, isPublic: $isPublic) {
+  query GetPromptDatasets($limit: Int, $isPublic: Boolean, $domain: String) {
+    promptDatasets(limit: $limit, isPublic: $isPublic,domain: $domain) {
       id
       title
       description
@@ -67,6 +68,7 @@ const TestCases: React.FC<TestCasesProps> = ({
   setSelectedPromptLibraries,
   uploadedFiles,
   setUploadedFiles,
+  domain,
   pastedTestCases,
   setPastedTestCases,
   testInputMode,
@@ -118,6 +120,7 @@ const TestCases: React.FC<TestCasesProps> = ({
         }>(PROMPT_DATASETS_QUERY, {
           limit: 50,
           isPublic: true,
+          domain: domain || null,
         });
 
         const datasets = data?.promptDatasets || [];
@@ -142,7 +145,7 @@ const TestCases: React.FC<TestCasesProps> = ({
     };
 
     fetchPromptDatasets();
-  }, [isAuthenticated, request]);
+  }, [isAuthenticated, request, domain]);
 
   const promptDatasetColumns: ColumnDef<PromptDataset>[] = [
     {

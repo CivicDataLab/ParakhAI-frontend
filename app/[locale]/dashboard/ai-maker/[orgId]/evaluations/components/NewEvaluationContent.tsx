@@ -415,7 +415,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           new Set(domains.filter(Boolean))
         ).map((d) => ({
           value: d,
-          label: String(d),
+          label: toTitleCase(
+            String(d).replace(/_/g, " ").replace(/-/g, " ")
+          ),
         }));
 
         setEvaluationScopeOptions(options);
@@ -1872,6 +1874,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                 setSelectedPromptLibraries={setSelectedPromptLibraries}
                 uploadedFiles={uploadedFiles}
                 setUploadedFiles={setUploadedFiles}
+                domain={auditScope || null}
                 pastedTestCases={pastedTestCases}
                 setPastedTestCases={setPastedTestCases}
                 testInputMode={testInputMode}
