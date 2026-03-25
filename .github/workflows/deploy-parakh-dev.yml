@@ -1,0 +1,78 @@
+name: Update ParakhAI Dev
+
+on:
+  push:
+    branches: ['CD']
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: development
+    env:
+      KEYCLOAK_CLIENT_ID: ${{ secrets.KEYCLOAK_CLIENT_ID }}
+      KEYCLOAK_CLIENT_SECRET: ${{ secrets.KEYCLOAK_CLIENT_SECRET }}
+      AUTH_ISSUER: ${{ secrets.AUTH_ISSUER }}
+      NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
+      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+      END_SESSION_URL: ${{ secrets.END_SESSION_URL }}
+      REFRESH_TOKEN_URL: ${{ secrets.REFRESH_TOKEN_URL }}
+      NEXT_PUBLIC_BACKEND_URL: ${{ vars.NEXT_PUBLIC_BACKEND_URL }}
+      NEXT_PUBLIC_BACKEND_BASE_URL: ${{ vars.NEXT_PUBLIC_BACKEND_BASE_URL }}
+      NEXT_PUBLIC_AI_MAKER_URL: ${{ vars.NEXT_PUBLIC_AI_MAKER_URL }}
+      NEXT_PUBLIC_DATASPACE_API_URL: ${{ vars.NEXT_PUBLIC_DATASPACE_API_URL }}
+      NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT: ${{ vars.NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Generate
+        run: npm run generate:ci
+        env:
+          NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT: ${{ vars.NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT }}
+          NODE_ENV: production
+
+      - name: Build
+        run: npm run build
+
+      - name: Rename .next to .next2
+        run: mv .next .next2
+
+      - name: Rename public to public2
+        run: mv public public2
+
+      - name: Send .next2 to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ vars.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          source: .next2
+          target: platform/ParakhAI-frontend
+
+      - name: Send public2 to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ vars.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          source: public2
+          target: platform/ParakhAI-frontend
+
+      - name: Update with new Build
+        uses: appleboy/ssh-action@v1.0.3
+        continue-on-error: false
+        with:
+          host: ${{ vars.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          script: rm -rf platform/ParakhAI-frontend/.next; rm -rf platform/ParakhAI-frontend/public; mv platform/ParakhAI-frontend/.next2 platform/ParakhAI-frontend/.next; mv platform/ParakhAI-frontend/public2 platform/ParakhAI-frontend/public; /home/ubuntu/.nvm/versions/node/v20.11.1/bin/pm2 restart parakh
