@@ -34,8 +34,9 @@ const MobileNav = ({ navigationLinks, session, status }: MobileNavProps) => {
       {/* Mobile Hamburger Button */}
       <button
         onClick={() => setIsMobileMenuOpen(true)}
-        className="mobile-hamburger-button text-white hover:opacity-80 transition-opacity mr-4 lg:hidden"
+        className="mobile-hamburger-button text-white hover:opacity-80 transition-opacity mr-4 lg:hidden border-none bg-transparent p-0 m-0"
         aria-label="Open menu"
+        style={{ border: 'none', background: 'transparent', padding: 0, margin: 0 }}
       >
         <Icon source={Icons.menu} size={24} color="onBgDefault" />
       </button>

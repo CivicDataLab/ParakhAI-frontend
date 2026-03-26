@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
 import { GraphQLClient } from 'graphql-request';
+import React from 'react';
+import { logout } from './auth-helpers';
 import { useAppSession } from './session';
 
 /**
@@ -17,10 +18,7 @@ import { useAppSession } from './session';
  * Note: This requires the backend to have CORS properly configured
  */
 export function getGraphQLEndpoint(): string {
-  // Use proxy in development, direct URL in production
-  // if (process.env.NODE_ENV === 'development') {
-  //   return '/api/graphql';
-  // }
+  
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   
   if (!backendUrl) {
@@ -29,7 +27,6 @@ export function getGraphQLEndpoint(): string {
   
   let url = backendUrl.trim();
   
-  // Ensure URL has a protocol
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
     url = `https://${url}`;
   }
@@ -43,11 +40,15 @@ export function getGraphQLEndpoint(): string {
  * @param accessToken - The Keycloak access token (from useAppSession)
  * @returns Configured GraphQLClient instance
  */
-export function createGraphQLClient(accessToken: string | null): GraphQLClient {
+export function createGraphQLClient(
+  accessToken: string | null,
+  additionalHeaders: Record<string, string> = {}
+): GraphQLClient {
   const endpoint = getGraphQLEndpoint();
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    ...additionalHeaders,
   };
 
   // Add Authorization header if access token is available
@@ -74,9 +75,11 @@ export function createGraphQLClient(accessToken: string | null): GraphQLClient {
 export async function graphqlRequest<T = any>(
   query: string,
   variables: Record<string, any> = {},
-  accessToken: string | null = null
+  accessToken: string | null = null,
+  additionalHeaders: Record<string, string> = {}
 ): Promise<T> {
-  const client = createGraphQLClient(accessToken);
+  const client = createGraphQLClient(accessToken, additionalHeaders);
+
   try {
     return await client.request<T>(query, variables);
   } catch (error: any) {
@@ -103,9 +106,52 @@ export async function graphqlRequest<T = any>(
 }
 
 /**
+ * Check if an error is an authentication error that should trigger logout
+ */
+function isAuthenticationError(error: any): boolean {
+  const errorMessage = (error?.message || '').toLowerCase();
+  const responseErrors = error?.response?.errors || [];
+  
+  // Check error message
+  if (
+    errorMessage.includes('authentication') ||
+    errorMessage.includes('unauthorized') ||
+    errorMessage.includes('not authenticated') ||
+    errorMessage.includes('invalid token') ||
+    errorMessage.includes('token expired') ||
+    errorMessage.includes('token has expired')
+  ) {
+    return true;
+  }
+  
+  // Check GraphQL errors
+  for (const gqlError of responseErrors) {
+    const msg = (gqlError?.message || '').toLowerCase();
+    if (
+      msg.includes('authentication') ||
+      msg.includes('unauthorized') ||
+      msg.includes('not authenticated') ||
+      msg.includes('invalid token') ||
+      msg.includes('token expired') ||
+      gqlError?.extensions?.code === 'UNAUTHENTICATED'
+    ) {
+      return true;
+    }
+  }
+  
+  // Check HTTP status
+  if (error?.response?.status === 401 || error?.response?.status === 403) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
  * React hook for making authenticated GraphQL requests
  * 
  * Automatically uses the current user's access token from the session.
+ * Handles authentication errors by logging out the user.
  * 
  * @example
  * ```tsx
@@ -121,25 +167,51 @@ export async function graphqlRequest<T = any>(
  * ```
  */
 export function useGraphQL() {
-  const { accessToken, status } = useAppSession();
+  const { accessToken, status, error: sessionError } = useAppSession();
+  const hasLoggedOut = React.useRef(false);
+
+  // Handle session errors
+  React.useEffect(() => {
+    if (hasLoggedOut.current) return;
+    
+    if (sessionError === 'RefreshAccessTokenError' || sessionError === 'RefreshTokenExpired') {
+      hasLoggedOut.current = true;
+      console.warn('🔒 useGraphQL: Session error detected, logging out:', sessionError);
+      logout('/');
+    }
+  }, [sessionError]);
 
   // Memoize request function to prevent unnecessary re-renders
   const request = React.useCallback(async <T = any>(
     query: string,
-    variables: Record<string, any> = {}
+    variables: Record<string, any> = {},
+    headers: Record<string, string> = {}
   ): Promise<T> => {
     if (status === 'loading') {
       throw new Error('Session is still loading. Please wait.');
     }
 
     if (status === 'unauthenticated') {
+      if (!hasLoggedOut.current) {
+        hasLoggedOut.current = true;
+        console.warn('🔒 useGraphQL: User not authenticated, redirecting to login');
+        logout('/');
+      }
       throw new Error('User is not authenticated. Please log in.');
     }
 
     try {
-      const result = await graphqlRequest<T>(query, variables, accessToken);
+      const result = await graphqlRequest<T>(query, variables, accessToken, headers);
       return result;
     } catch (error: any) {
+      // Check for authentication errors and logout if needed
+      if (isAuthenticationError(error) && !hasLoggedOut.current) {
+        hasLoggedOut.current = true;
+        console.warn('🔒 useGraphQL: Authentication error from backend, logging out:', error?.message);
+        logout('/');
+        throw new Error('Session expired. Please log in again.');
+      }
+      
       // More specific error handling
       const errorMessage = error?.message || 'Unknown error';
       // Check for CORS errors (shouldn't happen with proxy, but just in case)
@@ -161,26 +233,15 @@ export function useGraphQL() {
 /**
  * Legacy function for backward compatibility
  * 
- * This matches the pattern mentioned in your project docs.
- * Automatically attaches Authorization header using session token.
- * 
- * @deprecated Use useGraphQL() hook instead for better React integration
+ * @deprecated Use useGraphQL() hook instead for better React integration.
+ * This function cannot access session tokens automatically.
+ * Pass accessToken explicitly if needed, or use useGraphQL() in React components.
  */
 export async function GraphQL<T = any>(
   query: string,
   variables: Record<string, any> = {},
-  deps: any[] = []
+  accessToken: string | null = null
 ): Promise<T> {
-  // Note: This function cannot access React hooks, so it requires
-  // the access token to be passed explicitly or retrieved from a global store.
-  // For client-side usage, prefer useGraphQL() hook.
-  
-  // Try to get token from window if available (for client-side)
-  // In practice, you should use useGraphQL() hook in React components
-  const accessToken = typeof window !== 'undefined' 
-    ? (window as any).__ACCESS_TOKEN__ || null 
-    : null;
-
   return graphqlRequest<T>(query, variables, accessToken);
 }
 

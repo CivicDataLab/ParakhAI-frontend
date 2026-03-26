@@ -1,9 +1,18 @@
+import { Inter } from "next/font/google";
 import { Providers } from "./providers";
 import "../styles/globals.css";
 
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+});
+
 export const metadata = {
   title: "ParakhAI",
-  description: "ParakhAI Authentication Platform",
+  description: "Paricipatory AI Evaluation",
+  icons: {
+    icon: "/images/icons/Favicon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -13,7 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body className={inter.className}>
         <Providers>{children}</Providers>
       </body>
     </html>

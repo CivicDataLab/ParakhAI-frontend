@@ -1,11 +1,22 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { Session } from 'next-auth';
-import { signIn, signOut } from 'next-auth/react';
-import { Avatar, Button, Divider, Icon, IconButton, Popover, Sheet, Spinner, Text } from 'opub-ui';
-import { Icons } from '@/components/icons';
+import { Icons } from "@/components/icons";
+import { logout } from "@/lib/auth-helpers";
+import { Session } from "next-auth";
+import { signIn } from "next-auth/react";
+import Link from "next/link";
+import {
+    Avatar,
+    Button,
+    Divider,
+    Icon,
+    IconButton,
+    Popover,
+    Sheet,
+    Spinner,
+    Text,
+} from "opub-ui";
+import React from "react";
 
 type NavItem = { label: string; href: string };
 
@@ -20,42 +31,48 @@ export default function Sidebar({
   setOpen: (next: boolean) => void;
   data: NavItem[];
   session: Session | null;
-  status: 'authenticated' | 'loading' | 'unauthenticated';
+  status: "authenticated" | "loading" | "unauthenticated";
 }) {
-  const loginButtonClasses = 'login-signup-button w-full';
+  const loginButtonClasses =
+    "w-full bg-secondaryGreen text-black text-base font-medium uppercase py-3 px-6 rounded-lg border border-transparent inline-flex items-center justify-center transition-all duration-150 ease rounded-2 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-baseVioletSolid6 focus:ring-offset-0";
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-        <Sheet.Content className={'p-4 overflow-y-auto overflow-x-visible'}>
+      <Sheet.Content className={"p-4 overflow-y-auto overflow-x-visible"}>
         <div className="flex flex-row justify-between">
           <div className="flex-1">
             {data.map((item, index) => {
-              const isExternal = item.href.startsWith('http://') || item.href.startsWith('https://');
+              const isExternal =
+                item.href.startsWith("http://") ||
+                item.href.startsWith("https://");
               return (
                 <div key={index} className="mb-1 px-1 py-2">
-                  <Link 
-                    href={item.href} 
-                    target={isExternal ? '_blank' : undefined}
-                    rel={isExternal ? 'noopener noreferrer' : undefined}
+                  <Link
+                    href={item.href}
+                    target={isExternal ? "_blank" : undefined}
+                    rel={isExternal ? "noopener noreferrer" : undefined}
                     onClick={() => setOpen(false)}
                   >
-                    <Text variant="headingSm" as="h1" color={'highlight'}>
+                    <Text variant="headingSm" as="h1" color={"highlight"}>
                       {item.label}
                     </Text>
                   </Link>
                 </div>
               );
             })}
-            {status === 'loading' ? (
+            {status === "loading" ? (
               <Spinner />
             ) : (
               <div>
                 {session?.user ? (
-                  <ProfileContent session={session} onClose={() => setOpen(false)} />
+                  <ProfileContent
+                    session={session}
+                    onClose={() => setOpen(false)}
+                  />
                 ) : (
                   <Button
                     onClick={() => {
-                      signIn('keycloak');
+                      signIn("keycloak");
                     }}
                     className={loginButtonClasses}
                   >
@@ -76,30 +93,36 @@ export default function Sidebar({
   );
 }
 
-export function ProfileContent({ session, onClose }: { session: Session; onClose: () => void }) {
+const profileLinks = [{ href: "/dashboard", label: "Evaluation Workspace" }];
+
+export function ProfileContent({
+  session,
+  onClose,
+}: {
+  session: Session;
+  onClose: () => void;
+}) {
   const [open, setOpen] = React.useState(false);
-  const logoutButtonClasses =
-    'w-full rounded-lg border border-[#d8d1ff] bg-[#f2ecff] text-[#4c3ad1] text-sm font-medium transition-colors duration-150 hover:bg-[#e6ddff] focus:outline-none focus:ring-2 focus:ring-[#c4b6ff] focus:ring-offset-1';
-  const dashboardLinkClasses =
-    'block w-full text-left text-sm font-medium text-[#3a3a3a] py-2 px-3 rounded-lg border border-transparent transition-colors duration-150 hover:bg-[#f9f7ff] hover:border-[#efe9ff] hover:shadow-none';
+
+  const handleSignOut = async () => {
+    setOpen(false);
+    onClose();
+    await logout("/");
+  };
 
   return (
     <div className="relative">
       <Popover open={open} onOpenChange={setOpen} modal={false}>
         <Popover.Trigger asChild>
-          {/* Remove all manual onClick handlers - let Popover.Trigger handle it */}
           {session.user?.image ? (
-            <IconButton
-              icon={session.user.image}
-              size="slim"
-            >
+            <IconButton icon={session.user.image} size="slim">
               {session.user.name}
             </IconButton>
           ) : (
             <div
               style={
                 {
-                  '--border-highlight-subdued': 'var(--accent-tertiary-color)',
+                  "--border-highlight-subdued": "var(--accent-tertiary-color)",
                 } as React.CSSProperties
               }
             >
@@ -108,7 +131,11 @@ export function ProfileContent({ session, onClose }: { session: Session; onClose
                 size="slim"
                 className="rounded-full hover:no-underline"
               >
-                <Avatar showInitials name={session.user?.name || 'User'} size="small" />
+                <Avatar
+                  showInitials
+                  name={session.user?.name || "User"}
+                  size="small"
+                />
               </Button>
             </div>
           )}
@@ -117,38 +144,46 @@ export function ProfileContent({ session, onClose }: { session: Session; onClose
           align="end"
           sideOffset={8}
           collisionPadding={8}
-          className="p-0 w-[min(260px,calc(100vw-32px))] max-w-[calc(100vw-32px)] bg-white border border-gray-200 shadow-lg rounded-xl z-[100000] mb-0"
+          className="p-0 w-[min(260px,calc(100vw-32px))] min-w-[220px] max-w-[calc(100vw-32px)] z-[100000] mb-0"
           style={{ zIndex: 100000, marginBottom: 0 }}
         >
-          <div className="px-4 pt-3 pb-2">
-            <Text variant="bodyMd" fontWeight="medium" className="text-gray-800 block">
-              {session.user?.name || 'User'}
-            </Text>
-            <Text variant="bodySm" className="text-gray-700 block mt-0.5">
-              {session.user?.email}
-            </Text>
-          </div>
-          <div className="px-2 pb-3 space-y-3">
-            <Link
-              href="/dashboard"
-              onClick={() => setOpen(false)}
-              className={`${dashboardLinkClasses} -mx-2`}
-            >
-              Dashboard
-            </Link>
-
-            <Divider className="my-2" />
-
-            <button
-              onClick={() => {
-                setOpen(false);
-                onClose();
-                signOut({ callbackUrl: '/' });
-              }}
-              className={`${logoutButtonClasses} py-2`}
-            >
-              Log Out
-            </button>
+          <div className="rounded-3 py-2 shadow-basicDeep bg-white">
+            <div className="flex flex-col px-5 py-2">
+              <Text
+                variant="bodyMd"
+                fontWeight="medium"
+                className="text-textDefault"
+              >
+                {session.user?.name || "User"}
+              </Text>
+              <Text variant="bodyMd" className="text-textDefault">
+                {session.user?.email}
+              </Text>
+            </div>
+            <div className="flex w-full flex-col">
+              {profileLinks.map((link) => (
+                <Text variant="bodyMd" key={link.href}>
+                  <Link
+                    onClick={() => setOpen(false)}
+                    href={link.href}
+                    className="block w-full px-5 py-2 text-textSubdued transition-colors duration-100 ease-ease hover:bg-actionSecondaryNeutralHovered hover:text-textDefault"
+                  >
+                    {link.label}
+                  </Link>
+                </Text>
+              ))}
+            </div>
+            <Divider className="mx-3 my-3 w-auto" />
+            <div className="px-3">
+              <Button
+                kind="secondary"
+                size="slim"
+                fullWidth
+                onClick={handleSignOut}
+              >
+                Log Out
+              </Button>
+            </div>
           </div>
         </Popover.Content>
       </Popover>

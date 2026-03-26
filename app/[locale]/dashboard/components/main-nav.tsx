@@ -1,27 +1,25 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { signIn, useSession } from 'next-auth/react';
-import { Spinner, Icon } from 'opub-ui';
+import React from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
+import { Spinner, Icon, IconButton } from "opub-ui";
 
-import { Icons } from '@/components/icons';
-import { ProfileMenu } from '@/components/ProfileMenu';
-import MobileNav from './mobile-nav';
+import { Icons } from "@/components/icons";
+import { ProfileMenu } from "@/components/ProfileMenu";
+import MobileNav from "./mobile-nav";
 
-const buildNavigationLinks = () => {
-  return [
-    { label: 'Models', href: '/models' },
-    { label: 'AI Makers', href: '#' },
-    { label: 'Auditors', href: '/auditors' },
-    { label: 'Resources', href: '/resources' },
-    { label: 'Dashboard', href: '/dashboard' },
-  ];
+type NavLink = {
+  label: string;
+  href: string;
 };
 
-const loginButtonClasses = 'login-signup-button';
+const buildNavigationLinks = (): NavLink[] => {
+  // Navigation links currently disabled (Evaluation Workspace removed)
+  return [];
+};
 
 const MainNav = () => {
   const { data: session, status } = useSession();
@@ -29,58 +27,85 @@ const MainNav = () => {
   const navigationLinks = React.useMemo(buildNavigationLinks, []);
 
   return (
-    <>
-      <nav className="bg-primary-purple relative z-[9999] sticky top-0">
-        <div className="max-w-7xl mx-auto px-12 sm:px-16 lg:px-32">
-          <div className="desktop-nav-container relative flex justify-between items-center h-30 pt-10 pr-10 pb-7 pl-10">
-            {/* Mobile Navigation */}
-            <MobileNav 
-              navigationLinks={navigationLinks}
-              session={session}
-              status={status}
-            />
+    <header className="sticky top-0 z-[99999]">
+      <nav className="bg-primaryPurple2 w-full">
+        <div className="w-full px-3 sm:px-4 lg:px-8">
+          {/* Top bar container */}
+          <div className="flex items-center justify-between min-h-[80px] py-4 lg:min-h-[60px] lg:py-3 gap-4">
+            {/* LEFT: Logo (MobileNav only visible on mobile) */}
+            <div className="flex items-center gap-3">
+              {/* Mobile Navigation - only visible on mobile */}
+              <div className="lg:hidden">
+                <MobileNav
+                  navigationLinks={navigationLinks}
+                  session={session}
+                  status={status}
+                />
+              </div>
 
-            {/* Logo */}
-            <div className="desktop-nav-logo flex items-center -ml-[270px]">
-              <Link href="/" className="flex items-center" aria-label="ParakhAI Home">
-                <Image src="/images/logos/parakhai-logo.png" alt="ParakhAI" width={169} height={50}  className="h-[55px] w-[169px] p-[6.53px]" />
-              </Link>
+              {/* Logo - always visible */}
+              <div className="flex items-center flex-shrink-0">
+                <Link
+                  href="/"
+                  className="flex items-center"
+                  aria-label="ParakhAI Home"
+                >
+                  <div
+                    className="relative overflow-hidden 
+                                h-6 w-[100px] 
+                                md:h-7 md:w-[120px] 
+                                lg:h-[55px] lg:w-[165px] lg:p-[6.53px]"
+                  >
+                    <Image
+                      src="/images/logos/parakhai-logo.png"
+                      alt="ParakhAI"
+                      fill
+                      className="object-contain"
+                      sizes="(max-width: 640px) 100px, (max-width: 1024px) 120px, 165px"
+                    />
+                  </div>
+                </Link>
+              </div>
             </div>
 
-            {/* Center Section: Search + Navigation Links */}
-            <div className="desktop-nav-center flex items-center gap-6 absolute -right-[116px]">
-              {/* Search Icon */}
-              <button
-                type="button"
-                className="text-white hover:opacity-80 transition-opacity"
-              >
-                <Icon source={Icons.search} size={24} color="onBgDefault" />
-              </button>
-
+            {/* RIGHT: Navigation Links + Avatar/Profile (desktop only) */}
+            <div className="hidden lg:flex items-center gap-6">
               {/* Navigation Links */}
               {navigationLinks.map((link) => {
-                const isExternal = link.href.startsWith('http://') || link.href.startsWith('https://');
+                const isExternal =
+                  link.href.startsWith("http://") ||
+                  link.href.startsWith("https://");
                 const normalizedPath = (() => {
-                  if (!pathname) return '/';
+                  if (!pathname) return "/";
                   // Strip the leading locale segment if present: "/en/dashboard" -> "/dashboard"
-                  const withoutLocale = pathname.replace(/^\/[^/]+(?=\/)/, '');
-                  return withoutLocale || '/';
+                  const withoutLocale = pathname.replace(/^\/[^/]+(?=\/)/, "");
+                  return withoutLocale || "/";
                 })();
+
+                // Keep "Evaluation Workspace" highlighted for all nested Evaluation Workspace routes
+                const isDashboardLink = link.href === "/dashboard";
                 const isActive =
-                  !isExternal && (normalizedPath === link.href || normalizedPath.startsWith(`${link.href}/`));
+                  !isExternal &&
+                  (isDashboardLink
+                    ? normalizedPath.startsWith("/dashboard") ||
+                      (pathname && pathname.includes("/dashboard"))
+                    : normalizedPath === link.href ||
+                      normalizedPath.startsWith(`${link.href}/`));
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
-                    target={isExternal ? '_blank' : undefined}
-                    rel={isExternal ? 'noopener noreferrer' : undefined}
-                    className={`inline-flex items-center h-6 py-[2px] px-[5px] rounded hover:opacity-80 transition-opacity whitespace-nowrap ${
-                      isActive ? 'underline decoration-secondary-green' : ''
+                    target={isExternal ? "_blank" : undefined}
+                    rel={isExternal ? "noopener noreferrer" : undefined}
+                    className={`inline-flex items-center h-11 py-3 px-6 rounded-[8px] gap-[10px] whitespace-nowrap transition-colors duration-150 ${
+                      isActive
+                        ? "bg-[rgba(237,233,254,0.15)]" // active pill background with 15% opacity
+                        : "hover:bg-[#3A199C]" // subtle hover for inactive
                     }`}
                   >
-                    <span 
+                    <span
                       className={`text-base font-semibold leading-6 ${
-                        isActive ? 'text-secondary-green' : 'text-white'
+                        isActive ? "text-[#F5FFCC]" : "text-white"
                       }`}
                     >
                       {link.label}
@@ -88,31 +113,44 @@ const MainNav = () => {
                   </Link>
                 );
               })}
-              
-              {/* Profile/Sign In - positioned after navigation links */}
-              <div className="desktop-nav-right flex items-center gap-3 ml-6">
-                {status === 'loading' ? (
+
+              {/* Profile/Sign In */}
+              <div className="flex items-center gap-3 ml-6">
+                {status === "loading" ? (
                   <Spinner />
                 ) : session ? (
                   <ProfileMenu
-                    user={{ name: session.user?.name, email: session.user?.email }}
+                    user={{
+                      name: session.user?.name,
+                      email: session.user?.email,
+                    }}
                     align="end"
                     side="bottom"
                     sideOffset={4}
-                    contentClassName="profile-popover-content bg-white border border-gray-200 shadow-lg rounded-xl z-[10000]"
                   />
                 ) : (
-              <button onClick={() => signIn('keycloak')} className={loginButtonClasses}>
+                  <button
+                  type="button"
+                    onClick={() => signIn("keycloak")}
+                    className="bg-secondaryGreen text-black 
+                               text-base font-medium uppercase 
+                               py-3 px-6 rounded-lg border border-transparent 
+                               inline-flex items-center justify-center 
+                               transition-all duration-150 ease 
+                               rounded-2
+                               hover:opacity-80
+                               focus:outline-none focus:ring-2 focus:ring-baseVioletSolid6 focus:ring-offset-0"
+                  >
                     LOGIN / SIGN UP
-              </button>
+                  </button>
                 )}
               </div>
             </div>
           </div>
         </div>
       </nav>
-    </>
+    </header>
   );
 };
-  
+
 export default MainNav;
