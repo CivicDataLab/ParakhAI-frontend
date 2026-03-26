@@ -6,6 +6,7 @@ import { toTitleCase } from "@/lib/utils";
 import { IconCopy, IconEye, IconUpload } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import Image from "next/image";
+import { useParams } from "next/navigation";
 import {
   Button,
   DataTable,
@@ -90,6 +91,7 @@ const TestCases: React.FC<TestCasesProps> = ({
   const validationError = !hasTestCases
     ? "Please select at least one prompt dataset or provide custom test cases (paste text or upload file)"
     : undefined;
+  const params = useParams();
 
   // Fetch prompt datasets from DataSpace
   useEffect(() => {
@@ -121,7 +123,7 @@ const TestCases: React.FC<TestCasesProps> = ({
           limit: 50,
           isPublic: true,
           domain: domain || null,
-        });
+        }, { organization: params.orgId as string });
 
         const datasets = data?.promptDatasets || [];
         const formatted: PromptDataset[] = datasets.map((ds) => ({
