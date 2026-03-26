@@ -50,22 +50,13 @@ jobs:
       - name: Rename public to public2
         run: mv public public2
 
-      - name: Send .next2 to EC2
+      - name: Send files to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ vars.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
-          source: .next2
-          target: platform/ParakhAI-frontend
-
-      - name: Send public2 to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ vars.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          source: public2
+          source: .next2,public2,package.json,package-lock.json
           target: platform/ParakhAI-frontend
 
       - name: Update with new Build
@@ -75,4 +66,4 @@ jobs:
           host: ${{ vars.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
-          script: export PATH="/home/ubuntu/.nvm/versions/node/v24.11.1/bin:$PATH" && rm -rf platform/ParakhAI-frontend/.next; rm -rf platform/ParakhAI-frontend/public; mv platform/ParakhAI-frontend/.next2 platform/ParakhAI-frontend/.next; mv platform/ParakhAI-frontend/public2 platform/ParakhAI-frontend/public; pm2 restart parakh
+          script: export PATH="/home/ubuntu/.nvm/versions/node/v24.11.1/bin:$PATH" && cd platform/ParakhAI-frontend && npm install --legacy-peer-deps --omit=dev && rm -rf .next public; mv .next2 .next; mv public2 public; pm2 restart parakh
