@@ -95,16 +95,16 @@ const GET_AUDIT_RESULTS_SUMMARY_QUERY = `
   }
 `;
 
-const GET_AI_MODEL_NAME_QUERY = `
-  query GetAiModelName($model_id: ID!) {
-    aiModel(modelId: $model_id) {
-      id
-      name
-      displayName
-      domain
-    }
-  }
-`;
+// const GET_AI_MODEL_NAME_QUERY = `
+//   query GetAiModelName($model_id: ID!) {
+//     aiModel(modelId: $model_id) {
+//       id
+//       name
+//       displayName
+//       domain
+//     }
+//   }
+// `;
 
 // GraphQL query to fetch audit summary
 const GET_AUDIT_SUMMARY = `
@@ -305,7 +305,7 @@ const EvaluationDetail = ({
   );
   const [editableName, setEditableName] = useState<string>("");
   const [isSavingName, setIsSavingName] = useState(false);
-  const [modelDomain, setModelDomain] = useState<string | string[] | null>(null);
+  // const [modelDomain, setModelDomain] = useState<string | string[] | null>(null);
 
   const isFetchingRef = useRef(false);
   const lastFetchedAuditIdRef = useRef<string | null>(null);
@@ -423,37 +423,37 @@ const EvaluationDetail = ({
         setAudit(auditData.audit);
         lastFetchedAuditIdRef.current = evaluationId;
 
-        if (auditData.audit.modelId) {
-          try {
-            const modelData = await request<{
-              aiModel: {
-                id: string;
-                name: string | null;
-                displayName: string | null;
-                domain?: string | string[] | null;
-              };
-            }>(GET_AI_MODEL_NAME_QUERY, { model_id: auditData.audit.modelId });
+        // if (auditData.audit.modelId) {
+        //   try {
+        //     const modelData = await request<{
+        //       aiModel: {
+        //         id: string;
+        //         name: string | null;
+        //         displayName: string | null;
+        //         domain?: string | string[] | null;
+        //       };
+        //     }>(GET_AI_MODEL_NAME_QUERY, { model_id: auditData.audit.modelId });
 
-            if (modelData?.aiModel) {
-              setModelDomain(modelData.aiModel.domain ?? null);
-              const displayName =
-                modelData.aiModel.displayName ||
-                modelData.aiModel.name ||
-                auditData.audit.modelId;
+        //     if (modelData?.aiModel) {
+        //       setModelDomain(modelData.aiModel.domain ?? null);
+        //       const displayName =
+        //         modelData.aiModel.displayName ||
+        //         modelData.aiModel.name ||
+        //         auditData.audit.modelId;
 
-              setAudit((prev) =>
-                prev
-                  ? {
-                      ...prev,
-                      modelName: displayName,
-                    }
-                  : prev
-              );
-            }
-          } catch (modelErr) {
-            console.error("Error fetching model name:", modelErr);
-          }
-        }
+        //       setAudit((prev) =>
+        //         prev
+        //           ? {
+        //               ...prev,
+        //               modelName: displayName,
+        //             }
+        //           : prev
+        //       );
+        //     }
+        //   } catch (modelErr) {
+        //     console.error("Error fetching model name:", modelErr);
+        //   }
+        // }
 
         if (
           auditData.audit.status === "COMPLETED" ||
@@ -540,7 +540,7 @@ const EvaluationDetail = ({
     audit?.configuration?.auditScope ||
     audit?.configuration?.audit_scope ||
     null;
-  const evaluationScopeSource = savedEvaluationScope || modelDomain;
+  const evaluationScopeSource = savedEvaluationScope;
   const evaluationScopeDisplay = Array.isArray(evaluationScopeSource)
     ? evaluationScopeSource
         .filter(Boolean)
