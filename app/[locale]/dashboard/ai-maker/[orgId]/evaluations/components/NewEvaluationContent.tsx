@@ -403,7 +403,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         }
 
         const domainOptionsResult = await request<{
-          auditDomainOptions: { domains?: string[] | null } | null;
+          auditDomainOptions: { domains?: any[] | null } | null;
         }>(
           AUDIT_DOMAIN_OPTIONS_QUERY,
           { domain: domainInput },
@@ -411,14 +411,47 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         );
 
         const domains = domainOptionsResult?.auditDomainOptions?.domains || [];
-        const options: SelectOption[] = Array.from(
-          new Set(domains.filter(Boolean))
-        ).map((d) => ({
-          value: d,
-          label: toTitleCase(
-            String(d).replace(/_/g, " ").replace(/-/g, " ")
-          ),
-        }));
+        const options: SelectOption[] = [];
+
+        domains
+          .filter(Boolean)
+          .forEach((domainEntry) => {
+            let value: string;
+            let label: string;
+
+            if (typeof domainEntry === "string") {
+              value = domainEntry;
+              label = domainEntry;
+            } else if (
+              typeof domainEntry === "object" &&
+              domainEntry !== null
+            ) {
+              const entries = Object.entries(domainEntry as Record<string, any>);
+              if (entries.length > 0) {
+                const [backendValue, backendLabel] = entries[0];
+                const resolvedLabel =
+                  backendLabel !== undefined && backendLabel !== null
+                    ? String(backendLabel)
+                    : String(backendValue);
+
+                // Use backend key as value, human‑readable text as label
+                value = String(backendValue);
+                label = resolvedLabel;
+              } else {
+                const fallback = JSON.stringify(domainEntry);
+                value = fallback;
+                label = fallback;
+              }
+            } else {
+              const fallback = String(domainEntry);
+              value = fallback;
+              label = fallback;
+            }
+
+            if (!options.some((opt) => opt.value === value)) {
+              options.push({ value, label });
+            }
+          });
 
         setEvaluationScopeOptions(options);
       } catch {
