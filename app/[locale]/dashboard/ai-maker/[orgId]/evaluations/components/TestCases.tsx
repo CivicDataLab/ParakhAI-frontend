@@ -292,12 +292,13 @@ const TestCases: React.FC<TestCasesProps> = ({
                 <span className="text-gray-500">(comma separated values)</span>
               </Text>
             </Label>
-            <div className="test-cases-textarea-container">
+            <div>
               <TextField
                 name="pastedTestCases"
                 label="Paste your test cases"
                 labelHidden
                 multiline={6}
+                showLineNumbers={true}
                 value={pastedTestCases}
                 onChange={(value) => setPastedTestCases(value)}
                 placeholder={
