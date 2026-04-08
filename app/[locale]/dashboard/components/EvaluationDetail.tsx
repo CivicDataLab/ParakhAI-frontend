@@ -762,7 +762,7 @@ const EvaluationDetail = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 mt-10">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-          <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 text-left">
             <Text variant="bodyMd" className="text-gray-500 whitespace-nowrap mr-2">
               Evaluation Name :{" "}
             </Text>
@@ -1212,9 +1212,9 @@ const EvaluationDetail = ({
                                         onClick={() =>
                                           toggleIssueCard(issue.id)
                                         }
-                                        className="w-full flex items-center justify-between text-left mb-0 border-none outline-none bg-transparent"
+                                        className="w-full flex items-center justify-between gap-2 text-left mb-0 border-none outline-none bg-transparent"
                                       >
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex flex-1 min-w-0 items-center gap-3 flex-wrap">
                                           <Text
                                             variant="bodyLg"
                                             fontWeight="bold"

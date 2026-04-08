@@ -154,18 +154,23 @@ export const SeverityBarChart = ({ issues, metricSummary }: SeverityBarChartProp
   };
 
   const chartHeight = Math.max(260, submodules.length * 60 + 80);
+  const chartMinWidth = Math.max(520, submodules.length * 120);
 
   return (
     <div className="mb-6 rounded-[16px] border border-gray-100 bg-white p-4">
       <p className="mb-3 text-sm font-semibold text-gray-700">
         Issues by Submodule &amp; Severity
       </p>
-      <ReactECharts
-        option={option}
-        style={{ height: chartHeight, width: "100%" }}
-        notMerge
-        lazyUpdate
-      />
+      <div className="overflow-x-auto overflow-y-hidden">
+        <div style={{ minWidth: chartMinWidth }}>
+          <ReactECharts
+            option={option}
+            style={{ height: chartHeight, width: "100%" }}
+            notMerge
+            lazyUpdate
+          />
+        </div>
+      </div>
     </div>
   );
 };
