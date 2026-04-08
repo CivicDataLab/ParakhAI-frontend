@@ -1261,7 +1261,7 @@ const EvaluationDetail = ({
                                             >
                                               Input
                                             </Text>
-                                            <div className="prose prose-sm max-w-none ml-2 overflow-x-hidden break-words text-gray-900">
+                                            <div className="prose prose-sm max-w-none ml-2 overflow-x-auto break-words text-gray-900 [&_table]:min-w-[640px] [&_table]:w-max [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
                                               <ReactMarkdown
                                                 remarkPlugins={[remarkGfm]}
                                               >
@@ -1278,7 +1278,7 @@ const EvaluationDetail = ({
                                             >
                                               Output
                                             </Text>
-                                            <div className="prose prose-sm max-w-none overflow-x-hidden ml-2 break-words text-gray-900">
+                                            <div className="prose prose-sm max-w-none overflow-x-auto ml-2 break-words text-gray-900 [&_table]:min-w-[640px] [&_table]:w-max [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
                                               <ReactMarkdown
                                                 remarkPlugins={[remarkGfm]}
                                               >
@@ -1296,7 +1296,7 @@ const EvaluationDetail = ({
                                               >
                                                 Comments
                                               </Text>
-                                              <div className="prose prose-sm max-w-none ml-2 overflow-x-hidden break-words text-gray-900">
+                                              <div className="prose prose-sm max-w-none ml-2 overflow-x-auto break-words text-gray-900 [&_table]:min-w-[640px] [&_table]:w-max [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
                                                 <ReactMarkdown
                                                   remarkPlugins={[remarkGfm]}
                                                 >
