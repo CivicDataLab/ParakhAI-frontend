@@ -84,7 +84,7 @@ For more information on contributing to the project, refer to the [CONTRIBUTING.
 
 ## License
 
-This project is licensed under the MIT license. For more information, refer to the [LICENSE](LICENSE) file.
+This project is licensed under the MIT license. For more information, refer to the [LICENSE](LICENSE.md) file.
 
 ## Security
 
