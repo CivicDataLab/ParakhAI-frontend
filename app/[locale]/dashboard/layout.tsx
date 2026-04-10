@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
-import MainNav from './components/main-nav';
+import { DashboardGuard } from './components/DashboardGuard';
 import MainFooter from './components/main-footer';
+import MainNav from './components/main-nav';
 
 export const metadata: Metadata = {
   title: 'Dashboard | ParakhAI',
@@ -13,16 +14,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <header className="sticky top-0 z-50">
+    <DashboardGuard>
+      <div className="min-h-screen flex flex-col bg-[var(--page-background)]">
         <MainNav />
-      </header>
-      <main className="flex-1">
-        {children}
-      </main>
-      <footer>
+        <main className="flex-1 relative z-0">
+          {children}
+        </main>
         <MainFooter />
-      </footer>
-    </div>
+      </div>
+    </DashboardGuard>
   );
 }

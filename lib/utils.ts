@@ -1,5 +1,5 @@
-import { Metadata } from 'next';
-import { twMerge, type ClassNameValue } from 'tailwind-merge';
+import { Metadata } from "next";
+import { twMerge, type ClassNameValue } from "tailwind-merge";
 
 type MetadataOptions = {
   title?: string;
@@ -8,7 +8,7 @@ type MetadataOptions = {
   description?: string;
   keywords?: string[];
   openGraph?: {
-    type: 'website' | 'article' | 'dataset' | 'profile';
+    type: "website" | "article" | "dataset" | "profile";
     locale: string;
     url: string;
     title: string;
@@ -25,8 +25,8 @@ export function generatePageMetadata(options: MetadataOptions = {}): Metadata {
     description: options.description,
     keywords: options.keywords,
     openGraph: {
-      type: 'website',
-      locale: 'en_US',
+      type: "website",
+      locale: "en_US",
       url: options.openGraph?.url,
       title: options.openGraph?.title,
       description: options.openGraph?.description,
@@ -35,18 +35,18 @@ export function generatePageMetadata(options: MetadataOptions = {}): Metadata {
     },
     other: options.openGraph?.other,
     twitter: {
-      card: 'summary_large_image',
+      card: "summary_large_image",
       title: options.openGraph?.title,
       description: options.openGraph?.description,
       images: options.openGraph?.image,
-      creator: 'CivicDataLab',
+      creator: "CivicDataLab",
     },
   };
 }
 
 export interface JsonLdSchema {
-  '@context': 'https://schema.org';
-  '@type': string;
+  "@context": "https://schema.org";
+  "@type": string;
   [key: string]: any;
 }
 
@@ -60,17 +60,16 @@ export function cn(...inputs: ClassNameValue[]) {
 
 export function formatDate(input: string | number): string {
   const date = new Date(input);
-  return date.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
   });
 }
 
 export function toTitleCase(str: string) {
-  return str.replace(/\b\w/g, function (char: string) {
-    return char.toUpperCase();
-  });
+  if (!str) return "";
+  return str.toLowerCase().replace(/\b\p{L}/gu, (char) => char.toUpperCase());
 }
 
 const convertMap: any = {
@@ -99,7 +98,7 @@ export const blobToBase64 = function (blob: Blob) {
   let reader = new FileReader();
   reader.onload = function () {
     let dataUrl: any = reader.result;
-    let base64 = dataUrl?.split(',')[1];
+    let base64 = dataUrl?.split(",")[1];
 
     return base64;
   };
@@ -108,8 +107,8 @@ export const blobToBase64 = function (blob: Blob) {
 
 // function to convert bytes into friendly format
 export function bytesToSize(bytes: number) {
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-  if (bytes === 0) return '0 Byte';
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+  if (bytes === 0) return "0 Byte";
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
   return `${Math.round(bytes / Math.pow(1024, i))} ${sizes[i]}`;
 }
@@ -128,7 +127,7 @@ export function handleRedirect(event: any, link: any) {
     `You are being redirected to "${link}". `
   );
   if (confirmation) {
-    window.open(link, '_blank');
+    window.open(link, "_blank");
   }
 }
 
@@ -140,16 +139,16 @@ export function formatDateString(
   // If hyphendated it would return date in this format - 2023-01-01 else in April 1, 2021
   return isHyphenated
     ? new Date(
-        date.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'numeric',
+        date.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "numeric",
         })
       )
         .toISOString()
-        .split('T')[0]
-    : date.toLocaleDateString('en-US', {
-        month: 'long',
-        year: 'numeric',
+        .split("T")[0]
+    : date.toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
       });
 }
 
@@ -159,12 +158,12 @@ export async function getWebsiteTitle(url: string): Promise<string | null> {
     const html = await response.text();
 
     const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
+    const doc = parser.parseFromString(html, "text/html");
 
-    const title = doc.querySelector('title');
+    const title = doc.querySelector("title");
     return title?.innerText || null;
   } catch (error) {
-    console.error('Failed to fetch website title:', error);
+    console.error("Failed to fetch website title:", error);
     return null;
   }
 }
@@ -172,10 +171,10 @@ export async function getWebsiteTitle(url: string): Promise<string | null> {
 // Feature Sitemaps
 // Get configuration from environment
 export const getSiteMapConfig = () => ({
-  itemsPerPage: parseInt(process.env.FEATURE_SITEMAP_ITEMS_PER_PAGE || '1000'),
-  cacheDuration: parseInt(process.env.FEATURE_SITEMAP_CACHE_DURATION || '3600'),
+  itemsPerPage: parseInt(process.env.FEATURE_SITEMAP_ITEMS_PER_PAGE || "1000"),
+  cacheDuration: parseInt(process.env.FEATURE_SITEMAP_CACHE_DURATION || "3600"),
   childCacheDuration: parseInt(
-    process.env.FEATURE_SITEMAP_CHILD_CACHE_DURATION || '21600'
+    process.env.FEATURE_SITEMAP_CHILD_CACHE_DURATION || "21600"
   ),
 });
 
@@ -184,7 +183,7 @@ export type ENTITY_CONFIG_TYPE = Record<
   {
     // search for Elasticsearch type queries
     // graphql for GraphQL type queries
-    source: 'search' | 'graphql';
+    source: "search" | "graphql";
     // For Elasticsearch type queries
     endpoint?: string;
     // For GraphQL type queries
@@ -198,34 +197,34 @@ export type ENTITY_CONFIG_TYPE = Record<
 // Check if sitemap is enabled
 export const isSitemapEnabled = () => {
   return (
-    process.env.FEATURE_SITEMAPS === 'true' ||
-    process.env.NODE_ENV === 'production'
+    process.env.FEATURE_SITEMAPS === "true" ||
+    process.env.NODE_ENV === "production"
   );
 };
 
 // Entity Config
 export const ENTITY_CONFIG: ENTITY_CONFIG_TYPE = {
   datasets: {
-    source: 'search',
-    endpoint: '/search/dataset/',
+    source: "search",
+    endpoint: "/search/dataset/",
     // ?=&size=9&page=1&sort=recent
-    path: 'datasets',
-    priority: '0.8',
+    path: "datasets",
+    priority: "0.8",
   },
   usecases: {
-    source: 'graphql',
+    source: "graphql",
     graphqlQuery: `query UseCasesList {
       useCases {
         id
         slug
       }
     }`,
-    queryResKey: 'useCases',
-    path: 'usecases',
-    priority: '0.7',
+    queryResKey: "useCases",
+    path: "usecases",
+    priority: "0.7",
   },
   contributors: {
-    source: 'graphql',
+    source: "graphql",
     graphqlQuery: `query getContributors {
     getPublishers {
         __typename
@@ -237,29 +236,85 @@ export const ENTITY_CONFIG: ENTITY_CONFIG_TYPE = {
         }
       }
     }`,
-    queryResKey: 'getPublishers',
-    path: 'publishers',
-    priority: '0.6',
+    queryResKey: "getPublishers",
+    path: "publishers",
+    priority: "0.6",
   },
   sectors: {
-    source: 'graphql',
+    source: "graphql",
     graphqlQuery: `query SectorsLists {
       activeSectors {
         id
         slug
       }
     }`,
-    queryResKey: 'activeSectors',
-    path: 'sectors',
-    priority: '0.6',
+    queryResKey: "activeSectors",
+    path: "sectors",
+    priority: "0.6",
   },
 };
 export const extractPublisherId = (publisherSlug: any) => {
   // If the param contains an underscore, split and take the last part
-  if (publisherSlug.includes('_')) {
-    return publisherSlug.split('_').pop();
+  if (publisherSlug.includes("_")) {
+    return publisherSlug.split("_").pop();
   }
 
   // Otherwise, return the param as is (it's already just the ID)
   return publisherSlug;
+};
+
+// Helper function to strip markdown and HTML tags for card preview
+export const stripMarkdown = (markdown: string): string => {
+  if (!markdown) return "";
+
+  let cleaned = markdown
+    // Remove code blocks first (before other replacements)
+    .replace(/```[\s\S]*?```/g, "")
+    // Remove inline code
+    .replace(/`([^`]+)`/g, "$1")
+    // Remove images
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
+    // Remove links
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    // Remove headers
+    .replace(/^#{1,6}\s+/gm, "")
+    // Remove bold
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/__([^_]+)__/g, "$1")
+    // Remove italic
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/_([^_]+)_/g, "$1")
+    // Remove strikethrough
+    .replace(/~~([^~]+)~~/g, "$1")
+    // Remove blockquotes
+    .replace(/^\s*>\s+/gm, "")
+    // Remove horizontal rules
+    .replace(/^(-{3,}|_{3,}|\*{3,})$/gm, "")
+    // Remove list markers
+    .replace(/^\s*[-*+]\s+/gm, "")
+    .replace(/^\s*\d+\.\s+/gm, "")
+    // Remove HTML tags
+    .replace(/<[^>]*>/g, "")
+    // Replace HTML entities (like &nbsp;) with regular spaces - MUST come before other replacements
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, "/")
+    // Replace numeric HTML entities (like &#160;)
+    .replace(/&#\d+;/g, " ")
+    // Replace hex HTML entities (like &#xA0;)
+    .replace(/&#x[0-9A-Fa-f]+;/g, " ")
+    // Replace any remaining HTML entities with space
+    .replace(/&[#\w]+;/g, " ")
+    // Remove extra whitespace and newlines
+    .replace(/\n\s*\n/g, "\n")
+    .replace(/\n/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return cleaned;
 };

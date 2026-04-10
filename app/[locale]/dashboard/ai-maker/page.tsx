@@ -1,361 +1,145 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { 
-  Card, 
-  Button, 
-  Avatar, 
-  Tag, 
-  DataTable, 
-  ProgressBar, 
-  Text, 
-  Icon, 
-  Badge, 
-  Divider 
-} from 'opub-ui';
-import { 
-  IconCalendar, 
-  IconUsers, 
-  IconPlus, 
-  IconCheck, 
-  IconTool,
-  IconMoodSad 
-} from '@tabler/icons-react';
-import { createColumnHelper } from '@tanstack/react-table';
-import Link from 'next/link';
-import BreadCrumbs from '@/components/Breadcrumbs';
-import WelcomeSection from '../components/WelcomeSection';
-import { Icons } from '@/components/icons';
+import BreadCrumbs from "@/components/Breadcrumbs";
+import { Loading } from "@/components/loading";
+import { useDashboardStore } from "@/config/store";
+import { useGraphQL } from "@/lib/api";
+import Image from "next/image";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { Text } from "opub-ui";
+import { useEffect, useState } from "react";
 
-// Define audit data type
-type Audit = {
-  model: string;
-  auditTime: string;
-  auditId: string;
-  auditType: string;
-  testResult: string;
-  auditor: string;
+type Organization = {
+  id: string;
+  name: string;
+  description: string;
+  logoUrl?: string;
+  slug?: string | null;
 };
 
-type Model = {
-  title: string;
-  desc: string;
-  date: string;
-  testCases: string;
-  audits: string;
-  tags: string[];
-  version: string;
-};
-
-const AIMakerDashboard = () => {
-  const aiMakerBaseUrl = process.env.NEXT_PUBLIC_AI_MAKER_URL || 'https://dev.civicdataspace.in/dashboard';
-  const addModelUrl = aiMakerBaseUrl.replace(/\/$/, '');
-
-   const models: Model[] = []
-  //   { 
-  //     title: 'Region-al', 
-  //     desc: 'Context-aware translations between regional and less-common languages.',
-  //     date: '21 Sep 2024',
-  //     testCases: '1023 test cases',
-  //     audits: '2 audits',
-  //     tags: ['Translator', 'Low-Resource'],
-  //     version: 'Ver. 1.2.1',
-  //   },
-  //   { 
-  //     title: 'LinguaFlow', 
-  //     desc: 'Multilingual model for smooth real-time translation across major world languages.',
-  //     date: '21 Sep 2024',
-  //     testCases: '1023 test cases',
-  //     audits: '2 audits',
-  //     tags: ['Translator'],
-  //     version: 'Ver. 1.2.1',
-  //   },
-  //   { 
-  //     title: 'Transcend', 
-  //     desc: 'High-fidelity translation model for business and legal documentation.',
-  //     date: '21 Sep 2024',
-  //     testCases: '1023 test cases',
-  //     audits: '2 audits',
-  //     tags: ['Translator', 'Technical'],
-  //     version: 'Ver. 1.2.1',
-  //   },
-  //   { 
-  //     title: 'Mediscribe', 
-  //     desc: 'Language model to interpret clinical text and generate patient-friendly summaries.',
-  //     date: '21 Sep 2024',
-  //     testCases: '1023 test cases',
-  //     audits: '2 audits',
-  //     tags: ['Paraphrase', 'Technical'],
-  //     version: 'Ver. 1.2.1',
-  //   },
-  // ];
-
-  const hasModels = models.length > 0;
-
-  const metrics = [
-    { label: 'Audit Runs', value: hasModels ? '16' : '--' },
-    { label: 'Test Cases', value: hasModels ? '1250' : '--' },
-    { label: 'Models Covered', value: hasModels ? '4' : '--' },
-    { label: 'Issues Flagged', value: hasModels ? '45' : '--' },
-  ];
-
-  // Create column helper
-  const columnHelper = createColumnHelper<Audit>();
-
-  // Define columns
-  const columns = [
-    columnHelper.accessor('model', {
-      header: () => (
-        <div className="flex items-center gap-2">
-          <img src="/images/icons/arrows-sort.png" alt="Sort" width={16} height={16} />
-          <span>Model</span>
-        </div>
-      ),
-      cell: (info) => (
-        <Link 
-          href={`/model/${info.getValue()}`} 
-          className="audit-model-link"
-        >
-          {info.getValue()}
-        </Link>
-      ),
-    }),
-    columnHelper.accessor('auditTime', {
-      header: 'Audit Time',
-    }),
-    columnHelper.accessor('auditId', {
-      header: 'Audit ID',
-      cell: (info) => `ID #${info.getValue()}`,
-    }),
-    columnHelper.accessor('auditType', {
-      header: 'Audit Type',
-    }),
-    columnHelper.accessor('testResult', {
-      header: 'Test Result',
-      cell: (info) => {
-        return (
-          <div className="flex items-center gap-2">
-            <div className="test-result-bar">
-              <div className="test-result-pass" />
-              <div className="test-result-fail" />
-            </div>
-            <Text variant="bodySm">{info.getValue()} pa...</Text>
-          </div>
-        );
-      },
-    }),
-    columnHelper.accessor('auditor', {
-      header: 'Auditor',
-      cell: (info) => (
-        <div className="flex items-center gap-2">
-          <div className="auditor-avatar">
-            {info.getValue()[0]}
-          </div>
-          <Text variant="bodySm">{info.getValue()}</Text>
-        </div>
-      ),
-    }),
-  ];
-
-  // Define audit data
-  const auditData: Audit[] = [
-    {
-      model: 'Region-al',
-      auditTime: '25 / 06 / 2021',
-      auditId: '12345',
-      auditType: 'Technical',
-      testResult: '120/240',
-      auditor: 'Divya',
-    },
-    {
-      model: 'LinguaFlow',
-      auditTime: '25 / 06 / 2021',
-      auditId: '12346',
-      auditType: 'Technical',
-      testResult: '120/240',
-      auditor: 'Divya',
-    },
-    {
-      model: 'Transcend',
-      auditTime: '25 / 06 / 2021',
-      auditId: '12347',
-      auditType: 'Technical',
-      testResult: '120/240',
-      auditor: 'Divya',
-    },
-    {
-      model: 'Mediscribe',
-      auditTime: '25 / 06 / 2021',
-      auditId: '12348',
-      auditType: 'Technical',
-      testResult: '120/240',
-      auditor: 'Divya',
-    },
-    {
-      model: 'Region-al',
-      auditTime: '25 / 06 / 2021',
-      auditId: '12349',
-      auditType: 'Technical',
-      testResult: '120/240',
-      auditor: 'Divya',
-    },
-  ];
+const EntityCard = ({ org, locale }: { org: Organization; locale: string }) => {
+  const [isImageValid, setIsImageValid] = useState(!!org.logoUrl);
+  const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || "";
+  const imageSrc = `${dataspaceUrl.replace(/\/$/, "")}${org.logoUrl}`;
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <Link
+      key={org.name}
+      href={`/${locale}/dashboard/ai-maker/${org.id}`}
+      className="flex h-72 w-56 flex-col items-center bg-white gap-3 rounded-2 border-2 border-solid border-baseGraySlateSolid4 px-4 py-5 text-center transition-all hover:border-highlight group"
+    >
+      <div className="flex h-full w-full items-center justify-center rounded-2">
+        <div className="rounded-2">
+          {isImageValid ? (
+            <Image
+              height={160}
+              width={160}
+              src={imageSrc}
+              alt={`${org.name} logo`}
+              onError={() => setIsImageValid(false)}
+              className="object-contain"
+            />
+          ) : (
+            <Image
+              height={160}
+              width={160}
+              src={"/images/logos/parakhai-logo.png"}
+              alt={`fallback logo`}
+              className="fill-current object-contain text-baseGraySlateSolid6 opacity-20"
+            />
+          )}
+        </div>
+      </div>
+      <div>
+        <Text
+          variant="headingMd"
+          className="text-center line-clamp-3 group-hover:text-highlight transition-colors"
+          title={org.name}
+        >
+          {org.name}
+        </Text>
+      </div>
+    </Link>
+  );
+};
+
+const OrganizationSelection = () => {
+  const params = useParams();
+  const locale = params?.locale || "en";
+  const { request } = useGraphQL();
+  const { setAllEntityDetails } = useDashboardStore();
+
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const GET_MY_ORGANIZATIONS = `
+    query GetMyOrganizations {
+      myOrganizations {
+        id
+        name
+        slug
+        description
+        logoUrl
+      }
+    }
+  `;
+
+  useEffect(() => {
+    const fetchOrgs = async () => {
+      try {
+        const response = await request(GET_MY_ORGANIZATIONS);
+        const orgs = response?.myOrganizations || [];
+        setOrganizations(orgs);
+        setAllEntityDetails({ organizations: orgs });
+      } catch (error) {
+        console.error("Failed to fetch organizations:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrgs();
+  }, [request]);
+
+  return (
+    <div className="flex flex-col min-h-screen bg-[var(--page-background)]">
       <BreadCrumbs
         data={[
-          { href: '/', label: 'Home' },
-          { href: '/dashboard', label: 'User Dashboard' },
-          { href: '/dashboard/ai-maker', label: 'AI Maker Dashboard' },
+          { href: "/", label: "Home" },
+          { href: "/dashboard", label: "Evaluation Workspace" },
+          { href: "#", label: "AI Maker" },
         ]}
       />
 
-      {/* Sidebar and Content Layout */}
-      <div className="flex flex-1 gap-8 px-8 main-content-wrapper ai-maker-container">
-        {/* Sidebar */}
-        <WelcomeSection />
+      <div className="flex-1 container mb-40 mt-10 mx-10">
+        <div className="flex flex-col gap-6 py-10">
+          <Text variant="headingXl">Select Organization</Text>
+          <Text variant="bodyMd" className="text-gray-600">
+            Choose an organization to access its AI Maker dashboard.
+          </Text>
+        </div>
 
-        {/* Main Content */}
-        <div className="flex-1 bg-gray-50 p-10">
-          {/* Header with Title */}
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-gray-900 overview-heading">Overview</h1>
-          </div>
-
-          {/* Metrics */}
-          <div className="grid grid-cols-4 gap-4 mb-12 metrics-grid">
-            {metrics.map((m) => (
-              <div key={m.label} className="metric-card">
-                <p className="metric-card-label">{m.label}</p>
-                <p className="metric-card-value">{m.value}</p>
-              </div>
+        {loading ? (
+          <Loading />
+        ) : (
+          <div className="flex flex-wrap gap-6">
+            {organizations.map((org) => (
+              <EntityCard key={org.id} org={org} locale={locale as string} />
             ))}
-          </div>
-          {/* Models Section */}
-          <div className="section-margin-bottom">
-            <div className="flex items-center justify-between section-title-margin">
-              <Text variant="headingLg" as="h2" fontWeight="bold">Models</Text> 
-              {hasModels && (
-                <div className="add-model-button-wrapper">
-                  <Link 
-                    href={addModelUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="add-model-button"
-                    style={{ textDecoration: 'none', display: 'inline-block' }}
-                  >
-                    Add A New Model
-                  </Link>
-                </div>
-              )}
-            </div>
-            {hasModels ? (
-              <div className="grid grid-cols-2 gap-6 models-grid">
-                {models.map((model) => {
-                  // Card metadata (top row inside card)
-                  const metadataContent = [
-                    {
-                      icon: Icons.calendar,
-                      label: 'Created',
-                      value: model.date,
-                      tooltip: model.date,
-                    },
-                    {
-                      icon: Icons.testPipe,
-                      label: 'Test cases',
-                      value: model.testCases,
-                      tooltip: model.testCases,
-                    },
-                    {
-                      icon: Icons.discountCheck,
-                      label: 'Audits',
-                      value: model.audits,
-                      tooltip: model.audits,
-                    },
-                  ] as any;
 
-                  // Card footer info (bottom row inside card)
-                  const footerContent = [
-                    {
-                      icon: '/images/icons/Ellipse 4.png',
-                      label: 'Owner',
-                      tooltip: 'Owner',
-                    },
-                  ];
-
-                  const type = model.tags.map((tag) => ({
-                    label: tag,
-                    fillColor: '#E2F5C4',
-                    borderColor: '#E2F5C4',
-                  }));
-
-                  return (
-                    <div key={model.title} className="model-card">
-                      <Card
-                        title={model.title}
-                        description={model.desc}
-                        variation="collapsed"
-                        iconColor="highlight"
-                        metadataContent={metadataContent}
-                        footerContent={footerContent}
-                        type={type}
-                        tag={model.tags}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="ai-maker-empty-state">
-                <div className="ai-maker-empty-icon">
-                  <img
-                    src="/images/icons/mood-empty.png"
-                    alt="No models"
-                    width={70}
-                    height={70}
-                  />
-                </div>
-                <Text as="p" className="ai-maker-empty-title">
-                  You have no registered AI models.
-                  <br />
-                  Register your first model to get started!
+            {organizations.length === 0 && (
+              <div className="col-span-full w-full py-20 text-center bg-gray-50 rounded-4">
+                <Text variant="bodyLg" className="text-gray-500">
+                  You are not a member of any organization yet.
                 </Text>
-                <Link 
-                  href={addModelUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="add-model-button ai-maker-empty-button"
-                  style={{ textDecoration: 'none', display: 'inline-block' }}
-                >
-                  Add A New Model
-                </Link>
               </div>
             )}
           </div>
-
-          {/* Audits Table Section */}
-          {hasModels && (
-            <div className="audits-section">
-              <div className="flex justify-between items-center mb-4">
-                <Text variant="headingLg" as="h2">Last 10 Audits</Text>
-                <a href="/audits" className="text-blue-600">See All</a>
-              </div>
-              <DataTable
-                rows={auditData}
-                columns={columns}
-                hoverable={true}
-                sortColumns={['model', 'auditTime']}
-                defaultSortDirection="asc"
-                hideSelection={true}
-                hideFooter={true}
-              />
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default AIMakerDashboard;
+export default OrganizationSelection;

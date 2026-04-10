@@ -1,0 +1,156 @@
+/* Styles for ai-maker evaluations list page */
+
+/* Base padding for all header and body cells in this table for consistent gutters */
+.evaluations-table-evaluation-mode-col th,
+.evaluations-table-evaluation-mode-col td {
+  padding-left: 1.75rem;
+  padding-right: 1.75rem;
+  font-size: 0.875rem; /* 14px */
+  line-height: 1.4;
+}
+
+/* Give Evaluation Name column (1st column) extra width so long names are visible */
+.evaluations-table-evaluation-mode-col th:first-child,
+.evaluations-table-evaluation-mode-col td:first-child {
+  width: 500px;
+  max-width: 560px;
+  min-width: 320px;
+  box-sizing: border-box;
+}
+
+/* Evaluation Name text: 12px (0.75rem), single line, no truncation/ellipsis */
+.evaluations-table-evaluation-mode-col td:first-child > * {
+  font-size: 0.75rem;
+  line-height: 1.25;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+}
+
+/* Constrain "Evaluation Mode" column (3rd column) and keep left-aligned content */
+.evaluations-table-evaluation-mode-col th:nth-child(3),
+.evaluations-table-evaluation-mode-col td:nth-child(3) {
+  width: 180px;
+  max-width: 220px;
+  min-width: 160px;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+/* Nudge Evaluation Mode values slightly right for better visual alignment */
+.evaluations-table-evaluation-mode-col td:nth-child(3) {
+  padding-left: 0.65rem;
+}
+
+/* Nudge Evaluation Name values (first column) slightly right for better visual alignment */
+.evaluations-table-evaluation-mode-col td:first-child {
+  padding-left: 0.75rem;
+}
+
+/* Slightly reduce left padding for the Evaluation Mode header so it lines up with its cell text */
+.evaluations-table-evaluation-mode-col th:nth-child(3) {
+  padding-left: 0.15rem;
+}
+
+/* Status column (2nd column) – give it a bit more width so the tag text can show fully */
+.evaluations-table-evaluation-mode-col th:nth-child(2),
+.evaluations-table-evaluation-mode-col td:nth-child(2) {
+  width: 180px;
+  max-width: 220px;
+  min-width: 160px;
+  box-sizing: border-box;
+}
+
+/* Status cell content – keep default gutter (avoid extra gap) */
+.evaluations-table-evaluation-mode-col td:nth-child(2) {
+  padding-left: 0.45rem;
+}
+
+.evaluations-table-evaluation-mode-col td:nth-child(2) > * {
+  font-size: inherit;
+  padding: 2px 8px;
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Force any nested content inside Status column to respect table font-size */
+.evaluations-table-evaluation-mode-col td:nth-child(2) * {
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+
+/* Tests column (4th) and Completed column (5th) share the same width so gaps between columns look even */
+.evaluations-table-evaluation-mode-col th:nth-child(4),
+.evaluations-table-evaluation-mode-col td:nth-child(4),
+.evaluations-table-evaluation-mode-col th:nth-child(5),
+.evaluations-table-evaluation-mode-col td:nth-child(5) {
+  width: 180px;
+  max-width: 220px;
+  min-width: 160px;
+  box-sizing: border-box;
+}
+
+/* Nudge Completed column values (5th column) slightly right for better visual alignment */
+.evaluations-table-evaluation-mode-col td:nth-child(5) {
+  padding-left: 2.1rem;
+}
+
+/* Table headers: force 14px for all header labels (and inner wrappers/icons) */
+.evaluations-table-evaluation-mode-col th,
+.evaluations-table-evaluation-mode-col th * {
+  font-size: 0.875rem !important; /* 14px */
+  line-height: 1.4 !important;
+}
+
+/* Table cells: force 14px for all body values (and inner wrappers/icons) */
+.evaluations-table-evaluation-mode-col td,
+.evaluations-table-evaluation-mode-col td * {
+  font-size: 0.875rem !important; /* 14px */
+  line-height: 1.4 !important;
+}
+
+/* Status header sort icon: keep it right of label (not before) */
+.evaluations-table-evaluation-mode-col th:nth-child(2) > * {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.35rem;
+  flex-direction: row-reverse; /* flips icon/text order when icon renders first */
+   
+}
+
+/* Nudge Status header (label + icon) slightly right */
+.evaluations-table-evaluation-mode-col th:nth-child(2) {
+  padding-left: 0.45rem !important;
+}
+
+/* Evaluation Name header sort icon: keep it right of label */
+.evaluations-table-evaluation-mode-col th:nth-child(1) > * {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.35rem;
+  flex-direction: row-reverse;
+}
+
+/* Evaluation Mode header sort icon: keep it right of label */
+.evaluations-table-evaluation-mode-col th:nth-child(3) > * {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.35rem;
+  flex-direction: row-reverse;
+}
+
+/* Completed header sort icon: keep it right of label */
+.evaluations-table-evaluation-mode-col th:nth-child(5) > * {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.35rem;
+  flex-direction: row-reverse;
+}
+
+/* Nudge Completed header label + icon slightly right */
+.evaluations-table-evaluation-mode-col th:nth-child(5) {
+  padding-left: 2.05rem !important;
+}
