@@ -5,7 +5,7 @@
 [![React](https://img.shields.io/badge/React-18.2+-blue.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
-A Next.js frontend for the Parakh AI platform, built to run evaluations, and support auditor workflows for model testing and quality review.
+ParakhAI is a platform for evaluating AI models, creating prompt datasets, and running expert-led evaluations against those models.
 
 ## Features
 
