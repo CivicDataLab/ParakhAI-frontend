@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(grep -n \"GET_AUDIT_RESULTS\\\\|GET_MANUAL_TEST\\\\|manualTestCases\\\\|auditResults\" /home/saesha/ParakhAI-frontend/app/[locale]/dashboard/ai-maker/[orgId]/evaluations/components/NewEvaluationContent.tsx)",
-      "Bash(grep -n \"query\\\\|mutation\\\\|GET_\\\\|const.*QUERY\" /home/saesha/ParakhAI-frontend/app/[locale]/dashboard/ai-maker/[orgId]/evaluations/page.tsx)"
-    ]
-  }
-}
