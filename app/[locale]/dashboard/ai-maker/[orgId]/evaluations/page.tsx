@@ -3,9 +3,9 @@
 import { useGraphQL } from "@/lib/api";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { Badge, Button, DataTable, Spinner, Tag, Text } from "opub-ui";
-import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { Button, DataTable, Spinner, Tag, Text } from "opub-ui";
+import { useEffect, useRef, useState } from "react";
 import { useOrganization } from "../OrganizationContext";
 import ModelSelectionModal from "./components/ModelSelectionModal";
 import "./evaluations-page.css";
@@ -50,7 +50,6 @@ type Audit = {
 };
 
 const AuditsListPage = () => {
-  const router = useRouter();
   const params = useParams();
   const locale = params.locale || "en";
   const {
@@ -58,41 +57,90 @@ const AuditsListPage = () => {
     isAuthenticated,
     isLoading: isSessionLoading,
   } = useGraphQL();
-  const { organization } = useOrganization();
+  useOrganization();
 
   const [audits, setAudits] = useState<Audit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const isFetchingRef = useRef(false);
+  const hasFetchedRef = useRef(false);
+
+  const fetchAudits = async (showLoader = true) => {
+    try {
+      if (showLoader) {
+        setIsLoading(true);
+      }
+      setError(null);
+
+      const auditsData = await request<{ audits: Audit[] }>(
+        AUDITS_QUERY,
+        {
+          status: null,
+          limit: 100,
+        },
+        { organization: params.orgId as string }
+      );
+
+      const nextAudits = auditsData?.audits || [];
+      setAudits(nextAudits);
+
+      const hasActiveAudits = nextAudits.some((audit) => {
+        const status = audit.status?.toUpperCase();
+        return status === "PENDING" || status === "RUNNING";
+      });
+
+      return hasActiveAudits;
+    } catch (err: any) {
+      console.error("Error fetching audits:", err);
+      setError(err?.message || "Failed to load audits");
+      return false;
+    } finally {
+      if (showLoader) {
+        setIsLoading(false);
+      }
+      isFetchingRef.current = false;
+    }
+  };
+
+  const startPolling = () => {
+    const pollInterval = 15000;
+    const maxPollTime = 300000;
+    const startTime = Date.now();
+
+    const poll = async () => {
+      if (Date.now() - startTime > maxPollTime) return;
+
+      try {
+        const hasActiveAudits = await fetchAudits(false);
+        if (!hasActiveAudits) return;
+      } catch (err) {
+        console.error("Polling error:", err);
+      }
+
+      setTimeout(poll, pollInterval);
+    };
+
+    setTimeout(poll, pollInterval);
+  };
 
   // Fetch audits on mount
   useEffect(() => {
     if (!isAuthenticated || isSessionLoading) return;
+    if (isFetchingRef.current || hasFetchedRef.current) return;
 
-    const fetchAudits = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
+    isFetchingRef.current = true;
 
-        const auditsData = await request<{ audits: Audit[] }>(
-          AUDITS_QUERY,
-          {
-            status: null,
-            limit: 100,
-          },
-          { organization: params.orgId as string }
-        );
+    const loadAudits = async () => {
+      const hasActiveAudits = await fetchAudits(true);
+      hasFetchedRef.current = true;
 
-        setAudits(auditsData?.audits || []);
-      } catch (err: any) {
-        console.error("Error fetching audits:", err);
-        setError(err?.message || "Failed to load audits");
-      } finally {
-        setIsLoading(false);
+      if (hasActiveAudits) {
+        startPolling();
       }
     };
 
-    fetchAudits();
+    loadAudits();
   }, [isAuthenticated, isSessionLoading, request, params.orgId]);
 
   // Column helper for DataTable
