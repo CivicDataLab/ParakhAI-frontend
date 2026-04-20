@@ -99,8 +99,27 @@ const GET_AUDIT_SUMMARY = `
   query GetSummaries($audit_id: ID!)
   {
     auditSummaries(auditId: $audit_id) {
+      id
+      audit {
+        pk
+      }
+      status
+      totalTests
+      totalTasks
+      totalResults
+      aggregationMethod
       riskDistribution
-      metricSummary
+      moduleSummary
+      metricSummary 
+      toolSummary
+      overallVerdict
+      verdictReason
+      recommendations
+      auditorComments
+      executiveSummary
+      createdAt
+      updatedAt
+      hasReport
       auditReport {
         name
         size
@@ -342,7 +361,8 @@ const EvaluationDetail = ({
           }));
 
           if (data.audit.status === "COMPLETED" || data.audit.completedAt) {
-            await Promise.all([fetchAuditSummary(), fetchResultSamples()]);
+            await fetchAuditSummary();
+            await fetchResultSamples();
             return;
           }
 
@@ -393,7 +413,8 @@ const EvaluationDetail = ({
           auditData.audit.status === "COMPLETED" ||
           auditData.audit.completedAt
         ) {
-          await Promise.all([fetchAuditSummary(), fetchResultSamples()]);
+          await fetchAuditSummary();
+          await fetchResultSamples();
         } else if (
           auditData.audit.status === "RUNNING" ||
           auditData.audit.status === "PENDING"
@@ -561,18 +582,16 @@ const EvaluationDetail = ({
     }
   };
 
-  const passRate = useMemo(() => {
+  const getPassRate = () => {
     if (!audit?.totalTests || !audit?.passedTests) return 0;
     return ((audit.passedTests / audit.totalTests) * 100).toFixed(2);
-  }, [audit?.totalTests, audit?.passedTests]);
-
-  const passRateColor = useMemo(() => {
-    const rate = parseFloat(passRate.toString());
-    if (!rate) return "default";
-    if (rate >= 85) return "success";
-    if (rate >= 70) return "warning";
-    return "critical";
-  }, [passRate]);
+  };
+  const getPassRateColor = () => {
+    if (!audit?.totalTests || !audit?.passedTests) return "default";
+    const passRate = parseFloat(getPassRate().toString());
+    if (passRate >= 85) return "success";
+    if (passRate >= 70) return "warning";
+  };
 
   const riskSummary = {
     low: riskDistribution["LOW_RISK"] ?? 0,
@@ -583,18 +602,17 @@ const EvaluationDetail = ({
   const totalIssuesIdentified =
     riskSummary.low + riskSummary.medium + riskSummary.high;
 
-  // Group issues by module once to avoid repeated filtering in render
-  const issuesByModule = useMemo(() => {
-    const map: Record<string, ModuleIssue[]> = {};
-    for (const issue of apiModuleIssues) {
-      if (!map[issue.module]) map[issue.module] = [];
-      map[issue.module].push(issue);
-    }
-    return map;
-  }, [apiModuleIssues]);
-
+    const hasVisualizationDataForModule = (moduleName: string) => {
+      const issuesForModule = apiModuleIssues.filter(
+        (issue) => issue.module === moduleName
+      );
+      return issuesForModule.length > 0;
+    };
+  
   const modulesWithVisualizationData =
-    audit?.modules?.filter((moduleName) => (issuesByModule[moduleName]?.length ?? 0) > 0) || [];
+  audit?.modules?.filter((moduleName) =>
+    hasVisualizationDataForModule(moduleName)
+  ) || [];
 
   const toggleIssueCard = (issueId: string) => {
     setExpandedIssueIds((prev) => {
@@ -980,10 +998,10 @@ const EvaluationDetail = ({
                 <Text
                   variant="headingLg"
                   fontWeight="bold"
-                  color={passRateColor}
+                  color={getPassRateColor()}
                   className="text-green-600 text-xl sm:text-2xl"
                 >
-                  {passRate || 0}%
+                  {getPassRate() || 0}%
                 </Text>
               </div>
             </div>
@@ -1161,7 +1179,9 @@ const EvaluationDetail = ({
                       <TabPanel key={index} value={moduleName}>
                         <div className="mt-5 m-5">
                           <SeverityBarChart
-                            issues={issuesByModule[moduleName] ?? []}
+                           issues={apiModuleIssues.filter(
+                            (issue) => issue.module === moduleName
+                          )}
                             metricSummary={metricSummary[moduleName]}
                           />
 
@@ -1175,7 +1195,9 @@ const EvaluationDetail = ({
 
                           <div className="flex flex-col gap-4">
                             {(() => {
-                              const issuesForModule = issuesByModule[moduleName] ?? [];
+                               const issuesForModule = apiModuleIssues.filter(
+                                (issue) => issue.module === moduleName
+                              );
 
                               if (issuesForModule.length === 0) {
                                 return (
