@@ -1398,14 +1398,8 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   // Handle tab change - create audit if needed and update config
   const handleTestTabClick = async () => {
     if (!validateForm()) {
-      setAuditError(
-        "Please complete all required fields before adding test cases."
-      );
       return;
     }
-
-    setAuditError(null);
-
     let auditId = currentAuditId;
 
     // Create audit if not already created
@@ -1606,15 +1600,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                 </div>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Generic error state for create/update/run audit actions */}
-        {auditError && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <Text variant="bodySm" className="text-red-700">
-              {auditError}
-            </Text>
           </div>
         )}
 
