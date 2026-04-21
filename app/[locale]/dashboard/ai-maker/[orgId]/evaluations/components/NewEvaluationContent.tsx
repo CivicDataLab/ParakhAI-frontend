@@ -1335,14 +1335,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const validateForm = (): boolean => {
     const errors: typeof validationErrors = {};
 
-    if (!auditorName.trim()) {
-      errors.auditorName = "Expert name is required";
-    }
-
-    if (!organisationName.trim()) {
-      errors.organisationName = "Organisation name is required";
-    }
-
     if (!auditObjective.trim()) {
       errors.auditObjective = "Evaluation objective is required";
     }
@@ -1406,8 +1398,13 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   // Handle tab change - create audit if needed and update config
   const handleTestTabClick = async () => {
     if (!validateForm()) {
+      setAuditError(
+        "Please complete all required fields before adding test cases."
+      );
       return;
     }
+
+    setAuditError(null);
 
     let auditId = currentAuditId;
 
@@ -1609,6 +1606,15 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Generic error state for create/update/run audit actions */}
+        {auditError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <Text variant="bodySm" className="text-red-700">
+              {auditError}
+            </Text>
           </div>
         )}
 
