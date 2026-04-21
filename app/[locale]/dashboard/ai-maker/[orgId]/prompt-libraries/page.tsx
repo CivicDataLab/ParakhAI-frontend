@@ -584,6 +584,7 @@ const PromptLibrariesPage = () => {
                     className="cursor-pointer h-full"
                   >
                     <Card
+                      withViewButton={false}
                       title={library.title}
                       description={
                         stripMarkdown(library.description || "") || ""
