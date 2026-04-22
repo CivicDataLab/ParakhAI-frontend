@@ -1335,14 +1335,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const validateForm = (): boolean => {
     const errors: typeof validationErrors = {};
 
-    if (!auditorName.trim()) {
-      errors.auditorName = "Expert name is required";
-    }
-
-    if (!organisationName.trim()) {
-      errors.organisationName = "Organisation name is required";
-    }
-
     if (!auditObjective.trim()) {
       errors.auditObjective = "Evaluation objective is required";
     }
@@ -1408,7 +1400,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     if (!validateForm()) {
       return;
     }
-
     let auditId = currentAuditId;
 
     // Create audit if not already created

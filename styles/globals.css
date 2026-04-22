@@ -4412,6 +4412,10 @@ body {
   word-break: break-word;
 }
 
+table th {
+  background-color: #f5f2ff;
+}
+
 .test-cases-table table th {
   white-space: normal;
   vertical-align: top;
