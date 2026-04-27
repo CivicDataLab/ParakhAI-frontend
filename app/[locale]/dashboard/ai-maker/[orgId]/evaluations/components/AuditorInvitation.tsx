@@ -47,6 +47,7 @@ interface AuditorInvitationProps {
   modelName: string;
   modelVersionId: number;
   onAssignmentCreated?: (assignment: AuditorAssignment) => void;
+  onAssignmentResult?: (result: { type: "success" | "error"; message: string }) => void;
   isOpen?: boolean;
   onClose?: () => void;
   versionLabel?: string;
@@ -148,6 +149,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   modelName,
   modelVersionId,
   onAssignmentCreated,
+  onAssignmentResult,
   isOpen: externalIsOpen,
   onClose: externalOnClose,
   versionLabel,
@@ -185,6 +187,19 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
     message: string;
     type: "success" | "error";
   }>({ show: false, message: "", type: "success" });
+
+  const showResultToast = (type: "success" | "error", message: string) => {
+    if (isControlled && onAssignmentResult) {
+      onAssignmentResult({ type, message });
+      return;
+    }
+
+    setToast({
+      show: true,
+      message,
+      type,
+    });
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -292,31 +307,25 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
         }
 
         if (!suppressSuccessToast) {
-          setToast({
-            show: true,
-            message: "Evaluator assigned successfully",
-            type: "success",
-          });
+          showResultToast(
+            "success",
+            response?.assignAuditorToVersion?.message ||
+              "Evaluator assigned successfully",
+          );
         }
 
         setIsModalOpen(false);
         setSelectedAuditorId("");
         setNotes("");
       } else {
-        setToast({
-          show: true,
-          message:
-            response?.assignAuditorToVersion?.message ||
+        showResultToast(
+          "error",
+          response?.assignAuditorToVersion?.message ||
             "Failed to assign evaluator",
-          type: "error",
-        });
+        );
       }
     } catch (err: any) {
-      setToast({
-        show: true,
-        message: err?.message || "Error assigning evaluator",
-        type: "error",
-      });
+      showResultToast("error", err?.message || "Error assigning evaluator");
     } finally {
       setIsAssigning(false);
     }
@@ -664,7 +673,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
           onClick={() => setIsModalOpen(true)}
           disabled={loading}
         >
-          <IconPlus size={18} className="mr-1" /> Invite Auditor
+          <IconPlus size={18} className="mr-1" /> Invite Evaluator
         </Button>
       </div>
 
