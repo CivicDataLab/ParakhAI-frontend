@@ -585,6 +585,7 @@ const PromptLibrariesPage = () => {
                   >
                     <Card
                       title={library.title}
+                      withViewButton={false}
                       description={
                         stripMarkdown(library.description || "") || ""
                       }
