@@ -419,17 +419,6 @@ const AuditorsPage = () => {
                     >
                       {displayName}
                     </Text>
-                    <div className="w-fit rounded-full border-1 border-solid border-[#D5E1EA] bg-[#E9EFF4] px-3 py-1">
-                      <Text variant="bodySm">Evaluator</Text>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-                  <div className="w-fit rounded-full border-1 border-solid border-[#D5E1EA] px-3 py-1">
-                    <Text variant="bodySm" className="text-primaryBlue">
-                      {auditor.email}
-                    </Text>
                   </div>
                 </div>
 
