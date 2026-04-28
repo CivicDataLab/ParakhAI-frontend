@@ -1,6 +1,5 @@
 "use client";
 
-import BreadCrumbs from "@/components/Breadcrumbs";
 import { useGraphQL } from "@/lib/api";
 import {
   IconPlus,
@@ -17,12 +16,10 @@ import { useEffect, useState } from "react";
 const Avatar = ({
   src,
   alt,
-  username,
   size = 16,
 }: {
   src: string | null;
   alt: string;
-  username: string;
   size?: number;
 }) => {
   const [imageError, setImageError] = useState(false);
@@ -153,7 +150,6 @@ const REMOVE_AUDITOR_MUTATION = `
 
 const AuditorsPage = () => {
   const params = useParams();
-  const locale = params?.locale || "en";
   const orgId = params?.orgId as string;
 
   const {
@@ -163,7 +159,7 @@ const AuditorsPage = () => {
   } = useGraphQL();
 
   // State
-  const [organization, setOrganization] = useState<{
+  const [, setOrganization] = useState<{
     name: string;
     logoUrl: string | null;
   } | null>(null);
@@ -407,7 +403,6 @@ const AuditorsPage = () => {
                     <Avatar
                       src={auditor.profilePicture}
                       alt={auditor.username}
-                      username={auditor.username}
                       size={20}
                     />
                   </div>
@@ -545,7 +540,6 @@ const AuditorsPage = () => {
                       <Avatar
                         src={searchResult.user.profilePicture}
                         alt={searchResult.user.username}
-                        username={searchResult.user.username}
                         size={20}
                       />
                     </div>

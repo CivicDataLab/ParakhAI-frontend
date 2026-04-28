@@ -5,9 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
-import { Spinner, Icon, IconButton } from "opub-ui";
+import { Spinner } from "opub-ui";
 
-import { Icons } from "@/components/icons";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import MobileNav from "./mobile-nav";
 

@@ -16,7 +16,6 @@ import {
   Text,
 } from "opub-ui";
 import React from "react";
-import { useOrganization } from "../OrganizationContext";
 
 type AIModel = {
   id: string;
@@ -148,13 +147,10 @@ const AIModelsPage = () => {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [sectorsExpanded, setSectorsExpanded] = React.useState(true);
   const [tagsExpanded, setTagsExpanded] = React.useState(true);
-  const [selectedModel, setSelectedModel] = React.useState<AIModel | null>(
-    null
-  );
+  const [selectedModel] = React.useState<AIModel | null>(null);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [showNotice, setShowNotice] = React.useState(true);
   const [aiModels, setAiModels] = React.useState<AIModel[]>([]);
-  const { organization } = useOrganization();
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const modelTypeLabels: Record<string, string> = {
@@ -325,20 +321,12 @@ const AIModelsPage = () => {
     );
   };
 
-  // Handle New Evaluation button click
-  const handleNewEvaluation = (model: AIModel) => {
-    // Navigate to new evaluation page with model pre-selected
-    router.push(
-      `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/new?modelId=${model.id}`
-    );
-  };
-
   // Sample table data - replace with actual API call based on selectedModel
   const tableData = React.useMemo(() => {
     if (!selectedModel) return [];
 
     // Generate sample data based on selected model
-    return Array.from({ length: 13 }, (_, index) => ({
+    return Array.from({ length: 13 }, () => ({
       input: "Content",
       idealOutput: "Content",
       columnName1: "Content",
@@ -594,13 +582,6 @@ const AIModelsPage = () => {
                 },
               ] as any;
 
-              // Alternate between Parakh and CDL for different cards
-              const rightIcon =
-                index % 2 === 0
-                  ? "/images/icons/Parakh.png"
-                  : "/images/icons/CDL.png";
-              const rightLabel = index % 2 === 0 ? "Parakh" : "CDL";
-
               // const footerContent = [
               //   // {
               //   //   icon: "/images/icons/Disaster.png",
@@ -742,3 +723,4 @@ const AIModelsPage = () => {
 };
 
 export default AIModelsPage;
+

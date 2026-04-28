@@ -21,10 +21,6 @@ type Module = {
 interface EvaluationConfigurationProps {
   auditType: AuditType;
   setAuditType: (type: AuditType) => void;
-  auditorName: string;
-  setAuditorName: (value: string) => void;
-  organisationName: string;
-  setOrganisationName: (value: string) => void;
   auditObjective: string;
   setAuditObjective: (value: string) => void;
   auditScope: string;
@@ -75,10 +71,6 @@ interface EvaluationConfigurationProps {
 const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
   auditType,
   setAuditType,
-  auditorName,
-  setAuditorName,
-  organisationName,
-  setOrganisationName,
   auditObjective,
   setAuditObjective,
   auditScope,

@@ -17,7 +17,6 @@ import {
   Text,
 } from "opub-ui";
 import React from "react";
-import { useOrganization } from "../OrganizationContext";
 
 type PromptLibrary = {
   id: string;
@@ -148,7 +147,6 @@ const PromptLibrariesPage = () => {
   const [promptLibraries, setPromptLibraries] = React.useState<PromptLibrary[]>(
     []
   );
-  const { organization } = useOrganization();
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const handleToggleSelection = (
@@ -257,11 +255,6 @@ const PromptLibrariesPage = () => {
     return matchesSearch && matchesSector && matchesTags;
   });
 
-  const formatNumber = React.useCallback(
-    (value: number) => value.toLocaleString(),
-    []
-  );
-
   // Pagination logic
   const itemsPerPage = parseInt(resultsPerPage, 10);
   const totalPages = Math.max(
@@ -295,7 +288,7 @@ const PromptLibrariesPage = () => {
     if (!selectedLibrary) return [];
 
     // Generate sample data based on selected library
-    return Array.from({ length: 13 }, (_, index) => ({
+    return Array.from({ length: 13 }, () => ({
       input: "Content",
       idealOutput: "Content",
       columnName1: "Content",
@@ -530,10 +523,8 @@ const PromptLibrariesPage = () => {
               </Text>
             </div>
           ) : (
-            paginatedLibraries.map((library, index) => {
+            paginatedLibraries.map((library) => {
               const createdValue = formatDate(library.createdAt) || "Unknown";
-              const testCasesValue = `${formatNumber(library.promptsCount || 0)} test cases`;
-              const auditsValue = `${formatNumber(library.auditsCount || 0)} evaluations`;
 
               const metadataContent = [
                 {
@@ -552,24 +543,6 @@ const PromptLibrariesPage = () => {
                 //   value: auditsValue,
                 // },
               ] as any;
-
-              // Alternate between Parakh and CDL for different cards
-              const rightIcon =
-                index % 2 === 0
-                  ? "/images/icons/Parakh.png"
-                  : "/images/icons/CDL.png";
-              const rightLabel = index % 2 === 0 ? "Parakh" : "CDL";
-
-              const footerContent = [
-                {
-                  icon: "/images/icons/Disaster.png",
-                  label: "Disaster",
-                },
-                {
-                  icon: rightIcon,
-                  label: rightLabel,
-                },
-              ];
 
               const type = (library.sectors || []).map((sector) => ({
                 label: toTitleCase(sector),

@@ -17,7 +17,7 @@ import {
   TextField,
   toast,
 } from "opub-ui";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { SeverityBarChart } from "./SeverityBarChart";
@@ -488,7 +488,6 @@ const EvaluationDetail = ({
   const statusColors = getStatusColor(audit?.status || "");
   const evaluationMode = getStatusColor(audit?.evaluationMode || "");
   const duration = getDuration();
-  const isRunning = audit?.status === "RUNNING" || audit?.status === "PENDING";
   const evaluationScopeSource =
     audit?.auditScope ||
     audit?.configuration?.auditScope ||

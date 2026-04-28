@@ -2,11 +2,9 @@
 
 import RichTextRenderer from "@/components/RichTextRenderer";
 import { useGraphQL } from "@/lib/api";
-import { useAppSession } from "@/lib/session";
 import { statusColors } from "@/lib/statusColors";
 import { createColumnHelper } from "@tanstack/react-table";
 import {
-  IconArrowLeft,
   IconCheck,
   IconPlayerPlay,
   IconX,
@@ -219,18 +217,11 @@ type Evaluation = {
   evaluationMode: string;
 };
 
-const auditTypeLabels: Record<string, string> = {
-  TECHNICAL_AUDIT: "Technical",
-  DOMAIN_AUDIT: "Domain",
-  CULTURAL_AUDIT: "Cultural",
-};
-
 const AuditorModelDetailPage = () => {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { request, isAuthenticated } = useGraphQL();
-  const { user } = useAppSession();
   const locale = params?.locale || "en";
   const modelId = params?.modelId as string;
   const highlightVersionId = searchParams.get("versionId");

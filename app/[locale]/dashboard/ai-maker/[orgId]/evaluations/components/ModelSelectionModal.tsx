@@ -83,7 +83,6 @@ const ModelSelectionModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedModel = aiModels.find((m) => m.id === selectedModelId);
-  const latestVersion = selectedModel?.versions?.find((v) => v.isLatest);
 
   // Fetch AI models when modal opens
   useEffect(() => {

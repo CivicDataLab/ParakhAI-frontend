@@ -1,30 +1,8 @@
 "use client";
 
-import { graphqlRequest } from "@/lib/api";
-import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import Image from "next/image";
-import { Divider, Text } from "opub-ui";
-
-const SECTORS_WITH_AIMODELS_QUERY = `
-  query SectorsWithAIModels {
-    sectorsWithAimodels(limit: 6) {
-      id
-      name
-      slug
-      description
-      aimodelCount
-    }
-  }
-`;
-
-interface Sector {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  aimodelCount?: number;
-}
+import { Text } from "opub-ui";
 
 const SectorsSection = () => {
   // const { data, isLoading, error } = useQuery({
@@ -43,36 +21,6 @@ const SectorsSection = () => {
   // const sectors = data?.sectorsWithAimodels || [];
 
   const isLoading = false;
-
-  // Fallback static sectors for display when API is loading or no data
-  const fallbackSectors = [
-    { id: "1", name: "Budgets", slug: "budgets", aimodelCount: 388 },
-    { id: "2", name: "Child Rights", slug: "child-rights", aimodelCount: 388 },
-    {
-      id: "3",
-      name: "Climate Finance",
-      slug: "climate-finance",
-      aimodelCount: 988,
-    },
-    {
-      id: "4",
-      name: "Disaster Risk Reduction (DRR)",
-      slug: "disaster-risk-reduction",
-      aimodelCount: 203,
-    },
-    {
-      id: "5",
-      name: "Law and Justice",
-      slug: "law-and-justice",
-      aimodelCount: 388,
-    },
-    {
-      id: "6",
-      name: "Urban Development",
-      slug: "urban-development",
-      aimodelCount: 988,
-    },
-  ];
 
   const AllSectors = [
     {

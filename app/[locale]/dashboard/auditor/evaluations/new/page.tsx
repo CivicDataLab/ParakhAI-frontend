@@ -1,7 +1,6 @@
 "use client";
 
 import { useGraphQL } from "@/lib/api";
-import { useAppSession } from "@/lib/session";
 import { IconArrowLeft } from "@tabler/icons-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -52,8 +51,6 @@ const AuditorNewEvaluationPage = () => {
     isAuthenticated,
     isLoading: isSessionLoading,
   } = useGraphQL();
-  const { user } = useAppSession();
-
   const modelId = searchParams.get("modelId");
   const versionId = searchParams.get("versionId");
 

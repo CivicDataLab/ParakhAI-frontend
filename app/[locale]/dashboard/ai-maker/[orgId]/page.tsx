@@ -369,15 +369,6 @@ const AIMakerDashboard = () => {
                 },
               ] as any;
 
-              // Card footer info (bottom row inside card)
-              const footerContent = [
-                {
-                  icon: "/images/icons/Ellipse 4.png",
-                  label: "Owner",
-                  tooltip: "Owner",
-                },
-              ];
-
               const type = [
                 modelTypeLabels[model.modelType] || model.modelType,
               ].map((tag: string) => ({

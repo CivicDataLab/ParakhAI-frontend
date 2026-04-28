@@ -271,7 +271,6 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   const handleAssignAuditor = async (
     auditorId?: string,
     auditorEmail?: string,
-    auditorUsername?: string,
     suppressSuccessToast: boolean = false
   ) => {
     const targetAuditorId = auditorId || selectedAuditorId;
@@ -279,7 +278,6 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
 
     const auditor = auditors.find((a) => a.id === targetAuditorId);
     const email = auditorEmail || auditor?.email || "";
-    const username = auditorUsername || auditor?.username || "";
 
     try {
       setIsAssigning(true);
@@ -345,7 +343,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
         await handleAssignAuditor(
           existingAuditor.id,
           existingAuditor.email,
-          existingAuditor.username
+          false
         );
         setShowAddNew(false);
         setEmailInput("");
@@ -386,7 +384,6 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
         await handleAssignAuditor(
           searchResult.user.id,
           searchResult.user.email,
-          searchResult.user.username,
           true
         );
 

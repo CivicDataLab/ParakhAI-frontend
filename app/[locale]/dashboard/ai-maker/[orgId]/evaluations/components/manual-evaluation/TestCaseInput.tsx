@@ -5,7 +5,6 @@ import React from 'react';
 import { LANGUAGE_OPTIONS } from './types';
 
 interface TestCaseInputProps {
-  moduleName: string;
   moduleDisplayName: string;
   supportedLanguages?: string[];
   sourceLanguage: string;
@@ -19,7 +18,6 @@ interface TestCaseInputProps {
 }
 
 const TestCaseInput: React.FC<TestCaseInputProps> = ({
-  moduleName,
   moduleDisplayName,
   supportedLanguages,
   sourceLanguage,

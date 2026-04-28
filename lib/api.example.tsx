@@ -14,7 +14,7 @@ import { useAppSession } from './session';
 // ============================================================================
 
 export function ExampleComponentWithHook() {
-  const { request, isAuthenticated, isLoading } = useGraphQL();
+  const { request, isAuthenticated } = useGraphQL();
 
   // Example query
   const MY_QUERY = `

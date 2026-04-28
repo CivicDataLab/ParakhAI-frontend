@@ -7,11 +7,10 @@ import { createColumnHelper } from "@tanstack/react-table";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Avatar, Badge, Button, DataTable, Spinner, Tag, Text } from "opub-ui";
+import { Badge, Button, DataTable, Spinner, Tag, Text } from "opub-ui";
 import React from "react";
 import { createPortal } from "react-dom";
 import AuditorInvitation from "../../evaluations/components/AuditorInvitation";
-import { useOrganization } from "../../OrganizationContext";
 
 const GET_AI_MODEL = `
   query GetAIModel($modelId: ID!) {
@@ -115,36 +114,11 @@ type Evaluation = {
   requestedByName: string | null;
 };
 
-const modelTypeLabels: Record<string, string> = {
-  TRANSLATION: "Translation",
-  TEXT_GENERATION: "Text Generation",
-  SUMMARIZATION: "Summarisation",
-  QUESTION_ANSWERING: "Question Answering",
-  SENTIMENT_ANALYSIS: "Sentiment Analysis",
-  TEXT_CLASSIFICATION: "Text Classification",
-  NAMED_ENTITY_RECOGNITION: "Named Entity Recognition",
-  TEXT_TO_SPEECH: "Text to Speech",
-  SPEECH_TO_TEXT: "Speech to Text",
-  OTHER: "Other",
-};
-
-const providerLabels: Record<string, string> = {
-  OPENAI: "OpenAI",
-  LLAMA_OLLAMA: "Llama (Ollama)",
-  LLAMA_TOGETHER: "Llama (Together AI)",
-  LLAMA_REPLICATE: "Llama (Replicate)",
-  LLAMA_CUSTOM: "Llama (Custom)",
-  CUSTOM: "Custom API",
-  HUGGINGFACE: "HuggingFace",
-};
-
 const auditTypeLabels: Record<string, string> = {
   TECHNICAL_AUDIT: "Technical",
   DOMAIN_AUDIT: "Domain",
   CULTURAL_AUDIT: "Cultural",
 };
-
-const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || "";
 
 // Helper for formatted date
 const formatDate = (dateString: string) => {
@@ -176,7 +150,6 @@ const ModelDetailPage = () => {
 
   const [model, setModel] = React.useState<AIModel | null>(null);
   const [evaluations, setEvaluations] = React.useState<Evaluation[]>([]);
-  const { organization } = useOrganization();
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [assignmentToast, setAssignmentToast] = React.useState<{

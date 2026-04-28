@@ -1,7 +1,6 @@
 "use client";
 
 import { useGraphQL } from "@/lib/api";
-import RichTextRenderer from "@/components/RichTextRenderer";
 import ReactMarkdown from "react-markdown";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -10,19 +9,15 @@ import {
   Label,
   Select,
   Spinner,
-  Tag,
   Text,
   TextField,
 } from "opub-ui";
 import React, { useCallback, useEffect, useState } from "react";
 import { IconCircleArrowRight } from "@tabler/icons-react";
 import { toTitleCase } from "@/lib/utils";
-import FailureDetails from "./FailureDetails";
-import ModelOutputDisplay from "./ModelOutputDisplay";
 import ModuleSelector from "./ModuleSelector";
 import RecommendationModal from "./RecommendationModal";
 import TestCaseHistory from "./TestCaseHistory";
-import TestCaseInput from "./TestCaseInput";
 import {
   LANGUAGE_OPTIONS,
   SEVERITY_OPTIONS,
@@ -152,7 +147,7 @@ interface ManualEvaluationFlowProps {
   modelType: string;
   supportedLanguages?: string[];
   orgId: string;
-  onFinishAudit: () => void;
+  onFinishAudit?: () => void;
   isRequestingAudit: boolean;
 }
 
@@ -162,7 +157,6 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   modelType,
   supportedLanguages,
   orgId,
-  onFinishAudit,
   isRequestingAudit,
 }) => {
   // Router and params for navigation

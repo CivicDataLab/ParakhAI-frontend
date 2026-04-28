@@ -11,7 +11,6 @@ type Props = {
   align?: "start" | "center" | "end";
   side?: "top" | "right" | "bottom" | "left";
   sideOffset?: number;
-  maxHeight?: string; // CSS value, e.g., '40vh'
 };
 
 const profileLinks = [{ href: "/dashboard", label: "Evaluation Workspace" }];
@@ -22,7 +21,6 @@ export function ProfileMenu({
   align = "end",
   side = "bottom",
   sideOffset = 4,
-  maxHeight = "40vh",
 }: Props) {
   const [open, setOpen] = React.useState(false);
 

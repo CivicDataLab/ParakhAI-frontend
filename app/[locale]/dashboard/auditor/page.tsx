@@ -1,7 +1,6 @@
 "use client";
 
 import { useGraphQL } from "@/lib/api";
-import { useAppSession } from "@/lib/session";
 import { statusColors } from "@/lib/statusColors";
 import {
   IconCheck,
@@ -85,8 +84,6 @@ const AuditorDashboard = () => {
     isAuthenticated,
     isLoading: isSessionLoading,
   } = useGraphQL();
-  const { user } = useAppSession();
-
   const [assignments, setAssignments] = useState<AuditorAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

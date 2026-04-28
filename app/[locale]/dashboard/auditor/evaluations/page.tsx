@@ -1,7 +1,6 @@
 "use client";
 
 import { useGraphQL } from "@/lib/api";
-import { useAppSession } from "@/lib/session";
 import { IconEye, IconReportAnalytics } from "@tabler/icons-react";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
@@ -51,12 +50,6 @@ const GET_MY_EVALUATIONS = `
   }
 `;
 
-const auditTypeLabels: Record<string, string> = {
-  TECHNICAL_AUDIT: "Technical",
-  DOMAIN_AUDIT: "Domain",
-  CULTURAL_AUDIT: "Cultural",
-};
-
 const statusOptions = [
   { label: "All", value: "ALL" },
   { label: "Draft", value: "DRAFT" },
@@ -83,8 +76,6 @@ const EvaluationsPage = () => {
     isAuthenticated,
     isLoading: isSessionLoading,
   } = useGraphQL();
-  const { user } = useAppSession();
-
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

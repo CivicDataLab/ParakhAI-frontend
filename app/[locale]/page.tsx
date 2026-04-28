@@ -17,10 +17,6 @@ const HeroSection = dynamic(
   () => import("@/app/[locale]/components/HeroSection"),
   { ssr: false }
 );
-const SectorsSection = dynamic(
-  () => import("@/app/[locale]/components/SectorsSection"),
-  { ssr: false }
-);
 const GetStartedSection = dynamic(
   () => import("@/app/[locale]/components/GetStartedSection"),
   { ssr: false }

@@ -4,9 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Icon, Text } from "opub-ui";
 
-import { cn } from "@/lib/utils";
 import { Icons } from "@/components/icons";
-import styles from "./styles.module.scss";
 
 const MainFooter = () => {
   const socialMedia = [

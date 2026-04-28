@@ -201,35 +201,6 @@ const RUN_AUDIT_MUTATION = `
   }
 `;
 
-// Legacy mutation - kept for backward compatibility
-const REQUEST_AUDIT_MUTATION = `
-  mutation RequestAudit($input: RequestAuditInput!) {
-    requestAudit(input: $input) {
-      success
-      message
-      audit {
-        id
-        name
-        status
-        modules
-        metrics
-        modelId
-        modelVersionId
-        testDatasetIds
-        configuration
-        judgeModel
-        judgeConfig
-        errorMessage
-        errorDetails
-        totalTests
-        passedTests
-        failedTests
-        skippedTests
-      }
-    }
-  }
-`;
-
 const generateDefaultAuditName = () => {
   const now = new Date();
 
@@ -357,7 +328,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     request,
     isAuthenticated,
     isLoading: isSessionLoading,
-    accessToken,
   } = useGraphQL();
 
   // Get user session for expert name
@@ -539,8 +509,8 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   // Backend audit run state
   const [isRequestingAudit, setIsRequestingAudit] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
-  const [auditError, setAuditError] = useState<string | null>(null);
-  const [auditOverview, setAuditOverview] = useState<{
+  const [, setAuditError] = useState<string | null>(null);
+  const [, setAuditOverview] = useState<{
     auditId: string | null;
     auditTime: string | null;
     durationSeconds: number | null;
@@ -1320,18 +1290,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     }
   };
 
-  const validateTestCases = (): boolean => {
-    if (modeOfEvaluation === "manual") {
-      return true;
-    }
-
-    const hasPromptLibraries = selectedPromptLibraries.length > 0;
-    const hasCustomTestCases =
-      (testInputMode === "paste" && pastedTestCases.trim().length > 0) ||
-      (testInputMode === "upload" && uploadedFiles.length > 0);
-    return hasPromptLibraries || hasCustomTestCases;
-  };
-
   const validateForm = (): boolean => {
     const errors: typeof validationErrors = {};
 
@@ -1846,10 +1804,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             <EvaluationConfiguration
               auditType={auditType}
               setAuditType={setAuditType}
-              auditorName={auditorName}
-              setAuditorName={setAuditorName}
-              organisationName={organisationName}
-              setOrganisationName={setOrganisationName}
               auditObjective={auditObjective}
               setAuditObjective={setAuditObjective}
               auditScope={auditScope}
