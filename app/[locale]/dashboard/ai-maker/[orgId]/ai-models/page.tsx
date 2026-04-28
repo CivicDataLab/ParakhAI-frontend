@@ -578,16 +578,10 @@ const AIModelsPage = () => {
             </div>
           ) : (
             paginatedModels.map((model, index) => {
-              const updatedValue = formatDate(model.updatedAt) || "Unknown";
               const testCasesValue = `${formatNumber(model.testCasesCount || 0)} test cases`;
               const auditsValue = `${formatNumber(model.auditsCount || 0)} evaluations`;
 
               const metadataContent = [
-                {
-                  icon: Icons.calendar,
-                  label: "Updated",
-                  value: updatedValue,
-                },
                 {
                   icon: Icons.testPipe,
                   label: "Test cases",

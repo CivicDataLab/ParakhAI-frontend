@@ -356,12 +356,6 @@ const AIMakerDashboard = () => {
               // Card metadata (top row inside card)
               const metadataContent = [
                 {
-                  icon: Icons.calendar,
-                  label: "Created",
-                  value: formatDate(model.updatedAt),
-                  tooltip: formatDate(model.updatedAt),
-                },
-                {
                   icon: Icons.testPipe,
                   label: "Test Cases",
                   value: `${model.testCasesCount || 0} test cases`,
