@@ -3,7 +3,7 @@
 import { useGraphQL } from "@/lib/api";
 import { useAppSession } from "@/lib/session";
 import { toTitleCase } from "@/lib/utils";
-import { IconX } from "@tabler/icons-react";
+import { IconArrowLeft, IconTrash } from "@tabler/icons-react";
 import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -284,7 +284,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const [auditType, setAuditType] = useState<AuditType>("Technical");
   const [activeTab, setActiveTab] = useState<"config" | "test">("config");
   const [auditName, setAuditName] = useState(generateDefaultAuditName);
-  const isAutoSaved = true;
 
   // Current audit ID - persisted in URL
   const [currentAuditId, setCurrentAuditId] = useState<string | null>(
@@ -1613,9 +1612,88 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           </div>
         )}
 
-        {/* Model Name and Owner Section - Hide while loading audit details */}
-        {!(urlAuditId && isLoadingAuditDetails) && (
-          <div className="mb-6">
+        {/* Audit Name + Header Actions */}
+        <div
+          className={`flex items-center justify-between gap-4 ${styles.auditNameSection} max-[1023px]:gap-0.5 mb-8`}
+        >
+          <div className="flex items-center gap-4 flex-wrap min-w-0 flex-1 evaluation-name-row max-[640px]:flex-col max-[640px]:items-start max-[640px]:gap-2">
+            <Label
+              htmlFor="auditName"
+              className={`${styles.auditNameLabel} flex-shrink-0 whitespace-nowrap max-[640px]:w-full text-left`}
+            >
+              Evaluation Name :
+            </Label>
+            <div
+              className={`${styles.auditNameInputWrapper} flex-1 min-w-0 max-w-[380px] max-[1024px]:max-w-full max-[640px]:w-full`}
+            >
+              <TextField
+                id="auditName"
+                name="evaluationName"
+                label="Evaluation Name"
+                labelHidden
+                value={auditName}
+                onChange={(value) => setAuditName(value)}
+              />
+            </div>
+            <div className="flex-shrink-0 max-[640px]:w-full max-[640px]:flex max-[640px]:items-start">
+              <div
+                className={`${styles.tagWrapper} ${styles.auditTag}`}
+                style={{ borderRadius: "4px", overflow: "hidden" }}
+              >
+                <Tag variation="filled" fillColor="#E2F5C4" textColor="#0A0704">
+                  {auditType === "Technical"
+                    ? "Technical Evaluation"
+                    : auditType === "Domain"
+                      ? "Domain Evaluation"
+                      : "Cultural Evaluation"}
+                </Tag>
+              </div>
+            </div>
+          </div>
+
+          <div
+            className={`flex items-center justify-end gap-4 ${styles.auditStatusContainer} flex-shrink-0 max-[1023px]:gap-0.5 max-[1023px]:mt-0 mr-4`}
+          >
+            <Button
+              kind="tertiary"
+              onClick={() =>
+                router.push(`/${locale}/dashboard/ai-maker/${orgId}/evaluations`)
+              }
+              className={styles.cancelAuditButton}
+            >
+              <span className="inline-flex items-center">
+                <Icon
+                  source={IconArrowLeft}
+                  size={18}
+                  className="!-ml-0 !mr-3"
+                />
+              </span>
+              Back to List
+            </Button>
+            <Button
+              kind="tertiary"
+              variant="critical"
+              onClick={handleCancelEvaluation}
+              disabled={isCancelling}
+              className={`${styles.cancelAuditButton} flex-shrink-0 max-[640px]:ml-4`}
+            >
+              <span className="inline-flex items-center">
+                <Icon
+                  source={IconTrash}
+                  size={18}
+                  className="!-ml-0 !mr-3"
+                />
+              </span>
+              {isCancelling ? "Cancelling..." : "Cancel"}
+            </Button>
+            </div>
+
+            </div>
+            {/* Model Name and Owner Section - Hide while loading audit details */}
+            {!(urlAuditId && isLoadingAuditDetails) && (
+              <div className="mb-6 bg-white overview-evaluation-section">
+                <div className="p-4 sm:p-6">
+                  <div className="-mt-1">
             {/* Model Selector - Only show if no URL params and no audit loaded */}
             {!urlModelId && !currentAuditId && (
               <div className="mb-4 max-w-md">
@@ -1689,104 +1767,41 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               </div>
             )}
 
-            {/* Model Name label + value */}
-            <div className={`mb-4 ${styles.modelNameContainer}`}>
-              <Text
-                variant="bodySm"
-                className="text-sm leading-5 font-medium text-[#60646C] mb-1 text-right"
-              >
-                Model Name
-              </Text>
-              <div className="flex items-center gap-4">
-                <Text as="h1" className={styles.modelNameText}>
-                  {modelName}
+            <div className="flex items-center justify-between gap-4">
+              <div className={`mb-0 ${styles.modelNameContainer}`}>
+                <Text
+                  variant="bodyMd"
+                  className="text-gray-500"
+                >
+                  Model Name :{" "}
                 </Text>
-                {modelVersion && (
-                  <Text as="h2" className={styles.modelNameText}>
-                    {modelVersion}
-                  </Text>
-                )}
+                <Text
+                  as="h1"
+                  variant="headingXl"
+                  className="font-bold text-gray-900 break-words"
+                >
+                  {modelVersion && modelName?.includes(modelVersion)
+                    ? modelName
+                    : modelVersion
+                      ? `${modelName} ${modelVersion}`
+                      : modelName}
+                </Text>
               </div>
-            </div>
-            <div className="flex items-center gap-2 text-gray-600">
-              <Text variant="bodyMd">Owner:</Text>
-              <Image
-                src="/images/icons/CDL.png"
-                alt="CDL"
-                width={36}
-                height={36}
-                className={`object-contain ${styles.cdlLogo}`}
-              />
-            </div>
-          </div>
-        )}
 
-        {/* Audit Name, Tag, and Status Section */}
-        <div
-          className={`flex items-center justify-between mb-6 gap-4 ${styles.auditNameSection} max-[1023px]:mb-0.5 max-[1023px]:gap-0.5`}
-        >
-          <div className="flex items-center gap-4 flex-wrap min-w-0 flex-1 evaluation-name-row max-[640px]:flex-col max-[640px]:items-start max-[640px]:gap-2">
-            <Label
-              htmlFor="auditName"
-              className={`${styles.auditNameLabel} flex-shrink-0 whitespace-nowrap max-[640px]:w-full text-left`}
-            >
-              Evaluation Name
-            </Label>
-            <div
-              className={`${styles.auditNameInputWrapper} flex-1 min-w-0 max-w-[380px] max-[1024px]:max-w-full max-[640px]:w-full`}
-            >
-              <TextField
-                id="auditName"
-                name="evaluationName"
-                label="Evaluation Name"
-                labelHidden
-                value={auditName}
-                onChange={(value) => setAuditName(value)}
-              />
-            </div>
-            <div className="flex-shrink-0 max-[640px]:w-full max-[640px]:flex max-[640px]:items-start">
-              <div
-                className={`${styles.tagWrapper} ${styles.auditTag}`}
-                style={{ borderRadius: "4px", overflow: "hidden" }}
-              >
-                <Tag variation="filled" fillColor="#E2F5C4" textColor="#0A0704">
-                  {auditType === "Technical"
-                    ? "Technical Evaluation"
-                    : auditType === "Domain"
-                      ? "Domain Evaluation"
-                      : "Cultural Evaluation"}
-                </Tag>
-              </div>
-            </div>
-          </div>
-
-          <div
-            className={`flex items-center justify-end gap-4 ${styles.auditStatusContainer} flex-shrink-0 max-[1023px]:gap-0.5 max-[1023px]:mt-0 mr-4`}
-          >
-            {isAutoSaved && (
-              <div className="flex items-center gap-1.5 lg:translate-x-0 xl:translate-x-2">
-                <Text className={styles.auditAutoSaved}>Auto-saved</Text>
+              <div className="flex items-center gap-2">
                 <Image
-                  src="/images/icons/circle-check.png"
-                  alt="Circle check"
-                  width={18}
-                  height={18}
-                  className="object-contain"
+                  src="/images/logos/CDL Logo.png"
+                  alt="CivicDataLab Logo"
+                  width={50}
+                  height={50}
+                  className="object-contain rounded-full cdl-round-logo"
                 />
               </div>
+            </div>
+                  </div>
+                </div>
+              </div>
             )}
-            <Button
-              kind="tertiary"
-              variant="critical"
-              onClick={handleCancelEvaluation}
-              disabled={isCancelling}
-              className={`${styles.cancelAuditButton} flex-shrink-0 max-[640px]:ml-4`}
-            >
-              {isCancelling ? "Cancelling..." : "Cancel Evaluation"}
-              <Icon source={IconX} size={18} />
-            </Button>
-          </div>
-        </div>
 
         {/* Tabs */}
         <div className="mb-4 max-[1023px]:mb-3 max-[640px]:mb-2">
