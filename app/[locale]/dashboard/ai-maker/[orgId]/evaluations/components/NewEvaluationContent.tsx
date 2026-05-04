@@ -290,6 +290,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     urlAuditId
   );
   const [isCreatingAudit, setIsCreatingAudit] = useState(false);
+  const [isSavingDraftBeforeExit, setIsSavingDraftBeforeExit] = useState(false);
   const [isLoadingAuditDetails, setIsLoadingAuditDetails] = useState(false);
 
   // AI Models state
@@ -544,6 +545,66 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     auditTime: string | null;
     durationSeconds: number | null;
   } | null>(null);
+  const lastSavedDraftSnapshotRef = useRef<string>("");
+  const hasUnsavedDraftChangesRef = useRef(false);
+  const isNavigatingAwayRef = useRef(false);
+  const hasInitializedSavedSnapshotRef = useRef(false);
+  const hasInitializedPopStateGuardRef = useRef(false);
+
+  const getPromptDatasetStorageKey = (auditId: string) =>
+    `evaluation-draft-datasets:${orgId}:${auditId}`;
+
+  const getDraftSnapshot = () => {
+    const selectedModuleNames = Object.entries(selectedModules)
+      .filter(([, isSelected]) => isSelected)
+      .map(([moduleName]) => moduleName)
+      .sort();
+
+    const selectedMetricsMap = Object.entries(selectedMetrics)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .reduce(
+        (acc, [moduleName, metrics]) => {
+          acc[moduleName] = (metrics || []).map((metric) => metric.value).sort();
+          return acc;
+        },
+        {} as Record<string, string[]>
+      );
+
+    return JSON.stringify({
+      auditName: auditName.trim(),
+      auditType,
+      selectedModelId: selectedModelId || "",
+      selectedVersionId: selectedVersionId || null,
+      auditorName: auditorName.trim(),
+      organisationName: organisationName.trim(),
+      auditObjective: auditObjective.trim(),
+      modeOfEvaluation: modeOfEvaluation || "",
+      auditScope: auditScope.trim(),
+      selectedModules: selectedModuleNames,
+      selectedMetrics: selectedMetricsMap,
+      selectedPromptLibraries: selectedPromptLibraries
+        .map((item: any) => item?.id)
+        .filter(Boolean)
+        .sort(),
+      testInputMode,
+      pastedTestCases: pastedTestCases.trim(),
+      uploadedFiles: uploadedFiles.map((file) => file.name).sort(),
+    });
+  };
+
+  const hasDraftProgress = () =>
+    Boolean(
+      currentAuditId ||
+        selectedModelId ||
+        auditObjective.trim() ||
+        auditScope.trim() ||
+        auditorName.trim() ||
+        organisationName.trim() ||
+        pastedTestCases.trim() ||
+        uploadedFiles.length ||
+        selectedPromptLibraries.length ||
+        Object.values(selectedModules).some(Boolean)
+    );
 
   // Fetch audit details when auditId is in URL
   useEffect(() => {
@@ -783,6 +844,49 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           if (config.auditorName) setAuditorName(config.auditorName);
           if (config.organisationName)
             setOrganisationName(config.organisationName);
+          if (typeof config.testInputMode === "string") {
+            const savedMode =
+              config.testInputMode === "upload" ? "upload" : "paste";
+            setTestInputMode(savedMode);
+          }
+          if (typeof config.pastedTestCases === "string") {
+            setPastedTestCases(config.pastedTestCases);
+          }
+          let restoredDatasetIds: Array<string | number> = Array.isArray(
+            audit.testDatasetIds
+          )
+            ? audit.testDatasetIds
+            : Array.isArray(config.selectedPromptDatasetIds)
+              ? config.selectedPromptDatasetIds
+              : [];
+          if (!restoredDatasetIds.length && typeof window !== "undefined") {
+            const cached = window.localStorage.getItem(
+              getPromptDatasetStorageKey(audit.id)
+            );
+            if (cached) {
+              try {
+                const parsed = JSON.parse(cached);
+                if (Array.isArray(parsed)) {
+                  restoredDatasetIds = parsed;
+                }
+              } catch {
+                // Ignore invalid cache and continue.
+              }
+            }
+          }
+          if (restoredDatasetIds.length) {
+            setSelectedPromptLibraries(
+              restoredDatasetIds
+                .map((item: any) => {
+                  if (item && typeof item === "object") {
+                    const possibleId = item.id ?? item.value;
+                    return possibleId ? { id: String(possibleId) } : null;
+                  }
+                  return { id: String(item) };
+                })
+                .filter(Boolean) as any[]
+            );
+          }
 
           // Note: Modules and metrics are now loaded in the model fetch section above
           // using MetricsByModelType query to show all available modules
@@ -887,6 +991,16 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             auditorName,
             organisationName,
             auditObjective,
+            configuration: {
+              auditorName,
+              organisationName,
+              testInputMode,
+              pastedTestCases,
+              selectedPromptDatasetIds: selectedPromptLibraries
+                .map((item: any) => item?.id)
+                .filter(Boolean)
+                .map((id: string | number) => String(id)),
+            },
           },
         },
         { organization: orgId }
@@ -899,6 +1013,20 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         return false;
       }
 
+      lastSavedDraftSnapshotRef.current = getDraftSnapshot();
+      hasUnsavedDraftChangesRef.current = false;
+      hasInitializedSavedSnapshotRef.current = true;
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(
+          getPromptDatasetStorageKey(auditId),
+          JSON.stringify(
+            selectedPromptLibraries
+              .map((item: any) => item?.id)
+              .filter(Boolean)
+              .map((id: string | number) => String(id))
+          )
+        );
+      }
       return true;
     } catch (error: any) {
       setAuditError(error.message || "Error updating evaluation.");
@@ -1394,6 +1522,125 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     return { modules: selectedModuleNames, metrics: selectedMetricNames };
   };
 
+  useEffect(() => {
+    const snapshot = getDraftSnapshot();
+    hasUnsavedDraftChangesRef.current =
+      lastSavedDraftSnapshotRef.current !== "" &&
+      snapshot !== lastSavedDraftSnapshotRef.current;
+  }, [
+    currentAuditId,
+    auditName,
+    auditType,
+    selectedModelId,
+    selectedVersionId,
+    auditorName,
+    organisationName,
+    auditObjective,
+    modeOfEvaluation,
+    auditScope,
+    selectedModules,
+    selectedMetrics,
+    selectedPromptLibraries,
+    testInputMode,
+    pastedTestCases,
+    uploadedFiles,
+  ]);
+
+  useEffect(() => {
+    if (isLoadingAuditDetails) return;
+    if (hasInitializedSavedSnapshotRef.current) return;
+
+    if (urlAuditId || currentAuditId) {
+      lastSavedDraftSnapshotRef.current = getDraftSnapshot();
+      hasUnsavedDraftChangesRef.current = false;
+      hasInitializedSavedSnapshotRef.current = true;
+    }
+  }, [isLoadingAuditDetails, urlAuditId, currentAuditId]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (isNavigatingAwayRef.current) return;
+      if (!hasDraftProgress()) return;
+      if (!hasUnsavedDraftChangesRef.current && currentAuditId) return;
+
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [currentAuditId, selectedModelId, auditObjective, auditScope, auditorName, organisationName, selectedModules, selectedPromptLibraries, uploadedFiles, pastedTestCases]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (isNavigatingAwayRef.current) return;
+      if (!hasDraftProgress()) return;
+      if (!hasUnsavedDraftChangesRef.current && currentAuditId) return;
+
+      const shouldSaveAndLeave = window.confirm(
+        "You have unsaved evaluation progress. Save draft before leaving?"
+      );
+
+      if (!shouldSaveAndLeave) {
+        window.history.pushState(null, "", window.location.href);
+        return;
+      }
+
+      window.history.pushState(null, "", window.location.href);
+      void handleBackToList();
+    };
+
+    if (!hasInitializedPopStateGuardRef.current) {
+      window.history.pushState(null, "", window.location.href);
+      hasInitializedPopStateGuardRef.current = true;
+    }
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [currentAuditId, selectedModelId, auditObjective, auditScope, auditorName, organisationName, selectedModules, selectedPromptLibraries, uploadedFiles, pastedTestCases, isSavingDraftBeforeExit, isCreatingAudit]);
+
+  useEffect(() => {
+    const handleRouteLinkClick = (event: MouseEvent) => {
+      if (isNavigatingAwayRef.current) return;
+
+      const target = event.target as HTMLElement | null;
+      const anchor = target?.closest("a[href]") as HTMLAnchorElement | null;
+      if (!anchor) return;
+      if (anchor.target === "_blank") return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+      const href = anchor.getAttribute("href");
+      if (!href || href.startsWith("#")) return;
+      if (href.startsWith("mailto:") || href.startsWith("tel:")) return;
+
+      const destination = new URL(anchor.href, window.location.href);
+      const current = new URL(window.location.href);
+      if (destination.origin !== current.origin) return;
+      if (destination.href === current.href) return;
+
+      if (!hasDraftProgress()) return;
+      if (!hasUnsavedDraftChangesRef.current && currentAuditId) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const shouldSaveAndLeave = window.confirm(
+        "You have unsaved evaluation progress. Save draft before leaving?"
+      );
+      if (!shouldSaveAndLeave) return;
+
+      void (async () => {
+        const saved = await saveDraftProgress();
+        if (!saved) return;
+        isNavigatingAwayRef.current = true;
+        window.location.assign(destination.href);
+      })();
+    };
+
+    document.addEventListener("click", handleRouteLinkClick, true);
+    return () =>
+      document.removeEventListener("click", handleRouteLinkClick, true);
+  }, [currentAuditId, selectedModelId, auditObjective, auditScope, auditorName, organisationName, selectedModules, selectedPromptLibraries, uploadedFiles, pastedTestCases, isSavingDraftBeforeExit, isCreatingAudit, saveDraftProgress]);
+
   // Handle tab change - create audit if needed and update config
   const handleTestTabClick = async () => {
     if (!validateForm()) {
@@ -1418,6 +1665,44 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     }
 
     handleTabChange("test");
+  };
+
+  async function saveDraftProgress(): Promise<boolean> {
+    if (isSavingDraftBeforeExit || isCreatingAudit) return false;
+
+    setAuditError(null);
+    setIsSavingDraftBeforeExit(true);
+
+    try {
+      let auditId = currentAuditId;
+
+      // Persist form progress as draft before leaving, even if test cases were not added yet.
+      if (!auditId && selectedModelId) {
+        auditId = await createBlankAudit(selectedModelId, selectedVersionId);
+        if (!auditId) {
+          return false;
+        }
+      }
+
+      if (auditId) {
+        const updated = await updateAuditConfig(auditId);
+        if (!updated) {
+          return false;
+        }
+      }
+
+      return true;
+    } finally {
+      setIsSavingDraftBeforeExit(false);
+    }
+  }
+
+  const handleBackToList = async () => {
+    const saved = await saveDraftProgress();
+    if (!saved) return;
+
+    isNavigatingAwayRef.current = true;
+    router.push(`/${locale}/dashboard/ai-maker/${orgId}/evaluations`);
   };
 
   const handleRunAudit = async () => {
@@ -1656,9 +1941,8 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           >
             <Button
               kind="tertiary"
-              onClick={() =>
-                router.push(`/${locale}/dashboard/ai-maker/${orgId}/evaluations`)
-              }
+              onClick={handleBackToList}
+              disabled={isSavingDraftBeforeExit || isCreatingAudit}
               className={styles.cancelAuditButton}
             >
               <span className="inline-flex items-center">
@@ -1668,7 +1952,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                   className="!-ml-0 !mr-3"
                 />
               </span>
-              Back to List
+              {isSavingDraftBeforeExit ? "Saving..." : "Back to List"}
             </Button>
             <Button
               kind="tertiary"
