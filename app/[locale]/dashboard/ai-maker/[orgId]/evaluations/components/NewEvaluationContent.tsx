@@ -262,6 +262,31 @@ const generateDefaultAuditName = () => {
   return `Untitled Evaluation - ${day} ${month} ${year} - ${timeString}`;
 };
 
+/** Map API / config auditType values to UI AuditType; null if unknown. */
+function parseAuditTypeFromBackend(
+  raw: string | null | undefined
+): AuditType | null {
+  if (!raw || typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  if (trimmed === "Technical" || trimmed === "Domain" || trimmed === "Cultural") {
+    return trimmed;
+  }
+  const norm = trimmed.toUpperCase().replace(/[\s-]+/g, "_");
+  const byEnum: Record<string, AuditType> = {
+    TECHNICAL_AUDIT: "Technical",
+    DOMAIN_AUDIT: "Domain",
+    CULTURAL_AUDIT: "Cultural",
+    TECHNICAL: "Technical",
+    DOMAIN: "Domain",
+    CULTURAL: "Cultural",
+  };
+  if (byEnum[norm]) return byEnum[norm];
+  if (norm.includes("TECHNICAL")) return "Technical";
+  if (norm.includes("CULTURAL")) return "Cultural";
+  if (norm.includes("DOMAIN")) return "Domain";
+  return null;
+}
+
 interface NewEvaluationContentProps {
   orgId: string;
   fromAuditor?: boolean;
@@ -823,15 +848,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             }
           }
 
-          if (audit.auditType) {
-            const auditTypeMap: Record<string, AuditType> = {
-              TECHNICAL_AUDIT: "Technical",
-              DOMAIN_AUDIT: "Domain",
-              CULTURAL_AUDIT: "Cultural",
-            };
-            setAuditType(auditTypeMap[audit.auditType] || "Technical");
-          }
-
           if (audit.auditObjective) setAuditObjective(audit.auditObjective);
           if (audit.auditScope) setAuditScope(audit.auditScope);
           // If backend has no auditScope yet, keep the current default derived
@@ -841,6 +857,13 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           }
 
           const config = audit.configuration || {};
+
+          const restoredAuditType =
+            parseAuditTypeFromBackend(config.auditType) ??
+            parseAuditTypeFromBackend(audit.auditType);
+          if (restoredAuditType) {
+            setAuditType(restoredAuditType);
+          }
           if (config.auditorName) setAuditorName(config.auditorName);
           if (config.organisationName)
             setOrganisationName(config.organisationName);
@@ -994,6 +1017,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             configuration: {
               auditorName,
               organisationName,
+              auditType,
               testInputMode,
               pastedTestCases,
               selectedPromptDatasetIds: selectedPromptLibraries
@@ -1901,10 +1925,10 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         <div
           className={`flex items-center justify-between gap-4 ${styles.auditNameSection} max-[1023px]:gap-0.5 mb-8`}
         >
-          <div className="flex items-center gap-4 flex-wrap min-w-0 flex-1 evaluation-name-row max-[640px]:flex-col max-[640px]:items-start max-[640px]:gap-2">
+          <div className="flex items-center gap-4 flex-wrap min-w-0 flex-1 evaluation-name-row max-[640px]:flex-row max-[640px]:items-center max-[640px]:gap-2">
             <Label
               htmlFor="auditName"
-              className={`${styles.auditNameLabel} flex-shrink-0 whitespace-nowrap max-[640px]:w-full text-left`}
+              className={`${styles.auditNameLabel} flex-shrink-0 whitespace-nowrap text-left`}
             >
               Evaluation Name :
             </Label>
@@ -1937,7 +1961,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           </div>
 
           <div
-            className={`flex items-center justify-end gap-4 ${styles.auditStatusContainer} flex-shrink-0 max-[1023px]:gap-0.5 max-[1023px]:mt-0 mr-4`}
+            className={`flex items-center justify-end gap-4 ${styles.auditStatusContainer} flex-shrink-0 max-[1023px]:gap-0.5 max-[1023px]:mt-0 mr-0 translate-x-1`}
           >
             <Button
               kind="tertiary"
@@ -1949,7 +1973,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                 <Icon
                   source={IconArrowLeft}
                   size={18}
-                  className="!-ml-0 !mr-3"
+                  className={styles.backToListIcon}
                 />
               </span>
               {isSavingDraftBeforeExit ? "Saving..." : "Back to List"}
@@ -1965,7 +1989,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                 <Icon
                   source={IconTrash}
                   size={18}
-                  className="!-ml-0 !mr-3"
+                  className={styles.cancelIconOutline}
                 />
               </span>
               {isCancelling ? "Cancelling..." : "Cancel"}
