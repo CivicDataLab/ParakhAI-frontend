@@ -117,44 +117,37 @@
 /* Cancel Audit button styling */
 .cancelAuditButton {
   width: auto;
-  min-width: 86px;
-  height: 20px;
-  display: flex;
+  min-width: 48px;
+  min-height: 30px;
+  display: inline-flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 0px;
-  font-weight: 500;
+  justify-content: center;
+  gap: 8px;
   font-size: 14px;
   line-height: 20px;
-  letter-spacing: 0px;
-  color: #59682c;
-  background: transparent;
-  border: none;
-  padding: 0;
+  letter-spacing: 0;
+  padding: 4px 6px;
   margin: 0;
   white-space: nowrap;
+  border-radius: 8px;
+  color: #59682c;
 
   > * {
     margin: 0;
-    padding: 0;
+    color: #59682c;
   }
 
   [class*="Button"] {
-    gap: 0px;
-    display: flex;
+    gap: 8px;
+    display: inline-flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: center;
     width: auto;
-    min-width: 86px;
-    height: 20px;
-    font-weight: 500;
-    font-size: 14px;
-    line-height: 20px;
-    letter-spacing: 0px;
+    min-width: 88px;
+    min-height: 32px;
+    padding: 4px 6px;
+    border-radius: 8px;
     color: #59682c;
-    background: transparent;
-    border: none;
-    padding: 0;
   }
 
   span,
@@ -162,24 +155,50 @@
   [class*="Button"] span,
   [class*="Button"] button {
     margin: 0;
-    padding: 0;
-    gap: 0px;
+    gap: 8px;
     font-weight: 500;
     font-size: 14px;
     line-height: 20px;
-    letter-spacing: 0px;
-    color: #59682c;
+    letter-spacing: 0;
     white-space: nowrap;
+    color: #59682c;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   [class*="Icon"] {
-    color: #59682c;
     width: 18px;
     height: 18px;
     min-width: 18px;
     min-height: 18px;
     flex-shrink: 0;
-    margin-left: 4px;
+    margin-left: 0;
+  }
+}
+
+.backToListIcon {
+  color: #59682c !important;
+
+  svg,
+  path {
+    color: #59682c !important;
+    fill: #59682c !important;
+    stroke: #59682c !important;
+  }
+}
+
+.cancelIconOutline {
+  color: #59682c !important;
+
+  svg,
+  path,
+  rect,
+  line,
+  polyline,
+  polygon {
+    stroke: #59682c !important;
+    fill: none !important;
   }
 }
 
@@ -445,8 +464,9 @@
 
     > div:first-child {
       width: 100%;
-      flex-direction: column;
-      align-items: flex-start;
+      flex-direction: row;
+      align-items: center;
+      flex-wrap: nowrap;
       gap: 8px;
     }
 
@@ -564,7 +584,7 @@
     vertical-align: bottom;
     box-sizing: content-box;
     overflow: visible;
-    text-overflow: clip;
+    text-overflow: ellipsis;
     white-space: nowrap;
     flex-shrink: 0;
     display: inline-block;
