@@ -10,8 +10,8 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
-import { Button, Dialog, Spinner, Tag, Text } from "opub-ui";
-import { useEffect, useState } from "react";
+import { Button, Dialog, Spinner, Tag, Text, Tooltip } from "opub-ui";
+import { useEffect, useRef, useState } from "react";
 
 // Custom Avatar component with error handling
 const Avatar = ({
@@ -43,6 +43,53 @@ const Avatar = ({
       onError={() => setImageError(true)}
     />
   );
+};
+
+const TruncatedAuditorBio = ({ bio }: { bio?: string | null }) => {
+  const text = bio?.trim() || "";
+  const textRef = useRef<HTMLDivElement>(null);
+  const [isTruncated, setIsTruncated] = useState(false);
+
+  useEffect(() => {
+    const checkTruncation = () => {
+      const element = textRef.current;
+      if (!element || !text) {
+        setIsTruncated(false);
+        return;
+      }
+      setIsTruncated(
+        element.scrollHeight > element.clientHeight ||
+          element.scrollWidth > element.clientWidth
+      );
+    };
+
+    checkTruncation();
+    window.addEventListener("resize", checkTruncation);
+    return () => window.removeEventListener("resize", checkTruncation);
+  }, [text]);
+
+  const bioNode = (
+    <div
+      ref={textRef}
+      style={{
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        display: "-webkit-box",
+        WebkitLineClamp: 1,
+        WebkitBoxOrient: "vertical",
+      }}
+    >
+      <Text variant="bodySm" className="text-gray-600 break-words">
+        {text}
+      </Text>
+    </div>
+  );
+
+  if (!isTruncated || !text) {
+    return bioNode;
+  }
+
+  return <Tooltip content={text}>{bioNode}</Tooltip>;
 };
 
 // Types
@@ -442,19 +489,7 @@ const AuditorsPage = () => {
                     >
                       {displayName}
                     </Text>
-                    <Text
-                      variant="bodySm"
-                      className="text-gray-600 break-words"
-                      style={{
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        display: "-webkit-box",
-                        WebkitLineClamp: 1,
-                        WebkitBoxOrient: "vertical",
-                      }}
-                    >
-                      {getAuditorBio(auditor)}
-                    </Text>
+                    <TruncatedAuditorBio bio={getAuditorBio(auditor)} />
                   </div>
                 </div>
 
