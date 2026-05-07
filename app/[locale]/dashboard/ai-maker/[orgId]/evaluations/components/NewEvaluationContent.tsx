@@ -574,6 +574,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const hasUnsavedDraftChangesRef = useRef(false);
   const isNavigatingAwayRef = useRef(false);
   const hasInitializedSavedSnapshotRef = useRef(false);
+  const hasTriggeredLeaveAutosaveRef = useRef(false);
   const hasInitializedPopStateGuardRef = useRef(false);
 
   const getPromptDatasetStorageKey = (auditId: string) =>
@@ -948,7 +949,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     modelId: string,
     versionId: number | null
   ): Promise<string | null> => {
-    if (!isAuthenticated || isCreatingAudit) return null;
+    if (isCreatingAudit) return null;
 
     setIsCreatingAudit(true);
     setAuditError(null);
@@ -991,7 +992,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     auditIdOverride?: string
   ): Promise<boolean> => {
     const auditId = auditIdOverride || currentAuditId;
-    if (!auditId || !isAuthenticated) return false;
+    if (!auditId) return false;
 
     const { modules: modulesList, metrics: metricsList } =
       buildModulesAndMetrics();
@@ -1062,12 +1063,16 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     if (!confirm("Are you sure you want to cancel this evaluation?")) return;
     const auditId = currentAuditId;
     if (!auditId) {
-      router.back();
+      isNavigatingAwayRef.current = true;
+      // Avoid router.back() here because history guards can keep user on the same page.
+      window.location.assign(`/${locale}/dashboard/ai-maker/${orgId}/evaluations`);
       return;
     }
     setIsCancelling(true);
     setAuditError(null);
     try {
+      // Prevent unsaved-progress leave guards from firing during explicit cancel flow.
+      isNavigatingAwayRef.current = true;
       const result = await request<{
         updateAudit: { success: boolean; message: string };
       }>(
@@ -1078,13 +1083,16 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         { organization: orgId }
       );
       if (result?.updateAudit?.success) {
-        router.push(`/${locale}/dashboard/ai-maker/${orgId}/evaluations`);
+        // Use a hard navigation so the list refreshes immediately and doesn't rely on client cache.
+        window.location.assign(`/${locale}/dashboard/ai-maker/${orgId}/evaluations`);
       } else {
+        isNavigatingAwayRef.current = false;
         setAuditError(
           result?.updateAudit?.message || "Failed to cancel evaluation."
         );
       }
     } catch (error: any) {
+      isNavigatingAwayRef.current = false;
       setAuditError(error?.message || "Failed to cancel evaluation.");
     } finally {
       setIsCancelling(false);
@@ -1582,88 +1590,120 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   }, [isLoadingAuditDetails, urlAuditId, currentAuditId]);
 
   useEffect(() => {
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (isNavigatingAwayRef.current) return;
-      if (!hasDraftProgress()) return;
-      if (!hasUnsavedDraftChangesRef.current && currentAuditId) return;
-
-      event.preventDefault();
-      event.returnValue = "";
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [currentAuditId, selectedModelId, auditObjective, auditScope, auditorName, organisationName, selectedModules, selectedPromptLibraries, uploadedFiles, pastedTestCases]);
+    hasTriggeredLeaveAutosaveRef.current = false;
+  }, [
+    currentAuditId,
+    auditName,
+    auditType,
+    selectedModelId,
+    selectedVersionId,
+    auditorName,
+    organisationName,
+    auditObjective,
+    modeOfEvaluation,
+    auditScope,
+    selectedModules,
+    selectedMetrics,
+    selectedPromptLibraries,
+    testInputMode,
+    pastedTestCases,
+    uploadedFiles,
+  ]);
 
   useEffect(() => {
-    const handlePopState = () => {
+    const autoSaveDraftOnLeave = () => {
       if (isNavigatingAwayRef.current) return;
+      if (hasTriggeredLeaveAutosaveRef.current) return;
       if (!hasDraftProgress()) return;
       if (!hasUnsavedDraftChangesRef.current && currentAuditId) return;
 
-      const shouldSaveAndLeave = window.confirm(
-        "You have unsaved evaluation progress. Save draft before leaving?"
-      );
-
-      if (!shouldSaveAndLeave) {
-        window.history.pushState(null, "", window.location.href);
-        return;
-      }
-
-      window.history.pushState(null, "", window.location.href);
-      void handleBackToList();
+      hasTriggeredLeaveAutosaveRef.current = true;
+      void saveDraftProgress();
     };
 
+    window.addEventListener("beforeunload", autoSaveDraftOnLeave);
+
+    return () => {
+      window.removeEventListener("beforeunload", autoSaveDraftOnLeave);
+    };
+  }, [
+    currentAuditId,
+    auditName,
+    auditType,
+    selectedModelId,
+    selectedVersionId,
+    modeOfEvaluation,
+    auditObjective,
+    auditScope,
+    auditorName,
+    organisationName,
+    selectedModules,
+    selectedMetrics,
+    selectedPromptLibraries,
+    testInputMode,
+    uploadedFiles,
+    pastedTestCases,
+    isSavingDraftBeforeExit,
+    isCreatingAudit,
+  ]);
+
+  useEffect(() => {
     if (!hasInitializedPopStateGuardRef.current) {
       window.history.pushState(null, "", window.location.href);
       hasInitializedPopStateGuardRef.current = true;
     }
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [currentAuditId, selectedModelId, auditObjective, auditScope, auditorName, organisationName, selectedModules, selectedPromptLibraries, uploadedFiles, pastedTestCases, isSavingDraftBeforeExit, isCreatingAudit]);
 
-  useEffect(() => {
-    const handleRouteLinkClick = (event: MouseEvent) => {
+    const handlePopState = () => {
       if (isNavigatingAwayRef.current) return;
 
-      const target = event.target as HTMLElement | null;
-      const anchor = target?.closest("a[href]") as HTMLAnchorElement | null;
-      if (!anchor) return;
-      if (anchor.target === "_blank") return;
-      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const shouldAutoSave =
+        hasUnsavedDraftChangesRef.current ||
+        !currentAuditId ||
+        hasDraftProgress();
 
-      const href = anchor.getAttribute("href");
-      if (!href || href.startsWith("#")) return;
-      if (href.startsWith("mailto:") || href.startsWith("tel:")) return;
+      if (!shouldAutoSave) {
+        isNavigatingAwayRef.current = true;
+        window.history.back();
+        return;
+      }
 
-      const destination = new URL(anchor.href, window.location.href);
-      const current = new URL(window.location.href);
-      if (destination.origin !== current.origin) return;
-      if (destination.href === current.href) return;
-
-      if (!hasDraftProgress()) return;
-      if (!hasUnsavedDraftChangesRef.current && currentAuditId) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-
-      const shouldSaveAndLeave = window.confirm(
-        "You have unsaved evaluation progress. Save draft before leaving?"
-      );
-      if (!shouldSaveAndLeave) return;
+      // Keep user on current page while auto-save runs silently.
+      window.history.pushState(null, "", window.location.href);
 
       void (async () => {
         const saved = await saveDraftProgress();
-        if (!saved) return;
+        if (!saved) {
+          return;
+        }
         isNavigatingAwayRef.current = true;
-        window.location.assign(destination.href);
+        window.location.assign(`/${locale}/dashboard/ai-maker/${orgId}/evaluations`);
       })();
     };
 
-    document.addEventListener("click", handleRouteLinkClick, true);
-    return () =>
-      document.removeEventListener("click", handleRouteLinkClick, true);
-  }, [currentAuditId, selectedModelId, auditObjective, auditScope, auditorName, organisationName, selectedModules, selectedPromptLibraries, uploadedFiles, pastedTestCases, isSavingDraftBeforeExit, isCreatingAudit, saveDraftProgress]);
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [
+    currentAuditId,
+    auditName,
+    auditType,
+    selectedModelId,
+    selectedVersionId,
+    modeOfEvaluation,
+    auditObjective,
+    auditScope,
+    auditorName,
+    organisationName,
+    selectedModules,
+    selectedMetrics,
+    selectedPromptLibraries,
+    testInputMode,
+    uploadedFiles,
+    pastedTestCases,
+    isSavingDraftBeforeExit,
+    isCreatingAudit,
+    locale,
+    orgId,
+  ]);
 
   // Handle tab change - create audit if needed and update config
   const handleTestTabClick = async () => {
