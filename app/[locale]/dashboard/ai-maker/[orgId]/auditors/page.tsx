@@ -26,8 +26,10 @@ const Avatar = ({
   size?: number;
 }) => {
   const [imageError, setImageError] = useState(false);
+  const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || "";
+  let imageSrc = dataspaceUrl+src;
 
-  if (!src || imageError) {
+  if (!imageSrc || imageError) {
     return <IconUser size={size} className="text-purple-600" />;
   }
 
@@ -35,7 +37,7 @@ const Avatar = ({
 
   return (
     <img
-      src={src}
+      src={imageSrc}
       alt={alt}
       className={`${sizeClass} rounded-full object-cover`}
       onError={() => setImageError(true)}
