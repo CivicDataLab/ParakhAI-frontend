@@ -218,12 +218,12 @@ const TestCases: React.FC<TestCasesProps> = ({
       header: "Files",
       cell: ({ getValue }) => getValue<number>(),
     },
-    {
-      id: "preview",
-      header: "Preview",
-      enableSorting: false,
-      cell: () => <Icon source={IconEye} size={20} color="success" />,
-    },
+    // {
+    //   id: "preview",
+    //   header: "Preview",
+    //   enableSorting: false,
+    //   cell: () => <Icon source={IconEye} size={20} color="success" />,
+    // },
   ];
 
   return (

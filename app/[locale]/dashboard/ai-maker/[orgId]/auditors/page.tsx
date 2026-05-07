@@ -50,6 +50,7 @@ type Auditor = {
   email: string;
   firstName: string | null;
   lastName: string | null;
+  bio?: string | null;
   profilePicture: string | null;
   joinedAt: string | null;
 };
@@ -78,6 +79,8 @@ const getUserDisplayName = (user: Auditor): string => {
   return "";
 };
 
+
+
 // GraphQL Queries
 const GET_ORG_DETAILS = `
   query GetOrgDetails($orgId: ID!) {
@@ -101,6 +104,7 @@ const GET_ORGANIZATION_AUDITORS = `
         email
         firstName
         lastName
+        bio
         profilePicture
         joinedAt
       }
@@ -179,6 +183,8 @@ const AuditorsPage = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
+  const [selectedAuditor, setSelectedAuditor] = useState<Auditor | null>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const [toast, setToast] = useState<{
     show: boolean;
@@ -333,6 +339,8 @@ const AuditorsPage = () => {
     }
   };
 
+  const getAuditorBio = (auditor: Auditor) => auditor.bio?.trim();
+
   return (
     <>
       <div className="flex items-center justify-between mb-8 mt-10">
@@ -400,10 +408,23 @@ const AuditorsPage = () => {
             return (
               <div
                 key={auditor.id}
-                className="flex flex-col gap-4 rounded-4 border-1 border-solid border-[#D5E1EA] bg-white p-6 shadow-card"
+                className="flex flex-col gap-4 rounded-4 border-1 border-solid border-[#D5E1EA] bg-white p-6 shadow-card cursor-pointer"
+                onClick={() => {
+                  setSelectedAuditor(auditor);
+                  setIsProfileModalOpen(true);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSelectedAuditor(auditor);
+                    setIsProfileModalOpen(true);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full border-1 border-solid border-[#D5E1EA] bg-purple-100 flex items-center justify-center overflow-hidden">
+                  <div className="w-12 h-12 shrink-0 rounded-full border-1 border-solid border-[#D5E1EA] bg-purple-100 flex items-center justify-center overflow-hidden">
                     <Avatar
                       src={auditor.profilePicture}
                       alt={auditor.username}
@@ -419,6 +440,19 @@ const AuditorsPage = () => {
                     >
                       {displayName}
                     </Text>
+                    <Text
+                      variant="bodySm"
+                      className="text-gray-600 break-words"
+                      style={{
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 1,
+                        WebkitBoxOrient: "vertical",
+                      }}
+                    >
+                      {getAuditorBio(auditor)}
+                    </Text>
                   </div>
                 </div>
 
@@ -426,9 +460,12 @@ const AuditorsPage = () => {
                   <Button
                     kind="tertiary"
                     size="slim"
-                    onClick={() => handleRemoveAuditor(auditor.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveAuditor(auditor.id);
+                    }}
                   >
-                    <span className="inline-flex items-center gap-2">
+                    <span className="ml-1 inline-flex items-center gap-2">
                       <IconTrash size={16} />
                       <span className="relative top-[1px]">Remove</span>
                     </span>
@@ -584,6 +621,55 @@ const AuditorsPage = () => {
               </Text>
             )}
           </div>
+        </Dialog.Content>
+      </Dialog>
+
+      <Dialog
+        open={isProfileModalOpen}
+        onOpenChange={(open) => {
+          setIsProfileModalOpen(open);
+          if (!open) {
+            setSelectedAuditor(null);
+          }
+        }}
+      >
+        <Dialog.Content
+          title="Evaluator Profile"
+          footer={<></>}
+          secondaryActions={[
+            {
+              content: "Close",
+              onAction: () => {
+                setIsProfileModalOpen(false);
+                setSelectedAuditor(null);
+              },
+            },
+          ]}
+        >
+          {selectedAuditor && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 shrink-0 rounded-full border-1 border-solid border-[#D5E1EA] bg-purple-100 flex items-center justify-center overflow-hidden">
+                  <Avatar
+                    src={selectedAuditor.profilePicture}
+                    alt={selectedAuditor.username}
+                    username={selectedAuditor.username}
+                    size={20}
+                  />
+                </div>
+                <div className="min-w-0">
+                  <Text variant="headingSm" fontWeight="semibold" className="text-primaryBlue">
+                    {getUserDisplayName(selectedAuditor) || "-"}
+                  </Text>
+                </div>
+              </div>
+              <div className="ml-2">
+                <Text variant="bodySm" className="text-gray-700 whitespace-pre-wrap break-words">
+                  {getAuditorBio(selectedAuditor)}
+                </Text>
+              </div>
+            </div>
+          )}
         </Dialog.Content>
       </Dialog>
 
