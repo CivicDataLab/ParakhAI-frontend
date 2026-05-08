@@ -377,6 +377,7 @@ const PromptLibrariesPage = () => {
             </div>
           </div>
           <div className="prompt-search-actions">
+            {/* Temporarily hidden for now. Keep this Add Filters block for future use.
             <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
               <Popover.Trigger asChild>
                 <button type="button" className="prompt-add-filters-link">
@@ -481,6 +482,7 @@ const PromptLibrariesPage = () => {
                 </div>
               </Popover.Content>
             </Popover>
+            */}
           </div>
         </div>
         <div className="prompt-active-filters">
@@ -585,6 +587,7 @@ const PromptLibrariesPage = () => {
                   >
                     <Card
                       title={library.title}
+                      withViewButton={false}
                       description={
                         stripMarkdown(library.description || "") || ""
                       }

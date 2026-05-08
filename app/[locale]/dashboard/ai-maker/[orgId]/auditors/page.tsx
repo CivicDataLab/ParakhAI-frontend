@@ -10,8 +10,8 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
-import { Button, DataTable, Dialog, Spinner, Tag, Text } from "opub-ui";
-import { useEffect, useState } from "react";
+import { Button, Dialog, Spinner, Tag, Text, Tooltip } from "opub-ui";
+import { useEffect, useRef, useState } from "react";
 
 // Custom Avatar component with error handling
 const Avatar = ({
@@ -26,8 +26,10 @@ const Avatar = ({
   size?: number;
 }) => {
   const [imageError, setImageError] = useState(false);
+  const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || "";
+  let imageSrc = dataspaceUrl+src;
 
-  if (!src || imageError) {
+  if (!imageSrc || imageError) {
     return <IconUser size={size} className="text-purple-600" />;
   }
 
@@ -35,12 +37,59 @@ const Avatar = ({
 
   return (
     <img
-      src={src}
+      src={imageSrc}
       alt={alt}
       className={`${sizeClass} rounded-full object-cover`}
       onError={() => setImageError(true)}
     />
   );
+};
+
+const TruncatedAuditorBio = ({ bio }: { bio?: string | null }) => {
+  const text = bio?.trim() || "";
+  const textRef = useRef<HTMLDivElement>(null);
+  const [isTruncated, setIsTruncated] = useState(false);
+
+  useEffect(() => {
+    const checkTruncation = () => {
+      const element = textRef.current;
+      if (!element || !text) {
+        setIsTruncated(false);
+        return;
+      }
+      setIsTruncated(
+        element.scrollHeight > element.clientHeight ||
+          element.scrollWidth > element.clientWidth
+      );
+    };
+
+    checkTruncation();
+    window.addEventListener("resize", checkTruncation);
+    return () => window.removeEventListener("resize", checkTruncation);
+  }, [text]);
+
+  const bioNode = (
+    <div
+      ref={textRef}
+      style={{
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        display: "-webkit-box",
+        WebkitLineClamp: 1,
+        WebkitBoxOrient: "vertical",
+      }}
+    >
+      <Text variant="bodySm" className="text-gray-600 break-words">
+        {text}
+      </Text>
+    </div>
+  );
+
+  if (!isTruncated || !text) {
+    return bioNode;
+  }
+
+  return <Tooltip content={text}>{bioNode}</Tooltip>;
 };
 
 // Types
@@ -50,6 +99,7 @@ type Auditor = {
   email: string;
   firstName: string | null;
   lastName: string | null;
+  bio?: string | null;
   profilePicture: string | null;
   joinedAt: string | null;
 };
@@ -78,6 +128,8 @@ const getUserDisplayName = (user: Auditor): string => {
   return "";
 };
 
+
+
 // GraphQL Queries
 const GET_ORG_DETAILS = `
   query GetOrgDetails($orgId: ID!) {
@@ -101,6 +153,7 @@ const GET_ORGANIZATION_AUDITORS = `
         email
         firstName
         lastName
+        bio
         profilePicture
         joinedAt
       }
@@ -179,6 +232,8 @@ const AuditorsPage = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
+  const [selectedAuditor, setSelectedAuditor] = useState<Auditor | null>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const [toast, setToast] = useState<{
     show: boolean;
@@ -333,65 +388,7 @@ const AuditorsPage = () => {
     }
   };
 
-  const columns = [
-    {
-      accessorKey: "username",
-      header: "Username",
-      cell: ({ row }: any) => (
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-            <Avatar
-              src={row.original.profilePicture}
-              alt={row.original.username}
-              username={row.original.username}
-            />
-          </div>
-          <Text variant="bodySm" fontWeight="medium">
-            {row.original.username}
-          </Text>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "email",
-      header: "Email",
-      cell: ({ getValue }: any) => <Text variant="bodySm">{getValue()}</Text>,
-    },
-    {
-      accessorKey: "name",
-      header: "Name",
-      cell: ({ row }: any) => {
-        const firstName = row.original.firstName || "";
-        const lastName = row.original.lastName || "";
-        const fullName = `${firstName} ${lastName}`.trim();
-        return <Text variant="bodySm">{fullName || "-"}</Text>;
-      },
-    },
-    {
-      accessorKey: "joinedAt",
-      header: "Joined",
-      cell: ({ getValue }: any) => {
-        const date = getValue();
-        if (!date) return <Text variant="bodySm">-</Text>;
-        return (
-          <Text variant="bodySm">{new Date(date).toLocaleDateString()}</Text>
-        );
-      },
-    },
-    {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }: any) => (
-        <Button
-          kind="tertiary"
-          size="slim"
-          onClick={() => handleRemoveAuditor(row.original.id)}
-        >
-          <IconTrash size={16} className="mr-1" /> Remove
-        </Button>
-      ),
-    },
-  ];
+  const getAuditorBio = (auditor: Auditor) => auditor.bio?.trim();
 
   return (
     <>
@@ -446,21 +443,74 @@ const AuditorsPage = () => {
           </Text>
           <Button
             kind="primary"
-            className="bg-primaryPurple2 hover:bg-[#6849EE]"
+            className="bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white"
             onClick={() => setIsAddModalOpen(true)}
           >
             <IconPlus size={18} className="mr-1" /> Add Your First Auditor
           </Button>
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <DataTable
-            rows={auditors}
-            columns={columns}
-            hoverable={true}
-            hideSelection={true}
-            hideFooter={auditors.length <= 10}
-          />
+        <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {auditors.map((auditor) => {
+            const displayName = getUserDisplayName(auditor) || "-";
+
+            return (
+              <div
+                key={auditor.id}
+                className="flex flex-col gap-4 rounded-4 border-1 border-solid border-[#D5E1EA] bg-white p-6 shadow-card cursor-pointer"
+                onClick={() => {
+                  setSelectedAuditor(auditor);
+                  setIsProfileModalOpen(true);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSelectedAuditor(auditor);
+                    setIsProfileModalOpen(true);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 shrink-0 rounded-full border-1 border-solid border-[#D5E1EA] bg-purple-100 flex items-center justify-center overflow-hidden">
+                    <Avatar
+                      src={auditor.profilePicture}
+                      alt={auditor.username}
+                      username={auditor.username}
+                      size={20}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2 min-w-0">
+                    <Text
+                      variant="bodyMd"
+                      fontWeight="semibold"
+                      className="truncate text-primaryBlue"
+                    >
+                      {displayName}
+                    </Text>
+                    <TruncatedAuditorBio bio={getAuditorBio(auditor)} />
+                  </div>
+                </div>
+
+                <div className="mt-auto pt-1">
+                  <Button
+                    kind="tertiary"
+                    size="slim"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveAuditor(auditor.id);
+                    }}
+                  >
+                    <span className="ml-1 inline-flex items-center gap-2">
+                      <IconTrash size={16} />
+                      <span className="relative top-[1px]">Remove</span>
+                    </span>
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -608,6 +658,55 @@ const AuditorsPage = () => {
               </Text>
             )}
           </div>
+        </Dialog.Content>
+      </Dialog>
+
+      <Dialog
+        open={isProfileModalOpen}
+        onOpenChange={(open) => {
+          setIsProfileModalOpen(open);
+          if (!open) {
+            setSelectedAuditor(null);
+          }
+        }}
+      >
+        <Dialog.Content
+          title="Evaluator Profile"
+          footer={<></>}
+          secondaryActions={[
+            {
+              content: "Close",
+              onAction: () => {
+                setIsProfileModalOpen(false);
+                setSelectedAuditor(null);
+              },
+            },
+          ]}
+        >
+          {selectedAuditor && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 shrink-0 rounded-full border-1 border-solid border-[#D5E1EA] bg-purple-100 flex items-center justify-center overflow-hidden">
+                  <Avatar
+                    src={selectedAuditor.profilePicture}
+                    alt={selectedAuditor.username}
+                    username={selectedAuditor.username}
+                    size={20}
+                  />
+                </div>
+                <div className="min-w-0">
+                  <Text variant="headingSm" fontWeight="semibold" className="text-primaryBlue">
+                    {getUserDisplayName(selectedAuditor) || "-"}
+                  </Text>
+                </div>
+              </div>
+              <div className="ml-2">
+                <Text variant="bodySm" className="text-gray-700 whitespace-pre-wrap break-words">
+                  {getAuditorBio(selectedAuditor)}
+                </Text>
+              </div>
+            </div>
+          )}
         </Dialog.Content>
       </Dialog>
 

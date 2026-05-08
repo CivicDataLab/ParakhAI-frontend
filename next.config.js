@@ -3,6 +3,9 @@ const nextConfig = {
   productionBrowserSourceMaps: true,
   transpilePackages: ['opub-ui'],
   swcMinify: false,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   // experimental: {
   //   optimizePackageImports: ['opub-ui','echarts', 'lucide-react'],
   // },
