@@ -84,7 +84,7 @@ For more information on contributing to the project, refer to the [CONTRIBUTING.
 
 ## License
 
-This project is licensed under the AGPL license. For more information, refer to the [LICENSE](LICENSE.md) file.
+This project is licensed under the AGPL-3.0 license. For more information, refer to the [LICENSE](LICENSE.md) file.
 
 ## Security
 
