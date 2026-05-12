@@ -243,7 +243,7 @@ const WelcomeSection = ({
         </div>
 
         <p className="welcome-text sm:pt-4 md:pt-0">
-          Welcome,{" "}
+          {"Welcome,\u00A0"}
           <span className="break-words">
             {user?.name ||
               orgName ||

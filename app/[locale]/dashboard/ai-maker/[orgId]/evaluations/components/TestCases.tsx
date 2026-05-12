@@ -81,6 +81,7 @@ const TestCases: React.FC<TestCasesProps> = ({
   const [promptDatasets, setPromptDatasets] = useState<PromptDataset[]>([]);
   const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
   const [datasetsError, setDatasetsError] = useState<string | null>(null);
+  const [tableRenderKey, setTableRenderKey] = useState(0);
 
   // Validation: Check if at least one test case source is provided
   const hasPromptLibraries = selectedPromptLibraries.length > 0;
@@ -149,6 +150,34 @@ const TestCases: React.FC<TestCasesProps> = ({
     fetchPromptDatasets();
   }, [isAuthenticated, request, domain]);
 
+  useEffect(() => {
+    if (!promptDatasets.length || !selectedPromptLibraries.length) return;
+
+    const selectedIds = selectedPromptLibraries
+      .map((item: any) => item?.id)
+      .filter(Boolean);
+    if (!selectedIds.length) return;
+    const selectedIdSet = new Set(
+      selectedIds.map((id: string | number) => String(id))
+    );
+
+    const resolved = promptDatasets.filter((dataset) =>
+      selectedIdSet.has(String(dataset.id))
+    );
+
+    const currentHasTitles = selectedPromptLibraries.every(
+      (item: any) => typeof item?.title === "string" && item.title.length > 0
+    );
+
+    // Restore whatever saved datasets are currently available in the loaded table.
+    // Saved IDs can include entries filtered out by domain, so don't require full-length match.
+    if (resolved.length > 0 && !currentHasTitles) {
+      setSelectedPromptLibraries(resolved as any[]);
+      // DataTable uses defaultSelectedRows during mount; force one remount after hydration.
+      setTableRenderKey((prev) => prev + 1);
+    }
+  }, [promptDatasets, selectedPromptLibraries, setSelectedPromptLibraries]);
+
   const promptDatasetColumns: ColumnDef<PromptDataset>[] = [
     {
       accessorKey: "title",
@@ -189,12 +218,12 @@ const TestCases: React.FC<TestCasesProps> = ({
       header: "Files",
       cell: ({ getValue }) => getValue<number>(),
     },
-    {
-      id: "preview",
-      header: "Preview",
-      enableSorting: false,
-      cell: () => <Icon source={IconEye} size={20} color="success" />,
-    },
+    // {
+    //   id: "preview",
+    //   header: "Preview",
+    //   enableSorting: false,
+    //   cell: () => <Icon source={IconEye} size={20} color="success" />,
+    // },
   ];
 
   return (
@@ -237,12 +266,26 @@ const TestCases: React.FC<TestCasesProps> = ({
           </div>
         ) : (
           <DataTable
+            key={tableRenderKey}
             rows={promptDatasets}
             columns={promptDatasetColumns}
             hideSelection={false}
             hideFooter={true}
             defaultSelectedRows={selectedPromptLibraries}
             onRowSelectionChange={(selected) => {
+              // DataTable emits an initial empty selection before applying defaultSelectedRows.
+              // Ignore that one callback when we're restoring id-only draft selections.
+              const isInitialRestoreReset =
+                Array.isArray(selected) &&
+                selected.length === 0 &&
+                selectedPromptLibraries.length > 0 &&
+                selectedPromptLibraries.some(
+                  (item: any) =>
+                    item?.id &&
+                    (typeof item?.title !== "string" || item.title.length === 0)
+                );
+
+              if (isInitialRestoreReset) return;
               setSelectedPromptLibraries(selected as any[]);
             }}
           />

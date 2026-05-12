@@ -263,16 +263,16 @@ const AuditorDashboard = () => {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 whitespace-nowrap min-w-[170px]">
           <Button
             kind="tertiary"
             size="slim"
             onClick={() => handleUpdateStatus(row.original.id, "ACCEPTED")}
             disabled={updatingId === row.original.id}
           >
-            <div className="flex items-end gap-1">
-              <IconCheck color="#5746AF" size={16} className="mr-1" />
-              <span className="text-baseVioletSolid11 pt-0.4">Accept</span>
+            <div className="inline-flex items-center gap-1.5 whitespace-nowrap">
+              <IconCheck color="#5746AF" size={16} />
+              <span className="text-baseVioletSolid11">Accept</span>
             </div>
           </Button>
           <Button
@@ -281,9 +281,9 @@ const AuditorDashboard = () => {
             onClick={() => handleUpdateStatus(row.original.id, "DECLINED")}
             disabled={updatingId === row.original.id}
           >
-            <div className="flex items-start justify-center gap-1">
-              <IconX color="#5746AF" size={16} className="mr-1" />
-              <span className="text-baseVioletSolid11 pt-0.4">Decline</span>
+            <div className="inline-flex items-center gap-1.5 whitespace-nowrap">
+              <IconX color="#5746AF" size={16} />
+              <span className="text-baseVioletSolid11">Decline</span>
             </div>
           </Button>
         </div>
@@ -456,13 +456,13 @@ const AuditorDashboard = () => {
             </Text>
           </div>
         ) : (
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
             <DataTable
               rows={pendingAssignments}
               columns={pendingColumns}
               hoverable={true}
               hideSelection={true}
-              truncate={true}
+              truncate={false}
               hideFooter={pendingAssignments.length <= 10}
             />
           </div>
@@ -496,7 +496,7 @@ const AuditorDashboard = () => {
             </Text>
           </div>
         ) : (
-          <div className="rounded-lg border border-gray-200 overflow-hidden">
+          <div className="rounded-lg border border-gray-200 overflow-x-auto">
             <DataTable
               rows={activeAssignments}
               columns={activeColumns}

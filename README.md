@@ -1,6 +1,6 @@
 # Parakh AI Frontend
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-AGPL-yellow.svg)](https://opensource.org/licenses/AGPL)
 [![Next.js](https://img.shields.io/badge/Next.js-14.2+-black.svg)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-18.2+-blue.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
@@ -72,7 +72,7 @@ npm run dev
 
 ## Community
 
-We use Github Discussions to discuss ideas, proposals and questions about the project. You can [head over there](https://github.com/CivicDataLab/DataSpaceFrontend/discussions) to interact with the community.
+We use Github Discussions to discuss ideas, proposals and questions about the project. You can [head over there](https://github.com/CivicDataLab/ParakhAI-frontend/discussions) to interact with the community.
 
 Our [Code of Conduct](CODE_OF_CONDUCT.md) applies to all community channels.
 
@@ -84,7 +84,7 @@ For more information on contributing to the project, refer to the [CONTRIBUTING.
 
 ## License
 
-This project is licensed under the MIT license. For more information, refer to the [LICENSE](LICENSE.md) file.
+This project is licensed under the AGPL-3.0 license. For more information, refer to the [LICENSE](LICENSE.md) file.
 
 ## Security
 

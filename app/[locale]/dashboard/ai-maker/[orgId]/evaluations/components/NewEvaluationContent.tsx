@@ -3,7 +3,7 @@
 import { useGraphQL } from "@/lib/api";
 import { useAppSession } from "@/lib/session";
 import { toTitleCase } from "@/lib/utils";
-import { IconX } from "@tabler/icons-react";
+import { IconArrowLeft, IconTrash } from "@tabler/icons-react";
 import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -262,6 +262,31 @@ const generateDefaultAuditName = () => {
   return `Untitled Evaluation - ${day} ${month} ${year} - ${timeString}`;
 };
 
+/** Map API / config auditType values to UI AuditType; null if unknown. */
+function parseAuditTypeFromBackend(
+  raw: string | null | undefined
+): AuditType | null {
+  if (!raw || typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  if (trimmed === "Technical" || trimmed === "Domain" || trimmed === "Cultural") {
+    return trimmed;
+  }
+  const norm = trimmed.toUpperCase().replace(/[\s-]+/g, "_");
+  const byEnum: Record<string, AuditType> = {
+    TECHNICAL_AUDIT: "Technical",
+    DOMAIN_AUDIT: "Domain",
+    CULTURAL_AUDIT: "Cultural",
+    TECHNICAL: "Technical",
+    DOMAIN: "Domain",
+    CULTURAL: "Cultural",
+  };
+  if (byEnum[norm]) return byEnum[norm];
+  if (norm.includes("TECHNICAL")) return "Technical";
+  if (norm.includes("CULTURAL")) return "Cultural";
+  if (norm.includes("DOMAIN")) return "Domain";
+  return null;
+}
+
 interface NewEvaluationContentProps {
   orgId: string;
   fromAuditor?: boolean;
@@ -284,13 +309,13 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const [auditType, setAuditType] = useState<AuditType>("Technical");
   const [activeTab, setActiveTab] = useState<"config" | "test">("config");
   const [auditName, setAuditName] = useState(generateDefaultAuditName);
-  const isAutoSaved = true;
 
   // Current audit ID - persisted in URL
   const [currentAuditId, setCurrentAuditId] = useState<string | null>(
     urlAuditId
   );
   const [isCreatingAudit, setIsCreatingAudit] = useState(false);
+  const [isSavingDraftBeforeExit, setIsSavingDraftBeforeExit] = useState(false);
   const [isLoadingAuditDetails, setIsLoadingAuditDetails] = useState(false);
 
   // AI Models state
@@ -545,6 +570,67 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     auditTime: string | null;
     durationSeconds: number | null;
   } | null>(null);
+  const lastSavedDraftSnapshotRef = useRef<string>("");
+  const hasUnsavedDraftChangesRef = useRef(false);
+  const isNavigatingAwayRef = useRef(false);
+  const hasInitializedSavedSnapshotRef = useRef(false);
+  const hasTriggeredLeaveAutosaveRef = useRef(false);
+  const hasInitializedPopStateGuardRef = useRef(false);
+
+  const getPromptDatasetStorageKey = (auditId: string) =>
+    `evaluation-draft-datasets:${orgId}:${auditId}`;
+
+  const getDraftSnapshot = () => {
+    const selectedModuleNames = Object.entries(selectedModules)
+      .filter(([, isSelected]) => isSelected)
+      .map(([moduleName]) => moduleName)
+      .sort();
+
+    const selectedMetricsMap = Object.entries(selectedMetrics)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .reduce(
+        (acc, [moduleName, metrics]) => {
+          acc[moduleName] = (metrics || []).map((metric) => metric.value).sort();
+          return acc;
+        },
+        {} as Record<string, string[]>
+      );
+
+    return JSON.stringify({
+      auditName: auditName.trim(),
+      auditType,
+      selectedModelId: selectedModelId || "",
+      selectedVersionId: selectedVersionId || null,
+      auditorName: auditorName.trim(),
+      organisationName: organisationName.trim(),
+      auditObjective: auditObjective.trim(),
+      modeOfEvaluation: modeOfEvaluation || "",
+      auditScope: auditScope.trim(),
+      selectedModules: selectedModuleNames,
+      selectedMetrics: selectedMetricsMap,
+      selectedPromptLibraries: selectedPromptLibraries
+        .map((item: any) => item?.id)
+        .filter(Boolean)
+        .sort(),
+      testInputMode,
+      pastedTestCases: pastedTestCases.trim(),
+      uploadedFiles: uploadedFiles.map((file) => file.name).sort(),
+    });
+  };
+
+  const hasDraftProgress = () =>
+    Boolean(
+      currentAuditId ||
+        selectedModelId ||
+        auditObjective.trim() ||
+        auditScope.trim() ||
+        auditorName.trim() ||
+        organisationName.trim() ||
+        pastedTestCases.trim() ||
+        uploadedFiles.length ||
+        selectedPromptLibraries.length ||
+        Object.values(selectedModules).some(Boolean)
+    );
 
   // Fetch audit details when auditId is in URL
   useEffect(() => {
@@ -763,15 +849,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             }
           }
 
-          if (audit.auditType) {
-            const auditTypeMap: Record<string, AuditType> = {
-              TECHNICAL_AUDIT: "Technical",
-              DOMAIN_AUDIT: "Domain",
-              CULTURAL_AUDIT: "Cultural",
-            };
-            setAuditType(auditTypeMap[audit.auditType] || "Technical");
-          }
-
           if (audit.auditObjective) setAuditObjective(audit.auditObjective);
           if (audit.auditScope) setAuditScope(audit.auditScope);
           // If backend has no auditScope yet, keep the current default derived
@@ -781,9 +858,59 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           }
 
           const config = audit.configuration || {};
+
+          const restoredAuditType =
+            parseAuditTypeFromBackend(config.auditType) ??
+            parseAuditTypeFromBackend(audit.auditType);
+          if (restoredAuditType) {
+            setAuditType(restoredAuditType);
+          }
           if (config.auditorName) setAuditorName(config.auditorName);
           if (config.organisationName)
             setOrganisationName(config.organisationName);
+          if (typeof config.testInputMode === "string") {
+            const savedMode =
+              config.testInputMode === "upload" ? "upload" : "paste";
+            setTestInputMode(savedMode);
+          }
+          if (typeof config.pastedTestCases === "string") {
+            setPastedTestCases(config.pastedTestCases);
+          }
+          let restoredDatasetIds: Array<string | number> = Array.isArray(
+            audit.testDatasetIds
+          )
+            ? audit.testDatasetIds
+            : Array.isArray(config.selectedPromptDatasetIds)
+              ? config.selectedPromptDatasetIds
+              : [];
+          if (!restoredDatasetIds.length && typeof window !== "undefined") {
+            const cached = window.localStorage.getItem(
+              getPromptDatasetStorageKey(audit.id)
+            );
+            if (cached) {
+              try {
+                const parsed = JSON.parse(cached);
+                if (Array.isArray(parsed)) {
+                  restoredDatasetIds = parsed;
+                }
+              } catch {
+                // Ignore invalid cache and continue.
+              }
+            }
+          }
+          if (restoredDatasetIds.length) {
+            setSelectedPromptLibraries(
+              restoredDatasetIds
+                .map((item: any) => {
+                  if (item && typeof item === "object") {
+                    const possibleId = item.id ?? item.value;
+                    return possibleId ? { id: String(possibleId) } : null;
+                  }
+                  return { id: String(item) };
+                })
+                .filter(Boolean) as any[]
+            );
+          }
 
           // Note: Modules and metrics are now loaded in the model fetch section above
           // using MetricsByModelType query to show all available modules
@@ -822,7 +949,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     modelId: string,
     versionId: number | null
   ): Promise<string | null> => {
-    if (!isAuthenticated || isCreatingAudit) return null;
+    if (isCreatingAudit) return null;
 
     setIsCreatingAudit(true);
     setAuditError(null);
@@ -865,7 +992,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     auditIdOverride?: string
   ): Promise<boolean> => {
     const auditId = auditIdOverride || currentAuditId;
-    if (!auditId || !isAuthenticated) return false;
+    if (!auditId) return false;
 
     const { modules: modulesList, metrics: metricsList } =
       buildModulesAndMetrics();
@@ -888,6 +1015,17 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             auditorName,
             organisationName,
             auditObjective,
+            configuration: {
+              auditorName,
+              organisationName,
+              auditType,
+              testInputMode,
+              pastedTestCases,
+              selectedPromptDatasetIds: selectedPromptLibraries
+                .map((item: any) => item?.id)
+                .filter(Boolean)
+                .map((id: string | number) => String(id)),
+            },
           },
         },
         { organization: orgId }
@@ -900,6 +1038,20 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         return false;
       }
 
+      lastSavedDraftSnapshotRef.current = getDraftSnapshot();
+      hasUnsavedDraftChangesRef.current = false;
+      hasInitializedSavedSnapshotRef.current = true;
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(
+          getPromptDatasetStorageKey(auditId),
+          JSON.stringify(
+            selectedPromptLibraries
+              .map((item: any) => item?.id)
+              .filter(Boolean)
+              .map((id: string | number) => String(id))
+          )
+        );
+      }
       return true;
     } catch (error: any) {
       setAuditError(error.message || "Error updating evaluation.");
@@ -911,12 +1063,16 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     if (!confirm("Are you sure you want to cancel this evaluation?")) return;
     const auditId = currentAuditId;
     if (!auditId) {
-      router.back();
+      isNavigatingAwayRef.current = true;
+      // Avoid router.back() here because history guards can keep user on the same page.
+      window.location.assign(`/${locale}/dashboard/ai-maker/${orgId}/evaluations`);
       return;
     }
     setIsCancelling(true);
     setAuditError(null);
     try {
+      // Prevent unsaved-progress leave guards from firing during explicit cancel flow.
+      isNavigatingAwayRef.current = true;
       const result = await request<{
         updateAudit: { success: boolean; message: string };
       }>(
@@ -927,13 +1083,16 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         { organization: orgId }
       );
       if (result?.updateAudit?.success) {
-        router.push(`/${locale}/dashboard/ai-maker/${orgId}/evaluations`);
+        // Use a hard navigation so the list refreshes immediately and doesn't rely on client cache.
+        window.location.assign(`/${locale}/dashboard/ai-maker/${orgId}/evaluations`);
       } else {
+        isNavigatingAwayRef.current = false;
         setAuditError(
           result?.updateAudit?.message || "Failed to cancel evaluation."
         );
       }
     } catch (error: any) {
+      isNavigatingAwayRef.current = false;
       setAuditError(error?.message || "Failed to cancel evaluation.");
     } finally {
       setIsCancelling(false);
@@ -1395,6 +1554,157 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     return { modules: selectedModuleNames, metrics: selectedMetricNames };
   };
 
+  useEffect(() => {
+    const snapshot = getDraftSnapshot();
+    hasUnsavedDraftChangesRef.current =
+      lastSavedDraftSnapshotRef.current !== "" &&
+      snapshot !== lastSavedDraftSnapshotRef.current;
+  }, [
+    currentAuditId,
+    auditName,
+    auditType,
+    selectedModelId,
+    selectedVersionId,
+    auditorName,
+    organisationName,
+    auditObjective,
+    modeOfEvaluation,
+    auditScope,
+    selectedModules,
+    selectedMetrics,
+    selectedPromptLibraries,
+    testInputMode,
+    pastedTestCases,
+    uploadedFiles,
+  ]);
+
+  useEffect(() => {
+    if (isLoadingAuditDetails) return;
+    if (hasInitializedSavedSnapshotRef.current) return;
+
+    if (urlAuditId || currentAuditId) {
+      lastSavedDraftSnapshotRef.current = getDraftSnapshot();
+      hasUnsavedDraftChangesRef.current = false;
+      hasInitializedSavedSnapshotRef.current = true;
+    }
+  }, [isLoadingAuditDetails, urlAuditId, currentAuditId]);
+
+  useEffect(() => {
+    hasTriggeredLeaveAutosaveRef.current = false;
+  }, [
+    currentAuditId,
+    auditName,
+    auditType,
+    selectedModelId,
+    selectedVersionId,
+    auditorName,
+    organisationName,
+    auditObjective,
+    modeOfEvaluation,
+    auditScope,
+    selectedModules,
+    selectedMetrics,
+    selectedPromptLibraries,
+    testInputMode,
+    pastedTestCases,
+    uploadedFiles,
+  ]);
+
+  useEffect(() => {
+    const autoSaveDraftOnLeave = () => {
+      if (isNavigatingAwayRef.current) return;
+      if (hasTriggeredLeaveAutosaveRef.current) return;
+      if (!hasDraftProgress()) return;
+      if (!hasUnsavedDraftChangesRef.current && currentAuditId) return;
+
+      hasTriggeredLeaveAutosaveRef.current = true;
+      void saveDraftProgress();
+    };
+
+    window.addEventListener("beforeunload", autoSaveDraftOnLeave);
+
+    return () => {
+      window.removeEventListener("beforeunload", autoSaveDraftOnLeave);
+    };
+  }, [
+    currentAuditId,
+    auditName,
+    auditType,
+    selectedModelId,
+    selectedVersionId,
+    modeOfEvaluation,
+    auditObjective,
+    auditScope,
+    auditorName,
+    organisationName,
+    selectedModules,
+    selectedMetrics,
+    selectedPromptLibraries,
+    testInputMode,
+    uploadedFiles,
+    pastedTestCases,
+    isSavingDraftBeforeExit,
+    isCreatingAudit,
+  ]);
+
+  useEffect(() => {
+    if (!hasInitializedPopStateGuardRef.current) {
+      window.history.pushState(null, "", window.location.href);
+      hasInitializedPopStateGuardRef.current = true;
+    }
+
+    const handlePopState = () => {
+      if (isNavigatingAwayRef.current) return;
+
+      const shouldAutoSave =
+        hasUnsavedDraftChangesRef.current ||
+        !currentAuditId ||
+        hasDraftProgress();
+
+      if (!shouldAutoSave) {
+        isNavigatingAwayRef.current = true;
+        window.history.back();
+        return;
+      }
+
+      // Keep user on current page while auto-save runs silently.
+      window.history.pushState(null, "", window.location.href);
+
+      void (async () => {
+        const saved = await saveDraftProgress();
+        if (!saved) {
+          return;
+        }
+        isNavigatingAwayRef.current = true;
+        window.location.assign(`/${locale}/dashboard/ai-maker/${orgId}/evaluations`);
+      })();
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [
+    currentAuditId,
+    auditName,
+    auditType,
+    selectedModelId,
+    selectedVersionId,
+    modeOfEvaluation,
+    auditObjective,
+    auditScope,
+    auditorName,
+    organisationName,
+    selectedModules,
+    selectedMetrics,
+    selectedPromptLibraries,
+    testInputMode,
+    uploadedFiles,
+    pastedTestCases,
+    isSavingDraftBeforeExit,
+    isCreatingAudit,
+    locale,
+    orgId,
+  ]);
+
   // Handle tab change - create audit if needed and update config
   const handleTestTabClick = async () => {
     if (!validateForm()) {
@@ -1403,9 +1713,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       );
       return;
     }
-
-    setAuditError(null);
-
     let auditId = currentAuditId;
 
     // Create audit if not already created
@@ -1425,6 +1732,44 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     }
 
     handleTabChange("test");
+  };
+
+  async function saveDraftProgress(): Promise<boolean> {
+    if (isSavingDraftBeforeExit || isCreatingAudit) return false;
+
+    setAuditError(null);
+    setIsSavingDraftBeforeExit(true);
+
+    try {
+      let auditId = currentAuditId;
+
+      // Persist form progress as draft before leaving, even if test cases were not added yet.
+      if (!auditId && selectedModelId) {
+        auditId = await createBlankAudit(selectedModelId, selectedVersionId);
+        if (!auditId) {
+          return false;
+        }
+      }
+
+      if (auditId) {
+        const updated = await updateAuditConfig(auditId);
+        if (!updated) {
+          return false;
+        }
+      }
+
+      return true;
+    } finally {
+      setIsSavingDraftBeforeExit(false);
+    }
+  }
+
+  const handleBackToList = async () => {
+    const saved = await saveDraftProgress();
+    if (!saved) return;
+
+    isNavigatingAwayRef.current = true;
+    router.push(`/${locale}/dashboard/ai-maker/${orgId}/evaluations`);
   };
 
   const handleRunAudit = async () => {
@@ -1628,9 +1973,87 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           </div>
         )}
 
-        {/* Model Name and Owner Section - Hide while loading audit details */}
-        {!(urlAuditId && isLoadingAuditDetails) && (
-          <div className="mb-6">
+        {/* Audit Name + Header Actions */}
+        <div
+          className={`flex items-center justify-between gap-4 ${styles.auditNameSection} max-[1023px]:gap-0.5 mb-8`}
+        >
+          <div className="flex items-center gap-4 flex-wrap min-w-0 flex-1 evaluation-name-row max-[640px]:flex-row max-[640px]:items-center max-[640px]:gap-2">
+            <Label
+              htmlFor="auditName"
+              className={`${styles.auditNameLabel} flex-shrink-0 whitespace-nowrap text-left`}
+            >
+              Evaluation Name :
+            </Label>
+            <div
+              className={`${styles.auditNameInputWrapper} flex-1 min-w-0 max-w-[380px] max-[1024px]:max-w-full max-[640px]:w-full`}
+            >
+              <TextField
+                id="auditName"
+                name="evaluationName"
+                label="Evaluation Name"
+                labelHidden
+                value={auditName}
+                onChange={(value) => setAuditName(value)}
+              />
+            </div>
+            <div className="flex-shrink-0 max-[640px]:w-full max-[640px]:flex max-[640px]:items-start">
+              <div
+                className={`${styles.tagWrapper} ${styles.auditTag}`}
+                style={{ borderRadius: "4px", overflow: "hidden" }}
+              >
+                <Tag variation="filled" fillColor="#E2F5C4" textColor="#0A0704">
+                  {auditType === "Technical"
+                    ? "Technical Evaluation"
+                    : auditType === "Domain"
+                      ? "Domain Evaluation"
+                      : "Cultural Evaluation"}
+                </Tag>
+              </div>
+            </div>
+          </div>
+
+          <div
+            className={`flex items-center justify-end gap-4 ${styles.auditStatusContainer} flex-shrink-0 max-[1023px]:gap-0.5 max-[1023px]:mt-0 mr-0 translate-x-1`}
+          >
+            <Button
+              kind="tertiary"
+              onClick={handleBackToList}
+              disabled={isSavingDraftBeforeExit || isCreatingAudit}
+              className={styles.cancelAuditButton}
+            >
+              <span className="inline-flex items-center">
+                <Icon
+                  source={IconArrowLeft}
+                  size={18}
+                  className={styles.backToListIcon}
+                />
+              </span>
+              {isSavingDraftBeforeExit ? "Saving..." : "Back to List"}
+            </Button>
+            <Button
+              kind="tertiary"
+              variant="critical"
+              onClick={handleCancelEvaluation}
+              disabled={isCancelling}
+              className={`${styles.cancelAuditButton} flex-shrink-0 max-[640px]:ml-4`}
+            >
+              <span className="inline-flex items-center">
+                <Icon
+                  source={IconTrash}
+                  size={18}
+                  className={styles.cancelIconOutline}
+                />
+              </span>
+              {isCancelling ? "Cancelling..." : "Cancel"}
+            </Button>
+            </div>
+
+            </div>
+            {/* Model Name and Owner Section - Hide while loading audit details */}
+            {!(urlAuditId && isLoadingAuditDetails) && (
+              <div className="mb-6 bg-white overview-evaluation-section">
+                <div className="p-4 sm:p-6">
+                  <div className="-mt-1">
             {/* Model Selector - Only show if no URL params and no audit loaded */}
             {!urlModelId && !currentAuditId && (
               <div className="mb-4 max-w-md">
@@ -1704,104 +2127,41 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               </div>
             )}
 
-            {/* Model Name label + value */}
-            <div className={`mb-4 ${styles.modelNameContainer}`}>
-              <Text
-                variant="bodySm"
-                className="text-sm leading-5 font-medium text-[#60646C] mb-1 text-right"
-              >
-                Model Name
-              </Text>
-              <div className="flex items-center gap-4">
-                <Text as="h1" className={styles.modelNameText}>
-                  {modelName}
+            <div className="flex items-center justify-between gap-4">
+              <div className={`mb-0 ${styles.modelNameContainer}`}>
+                <Text
+                  variant="bodyMd"
+                  className="text-gray-500"
+                >
+                  Model Name :{" "}
                 </Text>
-                {modelVersion && (
-                  <Text as="h2" className={styles.modelNameText}>
-                    {modelVersion}
-                  </Text>
-                )}
+                <Text
+                  as="h1"
+                  variant="headingXl"
+                  className="font-bold text-gray-900 break-words"
+                >
+                  {modelVersion && modelName?.includes(modelVersion)
+                    ? modelName
+                    : modelVersion
+                      ? `${modelName} ${modelVersion}`
+                      : modelName}
+                </Text>
               </div>
-            </div>
-            <div className="flex items-center gap-2 text-gray-600">
-              <Text variant="bodyMd">Owner:</Text>
-              <Image
-                src="/images/icons/CDL.png"
-                alt="CDL"
-                width={36}
-                height={36}
-                className={`object-contain ${styles.cdlLogo}`}
-              />
-            </div>
-          </div>
-        )}
 
-        {/* Audit Name, Tag, and Status Section */}
-        <div
-          className={`flex items-center justify-between mb-6 gap-4 ${styles.auditNameSection} max-[1023px]:mb-0.5 max-[1023px]:gap-0.5`}
-        >
-          <div className="flex items-center gap-4 flex-wrap min-w-0 flex-1 evaluation-name-row max-[640px]:flex-col max-[640px]:items-start max-[640px]:gap-2">
-            <Label
-              htmlFor="auditName"
-              className={`${styles.auditNameLabel} flex-shrink-0 whitespace-nowrap max-[640px]:w-full text-left`}
-            >
-              Evaluation Name
-            </Label>
-            <div
-              className={`${styles.auditNameInputWrapper} flex-1 min-w-0 max-w-[380px] max-[1024px]:max-w-full max-[640px]:w-full`}
-            >
-              <TextField
-                id="auditName"
-                name="evaluationName"
-                label="Evaluation Name"
-                labelHidden
-                value={auditName}
-                onChange={(value) => setAuditName(value)}
-              />
-            </div>
-            <div className="flex-shrink-0 max-[640px]:w-full max-[640px]:flex max-[640px]:items-start">
-              <div
-                className={`${styles.tagWrapper} ${styles.auditTag}`}
-                style={{ borderRadius: "4px", overflow: "hidden" }}
-              >
-                <Tag variation="filled" fillColor="#E2F5C4" textColor="#0A0704">
-                  {auditType === "Technical"
-                    ? "Technical Evaluation"
-                    : auditType === "Domain"
-                      ? "Domain Evaluation"
-                      : "Cultural Evaluation"}
-                </Tag>
-              </div>
-            </div>
-          </div>
-
-          <div
-            className={`flex items-center justify-end gap-4 ${styles.auditStatusContainer} flex-shrink-0 max-[1023px]:gap-0.5 max-[1023px]:mt-0 mr-4`}
-          >
-            {isAutoSaved && (
-              <div className="flex items-center gap-1.5 lg:translate-x-0 xl:translate-x-2">
-                <Text className={styles.auditAutoSaved}>Auto-saved</Text>
+              <div className="flex items-center gap-2">
                 <Image
-                  src="/images/icons/circle-check.png"
-                  alt="Circle check"
-                  width={18}
-                  height={18}
-                  className="object-contain"
+                  src="/images/logos/CDL Logo.png"
+                  alt="CivicDataLab Logo"
+                  width={50}
+                  height={50}
+                  className="object-contain rounded-full cdl-round-logo"
                 />
               </div>
+            </div>
+                  </div>
+                </div>
+              </div>
             )}
-            <Button
-              kind="tertiary"
-              variant="critical"
-              onClick={handleCancelEvaluation}
-              disabled={isCancelling}
-              className={`${styles.cancelAuditButton} flex-shrink-0 max-[640px]:ml-4`}
-            >
-              {isCancelling ? "Cancelling..." : "Cancel Evaluation"}
-              <Icon source={IconX} size={18} />
-            </Button>
-          </div>
-        </div>
 
         {/* Tabs */}
         <div className="mb-4 max-[1023px]:mb-3 max-[640px]:mb-2">

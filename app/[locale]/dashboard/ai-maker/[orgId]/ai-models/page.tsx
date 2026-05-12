@@ -424,11 +424,12 @@ const AIModelsPage = () => {
             </div>
           </div>
           <div className="prompt-search-actions">
+            {/* Temporarily hidden for now. Keep this Add Filters block for future use.
             <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
               <Popover.Trigger asChild>
                 <button type="button" className="prompt-add-filters-link">
                   Add Filters
-                </button>
+                </button> 
               </Popover.Trigger>
               <Popover.Content
                 side="bottom"
@@ -528,6 +529,7 @@ const AIModelsPage = () => {
                 </div>
               </Popover.Content>
             </Popover>
+            */}
           </div>
         </div>
         <div className="prompt-active-filters mb-8">
@@ -578,16 +580,10 @@ const AIModelsPage = () => {
             </div>
           ) : (
             paginatedModels.map((model, index) => {
-              const updatedValue = formatDate(model.updatedAt) || "Unknown";
               const testCasesValue = `${formatNumber(model.testCasesCount || 0)} test cases`;
               const auditsValue = `${formatNumber(model.auditsCount || 0)} evaluations`;
 
               const metadataContent = [
-                {
-                  icon: Icons.calendar,
-                  label: "Updated",
-                  value: updatedValue,
-                },
                 {
                   icon: Icons.testPipe,
                   label: "Test cases",
