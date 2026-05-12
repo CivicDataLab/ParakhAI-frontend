@@ -17,7 +17,16 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
   moduleName,
   moduleDisplayName,
 }) => {
-  const moduleTestCases = testCases.filter((tc) => tc.module === moduleName);
+  // Order by submission time so "Test Case N" matches the sequence shown during entry
+  // (API may return newest-first; labels use array index only).
+  const moduleTestCases = testCases
+    .filter((tc) => tc.module === moduleName)
+    .sort((a, b) => {
+      const byTime =
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      if (byTime !== 0) return byTime;
+      return a.id.localeCompare(b.id);
+    });
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   if (moduleTestCases.length === 0) {
