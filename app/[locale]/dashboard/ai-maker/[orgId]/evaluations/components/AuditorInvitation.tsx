@@ -8,8 +8,38 @@ import {
   IconUserCheck,
   IconX,
 } from "@tabler/icons-react";
-import { Button, Dialog, Spinner, Text } from "opub-ui";
+import { Button, Dialog, Spinner, Tag, Text } from "opub-ui";
 import { useEffect, useState } from "react";
+
+/** Profile image for search hit — same behavior as Add Evaluator on auditors page */
+const SearchResultAvatar = ({
+  src,
+  alt,
+  size = 16,
+}: {
+  src: string | null;
+  alt: string;
+  size?: number;
+}) => {
+  const [imageError, setImageError] = useState(false);
+  const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || "";
+  const imageSrc = src ? `${dataspaceUrl}${src}` : "";
+
+  if (!imageSrc || imageError) {
+    return <IconUser size={size} className="text-purple-600" />;
+  }
+
+  const sizeClass = size === 20 ? "h-10 w-10" : "h-8 w-8";
+
+  return (
+    <img
+      src={imageSrc}
+      alt={alt}
+      className={`${sizeClass} rounded-full object-cover`}
+      onError={() => setImageError(true)}
+    />
+  );
+};
 
 // Types
 type Auditor = {
@@ -39,6 +69,24 @@ type SearchUserResult = {
   found: boolean;
   message?: string;
   user?: Auditor;
+};
+
+const getUserDisplayName = (user: Auditor): string => {
+  const firstName = user.firstName?.trim() || "";
+  const lastName = user.lastName?.trim() || "";
+  const fullName = `${firstName} ${lastName}`.trim();
+
+  if (fullName) return fullName;
+
+  if (user.username && user.username !== user.email) {
+    return user.username;
+  }
+
+  if (user.email) {
+    return user.email.split("@")[0];
+  }
+
+  return "";
 };
 
 interface AuditorInvitationProps {
@@ -473,6 +521,12 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
           disabled: showAddNew
             ? !searchResult?.found || isAddingNew
             : !selectedAuditorId || isAssigning,
+          ...(showAddNew
+            ? {
+                className:
+                  "!rounded-[8px] !min-h-[46px] !px-6 !font-semibold !shadow-sm disabled:!cursor-not-allowed disabled:!bg-[#8c949d] disabled:!text-white disabled:!opacity-100 disabled:hover:!bg-[#8c949d]",
+              }
+            : {}),
         }}
         secondaryActions={[
           {
@@ -555,66 +609,118 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                 auditor to your organization and assigned to this model version.
               </Text>
 
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    placeholder="evaluator@example.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button
-                    kind="secondary"
-                    onClick={handleSearchUser}
-                    disabled={!emailInput.trim() || isSearching}
-                  >
-                    <IconSearch size={18} className="mr-1" />
-                    {isSearching ? "Searching..." : "Search"}
-                  </Button>
+              <div>
+                <label
+                  htmlFor="add-by-email-search"
+                  className="mb-1 block text-sm font-medium text-gray-700"
+                >
+                  Email Address
+                </label>
+                <div className="flex gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="relative min-w-0">
+                      <input
+                        id="add-by-email-search"
+                        type="email"
+                        value={
+                          searchResult?.found && searchResult.user
+                            ? ""
+                            : emailInput
+                        }
+                        onChange={(e) => setEmailInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            if (emailInput.trim() && !isSearching) {
+                              void handleSearchUser();
+                            }
+                          }
+                        }}
+                        placeholder={
+                          searchResult?.found && searchResult.user
+                            ? ""
+                            : "evaluator@example.com"
+                        }
+                        readOnly={!!(searchResult?.found && searchResult.user)}
+                        autoComplete="email"
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                      {searchResult?.found && searchResult.user && (
+                        <div className="absolute inset-y-0 left-px flex items-center gap-2 pl-3 pr-2">
+                          <Tag
+                            value={searchResult.user.id}
+                            onRemove={() => {
+                              setSearchResult(null);
+                              setEmailInput("");
+                            }}
+                          >
+                            {getUserDisplayName(searchResult.user)}
+                          </Tag>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      kind="secondary"
+                      onClick={() => void handleSearchUser()}
+                      disabled={!emailInput.trim() || isSearching}
+                      className="rounded-[8px] border-none bg-primaryPurple2 px-8 py-3 text-base font-medium text-white hover:bg-[#6849EE] hover:text-white disabled:cursor-not-allowed disabled:bg-[#f2f2f2] disabled:text-[#8e8e8e] disabled:hover:bg-[#f2f2f2]"
+                    >
+                      <div className="flex h-full w-full items-center gap-2">
+                        <IconSearch size={18} className="mr-1 shrink-0" />
+                        <div>
+                          {isSearching ? "Searching..." : "Search"}
+                        </div>
+                      </div>
+                    </Button>
+                  </div>
                 </div>
               </div>
 
-              {/* Search Result */}
               {searchResult && (
                 <div
-                  className={`p-4 rounded-lg ${
+                  className={`rounded-lg p-4 ${
                     searchResult.found
-                      ? "bg-green-50 border-2 border-green-400"
-                      : "bg-red-50 border border-red-200"
+                      ? "border border-green-200 bg-green-50"
+                      : "border border-red-200 bg-red-50"
                   }`}
                 >
                   {searchResult.found && searchResult.user ? (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                          <IconUser size={20} className="text-purple-600" />
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-100">
+                          <SearchResultAvatar
+                            src={searchResult.user.profilePicture}
+                            alt={searchResult.user.username}
+                            size={20}
+                          />
                         </div>
-                        <div>
+                        <div className="flex min-w-0 flex-col gap-0.5">
                           <Text variant="bodySm" fontWeight="medium">
-                            {searchResult.user.firstName &&
-                            searchResult.user.lastName
-                              ? `${searchResult.user.firstName} ${searchResult.user.lastName}`
-                              : searchResult.user.username !==
-                                  searchResult.user.email
-                                ? searchResult.user.username
-                                : searchResult.user.email.split("@")[0]}
+                            {getUserDisplayName(searchResult.user)}
                           </Text>
                           <Text variant="bodySm" className="text-gray-600">
                             {searchResult.user.email}
                           </Text>
+                          {(searchResult.user.firstName ||
+                            searchResult.user.lastName) &&
+                            searchResult.user.username !==
+                              searchResult.user.email && (
+                              <Text variant="bodySm" className="text-gray-500">
+                                @{searchResult.user.username}
+                              </Text>
+                            )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <IconUserCheck size={20} className="text-green-600" />
+                      <div className="flex shrink-0 items-center gap-2">
+                        <IconUserCheck
+                          size={20}
+                          className="text-green-600"
+                        />
                         <Text
                           variant="bodySm"
-                          className="text-green-700 font-medium"
+                          className="font-medium text-green-700"
                         >
                           Ready to assign
                         </Text>
