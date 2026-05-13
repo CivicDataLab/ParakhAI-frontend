@@ -2257,6 +2257,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               />
             ) : (
               <TestCases
+                orgId={orgId}
                 selectedPromptLibraries={selectedPromptLibraries}
                 setSelectedPromptLibraries={setSelectedPromptLibraries}
                 uploadedFiles={uploadedFiles}
