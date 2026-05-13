@@ -1,7 +1,14 @@
-import { jwtDecode } from "jwt-decode";
+import { jwtDecode, type JwtPayload } from "jwt-decode";
 import { AuthOptions } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import KeycloakProvider from "next-auth/providers/keycloak";
+
+/** Claims we read from Keycloak access tokens (see session callback). */
+interface KeycloakJwtPayload extends JwtPayload {
+  realm_access?: { roles?: string[] };
+  email?: string;
+  name?: string;
+}
 
 // Extend NextAuth types
 declare module "next-auth" {
@@ -15,7 +22,7 @@ declare module "next-auth" {
 
 declare module "next-auth/jwt" {
   interface JWT {
-    decoded?: any;
+    decoded?: KeycloakJwtPayload;
     access_token?: string;
     id_token?: string;
     expires_at?: number;
@@ -57,7 +64,9 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
       throw new Error(refreshedTokens.error || "Failed to refresh token");
     }
 
-    const newDecoded = jwtDecode(refreshedTokens.access_token);
+    const newDecoded = jwtDecode<KeycloakJwtPayload>(
+      refreshedTokens.access_token
+    );
 
     return {
       ...token,
@@ -93,7 +102,7 @@ export const authOptions: AuthOptions = {
     async jwt({ token, account }) {
       // Initial sign-in: extract tokens from Keycloak
       if (account && account.access_token) {
-        token.decoded = jwtDecode(account.access_token);
+        token.decoded = jwtDecode<KeycloakJwtPayload>(account.access_token);
         token.access_token = account.access_token;
         token.id_token = account.id_token;
         token.expires_at = account.expires_at;

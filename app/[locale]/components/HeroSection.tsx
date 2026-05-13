@@ -34,7 +34,7 @@ const HeroSection = () => {
       <div className="container mx-auto px-4 md:px-8 lg:px-12 relative z-10">
         <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
           <h1 className="text-3xl md:text-4xl lg:text-[3.5rem] text-[#5119C1] font-[400] text-gray-900 mb-6 leading-[1]">
-            Build AI that's trustworthy 
+            Build AI that{"'"}s trustworthy{" "}
             <br />
             {/* text-[#6849EE] */}
             <span className=""> from day one.</span>

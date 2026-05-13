@@ -1,130 +1,67 @@
 "use client";
 
-import { graphqlRequest } from "@/lib/api";
-import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import Image from "next/image";
-import { Divider, Text } from "opub-ui";
+import { Text } from "opub-ui";
 
-const SECTORS_WITH_AIMODELS_QUERY = `
-  query SectorsWithAIModels {
-    sectorsWithAimodels(limit: 6) {
-      id
-      name
-      slug
-      description
-      aimodelCount
-    }
-  }
-`;
-
-interface Sector {
-  id: string;
+type DisplaySector = {
   name: string;
   slug: string;
-  description?: string;
-  aimodelCount?: number;
-}
+  icon: string;
+};
+
+const AllSectors: DisplaySector[] = [
+  {
+    name: "HEALTHCARE",
+    slug: "healthcare",
+    icon: "/images/domain/healthcare.svg",
+  },
+  {
+    name: "AGRICULTURE",
+    slug: "agriculture",
+    icon: "/images/domain/agri.svg",
+  },
+  {
+    name: "CLIMATE",
+    slug: "environment",
+    icon: "/images/domain/environment.svg",
+  },
+  {
+    name: "EDUCATION",
+    slug: "education",
+    icon: "/images/domain/education.svg",
+  },
+  { name: "LEGAL", slug: "legal", icon: "/images/domain/legal.svg" },
+  { name: "FINANCE", slug: "finance", icon: "/images/domain/finance.svg" },
+
+  // {
+  //   name: "GOVERNMENT",
+  //   slug: "government",
+  //   icon: "/images/icons/government.png",
+  // },
+  {
+    name: "TECHNOLOGY",
+    slug: "technology",
+    icon: "/images/domain/technology.svg",
+  },
+  { name: "SCIENCE", slug: "science", icon: "/images/domain/science.svg" },
+  {
+    name: "SOCIAL SERVICES",
+    slug: "social_services",
+    icon: "/images/domain/social services.svg",
+  },
+  {
+    name: "TRANSPORTATION",
+    slug: "transportation",
+    icon: "/images/domain/transport.svg",
+  },
+  { name: "ENERGY", slug: "energy", icon: "/images/domain/energy.svg" },
+  // { name: "GENERAL", slug: "general", icon: "/images/logos/CDL Logo.png" },
+  // { name: "OTHER", slug: "other", icon: "/images/logos/CDL Logo.png" },
+];
 
 const SectorsSection = () => {
-  // const { data, isLoading, error } = useQuery({
-  //   queryKey: ["sectors_with_aimodels"],
-  //   queryFn: async () => {
-  //     // Use unauthenticated request for public homepage
-  //     const result = await graphqlRequest<{ sectorsWithAimodels: Sector[] }>(
-  //       SECTORS_WITH_AIMODELS_QUERY,
-  //       {},
-  //       null // No auth token needed for public query
-  //     );
-  //     return result;
-  //   },
-  // });
-
-  // const sectors = data?.sectorsWithAimodels || [];
-
   const isLoading = false;
-
-  // Fallback static sectors for display when API is loading or no data
-  const fallbackSectors = [
-    { id: "1", name: "Budgets", slug: "budgets", aimodelCount: 388 },
-    { id: "2", name: "Child Rights", slug: "child-rights", aimodelCount: 388 },
-    {
-      id: "3",
-      name: "Climate Finance",
-      slug: "climate-finance",
-      aimodelCount: 988,
-    },
-    {
-      id: "4",
-      name: "Disaster Risk Reduction (DRR)",
-      slug: "disaster-risk-reduction",
-      aimodelCount: 203,
-    },
-    {
-      id: "5",
-      name: "Law and Justice",
-      slug: "law-and-justice",
-      aimodelCount: 388,
-    },
-    {
-      id: "6",
-      name: "Urban Development",
-      slug: "urban-development",
-      aimodelCount: 988,
-    },
-  ];
-
-  const AllSectors = [
-    {
-      name: "HEALTHCARE",
-      slug: "healthcare",
-      icon: "/images/domain/healthcare.svg",
-    },
-    {
-      name: "AGRICULTURE",
-      slug: "agriculture",
-      icon: "/images/domain/agri.svg",
-    },
-    {
-      name: "CLIMATE",
-      slug: "environment",
-      icon: "/images/domain/environment.svg",
-    },
-    {
-      name: "EDUCATION",
-      slug: "education",
-      icon: "/images/domain/education.svg",
-    },
-    { name: "LEGAL", slug: "legal", icon: "/images/domain/legal.svg" },
-    { name: "FINANCE", slug: "finance", icon: "/images/domain/finance.svg" },
-
-    // {
-    //   name: "GOVERNMENT",
-    //   slug: "government",
-    //   icon: "/images/icons/government.png",
-    // },
-    {
-      name: "TECHNOLOGY",
-      slug: "technology",
-      icon: "/images/domain/technology.svg",
-    },
-    { name: "SCIENCE", slug: "science", icon: "/images/domain/science.svg" },
-    {
-      name: "SOCIAL SERVICES",
-      slug: "social_services",
-      icon: "/images/domain/social services.svg",
-    },
-    {
-      name: "TRANSPORTATION",
-      slug: "transportation",
-      icon: "/images/domain/transport.svg",
-    },
-    { name: "ENERGY", slug: "energy", icon: "/images/domain/energy.svg" },
-    // { name: "GENERAL", slug: "general", icon: "/images/logos/CDL Logo.png" },
-    // { name: "OTHER", slug: "other", icon: "/images/logos/CDL Logo.png" },
-  ];
-
-  // const displaySectors = sectors.length > 0 ? sectors : fallbackSectors;
 
   return (
     <section className="bg-[#F5F2FF] py-12 md:py-12 lg:py-17">
@@ -150,10 +87,10 @@ const SectorsSection = () => {
           </div>
         ) : (
           <div className="flex flex-row gap-6 w-full flex-wrap justify-center   pt-2 ">
-            {AllSectors.map((sector: any) => (
+            {AllSectors.map((sector) => (
               <Link
                 href={`/models?sector=${sector.slug}`}
-                key={sector.id}
+                key={sector.slug}
                 className="group border-1 h-[90px] border-solid md:min-w-[300px] rounded-2 bg-white  transition-all duration-300 flex justify-around items-center"
               >
                 <div className="flex items-center w-full gap-4 p-5 justify-between ">
