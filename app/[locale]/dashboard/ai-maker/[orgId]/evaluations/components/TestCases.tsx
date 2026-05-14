@@ -184,9 +184,9 @@ const TestCases: React.FC<TestCasesProps> = ({
       header: "Name",
       enableSorting: true,
       cell: ({ getValue }) => (
-        <a href="#" className="text-primary-purple hover:underline">
+        <span className="text-primary-purple">
           {getValue<string>()}
-        </a>
+        </span>
       ),
     },
     {
