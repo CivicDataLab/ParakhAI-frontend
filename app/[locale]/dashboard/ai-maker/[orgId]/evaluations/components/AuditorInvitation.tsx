@@ -8,7 +8,7 @@ import {
   IconUserCheck,
   IconX,
 } from "@tabler/icons-react";
-import { Button, Dialog, Spinner, Tag, Text } from "opub-ui";
+import { Button, Dialog, Spinner, Tag, Text, TextField } from "opub-ui";
 import { useEffect, useState } from "react";
 
 /** Profile image for search hit — same behavior as Add Evaluator on auditors page */
@@ -304,7 +304,11 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
       );
 
       if (response?.searchUserByEmail) {
-        setSearchResult(response.searchUserByEmail);
+        const hit = response.searchUserByEmail;
+        setSearchResult(hit);
+        if (hit.found && hit.user) {
+          setEmailInput("");
+        }
       }
     } catch (err: any) {
       setSearchResult({
@@ -616,37 +620,41 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                 >
                   Email Address
                 </label>
-                <div className="flex gap-2">
-                  <div className="min-w-0 flex-1">
-                    <div className="relative min-w-0">
-                      <input
-                        id="add-by-email-search"
-                        type="email"
-                        value={
-                          searchResult?.found && searchResult.user
-                            ? ""
-                            : emailInput
+                <div className="flex items-center gap-2">
+                  <div
+                    className="min-w-0 flex-1 [&_#add-by-email-search-tags]:box-border [&_#add-by-email-search-tags]:flex [&_#add-by-email-search-tags]:min-h-10 [&_#add-by-email-search-tags]:flex-row [&_#add-by-email-search-tags]:flex-nowrap [&_#add-by-email-search-tags]:items-center [&_#add-by-email-search-tags]:gap-1 [&_#add-by-email-search-tags_input]:min-h-0 [&_#add-by-email-search-tags_input]:min-w-0 [&_#add-by-email-search-tags_input]:flex-[1_1_auto] [&_#add-by-email-search-tags_input]:leading-2"
+                  >
+                    <TextField
+                      key={
+                        searchResult?.found && searchResult.user
+                          ? `tag-${searchResult.user.id}`
+                          : "email-entry"
+                      }
+                      id="add-by-email-search"
+                      name="add-by-email-search"
+                      label="Email Address"
+                      labelHidden
+                      type="email"
+                      value={
+                        searchResult?.found && searchResult.user
+                          ? ""
+                          : emailInput
+                      }
+                      onChange={(value) => setEmailInput(value)}
+                      onEnter={() => {
+                        if (emailInput.trim() && !isSearching) {
+                          void handleSearchUser();
                         }
-                        onChange={(e) => setEmailInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            if (emailInput.trim() && !isSearching) {
-                              void handleSearchUser();
-                            }
-                          }
-                        }}
-                        placeholder={
-                          searchResult?.found && searchResult.user
-                            ? ""
-                            : "evaluator@example.com"
-                        }
-                        readOnly={!!(searchResult?.found && searchResult.user)}
-                        autoComplete="email"
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      />
-                      {searchResult?.found && searchResult.user && (
-                        <div className="absolute inset-y-0 left-px flex items-center gap-2 pl-3 pr-2">
+                      }}
+                      placeholder={
+                        searchResult?.found && searchResult.user
+                          ? ""
+                          : "evaluator@example.com"
+                      }
+                      readOnly={!!(searchResult?.found && searchResult.user)}
+                      autoComplete="email"
+                      tags={
+                        searchResult?.found && searchResult.user ? (
                           <Tag
                             value={searchResult.user.id}
                             onRemove={() => {
@@ -656,11 +664,11 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                           >
                             {getUserDisplayName(searchResult.user)}
                           </Tag>
-                        </div>
-                      )}
-                    </div>
+                        ) : undefined
+                      }
+                    />
                   </div>
-                  <div className="flex items-end">
+                  <div className="flex shrink-0 items-center">
                     <Button
                       kind="secondary"
                       onClick={() => void handleSearchUser()}
