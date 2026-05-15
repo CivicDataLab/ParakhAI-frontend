@@ -3,6 +3,8 @@
 import { Tag, Text } from 'opub-ui';
 import React, { useState } from 'react';
 import { IconMinus, IconPlus } from '@tabler/icons-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { ManualTestCase } from './types';
 import { toTitleCase } from '@/lib/utils';
 
@@ -61,7 +63,7 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
             >
               <button
                 onClick={() => toggleCard(tc.id)}
-                className="w-full flex items-center justify-between text-left mb-0 border-none outline-none bg-transparent"
+                className="w-full flex items-center justify-between text-left mb-0 border-none outline-none bg-transparent p-0"
               >
                 <div className="flex items-center gap-3">
                   <Text variant="bodyMd" fontWeight="medium">
@@ -112,14 +114,18 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
                     <Text variant="bodySm" fontWeight="medium" className="mb-2 block">
                       Input
                     </Text>
-                    <Text variant="bodySm">{tc.inputPrompt}</Text>
+                    <div className="prose prose-sm max-w-none break-words text-gray-900">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{tc.inputPrompt || ''}</ReactMarkdown>
+                    </div>
                   </div>
 
                   <div>
                     <Text variant="bodySm" fontWeight="medium" className="mb-2 block">
                       Output
                     </Text>
-                    <Text variant="bodySm">{tc.modelOutput}</Text>
+                    <div className="prose prose-sm max-w-none break-words text-gray-900">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{tc.modelOutput || ''}</ReactMarkdown>
+                    </div>
                   </div>
 
                   {tc.comments && (
@@ -127,7 +133,9 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
                       <Text variant="bodySm" fontWeight="medium" className="mb-2 block">
                         Comments
                       </Text>
-                      <Text variant="bodySm">{tc.comments}</Text>
+                      <div className="prose prose-sm max-w-none break-words text-gray-900">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{tc.comments}</ReactMarkdown>
+                      </div>
                     </div>
                   )}
                 </div>
