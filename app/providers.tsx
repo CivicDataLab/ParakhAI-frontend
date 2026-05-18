@@ -60,7 +60,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <TooltipProvider>
           {children}
         </TooltipProvider>
-        <Toaster richColors position="bottom-right" />
+        <Toaster
+          richColors
+          closeButton
+          position="bottom-right"
+          toastOptions={{
+            classNames: {
+              icon: "self-start mt-[5px]",
+              closeButton: "!left-auto !right-[-0.375rem] !top-[0.375rem]",
+            },
+          }}
+        />
       </QueryClientProvider>
     </SessionProvider>
   );
