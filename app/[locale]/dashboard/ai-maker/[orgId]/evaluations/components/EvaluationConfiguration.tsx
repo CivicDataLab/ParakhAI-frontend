@@ -70,6 +70,7 @@ interface EvaluationConfigurationProps {
       metrics?: string;
     }>
   >;
+  isModeOfEvaluationLocked?: boolean;
 }
 
 const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
@@ -100,7 +101,13 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
   toTitleCase,
   validationErrors = {},
   setValidationErrors,
+  isModeOfEvaluationLocked = false,
 }) => {
+  const isAuditTypeModeLocked =
+    auditType === "Domain" || auditType === "Cultural";
+  const isModeOfEvaluationDisabled =
+    isAuditTypeModeLocked || isModeOfEvaluationLocked;
+
   const modeOfEvaluationOptions = [
     { value: "automated", label: "Automated" },
     { value: "manual", label: "Manual" },
@@ -108,7 +115,10 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
 
   // Automatically set mode of evaluation to "manual" when domain or cultural evaluation is selected
   useEffect(() => {
-    if ((auditType === "Domain" || auditType === "Cultural") && modeOfEvaluation !== "manual") {
+    if (
+      (auditType === "Domain" || auditType === "Cultural") &&
+      modeOfEvaluation !== "manual"
+    ) {
       setModeOfEvaluation("manual");
     }
   }, [auditType, modeOfEvaluation, setModeOfEvaluation]);
@@ -140,8 +150,9 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
       <div className={`flex gap-4 flex-wrap ${styles.auditOptionsContainer}`}>
         {/* Technical Audit Option */}
         <label
-          className={`flex items-start gap-3 cursor-pointer transition-all ${styles.technicalAuditCard} ${auditType === "Technical" ? "" : ""
-            }`}
+          className={`flex items-start gap-3 cursor-pointer transition-all ${styles.technicalAuditCard} ${
+            auditType === "Technical" ? "" : ""
+          }`}
         >
           <input
             type="radio"
@@ -159,10 +170,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
             >
               Technical Evaluation
             </Text>
-            <Text
-              variant="bodySm"
-              className="text-gray-600 block"
-            >
+            <Text variant="bodySm" className="text-gray-600 block">
               Check performance, safety, drift
             </Text>
           </div>
@@ -170,8 +178,9 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
 
         {/* Domain Audit Option */}
         <label
-          className={`flex items-start gap-3 cursor-pointer transition-all ${styles.domainAuditCard} ${auditType === "Domain" ? "" : ""
-            }`}
+          className={`flex items-start gap-3 cursor-pointer transition-all ${styles.domainAuditCard} ${
+            auditType === "Domain" ? "" : ""
+          }`}
         >
           <input
             type="radio"
@@ -189,10 +198,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
             >
               Domain Evaluation
             </Text>
-            <Text
-              variant="bodySm"
-              className="text-gray-600 block"
-            >
+            <Text variant="bodySm" className="text-gray-600 block">
               Check accuracy within domain context
             </Text>
           </div>
@@ -200,8 +206,9 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
 
         {/* Cultural Audit Option */}
         <label
-          className={`flex items-start gap-3 cursor-pointer transition-all ${styles.culturalAuditCard} ${auditType === "Cultural" ? "" : ""
-            }`}
+          className={`flex items-start gap-3 cursor-pointer transition-all ${styles.culturalAuditCard} ${
+            auditType === "Cultural" ? "" : ""
+          }`}
         >
           <input
             type="radio"
@@ -219,10 +226,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
             >
               Cultural Evaluation
             </Text>
-            <Text
-              variant="bodySm"
-              className="text-gray-600 block"
-            >
+            <Text variant="bodySm" className="text-gray-600 block">
               Expert checks for real-world fit
             </Text>
           </div>
@@ -230,7 +234,9 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
       </div>
 
       {/* Audit Configuration Form - Show when Technical, Domain, or Cultural Audit is selected */}
-      {(auditType === "Technical" || auditType === "Domain" || auditType === "Cultural") && (
+      {(auditType === "Technical" ||
+        auditType === "Domain" ||
+        auditType === "Cultural") && (
         <div className={`${styles.auditConfigForm} mt-8`}>
           {/* Auditor Information Section */}
           {/* <div className="mb-6">
@@ -363,7 +369,9 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                     Evaluation Objective<span className="text-red-500">*</span>
                   </Text>
                 </Label>
-                <div className={`${styles.auditFormTextarea} ${styles.auditObjectiveTextarea}`}>
+                <div
+                  className={`${styles.auditFormTextarea} ${styles.auditObjectiveTextarea}`}
+                >
                   <TextField
                     id="auditObjective"
                     name="auditObjective"
@@ -392,7 +400,9 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
 
           {/* Evaluation Modules Section */}
           <div className="mb-6">
-            <Label className={`${styles.auditFormLabel} ${styles.evaluationModulesLabel}`}>
+            <Label
+              className={`${styles.auditFormLabel} ${styles.evaluationModulesLabel}`}
+            >
               <Text variant="bodyMd" fontWeight="medium">
                 Evaluation Modules<span className="text-red-500">*</span>
               </Text>
@@ -435,7 +445,9 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                 </Text>
               </div>
             ) : (
-              <div className={`flex flex-row gap-4 mt-4 ${styles.evaluationModulesRow}`}>
+              <div
+                className={`flex flex-row gap-4 mt-4 ${styles.evaluationModulesRow}`}
+              >
                 {modules
                   .filter((module) => module?.name)
                   .map((module) => {
@@ -449,15 +461,15 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                         ? moduleMetricsOptions[moduleKey]
                         : Array.isArray(module.metrics)
                           ? module.metrics
-                            .map((metric) => ({
-                              value: metric?.name || "",
-                              label:
-                                metric?.displayName ||
-                                toTitleCase(
-                                  (metric?.name || "").replace(/_/g, " ")
-                                ),
-                            }))
-                            .filter((opt) => opt.value) // Filter out invalid options
+                              .map((metric) => ({
+                                value: metric?.name || "",
+                                label:
+                                  metric?.displayName ||
+                                  toTitleCase(
+                                    (metric?.name || "").replace(/_/g, " ")
+                                  ),
+                              }))
+                              .filter((opt) => opt.value) // Filter out invalid options
                           : [];
                     return (
                       <div
@@ -560,8 +572,8 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                                 const nextSelected = Array.isArray(value)
                                   ? value
                                   : metricOptions.filter(
-                                    (option) => option.value === value
-                                  );
+                                      (option) => option.value === value
+                                    );
 
                                 setSelectedMetrics((prev) => ({
                                   ...prev,
@@ -607,13 +619,17 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
 
           {/* Mode of Evaluation Section */}
           <div className="mb-6 mt-6">
-            <Label className={`${styles.auditFormLabel} ${styles.evaluationModulesLabel}`}>
+            <Label
+              className={`${styles.auditFormLabel} ${styles.evaluationModulesLabel}`}
+            >
               <Text variant="bodyMd" fontWeight="medium">
                 Mode of Evaluation<span className="text-red-500">*</span>
               </Text>
             </Label>
             <div className="mt-4">
-              <div className={`${styles.evaluationModuleDropdown} ${styles.modeOfEvaluationDropdown}`}>
+              <div
+                className={`${styles.evaluationModuleDropdown} ${styles.modeOfEvaluationDropdown}`}
+              >
                 <Select
                   name="modeOfEvaluation"
                   label="Mode of Evaluation"
@@ -621,7 +637,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                   options={modeOfEvaluationOptions}
                   value={modeOfEvaluation}
                   className={
-                    auditType === "Domain" || auditType === "Cultural"
+                    isModeOfEvaluationDisabled
                       ? "mode-of-evaluation-select-disabled"
                       : undefined
                   }
@@ -639,17 +655,26 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                   }}
                   placeholder="Click to select from dropdown"
                   error={validationErrors.modeOfEvaluation}
-                  disabled={auditType === "Domain" || auditType === "Cultural"}
+                  disabled={isModeOfEvaluationDisabled}
                 />
               </div>
             </div>
-            {(auditType === "Domain" || auditType === "Cultural") && (
+            {isAuditTypeModeLocked && (
               <Text
                 variant="bodySm"
                 className="mt-2"
                 style={{ color: "#60646C" }}
               >
                 Only Manual Mode for Domain and Cultural Evaluations
+              </Text>
+            )}
+            {isModeOfEvaluationLocked && !isAuditTypeModeLocked && (
+              <Text
+                variant="bodySm"
+                className="mt-2"
+                style={{ color: "#60646C" }}
+              >
+                Mode of Evaluation cannot be edited after adding test cases
               </Text>
             )}
             {validationErrors.modeOfEvaluation && (
