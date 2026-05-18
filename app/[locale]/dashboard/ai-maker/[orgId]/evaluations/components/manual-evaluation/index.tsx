@@ -18,11 +18,13 @@ import React, { useCallback, useEffect, useState } from "react";
 import { IconCircleArrowRight } from "@tabler/icons-react";
 import { toTitleCase } from "@/lib/utils";
 import FailureDetails from "./FailureDetails";
+import { getFallbackSubModules } from "./utils";
 import ModelOutputDisplay from "./ModelOutputDisplay";
 import ModuleSelector from "./ModuleSelector";
 import RecommendationModal from "./RecommendationModal";
 import TestCaseHistory from "./TestCaseHistory";
 import TestCaseInput from "./TestCaseInput";
+import { GET_EVALUATION_STATUS_QUERY, GET_TEST_CASES_QUERY } from "./queries";
 import {
   LANGUAGE_OPTIONS,
   SEVERITY_OPTIONS,
@@ -91,27 +93,6 @@ const FINISH_EVALUATION_MUTATION = `
   }
 `;
 
-const GET_EVALUATION_STATUS_QUERY = `
-  query ManualEvaluationStatus($auditId: ID!) {
-    manualEvaluationStatus(auditId: $auditId) {
-      auditId
-      totalModules
-      completedModules
-      allModulesComplete
-      canFinishEvaluation
-      moduleProgress {
-        module
-        moduleDisplayName
-        testCaseCount
-        isComplete
-        canComplete
-        passedCount
-        failedCount
-      }
-    }
-  }
-`;
-
 const GET_SUB_MODULES_QUERY = `
   query ModuleSubModules($moduleName: String!, $modelType: String!) {
     moduleSubModules(moduleName: $moduleName, modelType: $modelType) {
@@ -126,26 +107,6 @@ const GET_SUB_MODULES_QUERY = `
   }
 `;
 
-const GET_TEST_CASES_QUERY = `
-  query ManualTestCases($auditId: ID!, $module: String) {
-    manualTestCases(auditId: $auditId, module: $module) {
-      id
-      module
-      subModule
-      sourceLanguage
-      targetLanguage
-      inputPrompt
-      modelOutput
-      status
-      issueType
-      severity
-      comments
-      idealOutput
-      createdAt
-    }
-  }
-`;
-
 interface ManualEvaluationFlowProps {
   auditId: string;
   modules: string[];
@@ -154,6 +115,7 @@ interface ManualEvaluationFlowProps {
   orgId: string;
   onFinishAudit: () => void;
   isRequestingAudit: boolean;
+  onTestCaseCountChange?: (count: number) => void;
 }
 
 const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
@@ -164,6 +126,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   orgId,
   onFinishAudit,
   isRequestingAudit,
+  onTestCaseCountChange,
 }) => {
   // Router and params for navigation
   const router = useRouter();
@@ -293,6 +256,10 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
     loadInitialData();
   }, [fetchEvaluationStatus, fetchTestCases]);
 
+  useEffect(() => {
+    onTestCaseCountChange?.(testCases.length);
+  }, [testCases.length, onTestCaseCountChange]);
+
   // Load sub-modules when module is selected
   useEffect(() => {
     if (selectedModule) {
@@ -390,6 +357,23 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
       );
 
       if (result?.submitManualTestCase?.success) {
+        const updatedProgress = result.submitManualTestCase.moduleProgress;
+        if (updatedProgress && selectedModule) {
+          setModuleProgress((prev) =>
+            prev.map((entry) =>
+              entry.module === selectedModule
+                ? {
+                    ...entry,
+                    testCaseCount: updatedProgress.testCaseCount,
+                    isComplete: updatedProgress.isComplete,
+                    canComplete:
+                      updatedProgress.testCaseCount >= 3 &&
+                      !updatedProgress.isComplete,
+                  }
+                : entry
+            )
+          );
+        }
         // Reset form for next test case
         resetTestCaseForm();
         // Refresh data
@@ -504,6 +488,13 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
     ? moduleProgress.find((p) => p.module === selectedModule)
     : null;
 
+  const canCompleteCurrentModule = Boolean(
+    currentModuleProgress &&
+      !currentModuleProgress.isComplete &&
+      (currentModuleProgress.canComplete ??
+        currentModuleProgress.testCaseCount >= 3)
+  );
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -526,7 +517,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
             onClick={() => setSelectedModule(null)}
             className="text-[#6849EE] hover:underline mb-4 block border-none bg-transparent p-0"
           >
-            <Text variant="bodySm" className="text-[#6849EE]">
+            <Text variant="bodyMd" className="text-[#6849EE]">
               &lt; Change Module
             </Text>
           </button>
@@ -699,34 +690,45 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                   <div>
                     <div className="mt-2">
                       <Combobox
-                        label="Issue *"
+                        label="Issue"
+                        requiredIndicator
                         name="issueType"
                         required
+                        placeholder="Select issue type"
                         list={subModules.map((sm) => ({
                           value: sm.name,
                           label: sm.displayName,
                         }))}
-                        creatable
-                        selectedValue={issueType}
-                        onChange={setIssueType}
+                        selectedValue={
+                          subModules.find((sm) => sm.name === issueType)
+                            ?.displayName ?? issueType
+                        }
+                        onChange={(value) => {
+                          if (Array.isArray(value)) {
+                            setIssueType(
+                              value.length > 0
+                                ? value[value.length - 1].value
+                                : ""
+                            );
+                            return;
+                          }
+                          setIssueType(typeof value === "string" ? value : "");
+                        }}
                       />
                     </div>
                   </div>
                   <div>
-                    <Label className="audit-form-label">
-                      <Text variant="bodyMd" fontWeight="medium">
-                        Risk Severity <span className="text-red-500">*</span>
-                      </Text>
-                    </Label>
                     <div className="mt-2">
                       <Select
                         name="severity"
                         label="Risk Severity"
-                        labelHidden
+                        // labelHidden
+                        requiredIndicator
+                        required
                         options={SEVERITY_OPTIONS}
                         value={severity}
                         onChange={setSeverity}
-                        placeholder="Select"
+                        placeholder="Select severity"
                       />
                     </div>
                   </div>
@@ -795,17 +797,19 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                   color="#0A0704"
                 />
               </button>
-              {currentModuleProgress &&
-                currentModuleProgress.testCaseCount >= 3 && (
-                  <Button
-                    kind="primary"
-                    onClick={() => setShowModuleRecommendationModal(true)}
-                    disabled={isCompletingModule}
-                    className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
-                  >
-                    {isCompletingModule ? "Completing..." : "Complete Module"}
-                  </Button>
-                )}
+            </div>
+          )}
+
+          {canCompleteCurrentModule && (
+            <div className="flex justify-center mt-4">
+              <Button
+                kind="primary"
+                onClick={() => setShowModuleRecommendationModal(true)}
+                disabled={isCompletingModule}
+                className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
+              >
+                {isCompletingModule ? "Completing..." : "Complete Module"}
+              </Button>
             </div>
           )}
 
@@ -815,17 +819,17 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
               testCases={testCases}
               moduleName={selectedModule}
               moduleDisplayName={getModuleDisplayName(selectedModule)}
+              subModules={subModules}
             />
           </div>
         </div>
       )}
 
-      {/* Navigation */}
       <div className="flex items-center justify-center gap-6 pt-8 border-t border-gray-200">
         <Button
           kind="primary"
           onClick={() => setShowOverallRecommendationModal(true)}
-          disabled={!canFinishEvaluation || isRequestingAudit}
+          disabled={isRequestingAudit || !canFinishEvaluation}
           className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
         >
           {isRequestingAudit ? "Finishing..." : "Finish Evaluation"}
@@ -858,29 +862,5 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
     </div>
   );
 };
-
-// Fallback sub-modules
-function getFallbackSubModules(moduleName: string): SubModuleInfo[] {
-  const fallbacks: Record<string, SubModuleInfo[]> = {
-    BIAS_FAIRNESS: [
-      { name: "GENDER_BIAS", displayName: "Gender Bias" },
-      { name: "CASTE_BIAS", displayName: "Caste Bias" },
-      { name: "REGIONAL_BIAS", displayName: "Regional Bias" },
-      { name: "RELIGION_BIAS", displayName: "Religion Bias" },
-      { name: "SOCIO_ECONOMIC_BIAS", displayName: "Socio-economic Bias" },
-    ],
-    HALLUCINATION_MISINFORMATION: [
-      { name: "HALLUCINATION", displayName: "Hallucination" },
-      { name: "FACTUAL_ERROR", displayName: "Factual Error" },
-      { name: "MISLEADING_INFO", displayName: "Misleading Information" },
-    ],
-    PRIVACY_SAFETY: [
-      { name: "PII_LEAKAGE", displayName: "PII Leakage" },
-      { name: "UNSAFE_CONTENT", displayName: "Unsafe Content" },
-      { name: "TOXICITY", displayName: "Toxicity" },
-    ],
-  };
-  return fallbacks[moduleName] || [];
-}
 
 export default ManualEvaluationFlow;

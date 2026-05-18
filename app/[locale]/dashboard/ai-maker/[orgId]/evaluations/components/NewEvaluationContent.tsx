@@ -16,9 +16,12 @@ import {
   Text,
   TextField,
 } from "opub-ui";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useOrganization } from "../../OrganizationContext";
 import EvaluationConfiguration from "./EvaluationConfiguration";
+import { GET_EVALUATION_STATUS_QUERY } from "./manual-evaluation/queries";
+import type { ManualEvaluationStatus } from "./manual-evaluation/types";
+import { getTotalManualTestCaseCount } from "./manual-evaluation/utils";
 import ManualTestCases from "./ManualTestCases";
 import ModelSelectionModal from "./ModelSelectionModal";
 import styles from "./styles.module.scss";
@@ -268,7 +271,11 @@ function parseAuditTypeFromBackend(
 ): AuditType | null {
   if (!raw || typeof raw !== "string") return null;
   const trimmed = raw.trim();
-  if (trimmed === "Technical" || trimmed === "Domain" || trimmed === "Cultural") {
+  if (
+    trimmed === "Technical" ||
+    trimmed === "Domain" ||
+    trimmed === "Cultural"
+  ) {
     return trimmed;
   }
   const norm = trimmed.toUpperCase().replace(/[\s-]+/g, "_");
@@ -415,7 +422,11 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             id: string;
             domain?: string | string[] | null;
           } | null;
-        }>(AI_MODEL_BY_ID_QUERY, { modelId: selectedModelId }, { organization: orgId });
+        }>(
+          AI_MODEL_BY_ID_QUERY,
+          { modelId: selectedModelId },
+          { organization: orgId }
+        );
 
         const modelDomain = modelResult?.aiModel?.domain;
         const domainInput = Array.isArray(modelDomain)
@@ -438,45 +449,40 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         const domains = domainOptionsResult?.auditDomainOptions?.domains || [];
         const options: SelectOption[] = [];
 
-        domains
-          .filter(Boolean)
-          .forEach((domainEntry) => {
-            let value: string;
-            let label: string;
+        domains.filter(Boolean).forEach((domainEntry) => {
+          let value: string;
+          let label: string;
 
-            if (typeof domainEntry === "string") {
-              value = domainEntry;
-              label = domainEntry;
-            } else if (
-              typeof domainEntry === "object" &&
-              domainEntry !== null
-            ) {
-              const entries = Object.entries(domainEntry as Record<string, any>);
-              if (entries.length > 0) {
-                const [backendValue, backendLabel] = entries[0];
-                const resolvedLabel =
-                  backendLabel !== undefined && backendLabel !== null
-                    ? String(backendLabel)
-                    : String(backendValue);
+          if (typeof domainEntry === "string") {
+            value = domainEntry;
+            label = domainEntry;
+          } else if (typeof domainEntry === "object" && domainEntry !== null) {
+            const entries = Object.entries(domainEntry as Record<string, any>);
+            if (entries.length > 0) {
+              const [backendValue, backendLabel] = entries[0];
+              const resolvedLabel =
+                backendLabel !== undefined && backendLabel !== null
+                  ? String(backendLabel)
+                  : String(backendValue);
 
-                // Use backend key as value, human‑readable text as label
-                value = String(backendValue);
-                label = resolvedLabel;
-              } else {
-                const fallback = JSON.stringify(domainEntry);
-                value = fallback;
-                label = fallback;
-              }
+              // Use backend key as value, human‑readable text as label
+              value = String(backendValue);
+              label = resolvedLabel;
             } else {
-              const fallback = String(domainEntry);
+              const fallback = JSON.stringify(domainEntry);
               value = fallback;
               label = fallback;
             }
+          } else {
+            const fallback = String(domainEntry);
+            value = fallback;
+            label = fallback;
+          }
 
-            if (!options.some((opt) => opt.value === value)) {
-              options.push({ value, label });
-            }
-          });
+          if (!options.some((opt) => opt.value === value)) {
+            options.push({ value, label });
+          }
+        });
 
         setEvaluationScopeOptions(options);
       } catch {
@@ -500,6 +506,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const [organisationName, setOrganisationName] = useState("");
   const [auditObjective, setAuditObjective] = useState("");
   const [modeOfEvaluation, setModeOfEvaluation] = useState<string>("");
+  const [hasManualTestCases, setHasManualTestCases] = useState(false);
   const [auditScope, setAuditScope] = useState<string>("");
 
   // Prefill organisation name when org details are loaded
@@ -518,6 +525,47 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       setModeOfEvaluation("manual");
     }
   }, [auditType, modeOfEvaluation]);
+
+  const handleManualTestCaseCountChange = useCallback((count: number) => {
+    setHasManualTestCases(count > 0);
+  }, []);
+
+  useEffect(() => {
+    if (!currentAuditId || modeOfEvaluation !== "manual") {
+      setHasManualTestCases(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const syncManualTestCaseCount = async () => {
+      try {
+        const result = await request<{
+          manualEvaluationStatus: ManualEvaluationStatus;
+        }>(
+          GET_EVALUATION_STATUS_QUERY,
+          { auditId: currentAuditId },
+          { organization: orgId }
+        );
+
+        if (!cancelled) {
+          setHasManualTestCases(
+            getTotalManualTestCaseCount(
+              result?.manualEvaluationStatus?.moduleProgress
+            ) > 0
+          );
+        }
+      } catch (err) {
+        console.error("Error syncing manual test case count:", err);
+      }
+    };
+
+    syncManualTestCaseCount();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentAuditId, modeOfEvaluation, orgId, request]);
 
   // Set auditor name from session when user is available
   useEffect(() => {
@@ -590,7 +638,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       .sort(([a], [b]) => a.localeCompare(b))
       .reduce(
         (acc, [moduleName, metrics]) => {
-          acc[moduleName] = (metrics || []).map((metric) => metric.value).sort();
+          acc[moduleName] = (metrics || [])
+            .map((metric) => metric.value)
+            .sort();
           return acc;
         },
         {} as Record<string, string[]>
@@ -1065,7 +1115,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     if (!auditId) {
       isNavigatingAwayRef.current = true;
       // Avoid router.back() here because history guards can keep user on the same page.
-      window.location.assign(`/${locale}/dashboard/ai-maker/${orgId}/evaluations`);
+      window.location.assign(
+        `/${locale}/dashboard/ai-maker/${orgId}/evaluations`
+      );
       return;
     }
     setIsCancelling(true);
@@ -1084,7 +1136,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       );
       if (result?.updateAudit?.success) {
         // Use a hard navigation so the list refreshes immediately and doesn't rely on client cache.
-        window.location.assign(`/${locale}/dashboard/ai-maker/${orgId}/evaluations`);
+        window.location.assign(
+          `/${locale}/dashboard/ai-maker/${orgId}/evaluations`
+        );
       } else {
         isNavigatingAwayRef.current = false;
         setAuditError(
@@ -1676,7 +1730,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           return;
         }
         isNavigatingAwayRef.current = true;
-        window.location.assign(`/${locale}/dashboard/ai-maker/${orgId}/evaluations`);
+        window.location.assign(
+          `/${locale}/dashboard/ai-maker/${orgId}/evaluations`
+        );
       })();
     };
 
@@ -2034,122 +2090,122 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               </span>
               {isCancelling ? "Cancelling..." : "Cancel"}
             </Button>
-            </div>
-
-            </div>
-            {/* Model Name and Owner Section - Hide while loading audit details */}
-            {!(urlAuditId && isLoadingAuditDetails) && (
-              <div className="mb-6 bg-white overview-evaluation-section">
-                <div className="p-4 sm:p-6">
-                  <div className="-mt-1">
-            {/* Model Selector - Only show if no URL params and no audit loaded */}
-            {!urlModelId && !currentAuditId && (
-              <div className="mb-4 max-w-md">
-                {isLoadingModels ? (
-                  <div className="flex flex-col items-center gap-4">
-                    <Spinner />
-                    <Text variant="bodySm" className="text-gray-600">
-                      Loading models...
-                    </Text>
-                  </div>
-                ) : modelsError ? (
-                  <div>
-                    <Text variant="bodySm" className="text-red-600">
-                      {modelsError}
-                    </Text>
-                  </div>
-                ) : aiModels.length > 0 ? (
-                  <div className="flex flex-col gap-4">
-                    <Select
-                      name="modelSelect"
-                      label="Select AI Model"
-                      options={aiModels.map((model) => ({
-                        value: model.id,
-                        label: model.displayName || model.name,
-                      }))}
-                      value={selectedModelId || ""}
-                      onChange={(value) => {
-                        setSelectedModelId(value);
-                        const model = aiModels.find((m) => m.id === value);
-                        const latestVer = model?.versions?.find(
-                          (v) => v.isLatest
-                        );
-                        setSelectedVersionId(latestVer?.id || null);
-                      }}
-                      disabled={
-                        typeof activeTab !== "undefined" &&
-                        activeTab !== "config"
-                      }
-                    />
-                    {selectedModel &&
-                      selectedModel.versions &&
-                      selectedModel.versions.length > 0 && (
+          </div>
+        </div>
+        {/* Model Name and Owner Section - Hide while loading audit details */}
+        {!(urlAuditId && isLoadingAuditDetails) && (
+          <div className="mb-6 bg-white overview-evaluation-section">
+            <div className="p-4 sm:p-6">
+              <div className="-mt-1">
+                {/* Model Selector - Only show if no URL params and no audit loaded */}
+                {!urlModelId && !currentAuditId && (
+                  <div className="mb-4 max-w-md">
+                    {isLoadingModels ? (
+                      <div className="flex flex-col items-center gap-4">
+                        <Spinner />
+                        <Text variant="bodySm" className="text-gray-600">
+                          Loading models...
+                        </Text>
+                      </div>
+                    ) : modelsError ? (
+                      <div>
+                        <Text variant="bodySm" className="text-red-600">
+                          {modelsError}
+                        </Text>
+                      </div>
+                    ) : aiModels.length > 0 ? (
+                      <div className="flex flex-col gap-4">
                         <Select
-                          name="versionSelect"
-                          label="Select Model Version"
-                          options={selectedModel.versions.map((ver) => ({
-                            value: String(ver.id),
-                            label: `${ver.version}${ver.isLatest ? " (Latest)" : ""}`,
+                          name="modelSelect"
+                          label="Select AI Model"
+                          options={aiModels.map((model) => ({
+                            value: model.id,
+                            label: model.displayName || model.name,
                           }))}
-                          value={
-                            selectedVersionId ? String(selectedVersionId) : ""
-                          }
-                          onChange={(value) =>
-                            setSelectedVersionId(value ? Number(value) : null)
-                          }
+                          value={selectedModelId || ""}
+                          onChange={(value) => {
+                            setSelectedModelId(value);
+                            const model = aiModels.find((m) => m.id === value);
+                            const latestVer = model?.versions?.find(
+                              (v) => v.isLatest
+                            );
+                            setSelectedVersionId(latestVer?.id || null);
+                          }}
                           disabled={
                             typeof activeTab !== "undefined" &&
                             activeTab !== "config"
                           }
                         />
-                      )}
-                  </div>
-                ) : (
-                  <div>
-                    <Text variant="bodySm" className="text-gray-600">
-                      No models available. Please check your backend
-                      configuration.
-                    </Text>
+                        {selectedModel &&
+                          selectedModel.versions &&
+                          selectedModel.versions.length > 0 && (
+                            <Select
+                              name="versionSelect"
+                              label="Select Model Version"
+                              options={selectedModel.versions.map((ver) => ({
+                                value: String(ver.id),
+                                label: `${ver.version}${ver.isLatest ? " (Latest)" : ""}`,
+                              }))}
+                              value={
+                                selectedVersionId
+                                  ? String(selectedVersionId)
+                                  : ""
+                              }
+                              onChange={(value) =>
+                                setSelectedVersionId(
+                                  value ? Number(value) : null
+                                )
+                              }
+                              disabled={
+                                typeof activeTab !== "undefined" &&
+                                activeTab !== "config"
+                              }
+                            />
+                          )}
+                      </div>
+                    ) : (
+                      <div>
+                        <Text variant="bodySm" className="text-gray-600">
+                          No models available. Please check your backend
+                          configuration.
+                        </Text>
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
-            )}
 
-            <div className="flex items-center justify-between gap-4">
-              <div className={`mb-0 ${styles.modelNameContainer}`}>
-                <Text
-                  variant="bodyMd"
-                  className="text-gray-500"
-                >
-                  Model Name :{" "}
-                </Text>
-                <Text
-                  as="h1"
-                  variant="headingXl"
-                  className="font-bold text-gray-900 break-words"
-                >
-                  {modelVersion && modelName?.includes(modelVersion)
-                    ? modelName
-                    : modelVersion
-                      ? `${modelName} ${modelVersion}`
-                      : modelName}
-                </Text>
-              </div>
+                <div className="flex items-center justify-between gap-4">
+                  <div className={`mb-0 ${styles.modelNameContainer}`}>
+                    <Text variant="bodyMd" className="text-gray-500">
+                      Model Name :{" "}
+                    </Text>
+                    <Text
+                      as="h1"
+                      variant="headingXl"
+                      className="font-bold text-gray-900 break-words"
+                    >
+                      {modelVersion && modelName?.includes(modelVersion)
+                        ? modelName
+                        : modelVersion
+                          ? `${modelName} ${modelVersion}`
+                          : modelName}
+                    </Text>
+                  </div>
 
-              <div className="flex items-center gap-2">
-                <Image
-                  src="/images/logos/CDL Logo.png"
-                  alt="CivicDataLab Logo"
-                  width={50}
-                  height={50}
-                  className="object-contain rounded-full cdl-round-logo"
-                />
-              </div>
-            </div>
+                  <div className="flex items-center gap-2">
+                    <Image
+                      src="/images/logos/CDL Logo.png"
+                      alt="CivicDataLab Logo"
+                      width={50}
+                      height={50}
+                      className="object-contain rounded-full cdl-round-logo"
+                    />
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="mb-4 max-[1023px]:mb-3 max-[640px]:mb-2">
@@ -2236,6 +2292,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               toTitleCase={toTitleCase}
               validationErrors={validationErrors}
               setValidationErrors={setValidationErrors}
+              isModeOfEvaluationLocked={hasManualTestCases}
             />
           </div>
         )}
@@ -2254,6 +2311,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                 orgId={orgId}
                 onRunAudit={handleRunAudit}
                 isRequestingAudit={isRequestingAudit}
+                onTestCaseCountChange={handleManualTestCaseCountChange}
               />
             ) : (
               <TestCases

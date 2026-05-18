@@ -5,19 +5,22 @@ import React, { useState } from 'react';
 import { IconMinus, IconPlus } from '@tabler/icons-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import type { ManualTestCase } from './types';
+import type { ManualTestCase, SubModuleInfo } from './types';
 import { toTitleCase } from '@/lib/utils';
+import { resolveIssueDisplayName } from './utils';
 
 interface TestCaseHistoryProps {
   testCases: ManualTestCase[];
   moduleName: string;
   moduleDisplayName: string;
+  subModules?: SubModuleInfo[];
 }
 
 const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
   testCases,
   moduleName,
   moduleDisplayName,
+  subModules = [],
 }) => {
   // Order by submission time so "Test Case N" matches the sequence shown during entry
   // (API may return newest-first; labels use array index only).
@@ -56,6 +59,12 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
       <div className="flex flex-col gap-5">
         {moduleTestCases.map((tc, index) => {
           const isExpanded = expandedCards.has(tc.id);
+          const issueKey = tc.issueType || tc.subModule;
+          const issueDisplayName = resolveIssueDisplayName(
+            issueKey,
+            subModules,
+            moduleName
+          );
           return (
             <div
               key={tc.id}
@@ -94,10 +103,8 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
                               : '#DC2626'
                     }
                   >
-                    {tc.status === 'FAILED' && tc.severity && tc.issueType
-                      ? `${tc.severity.charAt(0) + tc.severity.slice(1).toLowerCase()} risk - ${toTitleCase(
-                          tc.issueType.toLowerCase()
-                        )}`
+                    {tc.status === 'FAILED' && tc.severity && issueKey
+                      ? `${tc.severity.charAt(0) + tc.severity.slice(1).toLowerCase()} risk - ${issueDisplayName}`
                       : toTitleCase(tc.status.toLowerCase())}
                   </Tag>
                 </div>
