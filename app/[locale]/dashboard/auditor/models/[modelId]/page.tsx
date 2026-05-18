@@ -474,7 +474,7 @@ const AuditorModelDetailPage = () => {
                   {model.displayName}
                 </Text>
 
-                <div className="flex flex-wrap gap-2">
+                {/* <div className="flex flex-wrap gap-2">
                   {model.sectors?.slice(0, 1).map((sector, index) => (
                     <span key={index} className="self-start sm:self-auto">
                       <Tag
@@ -497,7 +497,7 @@ const AuditorModelDetailPage = () => {
                       </Tag>
                     </span>
                   ))}
-                </div>
+                </div> */}
               </div>
 
               <div className="overflow-hidden flex flex-col gap-2 mt-8">
