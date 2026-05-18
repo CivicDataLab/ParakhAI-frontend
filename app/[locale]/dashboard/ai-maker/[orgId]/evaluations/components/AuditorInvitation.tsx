@@ -286,9 +286,15 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
     }
   }, [organizationId, modelId, modelVersionId, request, isModalOpen]);
 
-  const availableAuditors = auditors.filter(
-    (auditor) => !assignments.some((a) => a.auditorEmail === auditor.email),
-  );
+  const availableAuditors = auditors.filter((auditor) => {
+    // Check if this auditor has any ACTIVE assignments
+    const hasActiveAssignment = assignments.some(
+      (a) => a.auditorEmail === auditor.email && ["PENDING", "ACCEPTED"].includes(a.status)
+    );
+
+    // The auditor is available if they DO NOT have an active assignment
+    return !hasActiveAssignment;
+  });
 
   const handleSearchUser = async () => {
     if (!emailInput.trim()) return;
