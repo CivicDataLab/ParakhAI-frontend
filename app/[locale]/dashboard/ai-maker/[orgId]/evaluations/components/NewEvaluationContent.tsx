@@ -623,7 +623,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const isNavigatingAwayRef = useRef(false);
   const hasInitializedSavedSnapshotRef = useRef(false);
   const hasTriggeredLeaveAutosaveRef = useRef(false);
-  const hasInitializedPopStateGuardRef = useRef(false);
 
   const getPromptDatasetStorageKey = (auditId: string) =>
     `evaluation-draft-datasets:${orgId}:${auditId}`;
@@ -1701,65 +1700,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     isCreatingAudit,
   ]);
 
-  useEffect(() => {
-    if (!hasInitializedPopStateGuardRef.current) {
-      window.history.pushState(null, "", window.location.href);
-      hasInitializedPopStateGuardRef.current = true;
-    }
-
-    const handlePopState = () => {
-      if (isNavigatingAwayRef.current) return;
-
-      const shouldAutoSave =
-        hasUnsavedDraftChangesRef.current ||
-        !currentAuditId ||
-        hasDraftProgress();
-
-      if (!shouldAutoSave) {
-        isNavigatingAwayRef.current = true;
-        window.history.back();
-        return;
-      }
-
-      // Keep user on current page while auto-save runs silently.
-      window.history.pushState(null, "", window.location.href);
-
-      void (async () => {
-        const saved = await saveDraftProgress();
-        if (!saved) {
-          return;
-        }
-        isNavigatingAwayRef.current = true;
-        window.location.assign(
-          `/${locale}/dashboard/ai-maker/${orgId}/evaluations`
-        );
-      })();
-    };
-
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [
-    currentAuditId,
-    auditName,
-    auditType,
-    selectedModelId,
-    selectedVersionId,
-    modeOfEvaluation,
-    auditObjective,
-    auditScope,
-    auditorName,
-    organisationName,
-    selectedModules,
-    selectedMetrics,
-    selectedPromptLibraries,
-    testInputMode,
-    uploadedFiles,
-    pastedTestCases,
-    isSavingDraftBeforeExit,
-    isCreatingAudit,
-    locale,
-    orgId,
-  ]);
 
   // Handle tab change - create audit if needed and update config
   const handleTestTabClick = async () => {

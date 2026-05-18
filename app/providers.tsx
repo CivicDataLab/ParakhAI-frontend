@@ -66,8 +66,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
           position="bottom-right"
           toastOptions={{
             classNames: {
-              icon: "self-start mt-[5px]",
-              closeButton: "!left-auto !right-[-0.375rem] !top-[0.375rem]",
+              toast:
+                "flex items-start gap-3 !p-4 rounded-lg shadow-md font-sans",
+              icon: "shrink-0 self-start mt-[5px]",
+              content: "flex-1 min-w-0",
+              title: "font-semibold text-sm leading-snug",
+              description: "text-sm leading-snug mt-0.5",
+              closeButton:
+                "!left-auto !right-[-0.375rem] !top-[0.375rem]",
             },
           }}
         />

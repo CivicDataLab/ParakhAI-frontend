@@ -39,6 +39,7 @@ const GET_MY_ASSIGNMENTS = `
     myAssignments(modelId: $modelId, status: $status) {
       id
       organizationId
+      organizationName
       modelId
       modelName
       modelVersionId
@@ -211,7 +212,7 @@ const AuditorDashboard = () => {
       header: "Organization",
       cell: (info) => (
         <Text variant="bodySm">
-          ID #{info.getValue() || info.row.original.organizationId.slice(0, 8)}
+          {info.getValue() || `ID #${info.row.original.organizationId.slice(0, 8)}`}
         </Text>
       ),
     }),
@@ -299,7 +300,7 @@ const AuditorDashboard = () => {
       header: "Organization",
       cell: (info) => (
         <Text variant="bodySm">
-          ID #{info.getValue() || info.row.original.organizationId.slice(0, 8)}
+          {info.getValue() || `ID #${info.row.original.organizationId.slice(0, 8)}`}
         </Text>
       ),
     }),
