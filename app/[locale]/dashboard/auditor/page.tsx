@@ -13,7 +13,7 @@ import {
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Badge, Button, DataTable, Spinner, Text } from "opub-ui";
+import { Badge, Button, DataTable, Spinner, Text, toast } from "opub-ui";
 import { useEffect, useState } from "react";
 
 // Types
@@ -39,6 +39,7 @@ const GET_MY_ASSIGNMENTS = `
     myAssignments(modelId: $modelId, status: $status) {
       id
       organizationId
+      organizationName
       modelId
       modelName
       modelVersionId
@@ -92,11 +93,6 @@ const AuditorDashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const [toast, setToast] = useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error";
-  }>({ show: false, message: "", type: "success" });
 
   useEffect(() => {
     if (!isAuthenticated || isSessionLoading) return;
@@ -149,26 +145,15 @@ const AuditorDashboard = () => {
           ),
         );
 
-        setToast({
-          show: true,
-          message: `Assignment ${newStatus.toLowerCase()} successfully`,
-          type: "success",
-        });
+        toast.success(`Assignment ${newStatus.toLowerCase()} successfully`);
       } else {
-        setToast({
-          show: true,
-          message:
-            response?.updateAuditorAssignmentStatus?.message ||
+        toast.error(
+          response?.updateAuditorAssignmentStatus?.message ||
             "Failed to update status",
-          type: "error",
-        });
+        );
       }
     } catch (err: any) {
-      setToast({
-        show: true,
-        message: err?.message || "Error updating status",
-        type: "error",
-      });
+      toast.error(err?.message || "Error updating status");
     } finally {
       setUpdatingId(null);
     }
@@ -227,7 +212,7 @@ const AuditorDashboard = () => {
       header: "Organization",
       cell: (info) => (
         <Text variant="bodySm">
-          ID #{info.getValue() || info.row.original.organizationId.slice(0, 8)}
+          {info.getValue() || `ID #${info.row.original.organizationId.slice(0, 8)}`}
         </Text>
       ),
     }),
@@ -315,7 +300,7 @@ const AuditorDashboard = () => {
       header: "Organization",
       cell: (info) => (
         <Text variant="bodySm">
-          ID #{info.getValue() || info.row.original.organizationId.slice(0, 8)}
+          {info.getValue() || `ID #${info.row.original.organizationId.slice(0, 8)}`}
         </Text>
       ),
     }),
@@ -508,24 +493,6 @@ const AuditorDashboard = () => {
         )}
       </div>
 
-      {/* Toast Notification */}
-      {toast.show && (
-        <div
-          className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 ${
-            toast.type === "success"
-              ? "bg-green-600 text-white"
-              : "bg-red-600 text-white"
-          }`}
-        >
-          <span>{toast.message}</span>
-          <button
-            onClick={() => setToast({ ...toast, show: false })}
-            className="ml-2 hover:opacity-80"
-          >
-            <IconX size={16} />
-          </button>
-        </div>
-      )}
     </>
   );
 };

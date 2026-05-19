@@ -6,9 +6,8 @@ import {
   IconSearch,
   IconUser,
   IconUserCheck,
-  IconX,
 } from "@tabler/icons-react";
-import { Button, Dialog, Spinner, Tag, Text, TextField } from "opub-ui";
+import { Button, Dialog, Spinner, Tag, Text, TextField, toast } from "opub-ui";
 import { useEffect, useState } from "react";
 
 /** Profile image for search hit — same behavior as Add Evaluator on auditors page */
@@ -230,23 +229,15 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   const [isSearching, setIsSearching] = useState(false);
   const [isAddingNew, setIsAddingNew] = useState(false);
 
-  const [toast, setToast] = useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error";
-  }>({ show: false, message: "", type: "success" });
-
   const showResultToast = (type: "success" | "error", message: string) => {
-    if (isControlled && onAssignmentResult) {
-      onAssignmentResult({ type, message });
-      return;
+    if (type === "success") {
+      toast.success(message);
+    } else {
+      toast.error(message);
     }
-
-    setToast({
-      show: true,
-      message,
-      type,
-    });
+    if (onAssignmentResult) {
+      onAssignmentResult({ type, message });
+    }
   };
 
   useEffect(() => {
@@ -365,11 +356,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
         }
 
         if (!suppressSuccessToast) {
-          showResultToast(
-            "success",
-            response?.assignAuditorToVersion?.message ||
-              "Evaluator assigned successfully",
-          );
+          showResultToast("success", "Evaluator assigned successfully");
         }
 
         setIsModalOpen(false);
@@ -431,14 +418,11 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
           setAuditors(auditorsResponse.organizationAuditors.auditors || []);
         }
 
-        // Show success message for adding auditor
-        setToast({
-          show: true,
-          message:
-            addResponse.addAuditorToOrganization.message ||
+        showResultToast(
+          "success",
+          addResponse.addAuditorToOrganization.message ||
             "Evaluator added successfully",
-          type: "success",
-        });
+        );
 
         // Now assign the newly added auditor, but avoid double success toasts
         await handleAssignAuditor(
@@ -455,20 +439,10 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
         const errorMessage =
           addResponse?.addAuditorToOrganization?.message || "";
 
-        // Always surface backend error message in toast so the user
-        // can see the exact reason (e.g. "User is already a member...")
-        setToast({
-          show: true,
-          message: errorMessage || "Failed to add evaluator",
-          type: "error",
-        });
+        showResultToast("error", errorMessage || "Failed to add evaluator");
       }
     } catch (err: any) {
-      setToast({
-        show: true,
-        message: err?.message || "Error adding evaluator",
-        type: "error",
-      });
+      showResultToast("error", err?.message || "Error adding evaluator");
     } finally {
       setIsAddingNew(false);
     }
@@ -489,24 +463,6 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
       };
     }),
   ];
-
-  const toastNotification = toast.show && (
-    <div
-      className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 ${
-        toast.type === "success"
-          ? "bg-green-600 text-white"
-          : "bg-red-600 text-white"
-      }`}
-    >
-      <span>{toast.message}</span>
-      <button
-        onClick={() => setToast({ ...toast, show: false })}
-        className="ml-2 hover:opacity-80"
-      >
-        <IconX size={16} />
-      </button>
-    </div>
-  );
 
   const inviteDialog = (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -772,7 +728,6 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
     return (
       <>
         {inviteDialog}
-        {toastNotification}
       </>
     );
   }
@@ -852,7 +807,6 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
       )}
 
       {inviteDialog}
-      {toastNotification}
     </div>
   );
 };

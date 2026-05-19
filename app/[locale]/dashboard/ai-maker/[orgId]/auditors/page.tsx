@@ -7,10 +7,9 @@ import {
   IconSearch,
   IconTrash,
   IconUser,
-  IconX,
 } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
-import { Button, Dialog, Spinner, Tag, Text, TextField, Tooltip } from "opub-ui";
+import { Button, Dialog, Spinner, Tag, Text, TextField, Tooltip, toast } from "opub-ui";
 import { useEffect, useRef, useState } from "react";
 
 // Custom Avatar component with error handling
@@ -235,12 +234,6 @@ const AuditorsPage = () => {
   const [selectedAuditor, setSelectedAuditor] = useState<Auditor | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
-  const [toast, setToast] = useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error";
-  }>({ show: false, message: "", type: "success" });
-
   useEffect(() => {
     if (!isAuthenticated || isSessionLoading || !orgId) return;
 
@@ -369,26 +362,15 @@ const AuditorsPage = () => {
 
       if (response?.removeAuditorFromOrganization?.success) {
         setAuditors((prev) => prev.filter((a) => a.id !== userId));
-        setToast({
-          show: true,
-          message: "Evaluator removed successfully",
-          type: "success",
-        });
+        toast.success("Evaluator removed successfully");
       } else {
-        setToast({
-          show: true,
-          message:
-            response?.removeAuditorFromOrganization?.message ||
+        toast.error(
+          response?.removeAuditorFromOrganization?.message ||
             "Failed to remove evaluator",
-          type: "error",
-        });
+        );
       }
     } catch (err: any) {
-      setToast({
-        show: true,
-        message: err?.message || "Error removing evaluator",
-        type: "error",
-      });
+      toast.error(err?.message || "Error removing evaluator");
     }
   };
 
@@ -737,23 +719,6 @@ const AuditorsPage = () => {
         </Dialog.Content>
       </Dialog>
 
-      {toast.show && (
-        <div
-          className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 ${
-            toast.type === "success"
-              ? "bg-green-600 text-white"
-              : "bg-red-600 text-white"
-          }`}
-        >
-          <span>{toast.message}</span>
-          <button
-            onClick={() => setToast({ ...toast, show: false })}
-            className="ml-2 hover:opacity-80"
-          >
-            <IconX size={16} />
-          </button>
-        </div>
-      )}
     </>
   );
 };
