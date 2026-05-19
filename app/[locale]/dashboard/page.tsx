@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Text } from "opub-ui";
 
 import BreadCrumbs from "@/components/Breadcrumbs";
-import { Icons } from "@/components/icons";
 import { useDashboardStore } from "@/config/store";
 import { Loading } from "@/components/loading";
 
