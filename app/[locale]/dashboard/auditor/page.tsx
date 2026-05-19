@@ -34,6 +34,21 @@ type AuditorAssignment = {
   updatedAt?: string;
 };
 
+const GET_AUDITOR_METRICS = `
+  query AuditorMetrics {
+    auditorMetrics {
+      assignmentsCount
+      assignmentsAccepted
+      assignmentsDeclined
+      assignmentsPending
+      assignmentsCompleted
+      auditsDone
+      testCasesCount
+      failedTestCasesCount
+    }
+  }
+`;
+
 const GET_MY_ASSIGNMENTS = `
   query GetMyAssignments($modelId: String, $status: String) {
     myAssignments(modelId: $modelId, status: $status) {
@@ -92,31 +107,43 @@ const AuditorDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [auditorMetrics, setAuditorMetrics] = useState<{
+    assignmentsCount: number;
+    auditsDone: number;
+    testCasesCount: number;
+    failedTestCasesCount: number;
+  } | null>(null);
 
 
   useEffect(() => {
     if (!isAuthenticated || isSessionLoading) return;
 
-    const fetchAssignments = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // No need to pass userId - backend uses logged-in user context
-        const response = await request(GET_MY_ASSIGNMENTS, {});
+        const [assignmentsResponse, metricsResponse] = await Promise.all([
+          request(GET_MY_ASSIGNMENTS, {}),
+          request(GET_AUDITOR_METRICS, {}),
+        ]);
 
-        if (response?.myAssignments) {
-          setAssignments(response.myAssignments);
+        if (assignmentsResponse?.myAssignments) {
+          setAssignments(assignmentsResponse.myAssignments);
+        }
+
+        if (metricsResponse?.auditorMetrics) {
+          setAuditorMetrics(metricsResponse.auditorMetrics);
         }
       } catch (err: any) {
-        console.error("Error fetching assignments:", err);
-        setError(err?.message || "Failed to load assignments");
+        console.error("Error fetching dashboard data:", err);
+        setError(err?.message || "Failed to load dashboard data");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAssignments();
+    fetchData();
   }, [isAuthenticated, isSessionLoading, request]);
 
   const handleUpdateStatus = async (
@@ -180,10 +207,22 @@ const AuditorDashboard = () => {
 
   // Calculate metrics for Overview section
   const metrics = [
-    { label: "Invitations Received", value: assignments.length.toString() },
-    { label: "Evaluation Runs", value: completedAssignments.length.toString() },
-    { label: "Test Cases", value: "0" }, // TODO: Fetch from evaluations when available
-    { label: "Issues Flagged", value: "0" }, // TODO: Fetch from evaluations when available
+    {
+      label: "Invitations Received",
+      value: (auditorMetrics?.assignmentsCount ?? assignments.length).toString(),
+    },
+    {
+      label: "Evaluation Runs",
+      value: (auditorMetrics?.auditsDone ?? completedAssignments.length).toString(),
+    },
+    {
+      label: "Test Cases",
+      value: (auditorMetrics?.testCasesCount ?? 0).toString(),
+    },
+    {
+      label: "Issues Flagged",
+      value: (auditorMetrics?.failedTestCasesCount ?? 0).toString(),
+    },
   ];
 
   const columnHelper = createColumnHelper<AuditorAssignment>();
