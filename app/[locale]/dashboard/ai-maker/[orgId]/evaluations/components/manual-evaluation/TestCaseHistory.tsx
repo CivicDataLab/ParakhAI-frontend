@@ -3,21 +3,35 @@
 import { Tag, Text } from 'opub-ui';
 import React, { useState } from 'react';
 import { IconMinus, IconPlus } from '@tabler/icons-react';
-import type { ManualTestCase } from './types';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import type { ManualTestCase, SubModuleInfo } from './types';
 import { toTitleCase } from '@/lib/utils';
+import { resolveIssueDisplayName } from './utils';
 
 interface TestCaseHistoryProps {
   testCases: ManualTestCase[];
   moduleName: string;
   moduleDisplayName: string;
+  subModules?: SubModuleInfo[];
 }
 
 const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
   testCases,
   moduleName,
   moduleDisplayName,
+  subModules = [],
 }) => {
-  const moduleTestCases = testCases.filter((tc) => tc.module === moduleName);
+  // Order by submission time so "Test Case N" matches the sequence shown during entry
+  // (API may return newest-first; labels use array index only).
+  const moduleTestCases = testCases
+    .filter((tc) => tc.module === moduleName)
+    .sort((a, b) => {
+      const byTime =
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      if (byTime !== 0) return byTime;
+      return a.id.localeCompare(b.id);
+    });
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   if (moduleTestCases.length === 0) {
@@ -45,6 +59,12 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
       <div className="flex flex-col gap-5">
         {moduleTestCases.map((tc, index) => {
           const isExpanded = expandedCards.has(tc.id);
+          const issueKey = tc.issueType || tc.subModule;
+          const issueDisplayName = resolveIssueDisplayName(
+            issueKey,
+            subModules,
+            moduleName
+          );
           return (
             <div
               key={tc.id}
@@ -52,7 +72,7 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
             >
               <button
                 onClick={() => toggleCard(tc.id)}
-                className="w-full flex items-center justify-between text-left mb-0 border-none outline-none bg-transparent"
+                className="w-full flex items-center justify-between text-left mb-0 border-none outline-none bg-transparent p-0"
               >
                 <div className="flex items-center gap-3">
                   <Text variant="bodyMd" fontWeight="medium">
@@ -83,10 +103,8 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
                               : '#DC2626'
                     }
                   >
-                    {tc.status === 'FAILED' && tc.severity && tc.issueType
-                      ? `${tc.severity.charAt(0) + tc.severity.slice(1).toLowerCase()} risk - ${toTitleCase(
-                          tc.issueType.toLowerCase()
-                        )}`
+                    {tc.status === 'FAILED' && tc.severity && issueKey
+                      ? `${tc.severity.charAt(0) + tc.severity.slice(1).toLowerCase()} risk - ${issueDisplayName}`
                       : toTitleCase(tc.status.toLowerCase())}
                   </Tag>
                 </div>
@@ -103,14 +121,18 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
                     <Text variant="bodySm" fontWeight="medium" className="mb-2 block">
                       Input
                     </Text>
-                    <Text variant="bodySm">{tc.inputPrompt}</Text>
+                    <div className="prose prose-sm max-w-none break-words text-gray-900">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{tc.inputPrompt || ''}</ReactMarkdown>
+                    </div>
                   </div>
 
                   <div>
                     <Text variant="bodySm" fontWeight="medium" className="mb-2 block">
                       Output
                     </Text>
-                    <Text variant="bodySm">{tc.modelOutput}</Text>
+                    <div className="prose prose-sm max-w-none break-words text-gray-900">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{tc.modelOutput || ''}</ReactMarkdown>
+                    </div>
                   </div>
 
                   {tc.comments && (
@@ -118,7 +140,9 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
                       <Text variant="bodySm" fontWeight="medium" className="mb-2 block">
                         Comments
                       </Text>
-                      <Text variant="bodySm">{tc.comments}</Text>
+                      <div className="prose prose-sm max-w-none break-words text-gray-900">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{tc.comments}</ReactMarkdown>
+                      </div>
                     </div>
                   )}
                 </div>

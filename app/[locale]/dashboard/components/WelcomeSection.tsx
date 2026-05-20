@@ -217,30 +217,45 @@ const WelcomeSection = ({
   return (
     <div className="welcome-section mt-12 sm:mt-8 lg:mt-14">
       <div className="text-center sm:pt-4 md:pt-0">
-        <div className="mb-3 sm:mb-4 flex justify-center">
-          <div
-            className={`cdl-logo-container ${dashboardType === "auditor" ? "bg-[var(--primary-purple-color2)]" : ""}`}
-          >
-            {orgLogo && isImageValid ? (
-              <Image
-                src={`${dataspaceUrl.replace(/\/$/, "")}${orgLogo}`}
-                alt={`${orgName} Logo`}
-                width={140}
-                height={140}
-                onError={() => setIsImageValid(false)}
-                className="object-contain w-full h-full"
-              />
-            ) : (
-              <Image
-                src="/images/logos/parakhai-logo.png"
-                alt="ParakhAI Logo"
-                width={140}
-                height={140}
-                className="object-contain w-full h-full"
-              />
-            )}
+        {dashboardType === "auditor" && (
+          <div className="mb-3 sm:mb-4 flex justify-center">
+            <div className="w-[80px] h-[80px] rounded-full bg-[var(--primary-purple-color2)] flex items-center justify-center shrink-0">
+              <span className="text-white text-2xl font-semibold select-none tracking-wide">
+                {(user?.name || user?.email || "E")
+                  .split(" ")
+                  .map((w: string) => w[0])
+                  .join("")
+                  .toUpperCase()
+                  .slice(0, 3)}
+              </span>
+            </div>
           </div>
-        </div>
+        )}
+
+        {dashboardType !== "auditor" && (
+          <div className="mb-3 sm:mb-4 flex justify-center">
+            <div className="cdl-logo-container">
+              {orgLogo && isImageValid ? (
+                <Image
+                  src={`${dataspaceUrl.replace(/\/$/, "")}${orgLogo}`}
+                  alt={`${orgName} Logo`}
+                  width={140}
+                  height={140}
+                  onError={() => setIsImageValid(false)}
+                  className="object-contain w-full h-full"
+                />
+              ) : (
+                <Image
+                  src="/images/logos/parakhai-logo.png"
+                  alt="ParakhAI Logo"
+                  width={140}
+                  height={140}
+                  className="object-contain w-full h-full"
+                />
+              )}
+            </div>
+          </div>
+        )}
 
         <p className="welcome-text sm:pt-4 md:pt-0">
           {"Welcome,\u00A0"}

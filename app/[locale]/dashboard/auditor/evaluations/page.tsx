@@ -45,6 +45,7 @@ const GET_MY_EVALUATIONS = `
       completedAt
       modelId
       modelName
+      modelVersionId
       auditType
       evaluationMode
     }
@@ -127,6 +128,20 @@ const EvaluationsPage = () => {
       ? evaluations
       : evaluations.filter((e) => e.status === statusFilter);
 
+  const getEvaluationHref = (row: Evaluation) => {
+    if (row.status?.toUpperCase() === "DRAFT" && row.modelId) {
+      const qs = new URLSearchParams({
+        modelId: row.modelId,
+        auditId: row.id,
+      });
+      if (row.modelVersionId != null && !Number.isNaN(row.modelVersionId)) {
+        qs.set("versionId", String(row.modelVersionId));
+      }
+      return `/${locale}/dashboard/auditor/evaluations/new?${qs.toString()}`;
+    }
+    return `/${locale}/dashboard/auditor/evaluations/${row.id}`;
+  };
+
   const columnHelper = createColumnHelper<Evaluation>();
 
   const columns = [
@@ -134,7 +149,7 @@ const EvaluationsPage = () => {
       header: "Evaluation Name",
       cell: (info) => (
         <Link
-          href={`/${locale}/dashboard/auditor/evaluations/${info.row.original.id}`}
+          href={getEvaluationHref(info.row.original)}
           className="text-purple-600 hover:underline font-medium"
         >
           {info.getValue() || "Untitled Evaluation"}
@@ -225,9 +240,7 @@ const EvaluationsPage = () => {
             kind="tertiary"
             size="slim"
             onClick={() =>
-              router.push(
-                `/${locale}/dashboard/auditor/evaluations/${row.original.id}`
-              )
+              router.push(getEvaluationHref(row.original))
             }
           >
             <div className="flex items-center justify-center gap-1">

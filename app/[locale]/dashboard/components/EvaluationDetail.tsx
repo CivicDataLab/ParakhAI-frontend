@@ -17,7 +17,7 @@ import {
   TextField,
   toast,
 } from "opub-ui";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { SeverityBarChart } from "./SeverityBarChart";
@@ -284,8 +284,15 @@ const EvaluationDetail = ({
     url: string;
   } | null>(null);
   const [apiModuleIssues, setApiModuleIssues] = useState<ModuleIssue[]>([]);
-  const [metricSummary, setMetricSummary] = useState<Record<string, Record<string, { risk_distribution: Record<string, number> }>>>({});
-  const [riskDistribution, setRiskDistribution] = useState<Record<string, number>>({});
+  const [metricSummary, setMetricSummary] = useState<
+    Record<
+      string,
+      Record<string, { risk_distribution: Record<string, number> }>
+    >
+  >({});
+  const [riskDistribution, setRiskDistribution] = useState<
+    Record<string, number>
+  >({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedIssueIds, setExpandedIssueIds] = useState<Set<string>>(
@@ -302,8 +309,13 @@ const EvaluationDetail = ({
     if (!evaluationId || isDownloading) return;
     setIsDownloading(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_BASE_URL?.replace(/\/$/, "");
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_BASE_URL?.replace(
+        /\/$/,
+        ""
+      );
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
       if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
       if (orgId) headers["organization"] = orgId;
 
@@ -333,7 +345,6 @@ const EvaluationDetail = ({
       setIsDownloading(false);
     }
   };
-
 
   // Poll for audit completion
   const startPolling = () => {
@@ -453,7 +464,10 @@ const EvaluationDetail = ({
         auditSummaries: Array<{
           hasReport: boolean;
           riskDistribution: Record<string, number> | null;
-          metricSummary: Record<string, Record<string, { risk_distribution: Record<string, number> }>> | null;
+          metricSummary: Record<
+            string,
+            Record<string, { risk_distribution: Record<string, number> }>
+          > | null;
           auditReport: {
             name: string;
             size: number | null;
@@ -519,7 +533,9 @@ const EvaluationDetail = ({
 
   useEffect(() => {
     if (audit) {
-      const fallbackName = audit.id ? `Evaluation #${audit.id.slice(0, 8)}` : "";
+      const fallbackName = audit.id
+        ? `Evaluation #${audit.id.slice(0, 8)}`
+        : "";
       setEditableName(audit.name || fallbackName);
     }
   }, [audit?.id, audit?.name]);
@@ -602,17 +618,17 @@ const EvaluationDetail = ({
   const totalIssuesIdentified =
     riskSummary.low + riskSummary.medium + riskSummary.high;
 
-    const hasVisualizationDataForModule = (moduleName: string) => {
-      const issuesForModule = apiModuleIssues.filter(
-        (issue) => issue.module === moduleName
-      );
-      return issuesForModule.length > 0;
-    };
-  
+  const hasVisualizationDataForModule = (moduleName: string) => {
+    const issuesForModule = apiModuleIssues.filter(
+      (issue) => issue.module === moduleName
+    );
+    return issuesForModule.length > 0;
+  };
+
   const modulesWithVisualizationData =
-  audit?.modules?.filter((moduleName) =>
-    hasVisualizationDataForModule(moduleName)
-  ) || [];
+    audit?.modules?.filter((moduleName) =>
+      hasVisualizationDataForModule(moduleName)
+    ) || [];
 
   const toggleIssueCard = (issueId: string) => {
     setExpandedIssueIds((prev) => {
@@ -781,7 +797,10 @@ const EvaluationDetail = ({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 mt-10">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 text-left">
-            <Text variant="bodyMd" className="text-gray-500 whitespace-nowrap mr-2">
+            <Text
+              variant="bodyMd"
+              className="text-gray-500 whitespace-nowrap mr-2"
+            >
               Evaluation Name :{" "}
             </Text>
             <div
@@ -1179,9 +1198,9 @@ const EvaluationDetail = ({
                       <TabPanel key={index} value={moduleName}>
                         <div className="mt-5 m-5">
                           <SeverityBarChart
-                           issues={apiModuleIssues.filter(
-                            (issue) => issue.module === moduleName
-                          )}
+                            issues={apiModuleIssues.filter(
+                              (issue) => issue.module === moduleName
+                            )}
                             metricSummary={metricSummary[moduleName]}
                           />
 
@@ -1195,7 +1214,7 @@ const EvaluationDetail = ({
 
                           <div className="flex flex-col gap-4">
                             {(() => {
-                               const issuesForModule = apiModuleIssues.filter(
+                              const issuesForModule = apiModuleIssues.filter(
                                 (issue) => issue.module === moduleName
                               );
 

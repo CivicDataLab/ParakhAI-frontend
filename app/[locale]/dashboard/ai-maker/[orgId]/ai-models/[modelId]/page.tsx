@@ -2,14 +2,12 @@
 
 import RichTextRenderer from "@/components/RichTextRenderer";
 import { useGraphQL } from "@/lib/api";
-import { IconAlertCircle, IconCheck, IconX } from "@tabler/icons-react";
 import { createColumnHelper } from "@tanstack/react-table";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Avatar, Badge, Button, DataTable, Spinner, Tag, Text } from "opub-ui";
 import React from "react";
-import { createPortal } from "react-dom";
 import AuditorInvitation from "../../evaluations/components/AuditorInvitation";
 import { useOrganization } from "../../OrganizationContext";
 
@@ -179,12 +177,6 @@ const ModelDetailPage = () => {
   const { organization } = useOrganization();
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [assignmentToast, setAssignmentToast] = React.useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error";
-  }>({ show: false, message: "", type: "success" });
-
   // Auditor invitation state
   const [selectedVersionForAuditor, setSelectedVersionForAuditor] =
     React.useState<{
@@ -225,16 +217,6 @@ const ModelDetailPage = () => {
 
     fetchData();
   }, [isAuthenticated, modelId, orgId, request]);
-
-  React.useEffect(() => {
-    if (!assignmentToast.show) return;
-
-    const timeoutId = window.setTimeout(() => {
-      setAssignmentToast((prev) => ({ ...prev, show: false }));
-    }, 4000);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [assignmentToast.show]);
 
   const handleNewEvaluation = (versionId?: string) => {
     let url = `/${locale}/dashboard/ai-maker/${orgId}/evaluations/new?modelId=${modelId}`;
@@ -749,67 +731,11 @@ const ModelDetailPage = () => {
           modelId={modelId}
           modelName={model.displayName}
           modelVersionId={selectedVersionForAuditor.id}
-          onAssignmentCreated={() => {
-            // Optionally refresh data or show success message
-          }}
-          onAssignmentResult={({ type, message }) => {
-            const fallbackMessage =
-              type === "success"
-                ? "Evaluator assigned successfully"
-                : "Failed to assign evaluator";
-            const resolvedMessage =
-              typeof message === "string" && message.trim().length > 0
-                ? message
-                : fallbackMessage;
-
-            setAssignmentToast({
-              show: true,
-              type,
-              message: resolvedMessage,
-            });
-          }}
           isOpen={!!selectedVersionForAuditor}
           onClose={() => setSelectedVersionForAuditor(null)}
           versionLabel={selectedVersionForAuditor.version}
         />
       )}
-
-      {assignmentToast.show &&
-        typeof window !== "undefined" &&
-        createPortal(
-          <div
-            className={`fixed right-4 bottom-4 z-max min-w-[300px] max-w-[420px] flex items-start gap-2 py-3 px-[14px] rounded-[10px] shadow-elementPopover border ${
-              assignmentToast.type === "success"
-                ? "bg-surfaceSuccess text-textSuccess border-borderSuccessSubdued"
-                : "bg-surfaceCritical text-textCritical border-borderCriticalSubdued"
-            }`}
-          >
-            <span className="w-[18px] h-[18px] inline-flex items-center justify-center shrink-0 mt-[1px]">
-              {assignmentToast.type === "success" ? (
-                <IconCheck size={16} />
-              ) : (
-                <IconAlertCircle size={16} />
-              )}
-            </span>
-            <span className="text-100 leading-2 flex-1">
-              {assignmentToast.message ||
-                (assignmentToast.type === "success"
-                  ? "Evaluator assigned successfully"
-                  : "Failed to assign evaluator")}
-            </span>
-            <button
-              onClick={() =>
-                setAssignmentToast((prev) => ({ ...prev, show: false }))
-              }
-              type="button"
-              className="ml-2 bg-transparent border-none cursor-pointer inline-flex items-center justify-center opacity-75"
-              aria-label="Close notification"
-            >
-              <IconX size={16} />
-            </button>
-          </div>,
-          document.body,
-        )}
     </>
   );
 };

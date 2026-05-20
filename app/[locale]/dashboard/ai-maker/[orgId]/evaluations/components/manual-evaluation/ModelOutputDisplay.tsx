@@ -2,6 +2,8 @@
 
 import { Button, Tag, Text } from 'opub-ui';
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface ModelOutputDisplayProps {
   output: string;
@@ -30,9 +32,13 @@ const ModelOutputDisplay: React.FC<ModelOutputDisplayProps> = ({
       </div>
 
       <div className="border border-gray-200 rounded-lg p-4 bg-white min-h-[120px] max-h-[300px] overflow-y-auto">
-        <Text variant="bodySm" className="whitespace-pre-wrap">
-          {output || 'No output received'}
-        </Text>
+        {output ? (
+          <div className="prose prose-sm max-w-none break-words text-gray-900">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{output}</ReactMarkdown>
+          </div>
+        ) : (
+          <Text variant="bodySm" className="text-gray-400">No output received</Text>
+        )}
       </div>
 
       <div className="flex items-center gap-4">

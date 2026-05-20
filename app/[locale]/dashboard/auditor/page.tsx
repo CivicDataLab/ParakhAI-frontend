@@ -13,7 +13,7 @@ import {
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Badge, Button, DataTable, Spinner, Text } from "opub-ui";
+import { Badge, Button, DataTable, Spinner, Text, toast } from "opub-ui";
 import { useEffect, useState } from "react";
 
 // Types
@@ -34,11 +34,27 @@ type AuditorAssignment = {
   updatedAt?: string;
 };
 
+const GET_AUDITOR_METRICS = `
+  query AuditorMetrics {
+    auditorMetrics {
+      assignmentsCount
+      assignmentsAccepted
+      assignmentsDeclined
+      assignmentsPending
+      assignmentsCompleted
+      auditsDone
+      testCasesCount
+      failedTestCasesCount
+    }
+  }
+`;
+
 const GET_MY_ASSIGNMENTS = `
   query GetMyAssignments($modelId: String, $status: String) {
     myAssignments(modelId: $modelId, status: $status) {
       id
       organizationId
+      organizationName
       modelId
       modelName
       modelVersionId
@@ -91,36 +107,43 @@ const AuditorDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [auditorMetrics, setAuditorMetrics] = useState<{
+    assignmentsCount: number;
+    auditsDone: number;
+    testCasesCount: number;
+    failedTestCasesCount: number;
+  } | null>(null);
 
-  const [toast, setToast] = useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error";
-  }>({ show: false, message: "", type: "success" });
 
   useEffect(() => {
     if (!isAuthenticated || isSessionLoading) return;
 
-    const fetchAssignments = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // No need to pass userId - backend uses logged-in user context
-        const response = await request(GET_MY_ASSIGNMENTS, {});
+        const [assignmentsResponse, metricsResponse] = await Promise.all([
+          request(GET_MY_ASSIGNMENTS, {}),
+          request(GET_AUDITOR_METRICS, {}),
+        ]);
 
-        if (response?.myAssignments) {
-          setAssignments(response.myAssignments);
+        if (assignmentsResponse?.myAssignments) {
+          setAssignments(assignmentsResponse.myAssignments);
+        }
+
+        if (metricsResponse?.auditorMetrics) {
+          setAuditorMetrics(metricsResponse.auditorMetrics);
         }
       } catch (err: any) {
-        console.error("Error fetching assignments:", err);
-        setError(err?.message || "Failed to load assignments");
+        console.error("Error fetching dashboard data:", err);
+        setError(err?.message || "Failed to load dashboard data");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAssignments();
+    fetchData();
   }, [isAuthenticated, isSessionLoading, request]);
 
   const handleUpdateStatus = async (
@@ -149,26 +172,15 @@ const AuditorDashboard = () => {
           ),
         );
 
-        setToast({
-          show: true,
-          message: `Assignment ${newStatus.toLowerCase()} successfully`,
-          type: "success",
-        });
+        toast.success(`Assignment ${newStatus.toLowerCase()} successfully`);
       } else {
-        setToast({
-          show: true,
-          message:
-            response?.updateAuditorAssignmentStatus?.message ||
+        toast.error(
+          response?.updateAuditorAssignmentStatus?.message ||
             "Failed to update status",
-          type: "error",
-        });
+        );
       }
     } catch (err: any) {
-      setToast({
-        show: true,
-        message: err?.message || "Error updating status",
-        type: "error",
-      });
+      toast.error(err?.message || "Error updating status");
     } finally {
       setUpdatingId(null);
     }
@@ -195,10 +207,22 @@ const AuditorDashboard = () => {
 
   // Calculate metrics for Overview section
   const metrics = [
-    { label: "Invitations Received", value: assignments.length.toString() },
-    { label: "Evaluation Runs", value: completedAssignments.length.toString() },
-    { label: "Test Cases", value: "0" }, // TODO: Fetch from evaluations when available
-    { label: "Issues Flagged", value: "0" }, // TODO: Fetch from evaluations when available
+    {
+      label: "Invitations Received",
+      value: (auditorMetrics?.assignmentsCount ?? assignments.length).toString(),
+    },
+    {
+      label: "Evaluation Runs",
+      value: (auditorMetrics?.auditsDone ?? completedAssignments.length).toString(),
+    },
+    {
+      label: "Test Cases",
+      value: (auditorMetrics?.testCasesCount ?? 0).toString(),
+    },
+    {
+      label: "Issues Flagged",
+      value: (auditorMetrics?.failedTestCasesCount ?? 0).toString(),
+    },
   ];
 
   const columnHelper = createColumnHelper<AuditorAssignment>();
@@ -227,7 +251,7 @@ const AuditorDashboard = () => {
       header: "Organization",
       cell: (info) => (
         <Text variant="bodySm">
-          ID #{info.getValue() || info.row.original.organizationId.slice(0, 8)}
+          {info.getValue() || `ID #${info.row.original.organizationId.slice(0, 8)}`}
         </Text>
       ),
     }),
@@ -315,7 +339,7 @@ const AuditorDashboard = () => {
       header: "Organization",
       cell: (info) => (
         <Text variant="bodySm">
-          ID #{info.getValue() || info.row.original.organizationId.slice(0, 8)}
+          {info.getValue() || `ID #${info.row.original.organizationId.slice(0, 8)}`}
         </Text>
       ),
     }),
@@ -508,24 +532,6 @@ const AuditorDashboard = () => {
         )}
       </div>
 
-      {/* Toast Notification */}
-      {toast.show && (
-        <div
-          className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 ${
-            toast.type === "success"
-              ? "bg-green-600 text-white"
-              : "bg-red-600 text-white"
-          }`}
-        >
-          <span>{toast.message}</span>
-          <button
-            onClick={() => setToast({ ...toast, show: false })}
-            className="ml-2 hover:opacity-80"
-          >
-            <IconX size={16} />
-          </button>
-        </div>
-      )}
     </>
   );
 };

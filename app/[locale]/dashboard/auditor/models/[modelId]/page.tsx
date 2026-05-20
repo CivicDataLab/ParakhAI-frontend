@@ -23,6 +23,7 @@ import {
   Tag,
   Text,
   Tooltip,
+  toast,
 } from "opub-ui";
 import React from "react";
 
@@ -242,12 +243,6 @@ const AuditorModelDetailPage = () => {
   const [error, setError] = React.useState<string | null>(null);
   const [updatingId, setUpdatingId] = React.useState<string | null>(null);
 
-  const [toast, setToast] = React.useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error";
-  }>({ show: false, message: "", type: "success" });
-
   React.useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -300,26 +295,15 @@ const AuditorModelDetailPage = () => {
           ),
         );
 
-        setToast({
-          show: true,
-          message: `Assignment ${newStatus.toLowerCase()} successfully`,
-          type: "success",
-        });
+        toast.success(`Assignment ${newStatus.toLowerCase()} successfully`);
       } else {
-        setToast({
-          show: true,
-          message:
-            response?.updateAuditorAssignmentStatus?.message ||
+        toast.error(
+          response?.updateAuditorAssignmentStatus?.message ||
             "Failed to update status",
-          type: "error",
-        });
+        );
       }
     } catch (err: any) {
-      setToast({
-        show: true,
-        message: err?.message || "Error updating status",
-        type: "error",
-      });
+      toast.error(err?.message || "Error updating status");
     } finally {
       setUpdatingId(null);
     }
@@ -474,7 +458,7 @@ const AuditorModelDetailPage = () => {
                   {model.displayName}
                 </Text>
 
-                <div className="flex flex-wrap gap-2">
+                {/* <div className="flex flex-wrap gap-2">
                   {model.sectors?.slice(0, 1).map((sector, index) => (
                     <span key={index} className="self-start sm:self-auto">
                       <Tag
@@ -497,7 +481,7 @@ const AuditorModelDetailPage = () => {
                       </Tag>
                     </span>
                   ))}
-                </div>
+                </div> */}
               </div>
 
               <div className="overflow-hidden flex flex-col gap-2 mt-8">
@@ -953,24 +937,6 @@ const AuditorModelDetailPage = () => {
         </div>
       </div>
 
-      {/* Toast Notification */}
-      {toast.show && (
-        <div
-          className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 ${
-            toast.type === "success"
-              ? "bg-green-600 text-white"
-              : "bg-red-600 text-white"
-          }`}
-        >
-          <span>{toast.message}</span>
-          <button
-            onClick={() => setToast({ ...toast, show: false })}
-            className="ml-2 hover:opacity-80"
-          >
-            <IconX size={16} />
-          </button>
-        </div>
-      )}
     </>
   );
 };

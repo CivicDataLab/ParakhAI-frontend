@@ -7,10 +7,9 @@ import {
   IconSearch,
   IconTrash,
   IconUser,
-  IconX,
 } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
-import { Button, Dialog, Spinner, Tag, Text, Tooltip } from "opub-ui";
+import { Button, Dialog, Spinner, Tag, Text, TextField, Tooltip, toast } from "opub-ui";
 import { useEffect, useRef, useState } from "react";
 
 // Custom Avatar component with error handling
@@ -235,12 +234,6 @@ const AuditorsPage = () => {
   const [selectedAuditor, setSelectedAuditor] = useState<Auditor | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
-  const [toast, setToast] = useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error";
-  }>({ show: false, message: "", type: "success" });
-
   useEffect(() => {
     if (!isAuthenticated || isSessionLoading || !orgId) return;
 
@@ -294,7 +287,11 @@ const AuditorsPage = () => {
       );
 
       if (response?.searchUserByEmail) {
-        setSearchResult(response.searchUserByEmail);
+        const hit = response.searchUserByEmail;
+        setSearchResult(hit);
+        if (hit.found && hit.user) {
+          setEmailInput("");
+        }
       }
     } catch (err: any) {
       setSearchResult({
@@ -365,26 +362,15 @@ const AuditorsPage = () => {
 
       if (response?.removeAuditorFromOrganization?.success) {
         setAuditors((prev) => prev.filter((a) => a.id !== userId));
-        setToast({
-          show: true,
-          message: "Evaluator removed successfully",
-          type: "success",
-        });
+        toast.success("Evaluator removed successfully");
       } else {
-        setToast({
-          show: true,
-          message:
-            response?.removeAuditorFromOrganization?.message ||
+        toast.error(
+          response?.removeAuditorFromOrganization?.message ||
             "Failed to remove evaluator",
-          type: "error",
-        });
+        );
       }
     } catch (err: any) {
-      setToast({
-        show: true,
-        message: err?.message || "Error removing evaluator",
-        type: "error",
-      });
+      toast.error(err?.message || "Error removing evaluator");
     }
   };
 
@@ -552,56 +538,79 @@ const AuditorsPage = () => {
               account in CivicDataSpace to be added as an evaluator.
             </Text>
 
-            <div className="flex gap-2">
-              <div className="flex-1 min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <div className="relative min-w-0">
-                  <input
+            <div>
+              <label
+                htmlFor="add-auditor-email"
+                className="mb-1 block text-sm font-medium text-gray-700"
+              >
+                Email Address
+              </label>
+              <div className="flex items-center gap-2">
+                {/*
+                  opub-ui renders the tags strip as #{id}-tags; styles target that id.
+                  Breaks if the library removes that id pattern.
+                */}
+                <div
+                  className="min-w-0 flex-1 [&_#add-auditor-email-tags]:box-border [&_#add-auditor-email-tags]:flex [&_#add-auditor-email-tags]:min-h-10 [&_#add-auditor-email-tags]:flex-row [&_#add-auditor-email-tags]:flex-nowrap [&_#add-auditor-email-tags]:items-center [&_#add-auditor-email-tags]:gap-1 [&_#add-auditor-email-tags_input]:min-h-0 [&_#add-auditor-email-tags_input]:min-w-0 [&_#add-auditor-email-tags_input]:flex-[1_1_auto] [&_#add-auditor-email-tags_input]:leading-2"
+                >
+                  <TextField
+                    key={
+                      searchResult?.found && searchResult.user
+                        ? `tag-${searchResult.user.id}`
+                        : "email-entry"
+                    }
+                    id="add-auditor-email"
+                    name="add-auditor-email"
+                    label="Email Address"
+                    labelHidden
                     type="email"
                     value={
                       searchResult?.found && searchResult.user
                         ? ""
                         : emailInput
                     }
-                    onChange={(e) => setEmailInput(e.target.value)}
+                    onChange={(value) => setEmailInput(value)}
+                    onEnter={() => {
+                      if (emailInput.trim() && !isSearching) {
+                        void handleSearchUser();
+                      }
+                    }}
                     placeholder={
                       searchResult?.found && searchResult.user
                         ? ""
                         : "evaluator@example.com"
                     }
                     readOnly={!!(searchResult?.found && searchResult.user)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    autoComplete="email"
+                    tags={
+                      searchResult?.found && searchResult.user ? (
+                        <Tag
+                          value={searchResult.user.id}
+                          onRemove={() => {
+                            setSearchResult(null);
+                            setEmailInput("");
+                            setAddError(null);
+                          }}
+                        >
+                          {getUserDisplayName(searchResult.user)}
+                        </Tag>
+                      ) : undefined
+                    }
                   />
-                  {searchResult?.found && searchResult.user && (
-                    <div className="absolute inset-y-0 left-px flex items-center pl-3 pr-2 gap-2">
-                      <Tag
-                        value={searchResult.user.id}
-                        onRemove={() => {
-                          setSearchResult(null);
-                          setEmailInput("");
-                          setAddError(null);
-                        }}
-                      >
-                        {getUserDisplayName(searchResult.user)}
-                      </Tag>
-                    </div>
-                  )}
                 </div>
-              </div>
-              <div className="flex items-end">
-                <Button
-                  kind="secondary"
-                  onClick={handleSearchUser}
-                  disabled={!emailInput.trim() || isSearching}
-                  className="bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white  px-8 py-3 rounded-[8px] font-medium text-base border-none"
-                >
-                  <div className="flex items-end gap-2 h-full w-full">
-                    <IconSearch size={18} className="mr-1" />
-                    <div>{isSearching ? "Searching..." : "Search"}</div>
-                  </div>
-                </Button>
+                <div className="flex shrink-0 items-center">
+                  <Button
+                    kind="secondary"
+                    onClick={() => void handleSearchUser()}
+                    disabled={!emailInput.trim() || isSearching}
+                    className="rounded-[8px] border-none bg-primaryPurple2 px-8 py-3 text-base font-medium text-white hover:bg-[#6849EE] hover:text-white disabled:cursor-not-allowed disabled:bg-[#f2f2f2] disabled:text-[#8e8e8e] disabled:hover:bg-[#f2f2f2]"
+                  >
+                    <div className="flex h-full w-full items-center gap-2">
+                      <IconSearch size={18} className="mr-1 shrink-0" />
+                      <div>{isSearching ? "Searching..." : "Search"}</div>
+                    </div>
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -710,23 +719,6 @@ const AuditorsPage = () => {
         </Dialog.Content>
       </Dialog>
 
-      {toast.show && (
-        <div
-          className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 ${
-            toast.type === "success"
-              ? "bg-green-600 text-white"
-              : "bg-red-600 text-white"
-          }`}
-        >
-          <span>{toast.message}</span>
-          <button
-            onClick={() => setToast({ ...toast, show: false })}
-            className="ml-2 hover:opacity-80"
-          >
-            <IconX size={16} />
-          </button>
-        </div>
-      )}
     </>
   );
 };

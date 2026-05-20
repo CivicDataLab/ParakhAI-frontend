@@ -1,5 +1,6 @@
 "use client";
 
+import { Icons } from "@/components/icons";
 import { signIn, useSession } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -49,7 +50,7 @@ const GetStartedSection = () => {
             fontWeight="regular"
             className="text-gray-900 "
           >
-             Start building trustworthy AI today.
+            Start building trustworthy AI today.
           </Text>
         </div>
 
@@ -59,7 +60,7 @@ const GetStartedSection = () => {
             <>
               {/* Card */}
               <div className="w-full md:flex-1 min-w-0">
-              <div className="flex flex-col gap-3 items-center p-4 rounded-2 justify-between bg-white w-full min-w-0 md:h-auto min-h-[240px]">
+                <div className="flex flex-col gap-3 items-center p-4 rounded-2 justify-between bg-white w-full min-w-0 md:h-auto min-h-[240px]">
                   {/* Icon */}
                   <div className="rounded-lg flex flex-col items-center gap-4 ">
                     <Image
@@ -70,11 +71,11 @@ const GetStartedSection = () => {
                       className="object-contain"
                     />
                     {/* Step Content */}
-                  <Text
-                    variant="headingLg"
-                    fontWeight="semibold"
-                    className="text-gray-900 text-center"
-                  >
+                    <Text
+                      variant="headingLg"
+                      fontWeight="semibold"
+                      className="text-gray-900 text-center"
+                    >
                       {step.title}
                     </Text>
                   </div>
@@ -92,15 +93,41 @@ const GetStartedSection = () => {
               {index < steps.length - 1 && (
                 <div className="flex-shrink-0 flex items-center justify-center">
                   {/* Down arrow for small screens */}
-                <div className="md:hidden w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm mx-auto my-1" aria-hidden>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
+                  <div
+                    className="md:hidden w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm mx-auto my-1"
+                    aria-hidden
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-gray-600"
+                    >
                       <path d="M6 9l6 6 6-6" />
                     </svg>
                   </div>
 
                   {/* Right arrow for md+ */}
-                  <div className="hidden md:flex w-8 h-8 rounded-full bg-white items-center justify-center shadow-sm md:mx-0" aria-hidden>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
+                  <div
+                    className="hidden md:flex w-8 h-8 rounded-full bg-white items-center justify-center shadow-sm md:mx-0"
+                    aria-hidden
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-gray-600"
+                    >
                       <path d="M9 18l6-6-6-6" />
                     </svg>
                   </div>
@@ -118,7 +145,16 @@ const GetStartedSection = () => {
             kind="primary"
             className="bg-primaryPurple2 hover:bg-[#6849EE] text-white px-8 py-3 rounded-[8px] font-bold text-base"
           >
-            Get Started →
+            <div className="flex items-center justify-center gap-2">
+              <Text
+                variant="bodyMd"
+                fontWeight="semibold"
+                className="text-white"
+              >
+                Get Started
+              </Text>{" "}
+              <Icons.arrowRight className="text-white" size={20} />
+            </div>
           </Button>
         </div>
       </div>

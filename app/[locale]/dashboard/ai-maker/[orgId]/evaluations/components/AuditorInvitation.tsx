@@ -6,10 +6,39 @@ import {
   IconSearch,
   IconUser,
   IconUserCheck,
-  IconX,
 } from "@tabler/icons-react";
-import { Button, Dialog, Spinner, Text } from "opub-ui";
+import { Button, Dialog, Spinner, Tag, Text, TextField, toast } from "opub-ui";
 import { useEffect, useState } from "react";
+
+/** Profile image for search hit — same behavior as Add Evaluator on auditors page */
+const SearchResultAvatar = ({
+  src,
+  alt,
+  size = 16,
+}: {
+  src: string | null;
+  alt: string;
+  size?: number;
+}) => {
+  const [imageError, setImageError] = useState(false);
+  const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || "";
+  const imageSrc = src ? `${dataspaceUrl}${src}` : "";
+
+  if (!imageSrc || imageError) {
+    return <IconUser size={size} className="text-purple-600" />;
+  }
+
+  const sizeClass = size === 20 ? "h-10 w-10" : "h-8 w-8";
+
+  return (
+    <img
+      src={imageSrc}
+      alt={alt}
+      className={`${sizeClass} rounded-full object-cover`}
+      onError={() => setImageError(true)}
+    />
+  );
+};
 
 // Types
 type Auditor = {
@@ -39,6 +68,24 @@ type SearchUserResult = {
   found: boolean;
   message?: string;
   user?: Auditor;
+};
+
+const getUserDisplayName = (user: Auditor): string => {
+  const firstName = user.firstName?.trim() || "";
+  const lastName = user.lastName?.trim() || "";
+  const fullName = `${firstName} ${lastName}`.trim();
+
+  if (fullName) return fullName;
+
+  if (user.username && user.username !== user.email) {
+    return user.username;
+  }
+
+  if (user.email) {
+    return user.email.split("@")[0];
+  }
+
+  return "";
 };
 
 interface AuditorInvitationProps {
@@ -182,23 +229,15 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   const [isSearching, setIsSearching] = useState(false);
   const [isAddingNew, setIsAddingNew] = useState(false);
 
-  const [toast, setToast] = useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error";
-  }>({ show: false, message: "", type: "success" });
-
   const showResultToast = (type: "success" | "error", message: string) => {
-    if (isControlled && onAssignmentResult) {
-      onAssignmentResult({ type, message });
-      return;
+    if (type === "success") {
+      toast.success(message);
+    } else {
+      toast.error(message);
     }
-
-    setToast({
-      show: true,
-      message,
-      type,
-    });
+    if (onAssignmentResult) {
+      onAssignmentResult({ type, message });
+    }
   };
 
   useEffect(() => {
@@ -238,9 +277,15 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
     }
   }, [organizationId, modelId, modelVersionId, request, isModalOpen]);
 
-  const availableAuditors = auditors.filter(
-    (auditor) => !assignments.some((a) => a.auditorEmail === auditor.email),
-  );
+  const availableAuditors = auditors.filter((auditor) => {
+    // Check if this auditor has any ACTIVE assignments
+    const hasActiveAssignment = assignments.some(
+      (a) => a.auditorEmail === auditor.email && ["PENDING", "ACCEPTED"].includes(a.status)
+    );
+
+    // The auditor is available if they DO NOT have an active assignment
+    return !hasActiveAssignment;
+  });
 
   const handleSearchUser = async () => {
     if (!emailInput.trim()) return;
@@ -256,7 +301,11 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
       );
 
       if (response?.searchUserByEmail) {
-        setSearchResult(response.searchUserByEmail);
+        const hit = response.searchUserByEmail;
+        setSearchResult(hit);
+        if (hit.found && hit.user) {
+          setEmailInput("");
+        }
       }
     } catch (err: any) {
       setSearchResult({
@@ -307,11 +356,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
         }
 
         if (!suppressSuccessToast) {
-          showResultToast(
-            "success",
-            response?.assignAuditorToVersion?.message ||
-              "Evaluator assigned successfully",
-          );
+          showResultToast("success", "Evaluator assigned successfully");
         }
 
         setIsModalOpen(false);
@@ -373,14 +418,11 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
           setAuditors(auditorsResponse.organizationAuditors.auditors || []);
         }
 
-        // Show success message for adding auditor
-        setToast({
-          show: true,
-          message:
-            addResponse.addAuditorToOrganization.message ||
+        showResultToast(
+          "success",
+          addResponse.addAuditorToOrganization.message ||
             "Evaluator added successfully",
-          type: "success",
-        });
+        );
 
         // Now assign the newly added auditor, but avoid double success toasts
         await handleAssignAuditor(
@@ -397,20 +439,10 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
         const errorMessage =
           addResponse?.addAuditorToOrganization?.message || "";
 
-        // Always surface backend error message in toast so the user
-        // can see the exact reason (e.g. "User is already a member...")
-        setToast({
-          show: true,
-          message: errorMessage || "Failed to add evaluator",
-          type: "error",
-        });
+        showResultToast("error", errorMessage || "Failed to add evaluator");
       }
     } catch (err: any) {
-      setToast({
-        show: true,
-        message: err?.message || "Error adding evaluator",
-        type: "error",
-      });
+      showResultToast("error", err?.message || "Error adding evaluator");
     } finally {
       setIsAddingNew(false);
     }
@@ -431,24 +463,6 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
       };
     }),
   ];
-
-  const toastNotification = toast.show && (
-    <div
-      className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 ${
-        toast.type === "success"
-          ? "bg-green-600 text-white"
-          : "bg-red-600 text-white"
-      }`}
-    >
-      <span>{toast.message}</span>
-      <button
-        onClick={() => setToast({ ...toast, show: false })}
-        className="ml-2 hover:opacity-80"
-      >
-        <IconX size={16} />
-      </button>
-    </div>
-  );
 
   const inviteDialog = (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -473,6 +487,12 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
           disabled: showAddNew
             ? !searchResult?.found || isAddingNew
             : !selectedAuditorId || isAssigning,
+          ...(showAddNew
+            ? {
+                className:
+                  "!rounded-[8px] !min-h-[46px] !px-6 !font-semibold !shadow-sm disabled:!cursor-not-allowed disabled:!bg-[#8c949d] disabled:!text-white disabled:!opacity-100 disabled:hover:!bg-[#8c949d]",
+              }
+            : {}),
         }}
         secondaryActions={[
           {
@@ -555,66 +575,122 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                 auditor to your organization and assigned to this model version.
               </Text>
 
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    placeholder="evaluator@example.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button
-                    kind="secondary"
-                    onClick={handleSearchUser}
-                    disabled={!emailInput.trim() || isSearching}
+              <div>
+                <label
+                  htmlFor="add-by-email-search"
+                  className="mb-1 block text-sm font-medium text-gray-700"
+                >
+                  Email Address
+                </label>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="min-w-0 flex-1 [&_#add-by-email-search-tags]:box-border [&_#add-by-email-search-tags]:flex [&_#add-by-email-search-tags]:min-h-10 [&_#add-by-email-search-tags]:flex-row [&_#add-by-email-search-tags]:flex-nowrap [&_#add-by-email-search-tags]:items-center [&_#add-by-email-search-tags]:gap-1 [&_#add-by-email-search-tags_input]:min-h-0 [&_#add-by-email-search-tags_input]:min-w-0 [&_#add-by-email-search-tags_input]:flex-[1_1_auto] [&_#add-by-email-search-tags_input]:leading-2"
                   >
-                    <IconSearch size={18} className="mr-1" />
-                    {isSearching ? "Searching..." : "Search"}
-                  </Button>
+                    <TextField
+                      key={
+                        searchResult?.found && searchResult.user
+                          ? `tag-${searchResult.user.id}`
+                          : "email-entry"
+                      }
+                      id="add-by-email-search"
+                      name="add-by-email-search"
+                      label="Email Address"
+                      labelHidden
+                      type="email"
+                      value={
+                        searchResult?.found && searchResult.user
+                          ? ""
+                          : emailInput
+                      }
+                      onChange={(value) => setEmailInput(value)}
+                      onEnter={() => {
+                        if (emailInput.trim() && !isSearching) {
+                          void handleSearchUser();
+                        }
+                      }}
+                      placeholder={
+                        searchResult?.found && searchResult.user
+                          ? ""
+                          : "evaluator@example.com"
+                      }
+                      readOnly={!!(searchResult?.found && searchResult.user)}
+                      autoComplete="email"
+                      tags={
+                        searchResult?.found && searchResult.user ? (
+                          <Tag
+                            value={searchResult.user.id}
+                            onRemove={() => {
+                              setSearchResult(null);
+                              setEmailInput("");
+                            }}
+                          >
+                            {getUserDisplayName(searchResult.user)}
+                          </Tag>
+                        ) : undefined
+                      }
+                    />
+                  </div>
+                  <div className="flex shrink-0 items-center">
+                    <Button
+                      kind="secondary"
+                      onClick={() => void handleSearchUser()}
+                      disabled={!emailInput.trim() || isSearching}
+                      className="rounded-[8px] border-none bg-primaryPurple2 px-8 py-3 text-base font-medium text-white hover:bg-[#6849EE] hover:text-white disabled:cursor-not-allowed disabled:bg-[#f2f2f2] disabled:text-[#8e8e8e] disabled:hover:bg-[#f2f2f2]"
+                    >
+                      <div className="flex h-full w-full items-center gap-2">
+                        <IconSearch size={18} className="mr-1 shrink-0" />
+                        <div>
+                          {isSearching ? "Searching..." : "Search"}
+                        </div>
+                      </div>
+                    </Button>
+                  </div>
                 </div>
               </div>
 
-              {/* Search Result */}
               {searchResult && (
                 <div
-                  className={`p-4 rounded-lg ${
+                  className={`rounded-lg p-4 ${
                     searchResult.found
-                      ? "bg-green-50 border-2 border-green-400"
-                      : "bg-red-50 border border-red-200"
+                      ? "border border-green-200 bg-green-50"
+                      : "border border-red-200 bg-red-50"
                   }`}
                 >
                   {searchResult.found && searchResult.user ? (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                          <IconUser size={20} className="text-purple-600" />
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-100">
+                          <SearchResultAvatar
+                            src={searchResult.user.profilePicture}
+                            alt={searchResult.user.username}
+                            size={20}
+                          />
                         </div>
-                        <div>
+                        <div className="flex min-w-0 flex-col gap-0.5">
                           <Text variant="bodySm" fontWeight="medium">
-                            {searchResult.user.firstName &&
-                            searchResult.user.lastName
-                              ? `${searchResult.user.firstName} ${searchResult.user.lastName}`
-                              : searchResult.user.username !==
-                                  searchResult.user.email
-                                ? searchResult.user.username
-                                : searchResult.user.email.split("@")[0]}
+                            {getUserDisplayName(searchResult.user)}
                           </Text>
                           <Text variant="bodySm" className="text-gray-600">
                             {searchResult.user.email}
                           </Text>
+                          {(searchResult.user.firstName ||
+                            searchResult.user.lastName) &&
+                            searchResult.user.username !==
+                              searchResult.user.email && (
+                              <Text variant="bodySm" className="text-gray-500">
+                                @{searchResult.user.username}
+                              </Text>
+                            )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <IconUserCheck size={20} className="text-green-600" />
+                      <div className="flex shrink-0 items-center gap-2">
+                        <IconUserCheck
+                          size={20}
+                          className="text-green-600"
+                        />
                         <Text
                           variant="bodySm"
-                          className="text-green-700 font-medium"
+                          className="font-medium text-green-700"
                         >
                           Ready to assign
                         </Text>
@@ -652,7 +728,6 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
     return (
       <>
         {inviteDialog}
-        {toastNotification}
       </>
     );
   }
@@ -732,7 +807,6 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
       )}
 
       {inviteDialog}
-      {toastNotification}
     </div>
   );
 };
