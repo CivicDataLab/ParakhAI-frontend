@@ -2,7 +2,7 @@
 
 import { useGraphQL } from "@/lib/api";
 import { useParams, useRouter } from "next/navigation";
-import { Button, Dialog, Select, Spinner, Text } from "opub-ui";
+import { Button, Dialog, Select, Spinner, Text, toast } from "opub-ui";
 import { useEffect, useState } from "react";
 
 // GraphQL query to fetch AI models with their versions
@@ -33,6 +33,7 @@ const AI_MODELS_QUERY = `
         version
         isLatest
         status
+        lifecycleStage
       }
     }
   }
@@ -49,6 +50,7 @@ type AIModel = {
     version: string;
     isLatest: boolean;
     status: string;
+    lifecycleStage: string;
   }>;
 };
 
@@ -84,6 +86,13 @@ const ModelSelectionModal = ({
 
   const selectedModel = aiModels.find((m) => m.id === selectedModelId);
   const latestVersion = selectedModel?.versions?.find((v) => v.isLatest);
+  const selectedVersion = selectedModel?.versions?.find(
+    (v) => v.id === selectedVersionId,
+  );
+  const isSelectedVersionDeprecated =
+    (selectedVersion?.lifecycleStage || "").toUpperCase() === "DEPRECATED" ||
+    (selectedVersion?.lifecycleStage || "").toUpperCase() === "DEPRECETED" ||
+    (selectedVersion?.lifecycleStage || "").toUpperCase() === "DEPRECIATED";
 
   // Fetch AI models when modal opens
   useEffect(() => {
@@ -165,6 +174,10 @@ const ModelSelectionModal = ({
     if (!selectedModelId || !selectedVersionId) {
       return;
     }
+    if (isSelectedVersionDeprecated) {
+      toast.error("Sorry this model version is depreceted");
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -233,9 +246,10 @@ const ModelSelectionModal = ({
                         label: `${ver.version}${ver.isLatest ? " (Latest)" : ""}`,
                       }))}
                       value={selectedVersionId ? String(selectedVersionId) : ""}
-                      onChange={(value) =>
-                        setSelectedVersionId(value ? Number(value) : null)
-                      }
+                      onChange={(value) => {
+                        const nextVersionId = value ? Number(value) : null;
+                        setSelectedVersionId(nextVersionId);
+                      }}
                     />
                   </div>
                 )}
@@ -257,7 +271,12 @@ const ModelSelectionModal = ({
             kind="primary"
             onClick={handleStart}
             disabled={!canStart || isSubmitting}
-            className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
+            aria-disabled={isSelectedVersionDeprecated}
+            className={`bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base ${
+              isSelectedVersionDeprecated
+                ? "!opacity-50 !cursor-not-allowed hover:!bg-primaryPurple2"
+                : ""
+            }`}
           >
             {isSubmitting ? "Starting..." : "Start"}
           </Button>

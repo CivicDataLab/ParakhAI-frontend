@@ -6,7 +6,16 @@ import { createColumnHelper } from "@tanstack/react-table";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Avatar, Badge, Button, DataTable, Spinner, Tag, Text } from "opub-ui";
+import {
+  Avatar,
+  Badge,
+  Button,
+  DataTable,
+  Spinner,
+  Tag,
+  Text,
+  toast,
+} from "opub-ui";
 import React from "react";
 import AuditorInvitation from "../../evaluations/components/AuditorInvitation";
 import { useOrganization } from "../../OrganizationContext";
@@ -162,6 +171,15 @@ const formatDateShort = (dateString: string) => {
     month: "short",
     year: "numeric",
   });
+};
+
+const isDeprecatedLifecycle = (lifecycleStage: string) => {
+  const normalizedStage = (lifecycleStage || "").toUpperCase();
+  return (
+    normalizedStage === "DEPRECATED" ||
+    normalizedStage === "DEPRECETED" ||
+    normalizedStage === "DEPRECIATED"
+  );
 };
 
 const ModelDetailPage = () => {
@@ -378,17 +396,34 @@ const ModelDetailPage = () => {
                         </div>
 
                         <div className="flex items-center gap-4">
+                          {(() => {
+                            const isStartEvaluationDisabled =
+                              isDeprecatedLifecycle(v.lifecycleStage);
+                            return (
                           <button
                             type="button"
                             style={{ textDecoration: "none" }}
-                            className="prompt-add-filters-link no-underline"
+                            className={`prompt-add-filters-link no-underline ${
+                              isStartEvaluationDisabled
+                                ? "opacity-50 cursor-not-allowed pointer-events-auto"
+                                : ""
+                            }`}
+                            aria-disabled={isStartEvaluationDisabled}
                             onClick={(e) => {
                               e.stopPropagation();
+                              if (isStartEvaluationDisabled) {
+                                toast.error(
+                                  "Sorry this model version is depreceted",
+                                );
+                                return;
+                              }
                               handleNewEvaluation(v.id);
                             }}
                           >
                             Start Evaluation
                           </button>
+                            );
+                          })()}
 
                           <button
                             type="button"
