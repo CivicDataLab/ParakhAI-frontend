@@ -367,7 +367,7 @@ const AuditorModelDetailPage = () => {
       },
     }),
     columnHelper.accessor("totalTests", {
-      header: "Test Result",
+      header: "Tests",
       cell: (info) => {
         const total = info.getValue();
         const row = info.row.original;
@@ -397,10 +397,12 @@ const AuditorModelDetailPage = () => {
         );
       },
     }),
-    columnHelper.accessor("createdAt", {
-      header: "Evaluated On",
+    columnHelper.accessor("completedAt", {
+      header: "Completed",
       cell: (info) => (
-        <Text variant="bodySm">{formatDate(info.getValue())}</Text>
+        <Text variant="bodySm">
+          {info.getValue() ? formatDate(info.getValue() as string) : "--"}
+        </Text>
       ),
     }),
     columnHelper.accessor("id", {
