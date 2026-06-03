@@ -5,6 +5,7 @@ import {
   StatusFilterTabs,
 } from "@/app/[locale]/dashboard/components/StatusFilterTabs";
 import { useGraphQL } from "@/lib/api";
+import { getEvaluationStatusColor } from "@/lib/statusColors";
 import { createColumnHelper } from "@tanstack/react-table";
 import { IconReportAnalytics } from "@tabler/icons-react";
 import Link from "next/link";
@@ -171,26 +172,6 @@ const AuditsListPage = () => {
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
-
-  const getEvaluationStatusColor = (status: string) => {
-    switch (status?.toUpperCase()) {
-      case "COMPLETED":
-        return { fillColor: "#E2F5C4", textColor: "#166534" };
-      case "RUNNING":
-        return { fillColor: "#FEF3C7", textColor: "#92400E" };
-      case "PENDING":
-        return { fillColor: "#E0E7FF", textColor: "#3730A3" };
-      case "DRAFT":
-        return { fillColor: "#FEF9C3", textColor: "#854D0E" };
-      case "FAILED":
-      case "ERROR":
-        return { fillColor: "#FEE2E2", textColor: "#DC2626" };
-      case "CANCELLED":
-        return { fillColor: "#F3F4F6", textColor: "#6B7280" };
-      default:
-        return { fillColor: "#F3F4F6", textColor: "#374151" };
-    }
   };
 
   // Get the appropriate link for an audit based on its status

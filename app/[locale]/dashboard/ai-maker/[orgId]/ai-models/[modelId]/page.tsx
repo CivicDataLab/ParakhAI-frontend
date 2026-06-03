@@ -2,6 +2,7 @@
 
 import RichTextRenderer from "@/components/RichTextRenderer";
 import { useGraphQL } from "@/lib/api";
+import { isDeprecatedLifecycle } from "@/lib/lifecycle";
 import { createColumnHelper } from "@tanstack/react-table";
 import Image from "next/image";
 import Link from "next/link";
@@ -103,7 +104,7 @@ type AIModel = {
     version: string;
     isLatest: boolean;
     status: string;
-    lifecycleStage: string;
+    lifecycleStage?: string | null;
     createdAt: string;
   }>;
 };
@@ -171,15 +172,6 @@ const formatDateShort = (dateString: string) => {
     month: "short",
     year: "numeric",
   });
-};
-
-const isDeprecatedLifecycle = (lifecycleStage: string) => {
-  const normalizedStage = (lifecycleStage || "").toUpperCase();
-  return (
-    normalizedStage === "DEPRECATED" ||
-    normalizedStage === "DEPRECETED" ||
-    normalizedStage === "DEPRECIATED"
-  );
 };
 
 const ModelDetailPage = () => {
@@ -365,7 +357,12 @@ const ModelDetailPage = () => {
                 </div>
 
                 <div className="flex flex-col gap-4">
-                  {(model.versions || []).map((v) => (
+                  {(model.versions || []).map((v) => {
+                    const isDeprecated = isDeprecatedLifecycle(
+                      v.lifecycleStage,
+                    );
+
+                    return (
                     <div
                       key={v.id}
                       className="mt-2 flex flex-col gap-2 border-solid border-2 border-baseGraySlateSolid6 bg-white bg-white p-4 rounded-2 lg:mx-0 lg:p-4 shadow-sm"
@@ -396,24 +393,20 @@ const ModelDetailPage = () => {
                         </div>
 
                         <div className="flex items-center gap-4">
-                          {(() => {
-                            const isStartEvaluationDisabled =
-                              isDeprecatedLifecycle(v.lifecycleStage);
-                            return (
                           <button
                             type="button"
                             style={{ textDecoration: "none" }}
                             className={`prompt-add-filters-link no-underline ${
-                              isStartEvaluationDisabled
+                              isDeprecated
                                 ? "opacity-50 cursor-not-allowed pointer-events-auto"
                                 : ""
                             }`}
-                            aria-disabled={isStartEvaluationDisabled}
+                            aria-disabled={isDeprecated}
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (isStartEvaluationDisabled) {
+                              if (isDeprecated) {
                                 toast.error(
-                                  "Sorry this model version is depreceted",
+                                  "Sorry this model version is deprecated",
                                 );
                                 return;
                               }
@@ -422,8 +415,6 @@ const ModelDetailPage = () => {
                           >
                             Start Evaluation
                           </button>
-                            );
-                          })()}
 
                           <button
                             type="button"
@@ -508,14 +499,15 @@ const ModelDetailPage = () => {
                           <div className="px-4 py-3 border-t md:border-t-0 border-baseGraySlateSolid4">
                             <Text variant="bodyMd" className="capitalize">
                               {v.isLatest
-                                ? v.lifecycleStage.replace(/_/g, " ")
+                                ? (v.lifecycleStage || "").replace(/_/g, " ")
                                 : v.status.replace(/_/g, " ")}
                             </Text>
                           </div>
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                   {(model.versions || []).length === 0 && (
                     <div className="p-6 border border-dashed border-gray-300 rounded-lg text-center bg-gray-50">
                       <Text variant="bodyMd" className="text-gray-500">
