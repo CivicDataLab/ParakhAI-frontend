@@ -1,6 +1,10 @@
 "use client";
 
 import { useGraphQL } from "@/lib/api";
+import {
+  getEvaluationModeColor,
+  getEvaluationStatusColor,
+} from "@/lib/statusColors";
 import { IconDownload, IconMinus, IconPlus } from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -211,25 +215,6 @@ export const formatModuleName = (moduleName: string): string => {
     .join(" ");
 };
 
-export const getStatusColor = (status: string) => {
-  switch (status?.toUpperCase()) {
-    case "COMPLETED":
-      return { fillColor: "#E2F5C4", textColor: "#166534" };
-    case "RUNNING":
-      return { fillColor: "#FEF3C7", textColor: "#92400E" };
-    case "PENDING":
-      return { fillColor: "#E0E7FF", textColor: "#3730A3" };
-    case "FAILED":
-    case "ERROR":
-      return { fillColor: "#FEE2E2", textColor: "#DC2626" };
-    case "MANUAL":
-      return { fillColor: "#d6d7d8", textColor: "#374151" };
-    case "AUTOMATED":
-      return { fillColor: "#d6d7d8", textColor: "#374151" };
-    default:
-      return { fillColor: "#d6d7d8", textColor: "#374151" };
-  }
-};
 /**
  * Tag colors for issue severity.
  * Matches the old table legend where:
@@ -499,8 +484,8 @@ const EvaluationDetail = ({
     return `${seconds}s`;
   };
 
-  const statusColors = getStatusColor(audit?.status || "");
-  const evaluationMode = getStatusColor(audit?.evaluationMode || "");
+  const statusColors = getEvaluationStatusColor(audit?.status);
+  const evaluationMode = getEvaluationModeColor(audit?.evaluationMode);
   const duration = getDuration();
   const isRunning = audit?.status === "RUNNING" || audit?.status === "PENDING";
   const evaluationScopeSource =

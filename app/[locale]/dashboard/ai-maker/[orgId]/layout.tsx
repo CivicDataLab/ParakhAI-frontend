@@ -78,7 +78,7 @@ export default function AIMakerLayout({
         />
         <div className="flex-1 w-full px-4 sm:px-6 lg:px-10 overflow-x-visible flex pt-0 md:pt-5 lg:pt-0">
           <div className="flex w-full flex-col md:flex-row md:items-stretch gap-6 md:gap-8 h-full">
-            <div className="flex-shrink-0 self-start max-md:self-center md:sticky md:top-4 w-full md:w-auto">
+            <div className="flex-shrink-0 self-start max-md:self-center md:sticky md:top-4 w-full md:w-auto lg:[&>.welcome-section]:min-h-[calc(100vh-120px)]">
               <WelcomeSection
                 orgName={organization?.name}
                 orgLogo={organization?.logoUrl}

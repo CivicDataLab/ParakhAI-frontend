@@ -270,7 +270,7 @@ const TestCases: React.FC<TestCasesProps> = ({
             rows={promptDatasets}
             columns={promptDatasetColumns}
             hideSelection={false}
-            hideFooter={true}
+            hideFooter={promptDatasets.length <= 10}
             defaultSelectedRows={selectedPromptLibraries}
             onRowSelectionChange={(selected) => {
               // DataTable emits an initial empty selection before applying defaultSelectedRows.
@@ -297,7 +297,7 @@ const TestCases: React.FC<TestCasesProps> = ({
         <Text variant="headingMd" className="enter-test-cases-heading mb-4">
           Enter Your Own Test Cases (Optional)
         </Text>
-        <div className="flex gap-6 mb-4 test-input-buttons-container">
+        {/* <div className="flex gap-6 mb-4 test-input-buttons-container">
           <Button
             kind="secondary"
             onClick={() => setTestInputMode("paste")}
@@ -325,7 +325,7 @@ const TestCases: React.FC<TestCasesProps> = ({
             </span>
             Upload File
           </Button>
-        </div>
+        </div> */}
 
         {testInputMode === "paste" ? (
           <div className="test-cases-input-wrapper">

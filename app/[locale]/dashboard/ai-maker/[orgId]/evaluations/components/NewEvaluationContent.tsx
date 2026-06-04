@@ -308,6 +308,10 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const params = useParams();
   const locale = params?.locale || "en";
 
+  const evaluationsListPath = fromAuditor
+    ? `/${locale}/dashboard/auditor/evaluations`
+    : `/${locale}/dashboard/ai-maker/${orgId}/evaluations`;
+
   const urlModelId = searchParams.get("modelId");
   const urlVersion = searchParams.get("version");
   const urlVersionId = searchParams.get("versionId");
@@ -1113,10 +1117,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     const auditId = currentAuditId;
     if (!auditId) {
       isNavigatingAwayRef.current = true;
-      // Avoid router.back() here because history guards can keep user on the same page.
-      window.location.assign(
-        `/${locale}/dashboard/ai-maker/${orgId}/evaluations`
-      );
+      router.push(evaluationsListPath);
       return;
     }
     setIsCancelling(true);
@@ -1134,10 +1135,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         { organization: orgId }
       );
       if (result?.updateAudit?.success) {
-        // Use a hard navigation so the list refreshes immediately and doesn't rely on client cache.
-        window.location.assign(
-          `/${locale}/dashboard/ai-maker/${orgId}/evaluations`
-        );
+        router.push(evaluationsListPath);
       } else {
         isNavigatingAwayRef.current = false;
         setAuditError(
@@ -1762,7 +1760,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     if (!saved) return;
 
     isNavigatingAwayRef.current = true;
-    router.push(`/${locale}/dashboard/ai-maker/${orgId}/evaluations`);
+    router.push(evaluationsListPath);
   };
 
   const handleRunAudit = async () => {
