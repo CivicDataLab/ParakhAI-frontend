@@ -1117,8 +1117,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     const auditId = currentAuditId;
     if (!auditId) {
       isNavigatingAwayRef.current = true;
-      // Avoid router.back() here because history guards can keep user on the same page.
-      window.location.assign(evaluationsListPath);
+      router.push(evaluationsListPath);
       return;
     }
     setIsCancelling(true);
@@ -1136,8 +1135,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         { organization: orgId }
       );
       if (result?.updateAudit?.success) {
-        // Use a hard navigation so the list refreshes immediately and doesn't rely on client cache.
-        window.location.assign(evaluationsListPath);
+        router.push(evaluationsListPath);
       } else {
         isNavigatingAwayRef.current = false;
         setAuditError(
