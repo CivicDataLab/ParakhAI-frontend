@@ -18,8 +18,9 @@ import "./evaluations-page.css";
 
 // GraphQL query to fetch user's audits
 const AUDITS_QUERY = `
-  query GetAudits($status: String, $limit: Int) {
-    audits(status: $status, limit: $limit) {
+  query GetAudits($limit: Int, $offset: Int) {
+    audits(limit: $limit, offset: $offset, filters: null, sortOptions: null) {
+      data{
       id
       name
       modelId
@@ -36,7 +37,9 @@ const AUDITS_QUERY = `
       startedAt
       completedAt
     }
+    totalItemsCount
   }
+}
 `;
 
 type Audit = {
@@ -88,7 +91,7 @@ const AuditsListPage = () => {
       }
       setError(null);
 
-      const auditsData = await request<{ audits: Audit[] }>(
+      const auditsData = await request<{ audits: { data: Audit[], totalItemsCount: number } }>(
         AUDITS_QUERY,
         {
           status: null,
@@ -97,7 +100,7 @@ const AuditsListPage = () => {
         { organization: params.orgId as string }
       );
 
-      const nextAudits = auditsData?.audits || [];
+      const nextAudits = auditsData?.audits?.data || [];
       setAudits(nextAudits);
 
       const hasActiveAudits = nextAudits.some((audit) => {
@@ -229,7 +232,7 @@ const AuditsListPage = () => {
               color: colors.textColor,
             }}
           >
-            {status || "Unknown"}
+            {status}
           </Text>
         );
       },
@@ -303,7 +306,7 @@ const AuditsListPage = () => {
     //   ),
     // }),
     columnHelper.accessor("completedAt", {
-      header: "Completed",
+      header: "Completed on",
       cell: (info) => (
         <Text variant="bodySm">{formatDate(info.getValue())}</Text>
       ),
@@ -313,7 +316,9 @@ const AuditsListPage = () => {
   const filteredAudits =
     statusFilter === "ALL"
       ? audits
-      : audits.filter((audit) => audit.status === statusFilter);
+      : audits.filter(
+          (audit) => audit.status?.toUpperCase() === statusFilter
+        );
 
   // Handle new audit button click - open modal
   const handleNewAudit = () => {
@@ -324,9 +329,14 @@ const AuditsListPage = () => {
     <>
       {/* Header */}
       <div className="flex items-center justify-between mb-6 mt-10">
-        <Text variant="headingLg" as="h1" fontWeight="bold">
-          Evaluations
-        </Text>
+        <div>
+          <Text variant="headingLg" as="h1" fontWeight="bold">
+            Evaluations
+          </Text>
+          <Text variant="bodySm" className="text-gray-600 mt-1">
+            Create and manage evaluation runs to assess your AI models
+          </Text>
+        </div>
         <Button
           kind="secondary"
           onClick={handleNewAudit}
@@ -388,7 +398,13 @@ const AuditsListPage = () => {
             <div className="flex flex-col items-center justify-center py-12 bg-white rounded-lg border border-gray-200">
               <IconReportAnalytics size={32} className="text-gray-400 mb-3" />
               <Text variant="bodyMd" className="text-gray-600">
-                {`No ${statusFilter.toLowerCase()} evaluations`}
+                {`No ${
+                  (
+                    EVALUATION_STATUS_FILTER_OPTIONS.find(
+                      (option) => option.value === statusFilter,
+                    )?.label ?? statusFilter
+                  ).toLowerCase()
+                } evaluations`}
               </Text>
               <Text variant="bodySm" className="text-gray-500 mt-1">
                 Try selecting a different filter
