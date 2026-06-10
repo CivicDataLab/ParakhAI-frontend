@@ -8,6 +8,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
+  AlertDialog,
   Avatar,
   Badge,
   Button,
@@ -193,6 +194,29 @@ const ModelDetailPage = () => {
       id: number;
       version: string;
     } | null>(null);
+  const [showEditRedirectPrompt, setShowEditRedirectPrompt] =
+    React.useState(false);
+
+  const editModelUrl = React.useMemo(() => {
+    const orgSlug = encodeURIComponent(
+      String(organization?.slug ?? orgId ?? "").trim(),
+    );
+    const externalHost =
+      process.env.NEXT_PUBLIC_DATASPACE_HOST ||
+      process.env.NEXT_PUBLIC_AI_MAKER_URL ||
+      "";
+    const externalPath =
+      orgSlug && modelId
+        ? `/dashboard/organization/${orgSlug}/aimodels/edit/${modelId}/details`
+        : "";
+
+    if (!externalHost.trim() || !externalPath) return "";
+
+    const host = externalHost.replace(/\/$/, "");
+    return /\/dashboard$/.test(host)
+      ? `${host}${externalPath.replace(/^\/dashboard/, "")}`
+      : `${host}${externalPath}`;
+  }, [organization?.slug, orgId, modelId]);
 
   React.useEffect(() => {
     if (!isAuthenticated) return;
@@ -312,24 +336,21 @@ const ModelDetailPage = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1 min-w-0  lg:border-r border-gray-100">
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-3">
-                <Text variant="heading3xl" fontWeight="semibold">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <Text
+                  variant="heading3xl"
+                  fontWeight="semibold"
+                  className="min-w-0"
+                >
                   {model.displayName}
                 </Text>
-
-                {/* <div className="flex flex-wrap gap-2">
-                  {model.tags?.slice(0, 2).map((tag, index) => (
-                    <span className="self-start sm:self-auto">
-                      <Tag
-                        variation="filled"
-                        fillColor={"bg-purple-200"}
-                        textColor={"text-purple-800"}
-                      >
-                        {tag}
-                      </Tag>
-                    </span>
-                  ))}
-                </div> */}
+                <Button
+                  kind="primary"
+                  onClick={() => setShowEditRedirectPrompt(true)}
+                  className="shrink-0 bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-medium text-base border-none"
+                >
+                  Edit model
+                </Button>
               </div>
 
               <div className="overflow-hidden flex flex-col gap-2 mt-8">
@@ -392,16 +413,10 @@ const ModelDetailPage = () => {
                           )}
                         </div>
 
-                        <div className="flex items-center gap-4">
-                          <button
-                            type="button"
-                            style={{ textDecoration: "none" }}
-                            className={`prompt-add-filters-link no-underline ${
-                              isDeprecated
-                                ? "opacity-50 cursor-not-allowed pointer-events-auto"
-                                : ""
-                            }`}
-                            aria-disabled={isDeprecated}
+                        <div className="flex items-center gap-3">
+                          <Button
+                            kind="secondary"
+                            disabled={isDeprecated}
                             onClick={(e) => {
                               e.stopPropagation();
                               if (isDeprecated) {
@@ -412,14 +427,12 @@ const ModelDetailPage = () => {
                               }
                               handleNewEvaluation(v.id);
                             }}
+                            className="!rounded-[8px]"
                           >
                             Start Evaluation
-                          </button>
-
-                          <button
-                            type="button"
-                            style={{ textDecoration: "none" }}
-                            className="prompt-add-filters-link"
+                          </Button>
+                          <Button
+                            kind="primary"
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedVersionForAuditor({
@@ -427,9 +440,10 @@ const ModelDetailPage = () => {
                                 version: v.version,
                               });
                             }}
+                            className="!rounded-[8px] !border-none !bg-primaryPurple2 !text-white hover:!bg-[#6849EE] hover:!text-white"
                           >
                             Invite Evaluators
-                          </button>
+                          </Button>
                         </div>
                       </div>
 
@@ -763,6 +777,41 @@ const ModelDetailPage = () => {
           versionLabel={selectedVersionForAuditor.version}
         />
       )}
+
+      <AlertDialog
+        open={showEditRedirectPrompt}
+        onOpenChange={setShowEditRedirectPrompt}
+      >
+        <AlertDialog.Content
+          title="Redirect to CivicDataSpace"
+          primaryAction={{
+            content: "Yes, continue",
+            onAction: () => {
+              setShowEditRedirectPrompt(false);
+              if (editModelUrl) {
+                window.open(editModelUrl, "_blank", "noopener,noreferrer");
+              } else {
+                toast.error(
+                  "Unable to open model editor. Please try again later.",
+                );
+              }
+            },
+            className:
+              "bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white",
+          } as any}
+          secondaryActions={[
+            {
+              content: "No",
+              onAction: () => setShowEditRedirectPrompt(false),
+              className:
+                "bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white",
+            } as any,
+          ]}
+        >
+          You are being redirected to CivicDataSpace to edit this model. Do you
+          want to continue?
+        </AlertDialog.Content>
+      </AlertDialog>
     </>
   );
 };
