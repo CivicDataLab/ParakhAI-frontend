@@ -6,6 +6,7 @@ import {
 } from "@/app/[locale]/dashboard/components/StatusFilterTabs";
 import { useGraphQL } from "@/lib/api";
 import { getEvaluationStatusColor } from "@/lib/statusColors";
+import { formatStatusLabel } from "@/lib/utils";
 import { createColumnHelper } from "@tanstack/react-table";
 import { IconReportAnalytics } from "@tabler/icons-react";
 import Link from "next/link";
@@ -232,7 +233,7 @@ const AuditsListPage = () => {
               color: colors.textColor,
             }}
           >
-            {status}
+            {formatStatusLabel(status)}
           </Text>
         );
       },
@@ -398,13 +399,7 @@ const AuditsListPage = () => {
             <div className="flex flex-col items-center justify-center py-12 bg-white rounded-lg border border-gray-200">
               <IconReportAnalytics size={32} className="text-gray-400 mb-3" />
               <Text variant="bodyMd" className="text-gray-600">
-                {`No ${
-                  (
-                    EVALUATION_STATUS_FILTER_OPTIONS.find(
-                      (option) => option.value === statusFilter,
-                    )?.label ?? statusFilter
-                  ).toLowerCase()
-                } evaluations`}
+                {`No ${formatStatusLabel(statusFilter, { lowercase: true })} evaluations`}
               </Text>
               <Text variant="bodySm" className="text-gray-500 mt-1">
                 Try selecting a different filter

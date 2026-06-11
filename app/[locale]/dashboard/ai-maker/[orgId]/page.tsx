@@ -2,14 +2,24 @@
 
 import { Icons } from "@/components/icons";
 import { useGraphQL } from "@/lib/api";
-import { stripMarkdown } from "@/lib/utils";
+import { getEvaluationStatusColor } from "@/lib/statusColors";
+import { formatStatusLabel, stripMarkdown } from "@/lib/utils";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { AlertDialog, Button, Card, DataTable, Spinner, Text } from "opub-ui";
+import {
+  AlertDialog,
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  Spinner,
+  Text,
+} from "opub-ui";
 import { useEffect, useMemo, useState } from "react";
 import { useOrganization } from "./OrganizationContext";
 import ModelSelectionModal from "./evaluations/components/ModelSelectionModal";
+import "./evaluations/evaluations-page.css";
 
 // Define evaluation data type
 type Evaluation = {
@@ -22,12 +32,18 @@ type Evaluation = {
   skippedTests: number | null;
   createdAt: string;
   startedAt: string | null;
-  completedAt: string;
+  completedAt: string | null;
   modelName: string | null;
   modelId: string;
   auditType: string;
   evaluationMode: string;
   successRate: number;
+};
+
+const auditTypeLabels: Record<string, string> = {
+  TECHNICAL_AUDIT: "Technical",
+  DOMAIN_AUDIT: "Domain",
+  CULTURAL_AUDIT: "Cultural",
 };
 
 type AIModel = {
@@ -117,24 +133,28 @@ const AIMakerDashboard = () => {
   `;
 
   const GET_EVALUATIONS = `
-    query GetEvaluations($limit: Int) {
-      audits(limit: $limit) {
-        id
-        name
-        modelId
-        status
-        auditType
-        evaluationMode
-        totalTests
-        passedTests
-        failedTests
-        skippedTests
-        modelName
-        successRate
-        completedAt
-        createdAt
-      }
+     query GetAudits($limit: Int, $offset: Int) {
+    audits(limit: $limit, offset: $offset, filters: null, sortOptions: null) {
+      data{
+      id
+      name
+      modelId
+      modelName
+      status
+      modules
+      metrics
+      evaluationMode
+      auditType
+      totalTests
+      passedTests
+      failedTests
+      createdAt
+      startedAt
+      completedAt
     }
+    totalItemsCount
+  }
+}
   `;
 
   const modelTypeLabels: Record<string, string> = {
@@ -160,16 +180,15 @@ const AIMakerDashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showRedirectPrompt, setShowRedirectPrompt] = useState(false);
 
-  const formatDate = (dateString?: string | null) => {
+  const formatEvaluationDate = (dateString: string | null) => {
     if (!dateString) return "--";
-
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "--";
-
     return date.toLocaleDateString("en-IN", {
       day: "2-digit",
-      month: "long",
+      month: "short",
       year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -178,8 +197,8 @@ const AIMakerDashboard = () => {
     const fetchData = async () => {
       try {
         const [modelsResponse, evaluationsResponse] = await Promise.all([
-          request(GET_AI_MODELS, { limit: 10 }, { organization: orgId }),
-          request(GET_EVALUATIONS, { limit: 5 }, { organization: orgId }),
+          request(GET_AI_MODELS, { limit: 100 }, { organization: orgId }),
+          request(GET_EVALUATIONS, { limit: 100,offset: 0 }, { organization: orgId }),
         ]);
         const auditMetricsResponse = await request(
           AUDIT_METRICS_QUERY,
@@ -190,7 +209,7 @@ const AIMakerDashboard = () => {
         setAuditMetrics(auditMetrics);
 
         const modelsData = modelsResponse?.aiModels || [];
-        const evaluationsData = evaluationsResponse?.audits || [];
+        const evaluationsData = evaluationsResponse?.audits.data || [];
 
         setModels(modelsData);
         setEvaluations(evaluationsData);
@@ -205,18 +224,41 @@ const AIMakerDashboard = () => {
   }, [request, orgId]);
 
   const hasModels = models.length > 0;
-  const hasEvaluations = evaluations.length > 0;
+
+  const recentModels = useMemo(
+    () =>
+      [...models]
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        )
+        .slice(0, 6),
+    [models],
+  );
+
+  const recentEvaluations = useMemo(
+    () =>
+      [...evaluations]
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        )
+        .slice(0, 5),
+    [evaluations],
+  );
+
+  const hasEvaluations = recentEvaluations.length > 0;
 
   const metrics = [
     {
-      label: "Evaluation\nRuns",
+      label: "Evaluations\nCompleted",
       value: auditMetrics?.evaluationRuns.toString() || "--",
     },
     {
-      label: "Test Cases",
+      label: "Test Cases Evaluated",
       value: auditMetrics?.testCasesCount.toString() || "--",
     },
-    { label: "Models", value: auditMetrics?.models.toString() || "--" },
+    { label: "Models Added", value: auditMetrics?.models.toString() || "--" },
     {
       label: "Issues\nFlagged",
       value: auditMetrics?.issuesFlagged.toString() || "--",
@@ -227,60 +269,82 @@ const AIMakerDashboard = () => {
     router.push(`/${locale}/dashboard/ai-maker/${orgId}/ai-models/${modelId}`);
   };
 
-  // Create column helper
+  const getAuditLink = (evaluation: Evaluation) => {
+    if (evaluation.status?.toUpperCase() === "DRAFT") {
+      return `/${locale}/dashboard/ai-maker/${orgId}/evaluations/new?auditId=${evaluation.id}`;
+    }
+    return `/${locale}/dashboard/ai-maker/${orgId}/evaluations/${evaluation.id}`;
+  };
+
   const columnHelper = createColumnHelper<Evaluation>();
 
-  // Define columns
   const columns = useMemo(
     () => [
+      columnHelper.accessor("name", {
+        header: "Evaluation Name",
+        cell: (info) => (
+          <Link
+            href={getAuditLink(info.row.original)}
+            className="text-primary-purple hover:underline font-medium"
+          >
+            {info.getValue() || `Evaluation #${info.row.original.id.slice(0, 8)}`}
+          </Link>
+        ),
+      }),
       columnHelper.accessor("modelName", {
         header: "Model",
+        cell: (info) => (
+          <Text variant="bodySm">
+            {info.getValue() ||
+              `Model ${info.row.original.modelId?.slice(0, 8) || "-"}`}
+          </Text>
+        ),
+      }),
+      columnHelper.accessor("auditType", {
+        header: "Evaluation Type",
         cell: (info) => {
-          const modelName = info.getValue();
-          return modelName ? (
-            <Text variant="bodySm">{modelName}</Text>
-          ) : (
-            <Text variant="bodySm" className="text-gray-500">
-              Unknown Model
+          const typeValue = info.getValue();
+          const label = typeValue
+            ? auditTypeLabels[typeValue] || typeValue
+            : "--";
+          return <Badge>{label}</Badge>;
+        },
+      }),
+      columnHelper.accessor("status", {
+        header: "Status",
+        cell: (info) => {
+          const status = info.getValue();
+          const colors = getEvaluationStatusColor(status);
+          return (
+            <Text
+              variant="bodySm"
+              as="span"
+              className="inline-block rounded px-2 py-0.5"
+              style={{
+                backgroundColor: colors.fillColor,
+                color: colors.textColor,
+              }}
+            >
+              {formatStatusLabel(status)}
             </Text>
           );
         },
       }),
-      columnHelper.accessor("createdAt", {
-        header: "Evaluation Time",
+      columnHelper.accessor("evaluationMode", {
+        header: "Evaluation Mode",
         cell: (info) => (
-          <div className="ml-5">
-            {new Date(info.getValue()).toLocaleDateString()}
-          </div>
+          <Text variant="bodySm">{info.getValue() || "--"}</Text>
         ),
-      }),
-      columnHelper.accessor("id", {
-        header: "Evaluation ID",
-        cell: (info) => (
-          <Link
-            href={`/${locale}/dashboard/ai-maker/${orgId}/evaluations/${info.getValue()}`}
-            className="text-primary-purple hover:underline"
-          >
-            ID #{info.getValue().slice(0, 8)}
-          </Link>
-        ),
-      }),
-      columnHelper.accessor("status", {
-        header: "Status",
-      }),
-      columnHelper.accessor("auditType", {
-        header: "Evaluation Type",
       }),
       columnHelper.accessor("totalTests", {
-        header: "Test Result",
+        header: "Tests",
         cell: (info) => {
-          const total = info.getValue();
-          const row = info.row.original;
-          const passed = row.passedTests;
-          const failed = row.failedTests;
+          const total = info.getValue() || 0;
+          const passed = info.row.original.passedTests || 0;
+          const failed = info.row.original.failedTests || 0;
 
-          if (!total || !passed || !failed) {
-            return <Text variant="bodySm">No data</Text>;
+          if (!total || passed == null || failed == null) {
+            return <Text variant="bodySm">--</Text>;
           }
 
           return (
@@ -302,8 +366,14 @@ const AIMakerDashboard = () => {
           );
         },
       }),
+      columnHelper.accessor("completedAt", {
+        header: "Completed on",
+        cell: (info) => (
+          <Text variant="bodySm">{formatEvaluationDate(info.getValue())}</Text>
+        ),
+      }),
     ],
-    [locale, orgId]
+    [locale, orgId],
   );
 
   if (loading) {
@@ -321,7 +391,13 @@ const AIMakerDashboard = () => {
     <>
       {/* Header with Title */}
       <div className="flex items-center justify-between mb-6 mt-10 w-full">
-        <h1 className="text-gray-900 overview-heading">Overview</h1>
+        <div>
+          <h1 className="text-gray-900 overview-heading">Overview</h1>
+          <Text variant="bodySm" className="text-gray-600 mt-1">
+            Monitor evaluation activity, models, and key metrics for your
+            organization
+          </Text>
+        </div>
       </div>
 
       {/* Metrics */}
@@ -337,7 +413,7 @@ const AIMakerDashboard = () => {
       <div className="section-margin-bottom">
         <div className="flex items-center justify-between section-title-margin">
           <Text variant="headingLg" as="h2" fontWeight="bold">
-            Models
+            Recently Added Models
           </Text>
           {hasModels && (
             <div className="add-model-button-wrapper">
@@ -352,7 +428,7 @@ const AIMakerDashboard = () => {
         </div>
         {hasModels ? (
           <div className="grid grid-cols-1 w-full gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {models.map((model) => {
+            {recentModels.map((model) => {
               // Card metadata (top row inside card)
               const metadataContent = [
                 {
@@ -441,21 +517,23 @@ const AIMakerDashboard = () => {
           </Text>
           <Link
             href={`/${locale}/dashboard/ai-maker/${orgId}/evaluations`}
-            className="text-blue-600 hover:underline"
+            className="inline-flex items-center gap-1 text-blue-600 hover:underline"
           >
-            See All
+            See all
+            <Icons.arrowRight size={16} className="text-blue-600" stroke={2} />
           </Link>
         </div>
         {hasEvaluations ? (
-          <DataTable
-            rows={evaluations}
-            columns={columns}
-            hoverable={true}
-            sortColumns={["modelName", "createdAt"]}
-            defaultSortDirection="asc"
-            hideSelection={true}
-            hideFooter={true}
-          />
+          <div className="evaluations-table-evaluation-mode-col">
+            <DataTable
+              rows={recentEvaluations}
+              columns={columns}
+              hoverable
+              hideSelection
+              hideFooter
+              truncate
+            />
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-8 bg-gray-50 rounded-lg">
             <Text variant="bodySm" className="text-gray-600 mb-4">
