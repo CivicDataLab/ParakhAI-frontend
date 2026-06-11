@@ -3,6 +3,8 @@
 import RichTextRenderer from "@/components/RichTextRenderer";
 import { useGraphQL } from "@/lib/api";
 import { isDeprecatedLifecycle } from "@/lib/lifecycle";
+import { getEvaluationStatusColor } from "@/lib/statusColors";
+import { formatStatusLabel } from "@/lib/utils";
 import { createColumnHelper } from "@tanstack/react-table";
 import Image from "next/image";
 import Link from "next/link";
@@ -21,6 +23,7 @@ import {
 import React from "react";
 import AuditorInvitation from "../../evaluations/components/AuditorInvitation";
 import { useOrganization } from "../../OrganizationContext";
+import "../../evaluations/evaluations-page.css";
 
 const GET_AI_MODEL = `
   query GetAIModel($modelId: ID!) {
@@ -59,10 +62,12 @@ const GET_AI_MODEL = `
 `;
 
 const GET_EVALUATIONS = `
-  query GetEvaluations($modelId: ID, $limit: Int) {
-    audits(modelId: $modelId, limit: $limit) {
+ query GetAudits($limit: Int, $offset: Int, $filters: [FilterSpec!]) {
+    audits(limit: $limit, offset: $offset, filters: $filters, sortOptions: null) {
+      data{
       id
       name
+      modelName
       status
       auditType
       totalTests
@@ -72,10 +77,12 @@ const GET_EVALUATIONS = `
       createdAt
       startedAt
       completedAt
-      modelName
+      evaluationMode
       requestedByName
     }
+    totalItemsCount
   }
+}
 `;
 
 type AIModel = {
@@ -115,11 +122,13 @@ type Evaluation = {
   name: string;
   status: string;
   auditType?: string;
+  evaluationMode?: string;
   totalTests: number | null;
   passedTests: number | null;
   failedTests: number | null;
   skippedTests: number | null;
   createdAt: string;
+  completedAt: string | null;
   modelName: string | null;
   requestedByName: string | null;
 };
@@ -155,15 +164,16 @@ const auditTypeLabels: Record<string, string> = {
 
 const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || "";
 
-// Helper for formatted date
-const formatDate = (dateString: string) => {
-  return new Date(dateString)
-    .toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    })
-    .replace(/\//g, " / ");
+const formatEvaluationDate = (dateString: string | null) => {
+  if (!dateString) return "--";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
 // Helper for formatted date (Short)
@@ -230,18 +240,19 @@ const ModelDetailPage = () => {
             { modelId },
             { organization: orgId },
           ),
-          request<{ audits: Evaluation[] }>(
+          request<{ audits: { data: Evaluation[], totalItemsCount: number } }>(
             GET_EVALUATIONS,
             {
-              modelId,
-              limit: 10,
+              limit: 100,
+              offset: 0,
+              filters: { field: "model_id", condition: "exact", value: modelId },
             },
             { organization: orgId },
           ),
         ]);
 
         if (modelResponse?.aiModel) setModel(modelResponse.aiModel);
-        if (evalResponse?.audits) setEvaluations(evalResponse.audits);
+        if (evalResponse?.audits?.data) setEvaluations(evalResponse.audits?.data);
       } catch (err: any) {
         setError(err.message || "Failed to fetch model details");
       } finally {
@@ -260,53 +271,99 @@ const ModelDetailPage = () => {
     router.push(url);
   };
 
+  const getAuditLink = (evaluation: Evaluation) => {
+    if (evaluation.status?.toUpperCase() === "DRAFT") {
+      return `/${locale}/dashboard/ai-maker/${orgId}/evaluations/new?auditId=${evaluation.id}`;
+    }
+    return `/${locale}/dashboard/ai-maker/${orgId}/evaluations/${evaluation.id}`;
+  };
+
   const columnHelper = createColumnHelper<Evaluation>();
   const columns = [
     columnHelper.accessor("name", {
       header: "Evaluation Name",
       cell: (info) => (
         <Link
-          href={`/${locale}/dashboard/ai-maker/${orgId}/evaluations/${info.row.original.id}`}
-          className="text-primary-purple hover:underline"
+          href={getAuditLink(info.row.original)}
+          className="text-primary-purple hover:underline font-medium"
         >
-          {info.getValue() || "Untitled Evaluation"}
+          {info.getValue() || `Evaluation #${info.row.original.id.slice(0, 8)}`}
         </Link>
       ),
     }),
-    columnHelper.accessor("createdAt", {
-      header: "Evaluation Time",
-      cell: (info) => formatDate(info.getValue()),
-    }),
-    columnHelper.accessor("id", {
-      header: "Evaluation ID",
-      cell: (info) => (
-        <span className="text-gray-600">ID #{info.getValue().slice(0, 8)}</span>
-      ),
-    }),
     columnHelper.accessor("auditType", {
-      header: "Type",
+      header: "Evaluation Type",
       cell: (info) => {
         const typeValue = info.getValue();
+        const label = typeValue
+          ? auditTypeLabels[typeValue] || typeValue
+          : "--";
+        return <Badge>{label}</Badge>;
+      },
+    }),
+    columnHelper.accessor("status", {
+      header: "Status",
+      cell: (info) => {
+        const status = info.getValue();
+        const colors = getEvaluationStatusColor(status);
         return (
-          <Text variant="bodyMd" fontWeight="medium">
-            {auditTypeLabels[typeValue || ""] || "Technical"}
+          <Text
+            variant="bodySm"
+            as="span"
+            className="inline-block rounded px-2 py-0.5"
+            style={{
+              backgroundColor: colors.fillColor,
+              color: colors.textColor,
+            }}
+          >
+            {formatStatusLabel(status)}
           </Text>
         );
       },
     }),
-    // columnHelper.accessor("requestedByName", {
-    //   header: "Expert",
-    //   cell: (info) => (
-    //     <div className="flex items-center gap-2">
-    //       <Avatar
-    //         showInitials
-    //         name={info.getValue() || "Expert"}
-    //         size="extraSmall"
-    //       />
-    //       <Text variant="bodySm">{info.getValue() || "Unknown"}</Text>
-    //     </div>
-    //   ),
-    // }),
+    columnHelper.accessor("evaluationMode", {
+      header: "Evaluation Mode",
+      cell: (info) => {
+        const evaluationMode = info.getValue();
+        return <Text variant="bodySm">{evaluationMode || "--"}</Text>;
+      },
+    }),
+    columnHelper.accessor("totalTests", {
+      header: "Tests",
+      cell: (info) => {
+        const total = info.getValue() || 0;
+        const passed = info.row.original.passedTests || 0;
+        const failed = info.row.original.failedTests || 0;
+
+        if (!total || passed == null || failed == null) {
+          return <Text variant="bodySm">--</Text>;
+        }
+
+        return (
+          <div className="flex items-center gap-2">
+            <div className="test-result-bar">
+              <div
+                className="test-result-pass"
+                style={{ width: `${(passed / total) * 100}%` }}
+              />
+              <div
+                className="test-result-fail"
+                style={{ width: `${(failed / total) * 100}%` }}
+              />
+            </div>
+            <Text variant="bodySm">
+              {passed}/{total} passed
+            </Text>
+          </div>
+        );
+      },
+    }),
+    columnHelper.accessor("completedAt", {
+      header: "Completed on",
+      cell: (info) => (
+        <Text variant="bodySm">{formatEvaluationDate(info.getValue())}</Text>
+      ),
+    }),
   ];
 
   if (loading) {
@@ -514,7 +571,7 @@ const ModelDetailPage = () => {
                             <Text variant="bodyMd" className="capitalize">
                               {v.isLatest
                                 ? (v.lifecycleStage || "").replace(/_/g, " ")
-                                : v.status.replace(/_/g, " ")}
+                                : formatStatusLabel(v.status)}
                             </Text>
                           </div>
                         </div>
@@ -740,12 +797,22 @@ const ModelDetailPage = () => {
             </Text>
           </div>
           {evaluations.length > 0 ? (
-            <div className="bg-purple-50/30 rounded-lg overflow-hidden border border-purple-100">
+            <div className="evaluations-table-model-detail-col">
               <DataTable
                 rows={evaluations}
                 columns={columns}
-                hideSelection={true}
-                hideFooter={false}
+                hoverable
+                sortColumns={[
+                  "name",
+                  "auditType",
+                  "status",
+                  "evaluationMode",
+                  "completedAt",
+                ]}
+                initialSortColumnIndex={5}
+                defaultSortDirection="desc"
+                hideSelection
+                truncate
               />
             </div>
           ) : (
