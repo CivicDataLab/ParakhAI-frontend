@@ -8,7 +8,6 @@ import { IconTrash } from "@tabler/icons-react";
 import { Button, DataTable, Icon, Spinner, Text } from "opub-ui";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import AddPromptRowModal from "./AddPromptRowModal";
-import RecommendationModal from "./manual-evaluation/RecommendationModal";
 import type { CustomPromptRow, SelectOption } from "./types";
 
 const MAX_SUBMODULES_PER_EVALUATION = 10;
@@ -85,7 +84,7 @@ interface TestCasesProps {
   setTestSourceMode: (mode: "library" | "custom") => void;
   selectedModules: Record<string, boolean>;
   selectedMetrics: Record<string, SelectOption[]>;
-  onRunAudit: (recommendation: string) => Promise<boolean>;
+  onRunAudit: () => Promise<boolean>;
   isRequestingAudit: boolean;
 }
 
@@ -138,13 +137,9 @@ const TestCases: React.FC<TestCasesProps> = ({
   );
   const [isAddRowModalOpen, setIsAddRowModalOpen] = useState(false);
   const [customPromptTableKey, setCustomPromptTableKey] = useState(0);
-  const [showRunEvaluationModal, setShowRunEvaluationModal] = useState(false);
 
-  const handleRunEvaluationSubmit = async (recommendation: string) => {
-    const started = await onRunAudit(recommendation);
-    if (started) {
-      setShowRunEvaluationModal(false);
-    }
+  const handleRunEvaluation = () => {
+    void onRunAudit();
   };
 
   const selectedSubModuleCount = useMemo(
@@ -704,7 +699,7 @@ const TestCases: React.FC<TestCasesProps> = ({
           kind="primary"
           onClick={() => {
             if (!isRunEvaluationDisabled) {
-              setShowRunEvaluationModal(true);
+              handleRunEvaluation();
             }
           }}
           disabled={isRunEvaluationDisabled}
@@ -732,17 +727,6 @@ const TestCases: React.FC<TestCasesProps> = ({
           </Text>
         </div>
       )}
-
-      <RecommendationModal
-        open={showRunEvaluationModal}
-        onOpenChange={setShowRunEvaluationModal}
-        title="Evaluation Recommendation"
-        description="Once you run your evaluation, you cannot change your selections. Enter your recommendation for this evaluation (optional)."
-        placeholder="Enter your recommendation for this evaluation (optional)"
-        onSubmit={handleRunEvaluationSubmit}
-        isSubmitting={isRequestingAudit}
-        submitButtonText="Run Evaluation"
-      />
     </div>
   );
 };

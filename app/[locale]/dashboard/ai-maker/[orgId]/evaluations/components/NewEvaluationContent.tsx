@@ -1944,7 +1944,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     router.push(evaluationsListPath);
   };
 
-  const handleRunAudit = async (recommendation = ""): Promise<boolean> => {
+  const handleRunAudit = async (): Promise<boolean> => {
     if (!isAuthenticated) {
       setAuditError("Please log in to run an audit.");
       return false;
@@ -1978,7 +1978,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       return false;
     }
 
-    const updated = await updateAuditConfig(auditId, recommendation);
+    const updated = await updateAuditConfig(auditId);
     if (!updated) {
       return false;
     }

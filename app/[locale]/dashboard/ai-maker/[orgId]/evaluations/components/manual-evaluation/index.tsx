@@ -33,7 +33,6 @@ import {
   writeManualEvalWorkspaceDraft,
 } from "./utils";
 // import ModuleSelector from "./ModuleSelector";
-import RecommendationModal from "./RecommendationModal";
 import CompletedTestCases from "./CompletedTestCases";
 import { GET_EVALUATION_STATUS_QUERY, GET_TEST_CASES_QUERY } from "./queries";
 import {
@@ -169,12 +168,6 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   // Evaluation state
   const [status, setStatus] = useState<"PASSED" | "FAILED" | null>(null);
   const [issueRows, setIssueRows] = useState<EvaluationIssueRow[]>([]);
-
-  // Modal state for recommendations
-  const [showModuleRecommendationModal, setShowModuleRecommendationModal] =
-    useState(false);
-  // const [showOverallRecommendationModal, setShowOverallRecommendationModal] =
-  //   useState(false);
 
   // Loading states
   const [isCallingModel, setIsCallingModel] = useState(false);
@@ -580,7 +573,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   //   }
   // };
 
-  const handleFinishEvaluation = async (recommendation: string) => {
+  const handleFinishEvaluation = async () => {
     const totalTestCases = Math.max(
       getTotalManualTestCaseCount(moduleProgress),
       testCases.length
@@ -605,13 +598,12 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
         };
       }>(
         FINISH_EVALUATION_MUTATION,
-        { input: { auditId, recommendation: recommendation || null } },
+        { input: { auditId, recommendation: null } },
         { organization: orgId }
       );
 
       if (result?.finishManualEvaluation?.success) {
         clearManualEvalWorkspaceDraft(orgId, auditId);
-        setShowModuleRecommendationModal(false);
         router.push(
           `/${locale}/dashboard/ai-maker/${orgId}/evaluations/${auditId}`
         );
@@ -902,36 +894,15 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
       <div className="flex items-center justify-center gap-6 pt-8 border-t border-gray-200">
         <Button
           kind="primary"
-          onClick={() => setShowModuleRecommendationModal(true)}
+          onClick={() => {
+            void handleFinishEvaluation();
+          }}
           disabled={isFinishingEvaluation || !canFinishEvaluationByMinimum}
           className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
         >
           {isFinishingEvaluation ? "Finishing..." : "Finish Evaluation"}
         </Button>
       </div>
-
-      <RecommendationModal
-        open={showModuleRecommendationModal}
-        onOpenChange={setShowModuleRecommendationModal}
-        title="Module Recommendation"
-        description={`Enter your recommendation for the ${selectedModule ? getModuleDisplayName(selectedModule) : ""} module.`}
-        placeholder="Enter your recommendation for this module (optional)"
-        onSubmit={handleFinishEvaluation}
-        isSubmitting={isFinishingEvaluation}
-        submitButtonText="Finish Evaluation"
-      />
-
-      {/* Overall recommendation modal replaced by module recommendation + finish evaluation flow. */}
-      {/* <RecommendationModal
-        open={showOverallRecommendationModal}
-        onOpenChange={setShowOverallRecommendationModal}
-        title="Overall Recommendation"
-        description="Enter your overall recommendation for this evaluation."
-        placeholder="Enter your overall recommendation (optional)"
-        onSubmit={handleFinishEvaluation}
-        isSubmitting={isRequestingAudit}
-        submitButtonText="Finish Evaluation"
-      /> */}
     </div>
   );
 };

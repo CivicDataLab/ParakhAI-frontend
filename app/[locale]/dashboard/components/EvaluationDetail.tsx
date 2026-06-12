@@ -19,6 +19,7 @@ import {
 } from "opub-ui";
 import { useEffect, useRef, useState } from "react";
 import EvaluationFormOverview from "../ai-maker/[orgId]/evaluations/components/EvaluationFormOverview";
+import RecommendationModal from "../ai-maker/[orgId]/evaluations/components/manual-evaluation/RecommendationModal";
 import { useOrganization } from "../ai-maker/[orgId]/OrganizationContext";
 import BulkEvaluationResults from "./BulkEvaluationResults";
 import PlaygroundEvaluationResults from "./PlaygroundEvaluationResults";
@@ -331,6 +332,8 @@ const EvaluationDetail = ({
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSavingEvaluation, setIsSavingEvaluation] = useState(false);
   const [isEvaluationSaved, setIsEvaluationSaved] = useState(false);
+  const [showSubmitRecommendationModal, setShowSubmitRecommendationModal] =
+    useState(false);
   const [modelVersion, setModelVersion] = useState("");
   const [evaluatorRecommendation, setEvaluatorRecommendation] = useState("");
   const isReportReady = Boolean(auditReport?.url);
@@ -338,26 +341,80 @@ const EvaluationDetail = ({
     audit?.status === "COMPLETED" || Boolean(audit?.completedAt);
   const isPlaygroundEvaluation =
     audit?.evaluationMode?.toLowerCase() === "manual";
-  const showDownloadActions = isPlaygroundEvaluation || isEvaluationSaved;
+  const showDownloadActions = isEvaluationSaved;
 
   useEffect(() => {
     setIsEvaluationSaved(false);
     setEvaluatorRecommendation("");
   }, [evaluationId]);
 
-  const saveEvaluation = async () => {
-    if (isSavingEvaluation || isEvaluationSaved) return;
+  const submitEvaluation = async (recommendation: string) => {
+    if (!audit || isSavingEvaluation || isEvaluationSaved) return;
+
     setIsSavingEvaluation(true);
     try {
-      // TODO: wire up save evaluation API
+      const requestOptions = orgId ? { organization: orgId } : undefined;
+      const existingConfig =
+        audit.configuration && typeof audit.configuration === "object"
+          ? audit.configuration
+          : {};
+
+      const result = await request<{
+        updateAudit: {
+          success: boolean;
+          message?: string | null;
+          audit?: { configuration?: unknown };
+        };
+      }>(
+        UPDATE_AUDIT_MUTATION,
+        {
+          input: {
+            auditId: audit.id,
+            configuration: {
+              ...existingConfig,
+              recommendation: recommendation.trim() || null,
+            },
+          },
+        },
+        requestOptions
+      );
+
+      if (!result?.updateAudit?.success) {
+        console.error(
+          result?.updateAudit?.message || "Failed to submit evaluation."
+        );
+        return;
+      }
+
+      const trimmed = recommendation.trim();
+      setEvaluatorRecommendation(trimmed);
+      setAudit((prev) =>
+        prev
+          ? {
+              ...prev,
+              configuration: {
+                ...existingConfig,
+                recommendation: trimmed || null,
+              },
+            }
+          : prev
+      );
       setIsEvaluationSaved(true);
-      toast.success("Evaluation saved successfully.");
+      setShowSubmitRecommendationModal(false);
     } catch (err: any) {
-      console.error("Save evaluation failed:", err);
-      toast.error(err?.message || "Failed to save evaluation. Please try again.");
+      console.error("Submit evaluation failed:", err);
     } finally {
       setIsSavingEvaluation(false);
     }
+  };
+
+  const handlePrimaryActionClick = () => {
+    if (showDownloadActions) {
+      void downloadReport();
+      return;
+    }
+
+    setShowSubmitRecommendationModal(true);
   };
 
   const downloadReport = async () => {
@@ -604,6 +661,7 @@ const EvaluationDetail = ({
       );
       if (recommendationFromConfig) {
         setEvaluatorRecommendation(recommendationFromConfig);
+        setIsEvaluationSaved(true);
       }
     }
   }, [audit?.id, audit?.name, audit?.configuration]);
@@ -1119,7 +1177,7 @@ const EvaluationDetail = ({
               />
             ) : undefined
           }
-          onClick={showDownloadActions ? downloadReport : saveEvaluation}
+          onClick={handlePrimaryActionClick}
           className={
             showDownloadActions
               ? isReportReady
@@ -1129,12 +1187,12 @@ const EvaluationDetail = ({
           }
         >
           {isSavingEvaluation
-            ? "Saving..."
+            ? "Submitting..."
             : showDownloadActions
               ? isDownloading
                 ? "Downloading..."
                 : "Download Report"
-              : "Save Evaluation"}
+              : "Submit"}
         </Button>
         <Link href={backLink}>
           <Button
@@ -1145,6 +1203,17 @@ const EvaluationDetail = ({
           </Button>
         </Link>
       </div>
+
+      <RecommendationModal
+        open={showSubmitRecommendationModal}
+        onOpenChange={setShowSubmitRecommendationModal}
+        title="Evaluation Recommendation"
+        description="Enter your recommendation for this evaluation (optional)."
+        placeholder="Enter your recommendation for this evaluation (optional)"
+        onSubmit={submitEvaluation}
+        isSubmitting={isSavingEvaluation}
+        submitButtonText="Submit"
+      />
     </>
   );
 };
