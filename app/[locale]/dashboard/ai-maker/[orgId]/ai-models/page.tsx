@@ -412,13 +412,19 @@ const AIModelsPage = () => {
     <>
       <div className="ai-models-content">
         <div className="prompt-page-header mt-10 text-left">
-          <Text
-            as="h1"
-            className="prompt-page-title text-left"
-            fontWeight="bold"
-          >
-            AI Models
-          </Text>
+          <div>
+            <Text
+              as="h1"
+              className="prompt-page-title text-left"
+              fontWeight="bold"
+            >
+              AI Models
+            </Text>
+            <Text variant="bodySm" className="text-gray-600 mt-1">
+              Browse and manage AI models registered for evaluation in your
+              organization
+            </Text>
+          </div>
         </div>
 
         <div className="prompt-search-row mb-8">

@@ -106,7 +106,11 @@ const AuditsListPage = () => {
 
       const hasActiveAudits = nextAudits.some((audit) => {
         const status = audit.status?.toUpperCase();
-        return status === "PENDING" || status === "RUNNING";
+        return (
+          status === "QUEUED" ||
+          status === "PENDING" ||
+          status === "RUNNING"
+        );
       });
 
       return hasActiveAudits;
@@ -252,8 +256,14 @@ const AuditsListPage = () => {
     columnHelper.accessor("evaluationMode", {
       header: "Evaluation Mode",
       cell: (info) => {
-        const evaluationMode = info.getValue();
-        return <Text variant="bodySm">{evaluationMode}</Text>;
+        const mode = info.getValue()?.toLowerCase();
+        const label =
+          mode === "manual"
+            ? "Playground Evaluation"
+            : mode === "bulk" || mode === "automated"
+              ? "Bulk Evaluation"
+              : info.getValue() || "--";
+        return <Text variant="bodySm">{label}</Text>;
       },
     }),
     columnHelper.accessor("totalTests", {

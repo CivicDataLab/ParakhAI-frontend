@@ -1,33 +1,43 @@
 "use client";
 
 import { useGraphQL } from "@/lib/api";
-import RichTextRenderer from "@/components/RichTextRenderer";
 import ReactMarkdown from "react-markdown";
 import { useParams, useRouter } from "next/navigation";
 import {
   Button,
-  Combobox,
-  Label,
   Select,
   Spinner,
-  Tag,
   Text,
   TextField,
 } from "opub-ui";
-import React, { useCallback, useEffect, useState } from "react";
-import { IconCircleArrowRight } from "@tabler/icons-react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toTitleCase } from "@/lib/utils";
-import FailureDetails from "./FailureDetails";
-import { getFallbackSubModules } from "./utils";
-import ModelOutputDisplay from "./ModelOutputDisplay";
-import ModuleSelector from "./ModuleSelector";
+import type { SelectOption } from "../types";
+import EvaluateOutputSection, {
+  createEvaluationIssueRow,
+  type EvaluationIssueRow,
+} from "./EvaluateOutputSection";
+import {
+  clearManualEvalWorkspaceDraft,
+  getFallbackSubModules,
+  getTotalManualTestCaseCount,
+  metricsToSubModules,
+  MIN_PLAYGROUND_TEST_CASES,
+  readManualEvalWorkspaceDraft,
+  writeManualEvalWorkspaceDraft,
+} from "./utils";
+// import ModuleSelector from "./ModuleSelector";
 import RecommendationModal from "./RecommendationModal";
-import TestCaseHistory from "./TestCaseHistory";
-import TestCaseInput from "./TestCaseInput";
+import CompletedTestCases from "./CompletedTestCases";
 import { GET_EVALUATION_STATUS_QUERY, GET_TEST_CASES_QUERY } from "./queries";
 import {
   LANGUAGE_OPTIONS,
-  SEVERITY_OPTIONS,
   type ManualEvaluationStatus,
   type ManualTestCase,
   type ModuleProgress,
@@ -82,6 +92,7 @@ const COMPLETE_MODULE_MUTATION = `
     }
   }
 `;
+// Complete module flow is temporarily disabled in favor of finishing evaluation directly.
 
 const FINISH_EVALUATION_MUTATION = `
   mutation FinishManualEvaluation($input: FinishManualEvaluationInput!) {
@@ -110,6 +121,7 @@ const GET_SUB_MODULES_QUERY = `
 interface ManualEvaluationFlowProps {
   auditId: string;
   modules: string[];
+  moduleMetrics?: Record<string, SelectOption[]>;
   modelType: string;
   supportedLanguages?: string[];
   orgId: string;
@@ -121,6 +133,7 @@ interface ManualEvaluationFlowProps {
 const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   auditId,
   modules,
+  moduleMetrics,
   modelType,
   supportedLanguages,
   orgId,
@@ -155,23 +168,36 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
 
   // Evaluation state
   const [status, setStatus] = useState<"PASSED" | "FAILED" | null>(null);
-  const [issueType, setIssueType] = useState("");
-  const [severity, setSeverity] = useState("");
-  const [comments, setComments] = useState("");
-  const [idealOutput, setIdealOutput] = useState("");
+  const [issueRows, setIssueRows] = useState<EvaluationIssueRow[]>([]);
 
   // Modal state for recommendations
   const [showModuleRecommendationModal, setShowModuleRecommendationModal] =
     useState(false);
-  const [showOverallRecommendationModal, setShowOverallRecommendationModal] =
-    useState(false);
+  // const [showOverallRecommendationModal, setShowOverallRecommendationModal] =
+  //   useState(false);
 
   // Loading states
   const [isCallingModel, setIsCallingModel] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCompletingModule, setIsCompletingModule] = useState(false);
+  // const [isCompletingModule, setIsCompletingModule] = useState(false);
+  const [isFinishingEvaluation, setIsFinishingEvaluation] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasRestoredWorkspaceRef = useRef(false);
+  const persistWorkspaceTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+
+  const issueSubModules = useMemo(() => {
+    if (!selectedModule) return subModules;
+
+    const configuredMetrics = moduleMetrics?.[selectedModule];
+    if (configuredMetrics?.length) {
+      return metricsToSubModules(configuredMetrics);
+    }
+
+    if (subModules.length > 0) return subModules;
+
+    return getFallbackSubModules(selectedModule);
+  }, [selectedModule, moduleMetrics, subModules]);
 
   const getModuleDisplayName = useCallback(
     (name: string) => {
@@ -188,6 +214,17 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   );
 
   // Fetch evaluation status
+  const pickActiveModule = useCallback(
+    (progress: ModuleProgress[]) => {
+      const nextIncomplete = modules.find((module) => {
+        const entry = progress.find((p) => p.module === module);
+        return !entry?.isComplete;
+      });
+      return nextIncomplete ?? modules[0] ?? null;
+    },
+    [modules]
+  );
+
   const fetchEvaluationStatus = useCallback(async () => {
     try {
       const result = await request<{
@@ -199,10 +236,12 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
         setCanFinishEvaluation(
           result.manualEvaluationStatus.canFinishEvaluation
         );
+        return result.manualEvaluationStatus;
       }
     } catch (err) {
       console.error("Error fetching evaluation status:", err);
     }
+    return null;
   }, [auditId, orgId, request]);
 
   // Fetch sub-modules for selected module
@@ -219,12 +258,14 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           { organization: orgId }
         );
 
-        if (result?.moduleSubModules?.subModules) {
-          setSubModules(result.moduleSubModules.subModules);
+        const apiSubModules = result?.moduleSubModules?.subModules;
+        if (apiSubModules?.length) {
+          setSubModules(apiSubModules);
+        } else {
+          setSubModules(getFallbackSubModules(moduleName));
         }
       } catch (err) {
         console.error("Error fetching sub-modules:", err);
-        // Use fallback sub-modules
         setSubModules(getFallbackSubModules(moduleName));
       }
     },
@@ -266,6 +307,92 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
       fetchSubModules(selectedModule);
     }
   }, [selectedModule, fetchSubModules]);
+
+  useEffect(() => {
+    if (modules.length === 0) {
+      setSelectedModule(null);
+      return;
+    }
+    if (!selectedModule || !modules.includes(selectedModule)) {
+      setSelectedModule(modules[0]);
+    }
+  }, [modules, selectedModule]);
+
+  useEffect(() => {
+    hasRestoredWorkspaceRef.current = false;
+  }, [auditId]);
+
+  useEffect(() => {
+    if (!auditId || isLoading || hasRestoredWorkspaceRef.current) return;
+    if (modules.length === 0) return;
+
+    hasRestoredWorkspaceRef.current = true;
+    const draft = readManualEvalWorkspaceDraft(orgId, auditId);
+    if (!draft) return;
+
+    if (draft.selectedModule && modules.includes(draft.selectedModule)) {
+      setSelectedModule(draft.selectedModule);
+    }
+    setSourceLanguage(draft.sourceLanguage || "en");
+    setTargetLanguage(draft.targetLanguage || "");
+    setInputPrompt(draft.inputPrompt || "");
+    setModelOutput(draft.modelOutput || "");
+    setLatencyMs(draft.latencyMs);
+    setHasCalledModel(draft.hasCalledModel);
+    setStatus(draft.status);
+    if (draft.status === "FAILED" && draft.issueRows.length > 0) {
+      setIssueRows(draft.issueRows);
+    }
+  }, [auditId, isLoading, modules, orgId]);
+
+  useEffect(() => {
+    if (!auditId || !hasRestoredWorkspaceRef.current) return;
+
+    if (persistWorkspaceTimeoutRef.current) {
+      clearTimeout(persistWorkspaceTimeoutRef.current);
+    }
+
+    persistWorkspaceTimeoutRef.current = setTimeout(() => {
+      writeManualEvalWorkspaceDraft(orgId, auditId, {
+        selectedModule,
+        sourceLanguage,
+        targetLanguage,
+        inputPrompt,
+        modelOutput,
+        latencyMs,
+        hasCalledModel,
+        status,
+        issueRows,
+      });
+    }, 300);
+
+    return () => {
+      if (persistWorkspaceTimeoutRef.current) {
+        clearTimeout(persistWorkspaceTimeoutRef.current);
+      }
+    };
+  }, [
+    auditId,
+    orgId,
+    selectedModule,
+    sourceLanguage,
+    targetLanguage,
+    inputPrompt,
+    modelOutput,
+    latencyMs,
+    hasCalledModel,
+    status,
+    issueRows,
+  ]);
+
+  useEffect(() => {
+    if (status === "FAILED" && issueRows.length === 0) {
+      setIssueRows([createEvaluationIssueRow()]);
+    }
+    if (status !== "FAILED") {
+      setIssueRows([]);
+    }
+  }, [status, issueRows.length]);
 
   // Call model
   const handleCallModel = async () => {
@@ -315,9 +442,17 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   const handleSubmitTestCase = async () => {
     if (!selectedModule || !status) return;
 
-    // Validate failed test case
-    if (status === "FAILED" && (!issueType || !severity)) {
-      setError("Please select issue type and severity for failed test cases");
+    const primaryIssue = issueRows[0];
+
+    if (
+      status === "FAILED" &&
+      (!primaryIssue?.issueType ||
+        !primaryIssue?.severity ||
+        !primaryIssue?.observations.trim())
+    ) {
+      setError(
+        "Please complete issue, risk severity, and reasons for failed test cases"
+      );
       return;
     }
 
@@ -333,6 +468,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           moduleProgress?: {
             testCaseCount: number;
             isComplete: boolean;
+            canComplete: boolean;
           };
         };
       }>(
@@ -341,16 +477,18 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           input: {
             auditId,
             module: selectedModule,
-            subModule: issueType || null,
+            subModule: primaryIssue?.issueType || null,
             sourceLanguage: sourceLanguage || null,
             targetLanguage: targetLanguage || null,
             inputPrompt: inputPrompt.trim(),
             modelOutput,
             status,
-            issueType: status === "FAILED" ? issueType : null,
-            severity: status === "FAILED" ? severity : null,
-            comments: comments || null,
-            idealOutput: status === "FAILED" ? idealOutput : null,
+            issueType: status === "FAILED" ? primaryIssue?.issueType : null,
+            severity: status === "FAILED" ? primaryIssue?.severity : null,
+            comments:
+              status === "FAILED" ? primaryIssue?.observations || null : null,
+            idealOutput:
+              status === "FAILED" ? primaryIssue?.idealOutput || null : null,
           },
         },
         { organization: orgId }
@@ -366,9 +504,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                     ...entry,
                     testCaseCount: updatedProgress.testCaseCount,
                     isComplete: updatedProgress.isComplete,
-                    canComplete:
-                      updatedProgress.testCaseCount >= 3 &&
-                      !updatedProgress.isComplete,
+                    canComplete: updatedProgress.canComplete,
                   }
                 : entry
             )
@@ -390,58 +526,76 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
     }
   };
 
-  const handleCompleteModule = async (recommendation: string) => {
-    if (!selectedModule) return;
+  // Complete module is temporarily disabled; finish evaluation opens the recommendation modal instead.
+  // const handleCompleteModule = async (recommendation: string) => {
+  //   if (!selectedModule) return;
+  //
+  //   const progress = moduleProgress.find((p) => p.module === selectedModule);
+  //   if (!progress || progress.testCaseCount < 3) {
+  //     setError("Module requires at least 3 test cases");
+  //     return;
+  //   }
+  //
+  //   setIsCompletingModule(true);
+  //   setError(null);
+  //
+  //   try {
+  //     const result = await request<{
+  //       completeModuleEvaluation: {
+  //         success: boolean;
+  //         message: string;
+  //         canFinishEvaluation: boolean;
+  //       };
+  //     }>(
+  //       COMPLETE_MODULE_MUTATION,
+  //       {
+  //         input: {
+  //           auditId,
+  //           module: selectedModule,
+  //           recommendation: recommendation || null,
+  //         },
+  //       },
+  //       { organization: orgId }
+  //     );
+  //
+  //     if (result?.completeModuleEvaluation?.success) {
+  //       setCanFinishEvaluation(
+  //         result.completeModuleEvaluation.canFinishEvaluation
+  //       );
+  //       setShowModuleRecommendationModal(false);
+  //       const status = await fetchEvaluationStatus();
+  //       setSelectedModule(
+  //         pickActiveModule(status?.moduleProgress ?? moduleProgress)
+  //       );
+  //     } else {
+  //       setError(
+  //         result?.completeModuleEvaluation?.message ||
+  //           "Failed to complete module"
+  //       );
+  //     }
+  //   } catch (err: any) {
+  //     setError(err.message || "Error completing module");
+  //   } finally {
+  //     setIsCompletingModule(false);
+  //   }
+  // };
 
-    const progress = moduleProgress.find((p) => p.module === selectedModule);
-    if (!progress || progress.testCaseCount < 3) {
-      setError("Module requires at least 3 test cases");
+  const handleFinishEvaluation = async (recommendation: string) => {
+    const totalTestCases = Math.max(
+      getTotalManualTestCaseCount(moduleProgress),
+      testCases.length
+    );
+
+    if (totalTestCases < MIN_PLAYGROUND_TEST_CASES) {
+      setError(
+        `Evaluate at least ${MIN_PLAYGROUND_TEST_CASES} test cases to finish the evaluation.`
+      );
       return;
     }
 
-    setIsCompletingModule(true);
+    setIsFinishingEvaluation(true);
     setError(null);
 
-    try {
-      const result = await request<{
-        completeModuleEvaluation: {
-          success: boolean;
-          message: string;
-          canFinishEvaluation: boolean;
-        };
-      }>(
-        COMPLETE_MODULE_MUTATION,
-        {
-          input: {
-            auditId,
-            module: selectedModule,
-            recommendation: recommendation || null,
-          },
-        },
-        { organization: orgId }
-      );
-
-      if (result?.completeModuleEvaluation?.success) {
-        setCanFinishEvaluation(
-          result.completeModuleEvaluation.canFinishEvaluation
-        );
-        setSelectedModule(null);
-        setShowModuleRecommendationModal(false);
-        await fetchEvaluationStatus();
-      } else {
-        setError(
-          result?.completeModuleEvaluation?.message ||
-            "Failed to complete module"
-        );
-      }
-    } catch (err: any) {
-      setError(err.message || "Error completing module");
-    } finally {
-      setIsCompletingModule(false);
-    }
-  };
-
-  const handleFinishEvaluation = async (recommendation: string) => {
     try {
       const result = await request<{
         finishManualEvaluation: {
@@ -456,7 +610,8 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
       );
 
       if (result?.finishManualEvaluation?.success) {
-        setShowOverallRecommendationModal(false);
+        clearManualEvalWorkspaceDraft(orgId, auditId);
+        setShowModuleRecommendationModal(false);
         router.push(
           `/${locale}/dashboard/ai-maker/${orgId}/evaluations/${auditId}`
         );
@@ -468,6 +623,8 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
       }
     } catch (err: any) {
       setError(err.message || "Error finishing evaluation");
+    } finally {
+      setIsFinishingEvaluation(false);
     }
   };
 
@@ -477,23 +634,30 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
     setLatencyMs(undefined);
     setHasCalledModel(false);
     setStatus(null);
-    setIssueType("");
-    setSeverity("");
-    setComments("");
-    setIdealOutput("");
+    setIssueRows([]);
+    writeManualEvalWorkspaceDraft(orgId, auditId, {
+      selectedModule,
+      sourceLanguage,
+      targetLanguage,
+      inputPrompt: "",
+      modelOutput: "",
+      hasCalledModel: false,
+      status: null,
+      issueRows: [],
+    });
   };
 
-  // Get current module progress
   const currentModuleProgress = selectedModule
     ? moduleProgress.find((p) => p.module === selectedModule)
     : null;
 
-  const canCompleteCurrentModule = Boolean(
-    currentModuleProgress &&
-      !currentModuleProgress.isComplete &&
-      (currentModuleProgress.canComplete ??
-        currentModuleProgress.testCaseCount >= 3)
+  const totalTestCaseCount = Math.max(
+    getTotalManualTestCaseCount(moduleProgress),
+    testCases.length
   );
+
+  const canFinishEvaluationByMinimum =
+    totalTestCaseCount >= MIN_PLAYGROUND_TEST_CASES;
 
   if (isLoading) {
     return (
@@ -507,8 +671,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   }
   return (
     <div className="space-y-8">
-      {/* Header - only show when module is selected */}
-      {selectedModule && (
+      {/* {selectedModule && (
         <div>
           <Text variant="headingLg" className="mb-1 block">
             Test Cases for Module: {getModuleDisplayName(selectedModule)}
@@ -522,7 +685,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
             </Text>
           </button>
         </div>
-      )}
+      )} */}
 
       {/* Error display */}
       {error && (
@@ -533,8 +696,8 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
         </div>
       )}
 
-      {/* Module Selection */}
-      {!selectedModule && (
+      {/* Module selection is handled in Evaluation Workspace above */}
+      {/* {!selectedModule && (
         <ModuleSelector
           modules={modules}
           moduleProgress={moduleProgress}
@@ -543,16 +706,16 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           getModuleDisplayName={getModuleDisplayName}
         />
       )}
-      {!canFinishEvaluation && (
+      {!canFinishEvaluationByMinimum && (
         <Text
           variant="bodyMd"
           fontWeight="medium"
           className="mt-4 text-center text-[#2d2c2a]"
         >
-          Note: Evaluate at least 3 test cases per module to complete the
-          evaluation.
+          Note: Evaluate at least {MIN_PLAYGROUND_TEST_CASES} test cases to
+          finish the evaluation.
         </Text>
-      )}
+      )} */}
       {/* Test Case Flow */}
       {selectedModule && (
         <div className="space-y-6">
@@ -597,10 +760,9 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
             )}
           </div>
           {/* Input and Output Panels Side by Side */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 !-mt-2">
-            {/* Input Panel */}
-            <div className="manual-eval-input-panel p-6 bg-white">
-              <div className="flex items-center justify-between mb-4">
+          <div className="grid grid-cols-1 gap-6 !-mt-2 lg:grid-cols-2">
+            <div className="manual-eval-input-panel bg-white p-6">
+              <div className="mb-4 flex items-center justify-between">
                 <Text variant="bodyMd" fontWeight="medium">
                   Input
                 </Text>
@@ -614,31 +776,30 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                 onChange={setInputPrompt}
                 placeholder="Type your prompt here"
               />
-              <div className="flex justify-end mt-4">
+              <div className="mt-4 flex justify-end">
                 <Button
                   kind="primary"
                   onClick={handleCallModel}
                   disabled={!inputPrompt.trim() || isCallingModel}
-                  className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white disabled:text-gray-400 px-6 py-2 rounded-[6px] font-bold text-base"
+                  className="rounded-[6px] bg-primaryPurple2 px-6 py-2 text-base font-bold text-white hover:bg-[#6849EE] hover:!bg-[#6849EE] hover:text-white hover:!text-white disabled:text-gray-400"
                 >
                   {isCallingModel ? "Please Wait..." : "Submit"}
                 </Button>
               </div>
             </div>
 
-            {/* Output Panel */}
-            <div className="relative manual-eval-input-panel p-6  pb-[4rem] bg-white">
-              <div className="flex items-center justify-between mb-2">
+            <div className="manual-eval-input-panel relative bg-white p-6 pb-16">
+              <div className="mb-2 flex items-center justify-between">
                 <Text variant="bodyMd" fontWeight="medium">
                   Output
                 </Text>
-                {latencyMs && (
-                  <span className="bg-gray-200 text-gray-600 px-2 bg-baseIndigoSolid4 text-[14px] rounded-[3px] border">
+                {latencyMs ? (
+                  <span className="rounded-[3px] border bg-baseIndigoSolid4 px-2 text-[14px] text-gray-600">
                     {(latencyMs / 1000).toFixed(0)} sec
                   </span>
-                )}
+                ) : null}
               </div>
-              <div className=" border border-gray-200 rounded-lg px-4 py-0 bg-gray-50 min-h-[200px] max-h-[300px] overflow-y-auto mb-4">
+              <div className="mb-4 min-h-[200px] max-h-[300px] overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 px-4 py-0">
                 <div className="-ml-4">
                   {hasCalledModel ? (
                     modelOutput ? (
@@ -656,7 +817,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                 </div>
               </div>
               {hasCalledModel && (
-                <div className="absolute bottom-[1.5rem] right-[1.5rem] flex justify-end gap-3">
+                <div className="absolute bottom-6 right-6 flex justify-end gap-3">
                   <Button
                     kind="secondary"
                     onClick={() => setStatus("PASSED")}
@@ -676,131 +837,36 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
             </div>
           </div>
 
-          {/* Provide Issue Details */}
           {hasCalledModel && status === "FAILED" && (
-            <div className="space-y-6 p-6 bg-white rounded-lg border border-gray-200">
-              <div className="text-center">
-                <Text variant="headingMd" className="block">
-                  Provide Issue Details
-                </Text>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left Column: Issue and Risk Severity */}
-                <div className="space-y-6">
-                  <div>
-                    <div className="mt-2">
-                      <Combobox
-                        label="Issue"
-                        requiredIndicator
-                        name="issueType"
-                        required
-                        placeholder="Select issue type"
-                        list={subModules.map((sm) => ({
-                          value: sm.name,
-                          label: sm.displayName,
-                        }))}
-                        selectedValue={
-                          subModules.find((sm) => sm.name === issueType)
-                            ?.displayName ?? issueType
-                        }
-                        onChange={(value) => {
-                          if (Array.isArray(value)) {
-                            setIssueType(
-                              value.length > 0
-                                ? value[value.length - 1].value
-                                : ""
-                            );
-                            return;
-                          }
-                          setIssueType(typeof value === "string" ? value : "");
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="mt-2">
-                      <Select
-                        name="severity"
-                        label="Risk Severity"
-                        // labelHidden
-                        requiredIndicator
-                        required
-                        options={SEVERITY_OPTIONS}
-                        value={severity}
-                        onChange={setSeverity}
-                        placeholder="Select severity"
-                      />
-                    </div>
-                  </div>
-                </div>
-                {/* Middle Column: Comments */}
-                <div>
-                  <Label className="audit-form-label">
-                    <Text variant="bodyMd" fontWeight="medium">
-                      Comments
-                    </Text>
-                  </Label>
-                  <div className="comments-textfield-wrapper mt-2">
-                    <TextField
-                      name="comments"
-                      label="Comments"
-                      labelHidden
-                      multiline={12}
-                      value={comments}
-                      onChange={setComments}
-                      placeholder="Type here"
-                    />
-                  </div>
-                </div>
-                {/* Right Column: Ideal Output */}
-                <div>
-                  <Label className="audit-form-label">
-                    <Text variant="bodyMd" fontWeight="medium">
-                      What would an ideal output look like?
-                    </Text>
-                  </Label>
-                  <div className="comments-textfield-wrapper mt-2">
-                    <TextField
-                      name="idealOutput"
-                      label="Ideal Output"
-                      labelHidden
-                      multiline={12}
-                      value={idealOutput}
-                      onChange={setIdealOutput}
-                      placeholder="Type here"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <EvaluateOutputSection
+              issueRows={issueRows}
+              subModules={issueSubModules}
+              onIssueRowsChange={setIssueRows}
+              onSave={handleSubmitTestCase}
+              isSaving={isSubmitting}
+              saveDisabled={
+                !issueRows[0]?.issueType ||
+                !issueRows[0]?.severity ||
+                !issueRows[0]?.observations.trim()
+              }
+            />
           )}
 
-          {/* Save and Next Test Case Button */}
-          {hasCalledModel && status && (
-            <div className="flex justify-center gap-4">
-              <button
+          {hasCalledModel && status === "PASSED" && (
+            <div className="flex justify-center pt-2">
+              <Button
+                kind="secondary"
                 onClick={handleSubmitTestCase}
-                disabled={
-                  isSubmitting ||
-                  (status === "FAILED" && (!issueType || !severity))
-                }
-                className="bg-transparent hover:bg-transparent border-none shadow-none text-black hover:text-black px-0 py-0 disabled:text-gray-400 disabled:opacity-50 cursor-pointer flex items-center gap-2"
+                disabled={isSubmitting}
+                className="rounded-[6px] bg-[#26007b] text-white hover:bg-[#4003c4] hover:text-white disabled:opacity-50"
               >
-                <span className="save-next-test-case-text">
-                  {isSubmitting ? "Saving..." : "Save and Next Test Case"}
-                </span>
-                <IconCircleArrowRight
-                  className="text-[#0A0704]"
-                  width={24}
-                  height={24}
-                  stroke={1.5}
-                  color="#0A0704"
-                />
-              </button>
+                {isSubmitting ? "Saving..." : "Save and Test New Input"}
+              </Button>
             </div>
           )}
 
-          {canCompleteCurrentModule && (
+          {/* Complete Module is temporarily disabled; use Finish Evaluation instead. */}
+          {/* {canCompleteCurrentModule && (
             <div className="flex justify-center mt-4">
               <Button
                 kind="primary"
@@ -811,45 +877,52 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                 {isCompletingModule ? "Completing..." : "Complete Module"}
               </Button>
             </div>
-          )}
+          )} */}
 
-          {/* Test Case History */}
-          <div className="mt-12">
-            <TestCaseHistory
-              testCases={testCases}
-              moduleName={selectedModule}
-              moduleDisplayName={getModuleDisplayName(selectedModule)}
-              subModules={subModules}
-            />
-          </div>
+          <CompletedTestCases
+            testCases={testCases}
+            modules={modules}
+            subModules={subModules}
+            getModuleDisplayName={getModuleDisplayName}
+          />
         </div>
+      )}
+
+      {!canFinishEvaluationByMinimum && (
+        <Text
+          variant="bodyMd"
+          fontWeight="medium"
+          className="pt-4 text-center text-[#2d2c2a]"
+        >
+          Note: Evaluate at least {MIN_PLAYGROUND_TEST_CASES} test cases to
+          finish the evaluation.
+        </Text>
       )}
 
       <div className="flex items-center justify-center gap-6 pt-8 border-t border-gray-200">
         <Button
           kind="primary"
-          onClick={() => setShowOverallRecommendationModal(true)}
-          disabled={isRequestingAudit || !canFinishEvaluation}
+          onClick={() => setShowModuleRecommendationModal(true)}
+          disabled={isFinishingEvaluation || !canFinishEvaluationByMinimum}
           className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
         >
-          {isRequestingAudit ? "Finishing..." : "Finish Evaluation"}
+          {isFinishingEvaluation ? "Finishing..." : "Finish Evaluation"}
         </Button>
       </div>
 
-      {/* Module Recommendation Modal */}
       <RecommendationModal
         open={showModuleRecommendationModal}
         onOpenChange={setShowModuleRecommendationModal}
         title="Module Recommendation"
         description={`Enter your recommendation for the ${selectedModule ? getModuleDisplayName(selectedModule) : ""} module.`}
         placeholder="Enter your recommendation for this module (optional)"
-        onSubmit={handleCompleteModule}
-        isSubmitting={isCompletingModule}
-        submitButtonText="Complete Module"
+        onSubmit={handleFinishEvaluation}
+        isSubmitting={isFinishingEvaluation}
+        submitButtonText="Finish Evaluation"
       />
 
-      {/* Overall Recommendation Modal */}
-      <RecommendationModal
+      {/* Overall recommendation modal replaced by module recommendation + finish evaluation flow. */}
+      {/* <RecommendationModal
         open={showOverallRecommendationModal}
         onOpenChange={setShowOverallRecommendationModal}
         title="Overall Recommendation"
@@ -858,7 +931,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
         onSubmit={handleFinishEvaluation}
         isSubmitting={isRequestingAudit}
         submitButtonText="Finish Evaluation"
-      />
+      /> */}
     </div>
   );
 };

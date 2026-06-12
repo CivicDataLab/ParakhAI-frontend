@@ -2,10 +2,12 @@
 
 import React from "react";
 import ManualEvaluationFlow from "./manual-evaluation";
+import type { SelectOption } from "./types";
 
 interface ManualTestCasesProps {
   auditId?: string;
   modules: string[];
+  moduleMetrics?: Record<string, SelectOption[]>;
   modelType?: string;
   supportedLanguages?: string[];
   orgId: string;
@@ -17,6 +19,7 @@ interface ManualTestCasesProps {
 const ManualTestCases: React.FC<ManualTestCasesProps> = ({
   auditId,
   modules,
+  moduleMetrics,
   modelType = "LLM",
   supportedLanguages,
   orgId,
@@ -40,6 +43,7 @@ const ManualTestCases: React.FC<ManualTestCasesProps> = ({
     <ManualEvaluationFlow
       auditId={auditId}
       modules={modules}
+      moduleMetrics={moduleMetrics}
       modelType={modelType}
       supportedLanguages={supportedLanguages}
       orgId={orgId}

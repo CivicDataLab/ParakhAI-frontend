@@ -42,8 +42,8 @@ const ModuleSelector: React.FC<ModuleSelectorProps> = ({
         Select Module to Test
       </Text>
       <Text variant="bodySm" className="text-gray-500 mb-4 block">
-        Choose a module to begin testing. Each module requires at least 3 test
-        cases.
+        Choose a module to begin testing. The evaluation requires at least 3
+        test cases in total.
       </Text>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

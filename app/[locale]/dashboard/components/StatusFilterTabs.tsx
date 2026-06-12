@@ -10,10 +10,11 @@ export type StatusFilterOption = {
 export const EVALUATION_STATUS_FILTER_OPTIONS: StatusFilterOption[] = [
   { label: "All", value: "ALL" },
   { label: "Draft", value: "DRAFT" },
-  { label: "Pending", value: "PENDING" },
+  { label: "Queued", value: "QUEUED" },
   { label: "Running", value: "RUNNING" },
   { label: "Completed", value: "COMPLETED" },
   { label: "Failed", value: "FAILED" },
+  { label: "Cancelled", value: "CANCELLED" },
 ];
 
 type StatusFilterTabsProps = {
@@ -34,7 +35,9 @@ export function StatusFilterTabs({
 }: StatusFilterTabsProps) {
   const getCount = (optionValue: string) => {
     if (!items || optionValue === "ALL") return null;
-    return items.filter((item) => item.status === optionValue).length;
+    return items.filter(
+      (item) => item.status?.toUpperCase() === optionValue
+    ).length;
   };
 
   return (

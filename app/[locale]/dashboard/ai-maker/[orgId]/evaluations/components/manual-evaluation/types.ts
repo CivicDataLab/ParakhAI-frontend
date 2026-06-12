@@ -27,6 +27,26 @@ export interface ManualEvaluationStatus {
   moduleProgress: ModuleProgress[];
 }
 
+export interface ManualEvalIssueRowDraft {
+  id: string;
+  issueType: string;
+  severity: string;
+  observations: string;
+  idealOutput: string;
+}
+
+export interface ManualEvalWorkspaceDraft {
+  selectedModule: string | null;
+  sourceLanguage: string;
+  targetLanguage: string;
+  inputPrompt: string;
+  modelOutput: string;
+  latencyMs?: number;
+  hasCalledModel: boolean;
+  status: "PASSED" | "FAILED" | null;
+  issueRows: ManualEvalIssueRowDraft[];
+}
+
 export interface ManualTestCase {
   id: string;
   module: string;

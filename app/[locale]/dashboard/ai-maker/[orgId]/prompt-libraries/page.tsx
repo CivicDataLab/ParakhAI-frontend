@@ -340,9 +340,14 @@ const PromptLibrariesPage = () => {
     <>
       <div className="prompt-libraries-content">
         <div className="prompt-page-header mt-10">
-          <Text as="h1" className="prompt-page-title" fontWeight="bold">
-            Prompt Libraries
-          </Text>
+          <div>
+            <Text as="h1" className="prompt-page-title" fontWeight="bold">
+              Prompt Libraries
+            </Text>
+            <Text variant="bodySm" className="text-gray-600 mt-1">
+              View available prompt datasets
+            </Text>
+          </div>
         </div>
 
         <div className="prompt-search-row">

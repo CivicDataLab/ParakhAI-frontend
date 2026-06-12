@@ -2,9 +2,9 @@
 
 import { useGraphQL } from "@/lib/api";
 import { useAppSession } from "@/lib/session";
-import { toTitleCase } from "@/lib/utils";
+import { getEvaluationStatusColor } from "@/lib/statusColors";
+import { formatGraphQLError, toTitleCase } from "@/lib/utils";
 import { IconArrowLeft, IconTrash } from "@tabler/icons-react";
-import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   Button,
@@ -19,9 +19,13 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useOrganization } from "../../OrganizationContext";
 import EvaluationConfiguration from "./EvaluationConfiguration";
+import EvaluationFormOverview from "./EvaluationFormOverview";
 import { GET_EVALUATION_STATUS_QUERY } from "./manual-evaluation/queries";
 import type { ManualEvaluationStatus } from "./manual-evaluation/types";
-import { getTotalManualTestCaseCount } from "./manual-evaluation/utils";
+import {
+  getFallbackEvaluationModules,
+  getTotalManualTestCaseCount,
+} from "./manual-evaluation/utils";
 import ManualTestCases from "./ManualTestCases";
 import ModelSelectionModal from "./ModelSelectionModal";
 import styles from "./styles.module.scss";
@@ -132,6 +136,8 @@ const GET_AUDIT_QUERY = `
       metrics
       testDatasetIds
       configuration
+      createdAt
+      completedAt
     }
   }
 `;
@@ -316,10 +322,20 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const urlVersion = searchParams.get("version");
   const urlVersionId = searchParams.get("versionId");
   const urlAuditId = searchParams.get("auditId");
+  const urlEvaluationName = searchParams.get("name");
+  const urlEvaluationMode = searchParams.get("evaluationMode");
+  const urlAuditType = searchParams.get("auditType");
+  const urlAuditScope = searchParams.get("auditScope");
+  const urlAuditObjective = searchParams.get("auditObjective");
 
-  const [auditType, setAuditType] = useState<AuditType>("Technical");
+  const [auditType, setAuditType] = useState<AuditType>(() => {
+    const parsed = parseAuditTypeFromBackend(urlAuditType);
+    return parsed ?? "Technical";
+  });
   const [activeTab, setActiveTab] = useState<"config" | "test">("config");
-  const [auditName, setAuditName] = useState(generateDefaultAuditName);
+  const [auditName, setAuditName] = useState(
+    () => urlEvaluationName || generateDefaultAuditName(),
+  );
 
   // Current audit ID - persisted in URL
   const [currentAuditId, setCurrentAuditId] = useState<string | null>(
@@ -384,6 +400,8 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const [evaluationScopeOptions, setEvaluationScopeOptions] = useState<
     SelectOption[]
   >([]);
+  const [isLoadingEvaluationScopeOptions, setIsLoadingEvaluationScopeOptions] =
+    useState(false);
   const evaluationScopeOptionsKey = evaluationScopeOptions
     .map((o) => o.value)
     .join("|");
@@ -401,25 +419,38 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
   // Keep auditScope aligned with the selected model's available domains
   useEffect(() => {
-    if (evaluationScopeOptions.length === 0) {
-      if (auditScope) setAuditScope("");
-      return;
-    }
+    if (isLoadingEvaluationScopeOptions) return;
+    if (evaluationScopeOptions.length === 0 || !auditScope) return;
 
     const exists = evaluationScopeOptions.some((o) => o.value === auditScope);
-    if (!exists) {
-      setAuditScope("");
+    if (exists) return;
+
+    const caseMatch = evaluationScopeOptions.find(
+      (option) => option.value.toLowerCase() === auditScope.toLowerCase(),
+    );
+    if (caseMatch) {
+      setAuditScope(caseMatch.value);
     }
+    // Keep the saved scope even when options use a different key format.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedModelId, auditType, evaluationScopeOptionsKey]);
+  }, [
+    selectedModelId,
+    auditType,
+    evaluationScopeOptionsKey,
+    isLoadingEvaluationScopeOptions,
+  ]);
 
   // Resolve evaluation scope options via:
   // 1) GetAIModel -> domain
   // 2) auditDomainOptions(domain) -> domains[]
   useEffect(() => {
     const fetchAuditDomainOptions = async () => {
-      if (!selectedModelId || !isAuthenticated || isSessionLoading) return;
+      if (!selectedModelId || !isAuthenticated || isSessionLoading) {
+        setIsLoadingEvaluationScopeOptions(false);
+        return;
+      }
 
+      setIsLoadingEvaluationScopeOptions(true);
       try {
         const modelResult = await request<{
           aiModel: {
@@ -491,6 +522,8 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         setEvaluationScopeOptions(options);
       } catch {
         setEvaluationScopeOptions([]);
+      } finally {
+        setIsLoadingEvaluationScopeOptions(false);
       }
     };
 
@@ -508,10 +541,18 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   // Form state (no default filled values)
   const [auditorName, setAuditorName] = useState("");
   const [organisationName, setOrganisationName] = useState("");
-  const [auditObjective, setAuditObjective] = useState("");
-  const [modeOfEvaluation, setModeOfEvaluation] = useState<string>("");
+  const [auditObjective, setAuditObjective] = useState(
+    () => urlAuditObjective || "",
+  );
+  const [modeOfEvaluation, setModeOfEvaluation] = useState<string>(() => {
+    const mode = urlEvaluationMode?.trim().toLowerCase();
+    if (!mode) return "";
+    return mode === "automated" ? "bulk" : mode;
+  });
   const [hasManualTestCases, setHasManualTestCases] = useState(false);
-  const [auditScope, setAuditScope] = useState<string>("");
+  const [auditScope, setAuditScope] = useState<string>(
+    () => urlAuditScope || "",
+  );
 
   // Prefill organisation name when org details are loaded
   useEffect(() => {
@@ -519,16 +560,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       setOrganisationName(organization.name);
     }
   }, [organization?.name, organisationName]);
-
-  // Automatically set mode of evaluation to "manual" when domain or cultural evaluation is selected
-  useEffect(() => {
-    if (
-      (auditType === "Domain" || auditType === "Cultural") &&
-      modeOfEvaluation !== "manual"
-    ) {
-      setModeOfEvaluation("manual");
-    }
-  }, [auditType, modeOfEvaluation]);
 
   const handleManualTestCaseCountChange = useCallback((count: number) => {
     setHasManualTestCases(count > 0);
@@ -612,6 +643,13 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const [testInputMode, setTestInputMode] = useState<"paste" | "upload">(
     "paste"
   );
+  const [testSourceMode, setTestSourceMode] = useState<"library" | "custom">(
+    "library",
+  );
+  const [evaluationStatus, setEvaluationStatus] = useState("DRAFT");
+  const [evaluationCreatedAt, setEvaluationCreatedAt] = useState<string | null>(
+    null,
+  );
 
   // Backend audit run state
   const [isRequestingAudit, setIsRequestingAudit] = useState(false);
@@ -627,6 +665,10 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const isNavigatingAwayRef = useRef(false);
   const hasInitializedSavedSnapshotRef = useRef(false);
   const hasTriggeredLeaveAutosaveRef = useRef(false);
+  const hasAutoCreatedDraftRef = useRef(false);
+  const persistOverviewTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   const getPromptDatasetStorageKey = (auditId: string) =>
     `evaluation-draft-datasets:${orgId}:${auditId}`;
@@ -708,11 +750,26 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             metrics: string[];
             testDatasetIds: string[];
             configuration: any;
+            createdAt?: string | null;
+            completedAt?: string | null;
           } | null;
         }>(GET_AUDIT_QUERY, { auditId: urlAuditId }, { organization: orgId });
 
         const audit = result?.audit;
         if (audit) {
+          setEvaluationStatus(audit.status || "DRAFT");
+          setEvaluationCreatedAt(
+            audit.createdAt
+              ? new Date(audit.createdAt).toLocaleString(undefined, {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                  hour12: true,
+                })
+              : null,
+          );
           setAuditName(audit.name || generateDefaultAuditName());
           setSelectedModelId(audit.modelId);
           setSelectedVersionId(audit.modelVersionId);
@@ -902,15 +959,39 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             }
           }
 
-          if (audit.auditObjective) setAuditObjective(audit.auditObjective);
-          if (audit.auditScope) setAuditScope(audit.auditScope);
-          // If backend has no auditScope yet, keep the current default derived
-          // from the selected model's domains instead of clearing it.
-          if (audit.evaluationMode) {
-            setModeOfEvaluation(audit.evaluationMode.toLowerCase());
+          const config = audit.configuration || {};
+
+          const restoredObjective =
+            audit.auditObjective ||
+            (typeof config.auditObjective === "string"
+              ? config.auditObjective
+              : "") ||
+            urlAuditObjective ||
+            "";
+          if (restoredObjective) {
+            setAuditObjective(restoredObjective);
           }
 
-          const config = audit.configuration || {};
+          const restoredScope =
+            audit.auditScope ||
+            (typeof config.auditScope === "string" ? config.auditScope : "") ||
+            urlAuditScope ||
+            "";
+          if (restoredScope) {
+            setAuditScope(restoredScope);
+          }
+
+          const restoredMode =
+            audit.evaluationMode ||
+            (typeof config.evaluationMode === "string"
+              ? config.evaluationMode
+              : "") ||
+            urlEvaluationMode ||
+            "";
+          if (restoredMode) {
+            const mode = String(restoredMode).trim().toLowerCase();
+            setModeOfEvaluation(mode === "automated" ? "bulk" : mode);
+          }
 
           const restoredAuditType =
             parseAuditTypeFromBackend(config.auditType) ??
@@ -1030,6 +1111,17 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
       const auditId = String(payload.audit.id);
       setCurrentAuditId(auditId);
+      setEvaluationStatus("DRAFT");
+      setEvaluationCreatedAt(
+        new Date().toLocaleString(undefined, {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        }),
+      );
       updateUrlWithAuditId(auditId);
       return auditId;
     } catch (error: any) {
@@ -1042,7 +1134,8 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
   // Update audit with current configuration
   const updateAuditConfig = async (
-    auditIdOverride?: string
+    auditIdOverride?: string,
+    recommendation?: string
   ): Promise<boolean> => {
     const auditId = auditIdOverride || currentAuditId;
     if (!auditId) return false;
@@ -1060,7 +1153,8 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             auditId: auditId,
             name: auditName,
             auditType,
-            evaluationMode: modeOfEvaluation || "automated",
+            evaluationMode:
+              modeOfEvaluation === "automated" ? "bulk" : modeOfEvaluation || "bulk",
             auditScope: auditScope.trim() || null,
             modules: modulesList,
             metrics: metricsList,
@@ -1072,12 +1166,20 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               auditorName,
               organisationName,
               auditType,
+              auditObjective,
+              auditScope: auditScope.trim() || null,
+              evaluationMode:
+                (modeOfEvaluation === "automated" ? "bulk" : modeOfEvaluation) ||
+                null,
               testInputMode,
               pastedTestCases,
               selectedPromptDatasetIds: selectedPromptLibraries
                 .map((item: any) => item?.id)
                 .filter(Boolean)
                 .map((id: string | number) => String(id)),
+              ...(recommendation?.trim()
+                ? { recommendation: recommendation.trim() }
+                : {}),
             },
           },
         },
@@ -1111,6 +1213,81 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       return false;
     }
   };
+
+  // Persist overview fields while configuring a draft
+  useEffect(() => {
+    if (!currentAuditId || isCreatingAudit || isLoadingAuditDetails) return;
+    if (!auditScope && !auditObjective && !modeOfEvaluation) return;
+
+    if (persistOverviewTimeoutRef.current) {
+      clearTimeout(persistOverviewTimeoutRef.current);
+    }
+
+    persistOverviewTimeoutRef.current = setTimeout(() => {
+      void updateAuditConfig(currentAuditId);
+    }, 700);
+
+    return () => {
+      if (persistOverviewTimeoutRef.current) {
+        clearTimeout(persistOverviewTimeoutRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    currentAuditId,
+    auditScope,
+    auditObjective,
+    modeOfEvaluation,
+    auditName,
+    auditType,
+    isCreatingAudit,
+    isLoadingAuditDetails,
+  ]);
+
+  // Create draft immediately when arriving from the start-evaluation modal
+  useEffect(() => {
+    const autoCreateDraft = async () => {
+      if (
+        hasAutoCreatedDraftRef.current ||
+        currentAuditId ||
+        urlAuditId ||
+        !urlModelId ||
+        !selectedModelId ||
+        invalidModelError ||
+        isSessionLoading ||
+        !isAuthenticated ||
+        isCreatingAudit ||
+        isLoadingAuditDetails
+      ) {
+        return;
+      }
+
+      hasAutoCreatedDraftRef.current = true;
+      const auditId = await createBlankAudit(
+        selectedModelId,
+        selectedVersionId,
+      );
+      if (auditId) {
+        await updateAuditConfig(auditId);
+      } else {
+        hasAutoCreatedDraftRef.current = false;
+      }
+    };
+
+    void autoCreateDraft();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    currentAuditId,
+    urlAuditId,
+    urlModelId,
+    selectedModelId,
+    selectedVersionId,
+    invalidModelError,
+    isSessionLoading,
+    isAuthenticated,
+    isCreatingAudit,
+    isLoadingAuditDetails,
+  ]);
 
   const handleCancelEvaluation = async () => {
     if (!confirm("Are you sure you want to cancel this evaluation?")) return;
@@ -1198,6 +1375,72 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     isFetchingRef.current = true;
     modulesFetchedRef.current = true;
 
+    const applyModulesData = (
+      modulesData: Module[],
+      metricsData: Array<{
+        name: string;
+        metrics: Array<{ name: string; displayName?: string }>;
+      }> = []
+    ) => {
+      setModules(modulesData);
+
+      const initialModuleMetrics: Record<string, SelectOption[]> = {};
+      const initialSelectedMetrics: Record<string, SelectOption[]> = {};
+
+      metricsData.forEach((moduleMetrics) => {
+        if (
+          moduleMetrics?.name &&
+          Array.isArray(moduleMetrics.metrics) &&
+          moduleMetrics.metrics.length > 0
+        ) {
+          const metricsOptions = moduleMetrics.metrics.map((metric) => ({
+            value: metric.name,
+            label:
+              metric.displayName ||
+              toTitleCase(metric.name.replace(/_/g, " ")),
+          }));
+
+          initialModuleMetrics[moduleMetrics.name] = metricsOptions;
+          initialSelectedMetrics[moduleMetrics.name] = metricsOptions;
+        }
+      });
+
+      const initialSelected: Record<string, boolean> = {};
+
+      modulesData.forEach((module) => {
+        if (!module?.name) return;
+
+        initialSelected[module.name] = true;
+
+        if (
+          !initialSelectedMetrics[module.name] &&
+          Array.isArray(module.metrics) &&
+          module.metrics.length > 0
+        ) {
+          const metricsOptions = module.metrics
+            .map((metric) => ({
+              value: metric?.name || "",
+              label:
+                metric?.displayName ||
+                toTitleCase((metric?.name || "").replace(/_/g, " ")),
+            }))
+            .filter((opt) => opt.value);
+
+          if (metricsOptions.length > 0) {
+            initialModuleMetrics[module.name] = metricsOptions;
+            initialSelectedMetrics[module.name] = metricsOptions;
+          }
+        }
+      });
+
+      setModuleMetricsOptions(initialModuleMetrics);
+      setSelectedModules(initialSelected);
+
+      if (Object.keys(initialSelectedMetrics).length > 0) {
+        setSelectedMetrics(initialSelectedMetrics);
+      }
+    };
+
     const fetchModules = async () => {
       try {
         setIsLoadingModules(true);
@@ -1211,11 +1454,11 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         const modulesData = Array.isArray(data?.modulesByModelType)
           ? data.modulesByModelType
           : [];
-        setModules(modulesData);
 
-        // Also pre-fetch metrics for all modules for this modelType
-        let initialModuleMetrics: Record<string, SelectOption[]> = {};
-        let initialSelectedMetrics: Record<string, SelectOption[]> = {};
+        let metricsData: Array<{
+          name: string;
+          metrics: Array<{ name: string; displayName?: string }>;
+        }> = [];
 
         try {
           const metricsResp = await request<{
@@ -1225,88 +1468,26 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             }>;
           }>(METRICS_BY_MODEL_TYPE_QUERY, { modelType });
 
-          const metricsData = metricsResp?.metricsByModelType || [];
-
-          metricsData.forEach((moduleMetrics: any) => {
-            if (
-              moduleMetrics?.name &&
-              Array.isArray(moduleMetrics.metrics) &&
-              moduleMetrics.metrics.length > 0
-            ) {
-              const metricsOptions = moduleMetrics.metrics.map(
-                (metric: any) => ({
-                  value: metric.name,
-                  label:
-                    metric.displayName ||
-                    toTitleCase(metric.name.replace(/_/g, " ")),
-                })
-              );
-
-              initialModuleMetrics[moduleMetrics.name] = metricsOptions;
-              initialSelectedMetrics[moduleMetrics.name] = metricsOptions;
-            }
-          });
-
-          setModuleMetricsOptions(initialModuleMetrics);
-          setSelectedMetrics(initialSelectedMetrics);
+          metricsData = metricsResp?.metricsByModelType || [];
         } catch (metricsError) {
           console.warn("Failed to prefetch metricsByModelType", metricsError);
         }
 
-        // Initialize selected modules state - all selected by default
-        const initialSelected: Record<string, boolean> = {};
-        if (Array.isArray(modulesData)) {
-          modulesData.forEach((module: Module) => {
-            if (module?.name) {
-              initialSelected[module.name] = true;
-
-              if (
-                !initialSelectedMetrics[module.name] &&
-                Array.isArray(module.metrics) &&
-                module.metrics.length > 0
-              ) {
-                const moduleMetricsOptions = module.metrics
-                  .map((metric) => ({
-                    value: metric?.name || "",
-                    label:
-                      metric?.displayName ||
-                      toTitleCase((metric?.name || "").replace(/_/g, " ")),
-                  }))
-                  .filter((opt) => opt.value);
-
-                if (moduleMetricsOptions.length > 0) {
-                  initialSelectedMetrics[module.name] = moduleMetricsOptions;
-                }
-              }
-            }
-          });
-        }
-        setSelectedModules(initialSelected);
-
-        if (Object.keys(initialSelectedMetrics).length > 0) {
-          setSelectedMetrics(initialSelectedMetrics);
-        }
-      } catch (error: any) {
-        if (
-          error?.message?.includes("Failed to fetch") ||
-          error?.message?.includes("ERR_CONNECTION_REFUSED") ||
-          error?.message?.includes("Backend server") ||
-          error?.message?.includes("NetworkError")
-        ) {
+        if (modulesData.length === 0) {
+          applyModulesData(getFallbackEvaluationModules());
           setModulesError(
-            error.message ||
-              "Backend server is not available. Please check your NEXT_PUBLIC_BACKEND_URL configuration."
+            "Evaluation modules could not be loaded from the server. Showing default modules."
           );
-        } else {
-          const errorMessage =
-            error?.message ||
-            error?.response?.errors?.[0]?.message ||
-            "Unknown error";
-          setModulesError(
-            `Failed to load evaluation modules: ${errorMessage}. Please check your authentication and backend configuration.`
-          );
-          modulesFetchedRef.current = false;
+          return;
         }
+
+        applyModulesData(modulesData, metricsData);
+      } catch (error: unknown) {
+        console.error("Error loading evaluation modules:", error);
+        applyModulesData(getFallbackEvaluationModules());
+        setModulesError(
+          `${formatGraphQLError(error, "Could not load evaluation modules from the server.")} Showing default modules.`
+        );
       } finally {
         setIsLoadingModules(false);
         isFetchingRef.current = false;
@@ -1536,10 +1717,10 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     }
 
     const hasPromptLibraries = selectedPromptLibraries.length > 0;
-    const hasCustomTestCases =
-      (testInputMode === "paste" && pastedTestCases.trim().length > 0) ||
-      (testInputMode === "upload" && uploadedFiles.length > 0);
-    return hasPromptLibraries || hasCustomTestCases;
+    const hasCustomTestCases = pastedTestCases.trim().length > 0;
+    return testSourceMode === "library"
+      ? hasPromptLibraries
+      : hasCustomTestCases;
   };
 
   const validateForm = (): boolean => {
@@ -1763,10 +1944,22 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     router.push(evaluationsListPath);
   };
 
-  const handleRunAudit = async () => {
+  const handleRunAudit = async (recommendation = ""): Promise<boolean> => {
     if (!isAuthenticated) {
       setAuditError("Please log in to run an audit.");
-      return;
+      return false;
+    }
+
+    if (!validateForm()) {
+      setAuditError(
+        "Please complete all required evaluation fields before running."
+      );
+      return false;
+    }
+
+    if (!validateTestCases()) {
+      setAuditError("Please add test cases before running the evaluation.");
+      return false;
     }
 
     // Ensure we have an audit ID
@@ -1776,19 +1969,18 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       // Create audit if not exists
       auditId = await createBlankAudit(selectedModelId, selectedVersionId);
       if (!auditId) {
-        return; // Error already set
+        return false;
       }
     }
 
     if (!auditId) {
       setAuditError("Please select an AI model before running the audit.");
-      return;
+      return false;
     }
 
-    // Update audit config first (pass auditId directly to handle async state)
-    const updated = await updateAuditConfig(auditId);
+    const updated = await updateAuditConfig(auditId, recommendation);
     if (!updated) {
-      return; // Error already set
+      return false;
     }
 
     // Prepare custom test inputs
@@ -1820,22 +2012,19 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       const payload = result?.runAudit;
       if (!payload) {
         setAuditError("Audit response was empty.");
-        setIsRequestingAudit(false);
-        return;
+        return false;
       }
 
       if (!payload.success) {
         setAuditError(payload.message || "Failed to start audit.");
-        setIsRequestingAudit(false);
-        return;
+        return false;
       }
 
       const audit = payload.audit || {};
 
       if (!audit.id) {
         setAuditError("Audit ID not found in response.");
-        setIsRequestingAudit(false);
-        return;
+        return false;
       }
 
       const started = audit.startedAt
@@ -1887,14 +2076,70 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           `/${locale}/dashboard/ai-maker/${orgId}/evaluations/${audit.id}`
         );
       }
+
+      return true;
     } catch (error: any) {
       const errorMessage =
         error?.message || "Network error while starting audit.";
       setAuditError(errorMessage);
+      return false;
     } finally {
       setIsRequestingAudit(false);
     }
   };
+
+  const draftStatusColors = getEvaluationStatusColor("DRAFT");
+
+  const getEvaluatorLabel = (type: AuditType) => {
+    switch (type) {
+      case "Technical":
+        return "Technical Evaluator";
+      case "Domain":
+        return "Domain Expert";
+      case "Cultural":
+        return "Cultural Expert";
+      default:
+        return "Evaluator";
+    }
+  };
+
+  const getModeLabel = (mode: string) => {
+    const normalized = mode?.toLowerCase();
+    if (normalized === "manual") return "Playground Evaluation";
+    if (normalized === "bulk" || normalized === "automated") {
+      return "Bulk Evaluation";
+    }
+    return mode || "--";
+  };
+
+  const getScopeDisplayLabel = (scopeValue: string) => {
+    if (!scopeValue.trim()) return "--";
+
+    const exactMatch = evaluationScopeOptions.find(
+      (option) => option.value === scopeValue,
+    );
+    if (exactMatch) return exactMatch.label;
+
+    const caseMatch = evaluationScopeOptions.find(
+      (option) => option.value.toLowerCase() === scopeValue.toLowerCase(),
+    );
+    if (caseMatch) return caseMatch.label;
+
+    return toTitleCase(scopeValue.replace(/_/g, " "));
+  };
+
+  const overviewScopeLabel = getScopeDisplayLabel(auditScope);
+
+  const overviewModulesLabel =
+    Object.entries(selectedModules)
+      .filter(([, isSelected]) => isSelected)
+      .map(([moduleName]) => getModuleDisplayName(moduleName))
+      .join(", ") || "--";
+
+  const displayModelName =
+    auditModelName || selectedModel?.displayName || selectedModel?.name || "";
+  const displayModelVersion =
+    auditModelVersion || selectedVersion?.version || "";
 
   return (
     <>
@@ -1902,6 +2147,14 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         className={`flex-1 ${styles.auditContent} p-4 sm:p-6 lg:p-10 mt-6 lg:mt-0`}
       >
         {/* Invalid Model/Version Error */}
+        {auditError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <Text variant="bodySm" className="text-red-700">
+              {auditError}
+            </Text>
+          </div>
+        )}
+
         {invalidModelError && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-start gap-3">
@@ -1955,11 +2208,11 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           </div>
         )}
 
-        {/* Audit Name + Header Actions */}
+        {/* Evaluation header */}
         <div
-          className={`flex items-center justify-between gap-4 ${styles.auditNameSection} max-[1023px]:gap-0.5 mb-8`}
+          className={`flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between ${styles.auditNameSection} mb-8`}
         >
-          <div className="flex items-center gap-4 flex-wrap min-w-0 flex-1 evaluation-name-row max-[640px]:flex-row max-[640px]:items-center max-[640px]:gap-2">
+          <div className="flex flex-wrap items-center gap-3 min-w-0 flex-1 evaluation-name-row">
             <Label
               htmlFor="auditName"
               className={`${styles.auditNameLabel} flex-shrink-0 whitespace-nowrap text-left`}
@@ -1967,7 +2220,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               Evaluation Name :
             </Label>
             <div
-              className={`${styles.auditNameInputWrapper} flex-1 min-w-0 max-w-[380px] max-[1024px]:max-w-full max-[640px]:w-full`}
+              className={`${styles.auditNameInputWrapper} min-w-[220px] flex-1 max-w-[380px]`}
             >
               <TextField
                 id="auditName"
@@ -1978,24 +2231,17 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                 onChange={(value) => setAuditName(value)}
               />
             </div>
-            <div className="flex-shrink-0 max-[640px]:w-full max-[640px]:flex max-[640px]:items-start">
-              <div
-                className={`${styles.tagWrapper} ${styles.auditTag}`}
-                style={{ borderRadius: "4px", overflow: "hidden" }}
-              >
-                <Tag variation="filled" fillColor="#E2F5C4" textColor="#0A0704">
-                  {auditType === "Technical"
-                    ? "Technical Evaluation"
-                    : auditType === "Domain"
-                      ? "Domain Evaluation"
-                      : "Cultural Evaluation"}
-                </Tag>
-              </div>
-            </div>
+            <Tag
+              variation="filled"
+              fillColor={draftStatusColors.fillColor}
+              textColor={draftStatusColors.textColor}
+            >
+              Draft
+            </Tag>
           </div>
 
           <div
-            className={`flex items-center justify-end gap-4 ${styles.auditStatusContainer} flex-shrink-0 max-[1023px]:gap-0.5 max-[1023px]:mt-0 mr-0 translate-x-1`}
+            className={`flex items-center justify-end gap-4 ${styles.auditStatusContainer} flex-shrink-0`}
           >
             <Button
               kind="tertiary"
@@ -2017,7 +2263,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               variant="critical"
               onClick={handleCancelEvaluation}
               disabled={isCancelling}
-              className={`${styles.cancelAuditButton} flex-shrink-0 max-[640px]:ml-4`}
+              className={styles.cancelAuditButton}
             >
               <span className="inline-flex items-center">
                 <Icon
@@ -2030,268 +2276,175 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             </Button>
           </div>
         </div>
-        {/* Model Name and Owner Section - Hide while loading audit details */}
+
         {!(urlAuditId && isLoadingAuditDetails) && (
-          <div className="mb-6 bg-white overview-evaluation-section">
-            <div className="p-4 sm:p-6">
-              <div className="-mt-1">
-                {/* Model Selector - Only show if no URL params and no audit loaded */}
-                {!urlModelId && !currentAuditId && (
-                  <div className="mb-4 max-w-md">
-                    {isLoadingModels ? (
-                      <div className="flex flex-col items-center gap-4">
-                        <Spinner />
-                        <Text variant="bodySm" className="text-gray-600">
-                          Loading models...
-                        </Text>
-                      </div>
-                    ) : modelsError ? (
-                      <div>
-                        <Text variant="bodySm" className="text-red-600">
-                          {modelsError}
-                        </Text>
-                      </div>
-                    ) : aiModels.length > 0 ? (
-                      <div className="flex flex-col gap-4">
-                        <Select
-                          name="modelSelect"
-                          label="Select AI Model"
-                          options={aiModels.map((model) => ({
-                            value: model.id,
-                            label: model.displayName || model.name,
-                          }))}
-                          value={selectedModelId || ""}
-                          onChange={(value) => {
-                            setSelectedModelId(value);
-                            const model = aiModels.find((m) => m.id === value);
-                            const latestVer = model?.versions?.find(
-                              (v) => v.isLatest
-                            );
-                            setSelectedVersionId(latestVer?.id || null);
-                          }}
-                          disabled={
-                            typeof activeTab !== "undefined" &&
-                            activeTab !== "config"
-                          }
-                        />
-                        {selectedModel &&
-                          selectedModel.versions &&
-                          selectedModel.versions.length > 0 && (
-                            <Select
-                              name="versionSelect"
-                              label="Select Model Version"
-                              options={selectedModel.versions.map((ver) => ({
-                                value: String(ver.id),
-                                label: `${ver.version}${ver.isLatest ? " (Latest)" : ""}`,
-                              }))}
-                              value={
-                                selectedVersionId
-                                  ? String(selectedVersionId)
-                                  : ""
-                              }
-                              onChange={(value) =>
-                                setSelectedVersionId(
-                                  value ? Number(value) : null
-                                )
-                              }
-                              disabled={
-                                typeof activeTab !== "undefined" &&
-                                activeTab !== "config"
-                              }
-                            />
-                          )}
-                      </div>
-                    ) : (
-                      <div>
-                        <Text variant="bodySm" className="text-gray-600">
-                          No models available. Please check your backend
-                          configuration.
-                        </Text>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between gap-4">
-                  <div className={`mb-0 ${styles.modelNameContainer}`}>
-                    <Text variant="bodyMd" className="text-gray-500">
-                      Model Name :{" "}
-                    </Text>
-                    <Text
-                      as="h1"
-                      variant="headingXl"
-                      className="font-bold text-gray-900 break-words"
-                    >
-                      {modelVersion && modelName?.includes(modelVersion)
-                        ? modelName
-                        : modelVersion
-                          ? `${modelName} ${modelVersion}`
-                          : modelName}
+          <>
+            {!urlModelId && !currentAuditId && (
+              <div className="mb-6 max-w-2xl">
+                {isLoadingModels ? (
+                  <div className="flex flex-col items-center gap-4">
+                    <Spinner />
+                    <Text variant="bodySm" className="text-gray-600">
+                      Loading models...
                     </Text>
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <Image
-                      src="/images/logos/CDL Logo.png"
-                      alt="CivicDataLab Logo"
-                      width={50}
-                      height={50}
-                      className="object-contain rounded-full cdl-round-logo"
+                ) : modelsError ? (
+                  <Text variant="bodySm" className="text-red-600">
+                    {modelsError}
+                  </Text>
+                ) : aiModels.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Select
+                      name="modelSelect"
+                      label="Select AI Model"
+                      options={aiModels.map((model) => ({
+                        value: model.id,
+                        label: model.displayName || model.name,
+                      }))}
+                      value={selectedModelId || ""}
+                      onChange={(value) => {
+                        setSelectedModelId(value);
+                        const model = aiModels.find((m) => m.id === value);
+                        const latestVer = model?.versions?.find(
+                          (v) => v.isLatest,
+                        );
+                        setSelectedVersionId(latestVer?.id || null);
+                      }}
                     />
+                    {selectedModel?.versions?.length ? (
+                      <Select
+                        name="versionSelect"
+                        label="Select Model Version"
+                        options={selectedModel.versions.map((ver) => ({
+                          value: String(ver.id),
+                          label: `${ver.version}${ver.isLatest ? " (Latest)" : ""}`,
+                        }))}
+                        value={
+                          selectedVersionId ? String(selectedVersionId) : ""
+                        }
+                        onChange={(value) =>
+                          setSelectedVersionId(value ? Number(value) : null)
+                        }
+                      />
+                    ) : null}
                   </div>
-                </div>
+                ) : (
+                  <Text variant="bodySm" className="text-gray-600">
+                    No models available. Please check your backend configuration.
+                  </Text>
+                )}
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tabs */}
-        <div className="mb-4 max-[1023px]:mb-3 max-[640px]:mb-2">
-          <div
-            className={`flex gap-6 max-[1023px]:gap-0 ${styles.tabsContainer} w-full`}
-          >
-            <button
-              onClick={() => handleTabChange("config")}
-              disabled={!!invalidModelError}
-              className={`${styles.auditConfigTab} flex-1 ${
-                activeTab === "config"
-                  ? `${styles.auditConfigTabActive} text-gray-900 font-semibold`
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 bg-transparent"
-              } ${invalidModelError ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              <Text
-                variant="bodyMd"
-                className={
-                  activeTab === "config"
-                    ? "text-gray-900 font-semibold"
-                    : "text-gray-600"
-                }
-              >
-                Evaluation Configuration
-              </Text>
-            </button>
-            <button
-              onClick={handleTestTabClick}
-              disabled={isCreatingAudit || !!invalidModelError}
-              className={`${styles.auditConfigTab} flex-1 ${
-                activeTab === "test"
-                  ? `${styles.auditConfigTabActive} text-gray-900 font-semibold`
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 bg-transparent"
-              } ${isCreatingAudit || invalidModelError ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              <Text
-                variant="bodyMd"
-                className={
-                  activeTab === "test"
-                    ? "text-gray-900 font-semibold"
-                    : "text-gray-600"
-                }
-              >
-                {isCreatingAudit ? "Creating Evaluation..." : "Test Cases"}
-              </Text>
-            </button>
-          </div>
-        </div>
-
-        {/* Tab Content */}
-        {activeTab === "config" && (
-          <div
-            className={
-              invalidModelError ? "pointer-events-none opacity-50" : ""
-            }
-          >
-            <EvaluationConfiguration
-              auditType={auditType}
-              setAuditType={setAuditType}
-              auditorName={auditorName}
-              setAuditorName={setAuditorName}
-              organisationName={organisationName}
-              setOrganisationName={setOrganisationName}
-              auditObjective={auditObjective}
-              setAuditObjective={setAuditObjective}
-              auditScope={auditScope}
-              setAuditScope={setAuditScope}
-              evaluationScopeOptions={evaluationScopeOptions}
-              modeOfEvaluation={modeOfEvaluation}
-              setModeOfEvaluation={setModeOfEvaluation}
-              modules={modules}
-              selectedModules={selectedModules}
-              setSelectedModules={setSelectedModules}
-              selectedMetrics={
-                selectedMetrics as Record<string, SelectOption[]>
-              }
-              setSelectedMetrics={setSelectedMetrics}
-              moduleMetricsOptions={moduleMetricsOptions}
-              setModuleMetricsOptions={setModuleMetricsOptions}
-              isLoadingModules={isLoadingModules}
-              modulesError={modulesError}
-              fetchMetricsForModule={fetchMetricsForModule}
-              getModuleDisplayName={getModuleDisplayName}
-              toTitleCase={toTitleCase}
-              validationErrors={validationErrors}
-              setValidationErrors={setValidationErrors}
-              isModeOfEvaluationLocked={hasManualTestCases}
-            />
-          </div>
-        )}
-
-        {activeTab === "test" && (
-          <div
-            className={
-              invalidModelError ? "pointer-events-none opacity-50" : ""
-            }
-          >
-            {modeOfEvaluation === "manual" ? (
-              <ManualTestCases
-                auditId={currentAuditId || undefined}
-                modules={buildModulesAndMetrics().modules}
-                modelType={modelType}
-                orgId={orgId}
-                onRunAudit={handleRunAudit}
-                isRequestingAudit={isRequestingAudit}
-                onTestCaseCountChange={handleManualTestCaseCountChange}
-              />
-            ) : (
-              <TestCases
-                orgId={orgId}
-                selectedPromptLibraries={selectedPromptLibraries}
-                setSelectedPromptLibraries={setSelectedPromptLibraries}
-                uploadedFiles={uploadedFiles}
-                setUploadedFiles={setUploadedFiles}
-                domain={auditScope || null}
-                pastedTestCases={pastedTestCases}
-                setPastedTestCases={setPastedTestCases}
-                testInputMode={testInputMode}
-                setTestInputMode={setTestInputMode}
-                onRunAudit={handleRunAudit}
-                isRequestingAudit={isRequestingAudit}
-              />
             )}
-          </div>
-        )}
 
-        {/* Navigation Buttons - Audit Configuration tab */}
-        {activeTab === "config" && (
-          <div className="flex items-center justify-center gap-6 pt-8">
-            <Button
-              kind="secondary"
-              onClick={handleTestTabClick}
-              disabled={isCreatingAudit || !!invalidModelError}
-              className={styles.addTestCasesButton}
+            <EvaluationFormOverview
+              modelName={displayModelName}
+              modelVersion={displayModelVersion}
+              organizationName={
+                organisationName || organization?.name || "CivicDataLab"
+              }
+              evalId={
+                isCreatingAudit && !currentAuditId
+                  ? "..."
+                  : currentAuditId || "--"
+              }
+              createdAt={
+                isCreatingAudit && !evaluationCreatedAt
+                  ? "..."
+                  : evaluationCreatedAt || "--"
+              }
+              completedAt="--"
+              duration="--"
+              scope={overviewScopeLabel}
+              mode={getModeLabel(modeOfEvaluation)}
+              evaluator={getEvaluatorLabel(auditType)}
+              modules={overviewModulesLabel}
+              objective={auditObjective}
+            />
+
+            <div
+              className={`${styles.evaluationWorkspaceSection} ${
+                invalidModelError ? "pointer-events-none opacity-50" : ""
+              }`}
             >
-              <span className="add-test-cases-text">
-                {isCreatingAudit ? "Creating..." : "Add Test Cases"}
-              </span>
+              <Text
+                variant="headingMd"
+                fontWeight="bold"
+                className={styles.evaluationWorkspaceTitle}
+              >
+                Evaluation Workspace
+              </Text>
 
-              <Image
-                src="/images/icons/circle-arrow-right.png"
-                alt="Circle arrow right"
-                width={18}
-                height={18}
-                className={`object-contain ${styles.addTestCasesIcon}`}
+              <EvaluationConfiguration
+                workspaceOnly
+                auditType={auditType}
+                setAuditType={setAuditType}
+                auditorName={auditorName}
+                setAuditorName={setAuditorName}
+                organisationName={organisationName}
+                setOrganisationName={setOrganisationName}
+                auditObjective={auditObjective}
+                setAuditObjective={setAuditObjective}
+                auditScope={auditScope}
+                setAuditScope={setAuditScope}
+                evaluationScopeOptions={evaluationScopeOptions}
+                modeOfEvaluation={modeOfEvaluation}
+                setModeOfEvaluation={setModeOfEvaluation}
+                modules={modules}
+                selectedModules={selectedModules}
+                setSelectedModules={setSelectedModules}
+                selectedMetrics={
+                  selectedMetrics as Record<string, SelectOption[]>
+                }
+                setSelectedMetrics={setSelectedMetrics}
+                moduleMetricsOptions={moduleMetricsOptions}
+                setModuleMetricsOptions={setModuleMetricsOptions}
+                isLoadingModules={isLoadingModules}
+                modulesError={modulesError}
+                fetchMetricsForModule={fetchMetricsForModule}
+                getModuleDisplayName={getModuleDisplayName}
+                toTitleCase={toTitleCase}
+                validationErrors={validationErrors}
+                setValidationErrors={setValidationErrors}
+                isModeOfEvaluationLocked={hasManualTestCases}
               />
-            </Button>
-          </div>
+
+              {modeOfEvaluation === "manual" ? (
+                <ManualTestCases
+                  auditId={currentAuditId || undefined}
+                  modules={buildModulesAndMetrics().modules}
+                  moduleMetrics={
+                    selectedMetrics as Record<string, SelectOption[]>
+                  }
+                  modelType={modelType}
+                  orgId={orgId}
+                  onRunAudit={handleRunAudit}
+                  isRequestingAudit={isRequestingAudit}
+                  onTestCaseCountChange={handleManualTestCaseCountChange}
+                />
+              ) : modeOfEvaluation ? (
+                <TestCases
+                  orgId={orgId}
+                  selectedPromptLibraries={selectedPromptLibraries}
+                  setSelectedPromptLibraries={setSelectedPromptLibraries}
+                  uploadedFiles={uploadedFiles}
+                  setUploadedFiles={setUploadedFiles}
+                  domain={auditScope || null}
+                  pastedTestCases={pastedTestCases}
+                  setPastedTestCases={setPastedTestCases}
+                  testInputMode={testInputMode}
+                  setTestInputMode={setTestInputMode}
+                  testSourceMode={testSourceMode}
+                  setTestSourceMode={setTestSourceMode}
+                  selectedModules={selectedModules}
+                  selectedMetrics={
+                    selectedMetrics as Record<string, SelectOption[]>
+                  }
+                  onRunAudit={handleRunAudit}
+                  isRequestingAudit={isRequestingAudit}
+                />
+              ) : null}
+            </div>
+          </>
         )}
       </div>
 

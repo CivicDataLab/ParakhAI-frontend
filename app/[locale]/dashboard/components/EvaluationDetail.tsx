@@ -5,26 +5,35 @@ import {
   getEvaluationModeColor,
   getEvaluationStatusColor,
 } from "@/lib/statusColors";
-import { IconDownload, IconMinus, IconPlus } from "@tabler/icons-react";
-import Image from "next/image";
+import { formatStatusLabel } from "@/lib/utils";
+import { IconDownload } from "@tabler/icons-react";
 import Link from "next/link";
 import {
   Button,
   Icon,
   Spinner,
-  Tab,
-  TabList,
-  TabPanel,
-  Tabs,
   Tag,
   Text,
   TextField,
   toast,
 } from "opub-ui";
 import { useEffect, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { SeverityBarChart } from "./SeverityBarChart";
+import EvaluationFormOverview from "../ai-maker/[orgId]/evaluations/components/EvaluationFormOverview";
+import { useOrganization } from "../ai-maker/[orgId]/OrganizationContext";
+import BulkEvaluationResults from "./BulkEvaluationResults";
+import PlaygroundEvaluationResults from "./PlaygroundEvaluationResults";
+
+const AI_MODEL_BY_ID_QUERY = `
+  query GetAIModel($modelId: ID!) {
+    aiModel(modelId: $modelId) {
+      id
+      versions {
+        id
+        version
+      }
+    }
+  }
+`;
 
 const EVALUATION_NAME_TOAST_ID = "evaluation-detail-name-save";
 
@@ -38,6 +47,8 @@ const GET_AUDIT_QUERY = `
       status
       modules
       auditScope
+      auditObjective
+      modelVersionId
       metrics
       configuration
       evaluationMode
@@ -51,49 +62,6 @@ const GET_AUDIT_QUERY = `
       createdAt
       startedAt
       completedAt
-    }
-  }
-`;
-
-const GET_AUDIT_RESULTS_SUMMARY_QUERY = `
-  query GetAuditResultSamples($auditId: ID!) {
-    resultSamples(auditId: $auditId) {
-      __typename
-
-      ... on ManualModuleSamples {
-        name
-        displayName
-        metrics {
-          name
-          displayName
-          samples {
-            testInput
-            actualOutput
-            comments
-            severity
-          }
-        }
-      }
-
-      ... on AutomatedModuleSamples {
-        name
-        displayName
-        metrics {
-          name
-          displayName
-          samples {
-            test {
-              testInput
-              actualOutput
-            }
-            result {
-              riskLevel
-              reason
-              score
-            }
-          }
-        }
-      }
     }
   }
 `;
@@ -158,6 +126,8 @@ export type Audit = {
   auditType: string;
   evaluationMode: string;
   auditScope?: string | null;
+  auditObjective?: string | null;
+  modelVersionId?: number | null;
   id: string;
   name: string;
   modelId: string;
@@ -187,17 +157,6 @@ export type TestCase = {
   reason: string;
 };
 
-type ModuleIssue = {
-  id: string;
-  module: string;
-  severity: "LOW" | "MEDIUM" | "HIGH";
-  status: "PASSED" | "FAILED";
-  issueType: string;
-  input: string;
-  output: string;
-  comments?: string;
-};
-
 export const formatModuleName = (moduleName: string): string => {
   const moduleMap: Record<string, string> = {
     BIAS_FAIRNESS: "Bias and Fairness",
@@ -213,6 +172,91 @@ export const formatModuleName = (moduleName: string): string => {
     .split("_")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
+};
+
+const getEvaluatorLabel = (auditType: string | null | undefined) => {
+  const normalized = auditType?.toUpperCase().replace(/[\s-]+/g, "_") || "";
+  if (normalized.includes("DOMAIN")) return "Domain Expert";
+  if (normalized.includes("CULTURAL")) return "Cultural Expert";
+  if (normalized.includes("TECHNICAL")) return "Technical Evaluator";
+  return auditType || "--";
+};
+
+const isAuditInProgress = (status: string | null | undefined) => {
+  const normalized = status?.toUpperCase();
+  return (
+    normalized === "RUNNING" ||
+    normalized === "QUEUED" ||
+    normalized === "PENDING"
+  );
+};
+
+const getModeLabel = (mode: string | null | undefined) => {
+  const normalized = mode?.toLowerCase();
+  if (normalized === "manual") return "Playground Evaluation";
+  if (normalized === "bulk" || normalized === "automated") {
+    return "Bulk Evaluation";
+  }
+  return mode || "--";
+};
+
+const parseEvaluatorRecommendation = (
+  recommendations: unknown,
+  configuration: unknown,
+  auditorComments?: string | null
+): string => {
+  if (typeof recommendations === "string" && recommendations.trim()) {
+    return recommendations.trim();
+  }
+
+  if (Array.isArray(recommendations)) {
+    const joined = recommendations
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (item && typeof item === "object" && "text" in item) {
+          return String((item as { text?: string }).text || "");
+        }
+        return "";
+      })
+      .filter(Boolean)
+      .join("\n\n");
+
+    if (joined.trim()) return joined.trim();
+  }
+
+  if (recommendations && typeof recommendations === "object") {
+    const record = recommendations as Record<string, unknown>;
+    for (const key of ["text", "recommendation", "content", "value"]) {
+      const value = record[key];
+      if (typeof value === "string" && value.trim()) {
+        return value.trim();
+      }
+    }
+  }
+
+  const config =
+    configuration && typeof configuration === "object"
+      ? (configuration as Record<string, unknown>)
+      : null;
+
+  if (config) {
+    for (const key of [
+      "recommendation",
+      "evaluatorRecommendation",
+      "evaluator_recommendation",
+    ]) {
+      const value = config[key];
+      if (typeof value === "string" && value.trim()) {
+        return value.trim();
+      }
+    }
+  }
+
+  if (typeof auditorComments === "string" && auditorComments.trim()) {
+    return auditorComments.trim();
+  }
+
+  return "";
 };
 
 /**
@@ -255,6 +299,7 @@ const EvaluationDetail = ({
   newEvaluationLink,
   orgId,
 }: EvaluationDetailProps) => {
+  const { organization } = useOrganization();
   const {
     request,
     accessToken,
@@ -268,27 +313,52 @@ const EvaluationDetail = ({
     size: number | null;
     url: string;
   } | null>(null);
-  const [apiModuleIssues, setApiModuleIssues] = useState<ModuleIssue[]>([]);
+  const [riskDistribution, setRiskDistribution] = useState<
+    Record<string, number>
+  >({});
   const [metricSummary, setMetricSummary] = useState<
     Record<
       string,
       Record<string, { risk_distribution: Record<string, number> }>
     >
   >({});
-  const [riskDistribution, setRiskDistribution] = useState<
-    Record<string, number>
-  >({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedIssueIds, setExpandedIssueIds] = useState<Set<string>>(
-    new Set()
-  );
   const [editableName, setEditableName] = useState<string>("");
   const [isSavingName, setIsSavingName] = useState(false);
   const isFetchingRef = useRef(false);
   const lastFetchedAuditIdRef = useRef<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isSavingEvaluation, setIsSavingEvaluation] = useState(false);
+  const [isEvaluationSaved, setIsEvaluationSaved] = useState(false);
+  const [modelVersion, setModelVersion] = useState("");
+  const [evaluatorRecommendation, setEvaluatorRecommendation] = useState("");
   const isReportReady = Boolean(auditReport?.url);
+  const isEvaluationComplete =
+    audit?.status === "COMPLETED" || Boolean(audit?.completedAt);
+  const isPlaygroundEvaluation =
+    audit?.evaluationMode?.toLowerCase() === "manual";
+  const showDownloadActions = isPlaygroundEvaluation || isEvaluationSaved;
+
+  useEffect(() => {
+    setIsEvaluationSaved(false);
+    setEvaluatorRecommendation("");
+  }, [evaluationId]);
+
+  const saveEvaluation = async () => {
+    if (isSavingEvaluation || isEvaluationSaved) return;
+    setIsSavingEvaluation(true);
+    try {
+      // TODO: wire up save evaluation API
+      setIsEvaluationSaved(true);
+      toast.success("Evaluation saved successfully.");
+    } catch (err: any) {
+      console.error("Save evaluation failed:", err);
+      toast.error(err?.message || "Failed to save evaluation. Please try again.");
+    } finally {
+      setIsSavingEvaluation(false);
+    }
+  };
 
   const downloadReport = async () => {
     if (!evaluationId || isDownloading) return;
@@ -357,8 +427,7 @@ const EvaluationDetail = ({
           }));
 
           if (data.audit.status === "COMPLETED" || data.audit.completedAt) {
-            await fetchAuditSummary();
-            await fetchResultSamples();
+            await fetchAuditSummary(data.audit.configuration);
             return;
           }
 
@@ -409,12 +478,8 @@ const EvaluationDetail = ({
           auditData.audit.status === "COMPLETED" ||
           auditData.audit.completedAt
         ) {
-          await fetchAuditSummary();
-          await fetchResultSamples();
-        } else if (
-          auditData.audit.status === "RUNNING" ||
-          auditData.audit.status === "PENDING"
-        ) {
+          await fetchAuditSummary(auditData.audit.configuration);
+        } else if (isAuditInProgress(auditData.audit.status)) {
           startPolling();
         }
       } catch (err: any) {
@@ -442,7 +507,7 @@ const EvaluationDetail = ({
     });
   };
 
-  const fetchAuditSummary = async () => {
+  const fetchAuditSummary = async (configurationOverride?: unknown) => {
     const requestOptions = orgId ? { organization: orgId } : undefined;
     try {
       const data = await request<{
@@ -453,6 +518,8 @@ const EvaluationDetail = ({
             string,
             Record<string, { risk_distribution: Record<string, number> }>
           > | null;
+          recommendations: unknown;
+          auditorComments?: string | null;
           auditReport: {
             name: string;
             size: number | null;
@@ -471,6 +538,14 @@ const EvaluationDetail = ({
       if (summary?.metricSummary) {
         setMetricSummary(summary.metricSummary);
       }
+      const recommendationText = parseEvaluatorRecommendation(
+        summary?.recommendations,
+        configurationOverride ?? audit?.configuration,
+        summary?.auditorComments
+      );
+      if (recommendationText) {
+        setEvaluatorRecommendation(recommendationText);
+      }
     } catch (err) {
       console.error("Error fetching audit summary:", err);
     }
@@ -487,7 +562,7 @@ const EvaluationDetail = ({
   const statusColors = getEvaluationStatusColor(audit?.status);
   const evaluationMode = getEvaluationModeColor(audit?.evaluationMode);
   const duration = getDuration();
-  const isRunning = audit?.status === "RUNNING" || audit?.status === "PENDING";
+  const isRunning = isAuditInProgress(audit?.status);
   const evaluationScopeSource =
     audit?.auditScope ||
     audit?.configuration?.auditScope ||
@@ -522,8 +597,53 @@ const EvaluationDetail = ({
         ? `Evaluation #${audit.id.slice(0, 8)}`
         : "";
       setEditableName(audit.name || fallbackName);
+
+      const recommendationFromConfig = parseEvaluatorRecommendation(
+        null,
+        audit.configuration
+      );
+      if (recommendationFromConfig) {
+        setEvaluatorRecommendation(recommendationFromConfig);
+      }
     }
-  }, [audit?.id, audit?.name]);
+  }, [audit?.id, audit?.name, audit?.configuration]);
+
+  useEffect(() => {
+    const fetchModelVersion = async () => {
+      if (!audit?.modelId || !audit?.modelVersionId || !isAuthenticated) {
+        setModelVersion("");
+        return;
+      }
+
+      try {
+        const requestOptions = orgId ? { organization: orgId } : undefined;
+        const data = await request<{
+          aiModel: {
+            versions?: Array<{ id: number; version: string }>;
+          } | null;
+        }>(
+          AI_MODEL_BY_ID_QUERY,
+          { modelId: audit.modelId },
+          requestOptions,
+        );
+
+        const matchedVersion = data?.aiModel?.versions?.find(
+          (version) => version.id === audit.modelVersionId,
+        );
+        setModelVersion(matchedVersion?.version || "");
+      } catch {
+        setModelVersion("");
+      }
+    };
+
+    void fetchModelVersion();
+  }, [
+    audit?.modelId,
+    audit?.modelVersionId,
+    isAuthenticated,
+    orgId,
+    request,
+  ]);
 
   const saveEvaluationName = async () => {
     if (!audit || isSavingName) return;
@@ -603,155 +723,6 @@ const EvaluationDetail = ({
   const totalIssuesIdentified =
     riskSummary.low + riskSummary.medium + riskSummary.high;
 
-  const hasVisualizationDataForModule = (moduleName: string) => {
-    const issuesForModule = apiModuleIssues.filter(
-      (issue) => issue.module === moduleName
-    );
-    return issuesForModule.length > 0;
-  };
-
-  const modulesWithVisualizationData =
-    audit?.modules?.filter((moduleName) =>
-      hasVisualizationDataForModule(moduleName)
-    ) || [];
-
-  const toggleIssueCard = (issueId: string) => {
-    setExpandedIssueIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(issueId)) {
-        newSet.delete(issueId);
-      } else {
-        newSet.add(issueId);
-      }
-      return newSet;
-    });
-  };
-
-  const fetchResultSamples = async () => {
-    const requestOptions = orgId ? { organization: orgId } : undefined;
-    try {
-      const data = await request<{
-        resultSamples: Array<
-          | {
-              __typename: "ManualModuleSamples";
-              name: string;
-              displayName: string;
-              metrics: Array<{
-                name: string;
-                displayName: string;
-                samples: Array<{
-                  testInput: string;
-                  actualOutput: string;
-                  comments?: string | null;
-                  severity?: "LOW" | "MEDIUM" | "HIGH" | null;
-                }>;
-              }>;
-            }
-          | {
-              __typename: "AutomatedModuleSamples";
-              name: string;
-              displayName: string;
-              metrics: Array<{
-                name: string;
-                displayName: string;
-                samples: Array<{
-                  test: {
-                    testInput: string;
-                    actualOutput: string;
-                  };
-                  result: {
-                    riskLevel: string;
-                    reason: string;
-                    score: number | null;
-                  };
-                }>;
-              }>;
-            }
-        >;
-      }>(
-        GET_AUDIT_RESULTS_SUMMARY_QUERY,
-        { auditId: evaluationId },
-        requestOptions
-      );
-
-      const collectedIssues: ModuleIssue[] = [];
-
-      (data?.resultSamples || []).forEach((sampleGroup) => {
-        if (!sampleGroup) return;
-
-        const resolveModuleId = () => {
-          if (!audit?.modules?.length) return sampleGroup.name;
-          const modules = audit.modules;
-
-          const exact = modules.find((m) => m === sampleGroup.name);
-          if (exact) return exact;
-
-          const byDisplay = modules.find(
-            (m) =>
-              formatModuleName(m).toLowerCase() ===
-              sampleGroup.displayName.toLowerCase()
-          );
-          return byDisplay || sampleGroup.name;
-        };
-
-        const moduleId = resolveModuleId();
-
-        if (sampleGroup.__typename === "ManualModuleSamples") {
-          sampleGroup.metrics?.forEach((metric) => {
-            metric.samples?.forEach((sample, index) => {
-              collectedIssues.push({
-                id: `${moduleId}-${metric.name}-manual-${index}`,
-                module: moduleId,
-                severity: (sample.severity || "LOW") as
-                  | "LOW"
-                  | "MEDIUM"
-                  | "HIGH",
-                status: "FAILED",
-                issueType: metric.displayName || metric.name,
-                input: sample.testInput,
-                output: sample.actualOutput,
-                comments: sample.comments || undefined,
-              });
-            });
-          });
-        }
-
-        if (sampleGroup.__typename === "AutomatedModuleSamples") {
-          sampleGroup.metrics?.forEach((metric) => {
-            metric.samples?.forEach((sample, index) => {
-              const riskLevel = sample.result?.riskLevel || "";
-
-              // Skip clearly no-risk samples from "issues" list
-              if (riskLevel.toUpperCase() === "NO_RISK") {
-                return;
-              }
-
-              let severity: "LOW" | "MEDIUM" | "HIGH" = "LOW";
-              const upperRisk = riskLevel.toUpperCase();
-              if (upperRisk.includes("HIGH")) severity = "HIGH";
-              else if (upperRisk.includes("MEDIUM")) severity = "MEDIUM";
-
-              collectedIssues.push({
-                id: `${moduleId}-${metric.name}-auto-${index}`,
-                module: moduleId,
-                severity,
-                status: "FAILED",
-                issueType: metric.displayName || metric.name,
-                input: sample.test?.testInput || "",
-                output: sample.test?.actualOutput || "",
-                comments: sample.result?.reason || undefined,
-              });
-            });
-          });
-        }
-      });
-
-      setApiModuleIssues(collectedIssues);
-    } catch (err) {
-      console.error("Error fetching result samples:", err);
-    }
-  };
-
   if (isSessionLoading || isLoading) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-20">
@@ -814,7 +785,7 @@ const EvaluationDetail = ({
               fillColor={statusColors.fillColor}
               textColor={statusColors.textColor}
             >
-              {audit.status}
+              {formatStatusLabel(audit.status)}
             </Tag>
           </span>
           <span className="self-start sm:self-auto">
@@ -823,7 +794,7 @@ const EvaluationDetail = ({
               fillColor={evaluationMode.fillColor}
               textColor={evaluationMode.textColor}
             >
-              {audit.evaluationMode}
+              {getModeLabel(audit.evaluationMode)}
             </Tag>
           </span>
         </div>
@@ -836,8 +807,8 @@ const EvaluationDetail = ({
             }}
           >
             <Button
-              kind="primary"
-              className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base w-full sm:w-auto"
+              kind="secondary"
+              className="px-8 py-3 rounded-[8px] font-bold text-base w-full sm:w-auto"
             >
               {backLinkText}
             </Button>
@@ -854,131 +825,55 @@ const EvaluationDetail = ({
         </div>
       )}
 
-      <div className="mb-8 bg-white overview-evaluation-section ">
-        <div className="flex flex-col sm:flex-row p-4 sm:p-6 items-start sm:items-center justify-between gap-4">
-          <div className="flex flex-col gap-1 flex-1 min-w-0">
-            <Text variant="bodyMd" className="text-gray-500">
-              Model Name :{" "}
-            </Text>
+      <EvaluationFormOverview
+        modelName={audit.modelName || "--"}
+        modelVersion={modelVersion}
+        organizationName={
+          organization?.name ||
+          (typeof audit.configuration?.organisationName === "string"
+            ? audit.configuration.organisationName
+            : undefined)
+        }
+        evalId={audit.id}
+        createdAt={formatDate(audit.createdAt)}
+        completedAt={formatDate(audit.completedAt)}
+        duration={duration || "--"}
+        scope={evaluationScopeDisplay}
+        mode={getModeLabel(audit.evaluationMode)}
+        evaluator={getEvaluatorLabel(audit.auditType)}
+        modules={audit.modules?.map(formatModuleName).join(", ") || "--"}
+        objective={
+          audit.auditObjective ||
+          (typeof audit.configuration?.auditObjective === "string"
+            ? audit.configuration.auditObjective
+            : "") ||
+          "--"
+        }
+      />
+
+      {isRunning && (
+        <div className="mb-8 space-y-1">
+          <Text variant="bodySm" className="text-gray-600">
+            Evaluation results will load once the evaluation is completed.
+          </Text>
+        </div>
+      )}
+
+      {(audit.status === "COMPLETED" || audit.completedAt) && (
+        <div className="mb-8">
+          <Text variant="headingMd" fontWeight="bold" className="mb-4 block">
+            Evaluator&apos;s Recommendations
+          </Text>
+          <div className="manual-eval-input-panel bg-white p-6">
             <Text
-              variant="headingXl"
-              className="font-bold text-gray-900 break-words"
+              variant="bodyMd"
+              className="whitespace-pre-wrap text-gray-800"
             >
-              {audit.modelName}
+              {evaluatorRecommendation || "No recommendations provided."}
             </Text>
           </div>
-          <div className="rounded-full flex-shrink-0">
-            <Image
-              src="/images/logos/CDL Logo.png"
-              alt="CivicDataLab Logo"
-              width={50}
-              height={50}
-              className="object-contain rounded-full cdl-round-logo"
-            />
-          </div>
         </div>
-      </div>
-
-      {/* Overview Section */}
-      <div className="mb-8 bg-white overview-evaluation-section ">
-        <div className="p-6">
-          <div className="mb-5">
-            <Text variant="headingMd" fontWeight="bold">
-              Evaluation Overview
-            </Text>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-            <div className="space-y-4">
-              <div className="flex flex-col gap-1">
-                <Text variant="bodyMd" className="text-gray-500">
-                  Evaluation ID :{" "}
-                </Text>
-                <Text
-                  variant="headingXl"
-                  className="font-bold text-gray-900 break-words"
-                >
-                  {audit.id}
-                </Text>
-              </div>
-            </div>
-
-            <div className="space-y-3 sm:space-y-4">
-              <div>
-                <Text variant="bodyMd" className="text-gray-500">
-                  Created :{" "}
-                </Text>
-                <Text
-                  variant="bodyMd"
-                  className="text-gray-900 font-medium break-words"
-                >
-                  {formatDate(audit.createdAt)}
-                </Text>
-              </div>
-              <div>
-                <Text variant="bodyMd" className="text-gray-500">
-                  Completed :{" "}
-                </Text>
-                <Text
-                  variant="bodyMd"
-                  className="text-gray-900 font-medium break-words"
-                >
-                  {formatDate(audit.completedAt)}
-                </Text>
-              </div>
-              {duration && (
-                <div>
-                  <Text variant="bodyMd" className="text-gray-500">
-                    Duration :{" "}
-                  </Text>
-                  <Text
-                    variant="bodyMd"
-                    className="text-gray-900 font-medium break-words"
-                  >
-                    {duration}
-                  </Text>
-                </div>
-              )}
-              <div>
-                <Text variant="bodyMd" className="text-gray-500">
-                  Evaluation Type :{" "}
-                </Text>
-                <Text
-                  variant="bodyMd"
-                  className="text-gray-900 font-medium break-words"
-                >
-                  {audit.auditType}
-                </Text>
-              </div>
-            </div>
-
-            <div className="space-y-4 sm:col-span-2 md:col-span-1">
-              <div>
-                <Text variant="bodyMd" className="text-gray-500">
-                  Modules :{" "}
-                </Text>
-                <Text
-                  variant="bodyMd"
-                  className="text-gray-900 font-medium break-words"
-                >
-                  {audit.modules?.map(formatModuleName).join(", ") || "--"}
-                </Text>
-              </div>
-              <div>
-                <Text variant="bodyMd" className="text-gray-500">
-                  Evaluation Scope :{" "}
-                </Text>
-                <Text
-                  variant="bodyMd"
-                  className="text-gray-900 font-medium break-words"
-                >
-                  {evaluationScopeDisplay}
-                </Text>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Results Summary */}
       {(audit.status === "COMPLETED" || audit.completedAt) && (
@@ -1157,7 +1052,7 @@ const EvaluationDetail = ({
             </div>
           </div>
 
-          {/* Module-wise Results - Sample Issues */}
+          {/* Module-wise Results — temporarily disabled
           {modulesWithVisualizationData.length > 0 && (
             <div className="mt-8 pt-4">
               <div className="mb-4">
@@ -1166,219 +1061,85 @@ const EvaluationDetail = ({
                 </Text>
               </div>
 
-              {/* Module Tabs - styled similar to NewEvaluationContent, only for modules with data */}
-              <div className="mb-4 max-[1023px]:mb-3  bg-white border-solid border-1 border-baseGraySlateAlpha4 rounded-2 max-[640px]:mb-2">
+              <div className="mb-4 max-[1023px]:mb-3 bg-white border-solid border-1 border-baseGraySlateAlpha4 rounded-2 max-[640px]:mb-2">
                 <Tabs defaultValue={modulesWithVisualizationData[0]}>
                   <TabList>
-                    {modulesWithVisualizationData.map((moduleName, index) => {
-                      return (
-                        <Tab value={moduleName} key={index}>
-                          {formatModuleName(moduleName)}
-                        </Tab>
-                      );
-                    })}
+                    {modulesWithVisualizationData.map((moduleName, index) => (
+                      <Tab value={moduleName} key={index}>
+                        {formatModuleName(moduleName)}
+                      </Tab>
+                    ))}
                   </TabList>
-                  {modulesWithVisualizationData.map((moduleName, index) => {
-                    return (
-                      <TabPanel key={index} value={moduleName}>
-                        <div className="mt-5 m-5">
-                          <SeverityBarChart
-                            issues={apiModuleIssues.filter(
-                              (issue) => issue.module === moduleName
-                            )}
-                            metricSummary={metricSummary[moduleName]}
-                          />
-
-                          <Text
-                            variant="bodyLg"
-                            fontWeight="bold"
-                            className="mb-3 block text-gray-900"
-                          >
-                            Sample Issues
-                          </Text>
-
-                          <div className="flex flex-col gap-4">
-                            {(() => {
-                              const issuesForModule = apiModuleIssues.filter(
-                                (issue) => issue.module === moduleName
-                              );
-
-                              if (issuesForModule.length === 0) {
-                                return (
-                                  <Text
-                                    variant="bodySm"
-                                    className="text-gray-600"
-                                  >
-                                    No issues found for this module.
-                                  </Text>
-                                );
-                              }
-
-                              return issuesForModule.map(
-                                (issue, index: number) => {
-                                  const isExpanded = expandedIssueIds.has(
-                                    issue.id
-                                  );
-                                  const isFailed = issue.status === "FAILED";
-                                  const tagColors =
-                                    isFailed && issue.severity
-                                      ? getSeverityTagColors(issue.severity)
-                                      : {
-                                          fillColor: "#BBF7D0",
-                                          textColor: "#15803D",
-                                        };
-
-                                  return (
-                                    <div
-                                      key={issue.id}
-                                      className="test-case-card-border bg-white p-6 mt-2"
-                                    >
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          toggleIssueCard(issue.id)
-                                        }
-                                        className="w-full flex items-center justify-between gap-2 text-left mb-0 border-none outline-none bg-transparent"
-                                      >
-                                        <div className="flex flex-1 min-w-0 items-center gap-3 flex-wrap">
-                                          <Text
-                                            variant="bodyLg"
-                                            fontWeight="bold"
-                                          >
-                                            Issue {index + 1}
-                                          </Text>
-                                          <Tag
-                                            variation="filled"
-                                            fillColor={tagColors.fillColor}
-                                            textColor={tagColors.textColor}
-                                          >
-                                            {isFailed &&
-                                            issue.severity &&
-                                            issue.issueType
-                                              ? `${
-                                                  issue.severity.charAt(0) +
-                                                  issue.severity
-                                                    .slice(1)
-                                                    .toLowerCase()
-                                                } risk - ${issue.issueType}`
-                                              : issue.status}
-                                          </Tag>
-                                        </div>
-                                        {isExpanded ? (
-                                          <IconMinus
-                                            className="text-gray-600"
-                                            size={20}
-                                          />
-                                        ) : (
-                                          <IconPlus
-                                            className="text-gray-600"
-                                            size={20}
-                                          />
-                                        )}
-                                      </button>
-
-                                      {isExpanded && (
-                                        <div className="mt-5 space-y-4 ml-1">
-                                          <div>
-                                            <Text
-                                              variant="bodyLg"
-                                              fontWeight="semibold"
-                                              className="mb-2 block"
-                                            >
-                                              Input
-                                            </Text>
-                                            <div className="prose prose-sm max-w-none ml-2 overflow-x-auto break-words text-gray-900 [&_table]:min-w-[640px] [&_table]:w-max [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
-                                              <ReactMarkdown
-                                                remarkPlugins={[remarkGfm]}
-                                              >
-                                                {issue.input || ""}
-                                              </ReactMarkdown>
-                                            </div>
-                                          </div>
-
-                                          <div>
-                                            <Text
-                                              variant="bodyLg"
-                                              fontWeight="semibold"
-                                              className="mb-2 block"
-                                            >
-                                              Output
-                                            </Text>
-                                            <div className="prose prose-sm max-w-none overflow-x-auto ml-2 break-words text-gray-900 [&_table]:min-w-[640px] [&_table]:w-max [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
-                                              <ReactMarkdown
-                                                remarkPlugins={[remarkGfm]}
-                                              >
-                                                {issue.output || ""}
-                                              </ReactMarkdown>
-                                            </div>
-                                          </div>
-
-                                          {issue.comments && (
-                                            <div>
-                                              <Text
-                                                variant="bodyLg"
-                                                fontWeight="semibold"
-                                                className="mb-2 block"
-                                              >
-                                                Comments
-                                              </Text>
-                                              <div className="prose prose-sm max-w-none ml-2 overflow-x-auto break-words text-gray-900 [&_table]:min-w-[640px] [&_table]:w-max [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
-                                                <ReactMarkdown
-                                                  remarkPlugins={[remarkGfm]}
-                                                >
-                                                  {issue.comments}
-                                                </ReactMarkdown>
-                                              </div>
-                                            </div>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                }
-                              );
-                            })()}
-                          </div>
-                        </div>
-                      </TabPanel>
-                    );
-                  })}
+                  {modulesWithVisualizationData.map((moduleName, index) => (
+                    <TabPanel key={index} value={moduleName}>
+                      <div className="mt-5 m-5">
+                        <SeverityBarChart
+                          issues={[]}
+                          metricSummary={metricSummary[moduleName]}
+                        />
+                      </div>
+                    </TabPanel>
+                  ))}
                 </Tabs>
               </div>
-
-              {/* Sample Issues List */}
             </div>
           )}
+          */}
         </div>
       )}
 
-      {/* Test Cases table removed in favour of module-wise samples */}
+      {(audit.status === "COMPLETED" || audit.completedAt) &&
+        (isPlaygroundEvaluation ? (
+          <PlaygroundEvaluationResults
+            auditId={evaluationId}
+            orgId={orgId}
+            modules={audit.modules || []}
+          />
+        ) : (
+          <BulkEvaluationResults auditId={evaluationId} orgId={orgId} />
+        ))}
 
       {/* Action Buttons */}
       <div className="flex flex-col items-center gap-4 pt-8">
         <Button
           kind="secondary"
-          disabled={!isReportReady || isDownloading}
-          icon={
-            <Icon
-              source={IconDownload}
-              size={18}
-              className={isReportReady ? "text-white" : "text-black"}
-            />
+          disabled={
+            !isEvaluationComplete ||
+            isSavingEvaluation ||
+            (showDownloadActions
+              ? !isReportReady || isDownloading
+              : false)
           }
-          onClick={downloadReport}
+          icon={
+            showDownloadActions ? (
+              <Icon
+                source={IconDownload}
+                size={18}
+                className="text-white"
+              />
+            ) : undefined
+          }
+          onClick={showDownloadActions ? downloadReport : saveEvaluation}
           className={
-            isReportReady
-              ? "bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base [&_svg]:text-white [&_svg]:fill-white [&_svg]:stroke-white [&_*]:text-white [&_*]:fill-white [&_*]:stroke-white"
-              : "bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-black hover:text-black hover:!text-black px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base [&_svg]:text-black [&_svg]:fill-black [&_svg]:stroke-black [&_*]:text-black [&_*]:fill-black [&_*]:stroke-black"
+            showDownloadActions
+              ? isReportReady
+                ? "bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base [&_svg]:text-white [&_svg]:fill-white [&_svg]:stroke-white [&_*]:text-white [&_*]:fill-white [&_*]:stroke-white"
+                : "bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-black hover:text-black hover:!text-black px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base [&_svg]:text-black [&_svg]:fill-black [&_svg]:stroke-black [&_*]:text-black [&_*]:fill-black [&_*]:stroke-black"
+              : "bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base"
           }
         >
-          Download Report
+          {isSavingEvaluation
+            ? "Saving..."
+            : showDownloadActions
+              ? isDownloading
+                ? "Downloading..."
+                : "Download Report"
+              : "Save Evaluation"}
         </Button>
         <Link href={backLink}>
           <Button
-            kind="primary"
-            className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base"
+            kind="secondary"
+            className="px-8 py-3 rounded-[8px] font-bold text-base"
           >
             {backLinkText}
           </Button>

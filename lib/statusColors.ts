@@ -11,7 +11,7 @@ export type StatusColorEntry = {
 
 export const statusColors: Record<string, StatusColorEntry> = {
   // Assignment statuses
-  PENDING: {
+  QUEUED: {
     bg: "bg-statusPendingBg",
     text: "text-statusPendingText",
     bgHex: "#fff9ed",
@@ -86,6 +86,7 @@ export function getEvaluationStatusColor(
       return { fillColor: "#E2F5C4", textColor: "#166534" };
     case "RUNNING":
       return { fillColor: "#FEF3C7", textColor: "#92400E" };
+    case "QUEUED":
     case "PENDING":
       return { fillColor: "#E0E7FF", textColor: "#3730A3" };
     case "DRAFT":
@@ -100,7 +101,9 @@ export function getEvaluationStatusColor(
   }
 }
 
-/** Tag fill/text colors for evaluation mode badges (e.g. manual vs automated). */
+/** Tag fill/text colors for evaluation mode badges (e.g. manual vs bulk). */
 export function getEvaluationModeColor(_mode?: string | null): TagColors {
   return EVALUATION_MODE_COLORS;
 }
+
+export { formatStatusLabel } from "./utils";

@@ -127,6 +127,12 @@ const OrganizationSelection = () => {
     fetchOrgs();
   }, [request]);
 
+  useEffect(() => {
+    if (!loading && organizations.length === 0) {
+      setShowRedirectPrompt(true);
+    }
+  }, [loading, organizations.length]);
+
   return (
     <div className="flex flex-col min-h-screen bg-[var(--page-background)]">
       <BreadCrumbs

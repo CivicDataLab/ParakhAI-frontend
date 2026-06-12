@@ -945,14 +945,9 @@
 .auditObjectiveLabel,
 .scopeOfAuditLabel,
 .evaluationModulesLabel {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 4px;
-  width: fit-content;
-  min-width: fit-content;
-  height: 20px;
-  margin-bottom: 0;
+  display: block;
+  width: 100%;
+  margin: 0 0 8px 0;
   padding: 0;
   box-sizing: border-box;
   font-weight: 500;
@@ -960,9 +955,12 @@
   line-height: 20px;
   letter-spacing: 0px;
   color: #0a0704;
+  text-align: left;
 
+  [class*="Label"],
   [class*="Text"],
-  > * {
+  label,
+  span {
     font-weight: 500;
     font-size: 14px;
     line-height: 20px;
@@ -970,6 +968,7 @@
     color: #0a0704;
     margin: 0;
     padding: 0;
+    text-align: left;
   }
 
   [class*="Text"] *:not(span) {
@@ -980,6 +979,37 @@
   span {
     margin-left: 4px;
     color: inherit;
+  }
+
+  :global(.required-asterisk) {
+    color: var(--text-critical, #cd2b31);
+  }
+
+  &,
+  * {
+    text-align: left;
+    justify-content: flex-start;
+  }
+}
+
+.evaluationWorkspaceSection {
+  margin-bottom: 2rem;
+  padding: 0;
+}
+
+.evaluationWorkspaceTitle {
+  display: block;
+  width: 100%;
+  margin: 0 0 1.5rem 0;
+  padding: 0;
+  text-align: left;
+
+  &,
+  [class*="Text"],
+  * {
+    margin-left: 0;
+    padding-left: 0;
+    text-align: left;
   }
 }
 
