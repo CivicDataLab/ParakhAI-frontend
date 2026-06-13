@@ -21,6 +21,7 @@ import { useEffect, useRef, useState } from "react";
 import EvaluationFormOverview from "../ai-maker/[orgId]/evaluations/components/EvaluationFormOverview";
 import RecommendationModal from "../ai-maker/[orgId]/evaluations/components/manual-evaluation/RecommendationModal";
 import { useOrganization } from "../ai-maker/[orgId]/OrganizationContext";
+import { SUBMIT_AUDIT_REVIEW_MUTATION } from "@/lib/bulkEvaluation/queries";
 import BulkEvaluationResults from "./BulkEvaluationResults";
 import PlaygroundEvaluationResults from "./PlaygroundEvaluationResults";
 
@@ -348,6 +349,7 @@ const EvaluationDetail = ({
     setEvaluatorRecommendation("");
   }, [evaluationId]);
 
+  // Playground evaluation: save recommendation to config, then mark done
   const submitEvaluation = async (recommendation: string) => {
     if (!audit || isSavingEvaluation || isEvaluationSaved) return;
 
@@ -359,7 +361,7 @@ const EvaluationDetail = ({
           ? audit.configuration
           : {};
 
-      const result = await request<{
+      const configResult = await request<{
         updateAudit: {
           success: boolean;
           message?: string | null;
@@ -379,10 +381,8 @@ const EvaluationDetail = ({
         requestOptions
       );
 
-      if (!result?.updateAudit?.success) {
-        console.error(
-          result?.updateAudit?.message || "Failed to submit evaluation."
-        );
+      if (!configResult?.updateAudit?.success) {
+        toast.error(configResult?.updateAudit?.message || "Failed to save recommendation.");
         return;
       }
 
@@ -402,7 +402,37 @@ const EvaluationDetail = ({
       setIsEvaluationSaved(true);
       setShowSubmitRecommendationModal(false);
     } catch (err: any) {
-      console.error("Submit evaluation failed:", err);
+      toast.error(err?.message || "Failed to submit evaluation. Please try again.");
+    } finally {
+      setIsSavingEvaluation(false);
+    }
+  };
+
+  // Bulk evaluation: finalise the audit directly (updateAudit is blocked for PENDING_REVIEW)
+  const submitBulkReview = async () => {
+    if (!audit || isSavingEvaluation || audit.status !== "PENDING_REVIEW") return;
+
+    setIsSavingEvaluation(true);
+    try {
+      const requestOptions = orgId ? { organization: orgId } : undefined;
+      const reviewResult = await request<{
+        submitAuditReview: { success: boolean; message?: string | null };
+      }>(
+        SUBMIT_AUDIT_REVIEW_MUTATION,
+        { input: { auditId: audit.id } },
+        requestOptions
+      );
+
+      if (!reviewResult?.submitAuditReview?.success) {
+        toast.error(reviewResult?.submitAuditReview?.message || "Failed to submit audit review.");
+        return;
+      }
+
+      toast.success("Review submitted. Generating report…");
+      setIsEvaluationSaved(true);
+      startPolling();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to submit review. Please try again.");
     } finally {
       setIsSavingEvaluation(false);
     }
@@ -411,6 +441,11 @@ const EvaluationDetail = ({
   const handlePrimaryActionClick = () => {
     if (showDownloadActions) {
       void downloadReport();
+      return;
+    }
+
+    if (!isPlaygroundEvaluation && audit?.status === "PENDING_REVIEW") {
+      void submitBulkReview();
       return;
     }
 
@@ -1146,7 +1181,7 @@ const EvaluationDetail = ({
         </div>
       )}
 
-      {(audit.status === "COMPLETED" || audit.completedAt) &&
+      {(audit.status === "PENDING_REVIEW" || audit.completedAt) &&
         (isPlaygroundEvaluation ? (
           <PlaygroundEvaluationResults
             auditId={evaluationId}
@@ -1154,7 +1189,11 @@ const EvaluationDetail = ({
             modules={audit.modules || []}
           />
         ) : (
-          <BulkEvaluationResults auditId={evaluationId} orgId={orgId} />
+          <BulkEvaluationResults
+            auditId={evaluationId}
+            orgId={orgId}
+            isEditable={audit.status === "PENDING_REVIEW"}
+          />
         ))}
 
       {/* Action Buttons */}
@@ -1162,11 +1201,12 @@ const EvaluationDetail = ({
         <Button
           kind="secondary"
           disabled={
-            !isEvaluationComplete ||
             isSavingEvaluation ||
             (showDownloadActions
-              ? !isReportReady || isDownloading
-              : false)
+              ? !isEvaluationComplete || !isReportReady || isDownloading
+              : isPlaygroundEvaluation
+                ? !isEvaluationComplete
+                : audit.status !== "PENDING_REVIEW")
           }
           icon={
             showDownloadActions ? (

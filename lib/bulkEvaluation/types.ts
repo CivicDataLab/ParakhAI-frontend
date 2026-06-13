@@ -1,4 +1,5 @@
 export type BulkTestCaseRisk = {
+  resultId?: string;
   severity: "LOW" | "MEDIUM" | "HIGH";
   label: string;
   observation: string;
@@ -8,6 +9,7 @@ export type BulkTestCase = {
   id: string;
   index: number;
   moduleId: string;
+  moduleDisplayName: string;
   inputPrompt: string;
   fullInputText: string;
   output: string;
