@@ -23,6 +23,15 @@ import RecommendationModal from "../ai-maker/[orgId]/evaluations/components/manu
 import { useOrganization } from "../ai-maker/[orgId]/OrganizationContext";
 import BulkEvaluationResults from "./BulkEvaluationResults";
 import PlaygroundEvaluationResults from "./PlaygroundEvaluationResults";
+import {
+  GET_AUDIT_RESULTS_QUERY,
+  SUBMIT_AUDIT_REVIEW_MUTATION,
+} from "@/lib/bulkEvaluation/queries";
+import type { AuditResult } from "@/lib/bulkEvaluation/mapAuditResults";
+import {
+  isIssueResult,
+  mapRiskLevel,
+} from "@/lib/bulkEvaluation/mapAuditResults";
 
 const AI_MODEL_BY_ID_QUERY = `
   query GetAIModel($modelId: ID!) {
@@ -63,6 +72,7 @@ const GET_AUDIT_QUERY = `
       createdAt
       startedAt
       completedAt
+      progressPercentage
     }
   }
 `;
@@ -146,6 +156,7 @@ export type Audit = {
   createdAt: string;
   startedAt: string | null;
   completedAt: string | null;
+  progressPercentage?: number | null;
 };
 
 export type TestCase = {
@@ -191,6 +202,141 @@ const isAuditInProgress = (status: string | null | undefined) => {
     normalized === "PENDING"
   );
 };
+
+const isAuditPendingReview = (status: string | null | undefined) =>
+  status?.toUpperCase() === "PENDING_REVIEW";
+
+const isPlaygroundEvaluationMode = (mode: string | null | undefined) =>
+  mode?.toLowerCase() === "manual";
+
+const hasCompletedAuditResults = (audit: {
+  status: string;
+  completedAt: string | null;
+}) => audit.status === "COMPLETED" || Boolean(audit.completedAt);
+
+const canShowBulkSummaryAndResults = (audit: {
+  status: string;
+  completedAt: string | null;
+}) =>
+  hasCompletedAuditResults(audit) || isAuditPendingReview(audit.status);
+
+const canShowEvaluationResults = (
+  audit: { status: string; completedAt: string | null },
+  isPlayground: boolean
+) =>
+  isPlayground
+    ? hasCompletedAuditResults(audit)
+    : canShowBulkSummaryAndResults(audit);
+
+const shouldStopPolling = (
+  audit: { status: string; completedAt: string | null },
+  isPlayground: boolean
+) =>
+  hasCompletedAuditResults(audit) ||
+  (!isPlayground && isAuditPendingReview(audit.status));
+
+const isProgressComplete = (progress: number | null | undefined) =>
+  typeof progress === "number" && progress >= 100;
+
+type RiskDistribution = Record<string, number>;
+
+const RISK_LEVEL_KEYS = {
+  low: ["LOW_RISK", "LOW", "low_risk", "low"],
+  medium: ["MEDIUM_RISK", "MEDIUM", "medium_risk", "medium"],
+  high: ["HIGH_RISK", "HIGH", "high_risk", "high"],
+} as const;
+
+const readRiskCount = (
+  distribution: RiskDistribution | null | undefined,
+  level: keyof typeof RISK_LEVEL_KEYS
+): number => {
+  if (!distribution) return 0;
+
+  for (const key of RISK_LEVEL_KEYS[level]) {
+    const value = distribution[key];
+    if (typeof value === "number") return value;
+  }
+
+  return 0;
+};
+
+const buildRiskDistribution = (
+  low: number,
+  medium: number,
+  high: number
+): RiskDistribution => ({
+  LOW_RISK: low,
+  MEDIUM_RISK: medium,
+  HIGH_RISK: high,
+});
+
+const aggregateRiskFromMetricSummary = (
+  metricSummary:
+    | Record<string, { risk_distribution?: RiskDistribution }>
+    | null
+    | undefined
+): RiskDistribution => {
+  let low = 0;
+  let medium = 0;
+  let high = 0;
+
+  for (const entry of Object.values(metricSummary ?? {})) {
+    const dist = entry?.risk_distribution;
+    low += readRiskCount(dist, "low");
+    medium += readRiskCount(dist, "medium");
+    high += readRiskCount(dist, "high");
+  }
+
+  return buildRiskDistribution(low, medium, high);
+};
+
+const aggregateRiskFromAuditResults = (
+  auditResults: AuditResult[]
+): RiskDistribution => {
+  let low = 0;
+  let medium = 0;
+  let high = 0;
+
+  for (const result of auditResults) {
+    if (!isIssueResult(result)) continue;
+
+    const severity =
+      mapRiskLevel(result.evaluatorRiskLevel) ??
+      mapRiskLevel(result.riskLevel) ??
+      "LOW";
+
+    if (severity === "HIGH") high += 1;
+    else if (severity === "MEDIUM") medium += 1;
+    else low += 1;
+  }
+
+  return buildRiskDistribution(low, medium, high);
+};
+
+const resolveRiskDistribution = (
+  riskDistribution: RiskDistribution | null | undefined,
+  metricSummary:
+    | Record<string, { risk_distribution?: RiskDistribution }>
+    | null
+    | undefined
+): RiskDistribution => {
+  const fromTopLevel = buildRiskDistribution(
+    readRiskCount(riskDistribution, "low"),
+    readRiskCount(riskDistribution, "medium"),
+    readRiskCount(riskDistribution, "high")
+  );
+
+  const topLevelTotal =
+    fromTopLevel.LOW_RISK + fromTopLevel.MEDIUM_RISK + fromTopLevel.HIGH_RISK;
+  if (topLevelTotal > 0) return fromTopLevel;
+
+  return aggregateRiskFromMetricSummary(metricSummary);
+};
+
+const getRiskDistributionTotal = (distribution: RiskDistribution) =>
+  (distribution.LOW_RISK ?? 0) +
+  (distribution.MEDIUM_RISK ?? 0) +
+  (distribution.HIGH_RISK ?? 0);
 
 const getModeLabel = (mode: string | null | undefined) => {
   const normalized = mode?.toLowerCase();
@@ -329,6 +475,12 @@ const EvaluationDetail = ({
   const [isSavingName, setIsSavingName] = useState(false);
   const isFetchingRef = useRef(false);
   const lastFetchedAuditIdRef = useRef<string | null>(null);
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isProgressPollingRef = useRef(false);
+  const isFinalisationPollingRef = useRef(false);
+  const [evaluationProgress, setEvaluationProgress] = useState<number | null>(
+    null
+  );
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSavingEvaluation, setIsSavingEvaluation] = useState(false);
   const [isEvaluationSaved, setIsEvaluationSaved] = useState(false);
@@ -341,11 +493,21 @@ const EvaluationDetail = ({
     audit?.status === "COMPLETED" || Boolean(audit?.completedAt);
   const isPlaygroundEvaluation =
     audit?.evaluationMode?.toLowerCase() === "manual";
-  const showDownloadActions = isEvaluationSaved;
+  const isBulkPendingReview = audit?.status === "PENDING_REVIEW";
+  const isBulkCompleted =
+    !isPlaygroundEvaluation &&
+    (audit?.status === "COMPLETED" || Boolean(audit?.completedAt));
+  const showDownloadActions = isPlaygroundEvaluation
+    ? isEvaluationSaved
+    : isBulkCompleted || isEvaluationSaved;
+  const isAwaitingReport = showDownloadActions && !isReportReady;
 
   useEffect(() => {
     setIsEvaluationSaved(false);
     setEvaluatorRecommendation("");
+    setEvaluationProgress(null);
+    setRiskDistribution({});
+    setAuditReport(null);
   }, [evaluationId]);
 
   const submitEvaluation = async (recommendation: string) => {
@@ -408,9 +570,72 @@ const EvaluationDetail = ({
     }
   };
 
+  const submitBulkReview = async () => {
+    if (!audit || isSavingEvaluation || audit.status !== "PENDING_REVIEW") return;
+
+    setIsSavingEvaluation(true);
+    try {
+      const requestOptions = orgId ? { organization: orgId } : undefined;
+      const reviewResult = await request<{
+        submitAuditReview: {
+          success: boolean;
+          message?: string | null;
+          audit?: {
+            id: string;
+            status: string;
+            completedAt: string | null;
+          };
+        };
+      }>(
+        SUBMIT_AUDIT_REVIEW_MUTATION,
+        { input: { auditId: audit.id } },
+        requestOptions
+      );
+
+      if (!reviewResult?.submitAuditReview?.success) {
+        toast.error(
+          reviewResult?.submitAuditReview?.message ||
+            "Failed to submit audit review."
+        );
+        return;
+      }
+
+      const updatedAudit = reviewResult.submitAuditReview.audit;
+      if (updatedAudit) {
+        setAudit((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: updatedAudit.status,
+                completedAt: updatedAudit.completedAt,
+              }
+            : prev
+        );
+      }
+
+      toast.success("Review submitted. Generating report…");
+      setIsEvaluationSaved(true);
+      stopProgressPolling();
+      startFinalisationPolling();
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Failed to submit review. Please try again."
+      );
+    } finally {
+      setIsSavingEvaluation(false);
+    }
+  };
+
   const handlePrimaryActionClick = () => {
     if (showDownloadActions) {
       void downloadReport();
+      return;
+    }
+
+    if (!isPlaygroundEvaluation && isBulkPendingReview) {
+      void submitBulkReview();
       return;
     }
 
@@ -458,51 +683,6 @@ const EvaluationDetail = ({
     }
   };
 
-  // Poll for audit completion
-  const startPolling = () => {
-    const pollInterval = 15000;
-    const maxPollTime = 300000;
-    const startTime = Date.now();
-
-    const requestOptions = orgId ? { organization: orgId } : undefined;
-
-    const poll = async () => {
-      if (Date.now() - startTime > maxPollTime) return;
-
-      try {
-        const data = await request<{ audit: Audit }>(
-          GET_AUDIT_QUERY,
-          { auditId: evaluationId },
-          requestOptions
-        );
-
-        if (data?.audit) {
-          // Preserve modelName if it exists in current state but not in new data
-          setAudit((prev) => ({
-            ...data.audit,
-            modelName: data.audit.modelName || prev?.modelName || null,
-          }));
-
-          if (data.audit.status === "COMPLETED" || data.audit.completedAt) {
-            await fetchAuditSummary(data.audit.configuration);
-            return;
-          }
-
-          if (data.audit.status === "FAILED" || data.audit.status === "ERROR") {
-            return;
-          }
-        }
-
-        setTimeout(poll, pollInterval);
-      } catch (err) {
-        console.error("Polling error:", err);
-        setTimeout(poll, pollInterval);
-      }
-    };
-
-    setTimeout(poll, pollInterval);
-  };
-
   useEffect(() => {
     if (!isAuthenticated || isSessionLoading || !evaluationId) return;
     if (isFetchingRef.current || lastFetchedAuditIdRef.current === evaluationId)
@@ -531,13 +711,28 @@ const EvaluationDetail = ({
         setAudit(auditData.audit);
         lastFetchedAuditIdRef.current = evaluationId;
 
-        if (
-          auditData.audit.status === "COMPLETED" ||
-          auditData.audit.completedAt
-        ) {
-          await fetchAuditSummary(auditData.audit.configuration);
+        const isPlayground = isPlaygroundEvaluationMode(
+          auditData.audit.evaluationMode
+        );
+
+        if (canShowEvaluationResults(auditData.audit, isPlayground)) {
+          const { hasReport } = await fetchAuditSummary(
+            auditData.audit.configuration,
+            auditData.audit
+          );
+          if (
+            !isPlayground &&
+            hasCompletedAuditResults(auditData.audit) &&
+            !hasReport
+          ) {
+            startFinalisationPolling();
+          }
         } else if (isAuditInProgress(auditData.audit.status)) {
-          startPolling();
+          setEvaluationProgress(
+            typeof auditData.audit.progressPercentage === "number"
+              ? auditData.audit.progressPercentage
+              : 0
+          );
         }
       } catch (err: any) {
         console.error("Error fetching audit:", err);
@@ -564,7 +759,10 @@ const EvaluationDetail = ({
     });
   };
 
-  const fetchAuditSummary = async (configurationOverride?: unknown) => {
+  const fetchAuditSummary = async (
+    configurationOverride?: unknown,
+    auditOverride?: Pick<Audit, "evaluationMode">
+  ): Promise<{ hasReport: boolean }> => {
     const requestOptions = orgId ? { organization: orgId } : undefined;
     try {
       const data = await request<{
@@ -586,15 +784,44 @@ const EvaluationDetail = ({
       }>(GET_AUDIT_SUMMARY, { audit_id: evaluationId }, requestOptions);
 
       const summary = data?.auditSummaries?.[0];
-      if (summary?.auditReport) {
+      if (summary?.auditReport?.url) {
         setAuditReport(summary.auditReport);
-      }
-      if (summary?.riskDistribution) {
-        setRiskDistribution(summary.riskDistribution);
+      } else {
+        setAuditReport(null);
       }
       if (summary?.metricSummary) {
         setMetricSummary(summary.metricSummary);
       }
+
+      let resolvedRisk = resolveRiskDistribution(
+        summary?.riskDistribution,
+        summary?.metricSummary
+      );
+
+      const evaluationMode =
+        auditOverride?.evaluationMode ?? audit?.evaluationMode;
+      const isBulkEvaluation = !isPlaygroundEvaluationMode(evaluationMode);
+
+      if (getRiskDistributionTotal(resolvedRisk) === 0 && isBulkEvaluation) {
+        try {
+          const resultsData = await request<{ auditResults: AuditResult[] }>(
+            GET_AUDIT_RESULTS_QUERY,
+            { auditId: evaluationId, metric: null },
+            requestOptions
+          );
+          resolvedRisk = aggregateRiskFromAuditResults(
+            resultsData?.auditResults ?? []
+          );
+        } catch (resultsError) {
+          console.error(
+            "Error fetching audit results for risk summary:",
+            resultsError
+          );
+        }
+      }
+
+      setRiskDistribution(resolvedRisk);
+
       const recommendationText = parseEvaluatorRecommendation(
         summary?.recommendations,
         configurationOverride ?? audit?.configuration,
@@ -603,10 +830,221 @@ const EvaluationDetail = ({
       if (recommendationText) {
         setEvaluatorRecommendation(recommendationText);
       }
+
+      return { hasReport: Boolean(summary?.auditReport?.url) };
     } catch (err) {
       console.error("Error fetching audit summary:", err);
+      return { hasReport: false };
     }
   };
+
+  const stopProgressPolling = () => {
+    isProgressPollingRef.current = false;
+    if (!isFinalisationPollingRef.current && pollTimeoutRef.current) {
+      clearTimeout(pollTimeoutRef.current);
+      pollTimeoutRef.current = null;
+    }
+  };
+
+  const stopFinalisationPolling = () => {
+    isFinalisationPollingRef.current = false;
+    if (!isProgressPollingRef.current && pollTimeoutRef.current) {
+      clearTimeout(pollTimeoutRef.current);
+      pollTimeoutRef.current = null;
+    }
+  };
+
+  const stopAllPolling = () => {
+    isProgressPollingRef.current = false;
+    isFinalisationPollingRef.current = false;
+    if (pollTimeoutRef.current) {
+      clearTimeout(pollTimeoutRef.current);
+      pollTimeoutRef.current = null;
+    }
+  };
+
+  const scheduleNextPoll = (
+    poll: () => Promise<void>,
+    pollingRef: { current: boolean }
+  ) => {
+    pollTimeoutRef.current = setTimeout(() => {
+      if (pollingRef.current) {
+        void poll();
+      }
+    }, 5000);
+  };
+
+  const startProgressPolling = () => {
+    if (isProgressPollingRef.current) return;
+
+    isProgressPollingRef.current = true;
+    const requestOptions = orgId ? { organization: orgId } : undefined;
+
+    const poll = async () => {
+      if (!isProgressPollingRef.current) {
+        return;
+      }
+
+      try {
+        const data = await request<{ audit: Audit }>(
+          GET_AUDIT_QUERY,
+          { auditId: evaluationId },
+          requestOptions
+        );
+
+        if (data?.audit) {
+          if (typeof data.audit.progressPercentage === "number") {
+            setEvaluationProgress(data.audit.progressPercentage);
+          }
+
+          setAudit((prev) => ({
+            ...data.audit,
+            modelName: data.audit.modelName || prev?.modelName || null,
+          }));
+
+          const isPlayground = isPlaygroundEvaluationMode(
+            data.audit.evaluationMode
+          );
+
+          if (
+            data.audit.status === "FAILED" ||
+            data.audit.status === "ERROR"
+          ) {
+            stopProgressPolling();
+            return;
+          }
+
+          if (shouldStopPolling(data.audit, isPlayground)) {
+            stopProgressPolling();
+            if (canShowEvaluationResults(data.audit, isPlayground)) {
+              await fetchAuditSummary(data.audit.configuration, data.audit);
+            }
+            return;
+          }
+
+          if (
+            isProgressComplete(data.audit.progressPercentage) &&
+            canShowEvaluationResults(data.audit, isPlayground)
+          ) {
+            stopProgressPolling();
+            await fetchAuditSummary(data.audit.configuration, data.audit);
+            return;
+          }
+        }
+
+        scheduleNextPoll(poll, isProgressPollingRef);
+      } catch (err) {
+        console.error("Polling error:", err);
+        scheduleNextPoll(poll, isProgressPollingRef);
+      }
+    };
+
+    void poll();
+  };
+
+  const startFinalisationPolling = () => {
+    if (isFinalisationPollingRef.current) return;
+
+    isFinalisationPollingRef.current = true;
+    const requestOptions = orgId ? { organization: orgId } : undefined;
+
+    const poll = async () => {
+      if (!isFinalisationPollingRef.current) {
+        return;
+      }
+
+      try {
+        const data = await request<{ audit: Audit }>(
+          GET_AUDIT_QUERY,
+          { auditId: evaluationId },
+          requestOptions
+        );
+
+        if (data?.audit) {
+          setAudit((prev) => ({
+            ...data.audit,
+            modelName: data.audit.modelName || prev?.modelName || null,
+          }));
+
+          if (
+            data.audit.status === "FAILED" ||
+            data.audit.status === "ERROR"
+          ) {
+            stopFinalisationPolling();
+            return;
+          }
+        }
+
+        const auditForSummary = data?.audit ?? audit;
+        const { hasReport } = await fetchAuditSummary(
+          auditForSummary?.configuration,
+          auditForSummary ?? undefined
+        );
+
+        if (
+          auditForSummary &&
+          hasCompletedAuditResults(auditForSummary) &&
+          hasReport
+        ) {
+          stopFinalisationPolling();
+          return;
+        }
+
+        scheduleNextPoll(poll, isFinalisationPollingRef);
+      } catch (err) {
+        console.error("Finalisation polling error:", err);
+        scheduleNextPoll(poll, isFinalisationPollingRef);
+      }
+    };
+
+    void poll();
+  };
+
+  useEffect(() => {
+    if (!audit || !isAuthenticated || isSessionLoading) return;
+
+    const isPlayground = isPlaygroundEvaluationMode(audit.evaluationMode);
+    const shouldKeepPolling =
+      isAuditInProgress(audit.status) &&
+      !shouldStopPolling(audit, isPlayground);
+
+    if (!shouldKeepPolling) return;
+
+    startProgressPolling();
+
+    return () => {
+      stopProgressPolling();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audit?.status, audit?.evaluationMode, evaluationId, isAuthenticated, isSessionLoading]);
+
+  useEffect(() => {
+    if (!audit || !isAuthenticated || isSessionLoading) return;
+    if (isPlaygroundEvaluationMode(audit.evaluationMode)) return;
+    if (!hasCompletedAuditResults(audit)) return;
+    if (isReportReady) return;
+    if (isFinalisationPollingRef.current) return;
+
+    startFinalisationPolling();
+
+    return () => {
+      stopFinalisationPolling();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    audit?.status,
+    audit?.completedAt,
+    evaluationId,
+    isAuthenticated,
+    isReportReady,
+    isSessionLoading,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      stopAllPolling();
+    };
+  }, [evaluationId]);
 
   const getDuration = () => {
     if (!audit?.startedAt || !audit?.completedAt) return null;
@@ -773,9 +1211,9 @@ const EvaluationDetail = ({
   };
 
   const riskSummary = {
-    low: riskDistribution["LOW_RISK"] ?? 0,
-    medium: riskDistribution["MEDIUM_RISK"] ?? 0,
-    high: riskDistribution["HIGH_RISK"] ?? 0,
+    low: readRiskCount(riskDistribution, "low"),
+    medium: readRiskCount(riskDistribution, "medium"),
+    high: readRiskCount(riskDistribution, "high"),
   };
 
   const totalIssuesIdentified =
@@ -910,9 +1348,12 @@ const EvaluationDetail = ({
       />
 
       {isRunning && (
-        <div className="mb-8 space-y-1">
-          <Text variant="bodySm" className="text-gray-600">
+        <div className="mb-8 flex flex-col gap-1">
+          <Text variant="bodySm" className="block text-gray-600">
             Evaluation results will load once the evaluation is completed.
+          </Text>
+          <Text variant="bodySm" className="block text-gray-600">
+            Evaluation Progress : {Math.round(evaluationProgress ?? 0)}%
           </Text>
         </div>
       )}
@@ -934,7 +1375,7 @@ const EvaluationDetail = ({
       )}
 
       {/* Results Summary */}
-      {(audit.status === "COMPLETED" || audit.completedAt) && (
+      {canShowEvaluationResults(audit, isPlaygroundEvaluation) && (
         <div className="mb-8 rounded-2xl border border-[#C4B8F3]">
           <div className="mb-4 sm:mb-5 pl-2">
             <Text variant="headingMd" fontWeight="bold">
@@ -1146,7 +1587,7 @@ const EvaluationDetail = ({
         </div>
       )}
 
-      {(audit.status === "COMPLETED" || audit.completedAt) &&
+      {canShowEvaluationResults(audit, isPlaygroundEvaluation) &&
         (isPlaygroundEvaluation ? (
           <PlaygroundEvaluationResults
             auditId={evaluationId}
@@ -1154,7 +1595,11 @@ const EvaluationDetail = ({
             modules={audit.modules || []}
           />
         ) : (
-          <BulkEvaluationResults auditId={evaluationId} orgId={orgId} />
+          <BulkEvaluationResults
+            auditId={evaluationId}
+            orgId={orgId}
+            isEditable={isBulkPendingReview}
+          />
         ))}
 
       {/* Action Buttons */}
@@ -1162,11 +1607,12 @@ const EvaluationDetail = ({
         <Button
           kind="secondary"
           disabled={
-            !isEvaluationComplete ||
             isSavingEvaluation ||
             (showDownloadActions
               ? !isReportReady || isDownloading
-              : false)
+              : isPlaygroundEvaluation
+                ? !isEvaluationComplete
+                : !isBulkPendingReview)
           }
           icon={
             showDownloadActions ? (
@@ -1191,9 +1637,17 @@ const EvaluationDetail = ({
             : showDownloadActions
               ? isDownloading
                 ? "Downloading..."
-                : "Download Report"
+                : isAwaitingReport
+                  ? "Generating Report..."
+                  : "Download Report"
               : "Submit"}
         </Button>
+        {isAwaitingReport && (
+          <Text variant="bodySm" className="text-gray-600 text-center">
+            Your report is being generated. This button will enable automatically
+            when it is ready.
+          </Text>
+        )}
         <Link href={backLink}>
           <Button
             kind="secondary"

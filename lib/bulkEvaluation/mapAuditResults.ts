@@ -13,11 +13,6 @@ export type AuditResultTest = {
   createdAt?: string | null;
   startedAt?: string | null;
   completedAt?: string | null;
-  comments?: string | null;
-  module?: string | null;
-  subModule?: string | null;
-  severity?: string | null;
-  isManual?: boolean | null;
 };
 
 export type AuditResultTask = {
@@ -72,13 +67,19 @@ const toInputPrompt = (testInput: string) => {
 };
 
 const buildRiskFromResult = (result: AuditResult): BulkTestCaseRisk | null => {
+  if (result.evaluatorSuccess === true) return null;
+  if (result.evaluatorRiskLevel) {
+    const evalRisk = result.evaluatorRiskLevel.toUpperCase().trim();
+    if (evalRisk === "NO_RISK" || evalRisk === "NONE" || evalRisk === "NO RISK") {
+      return null;
+    }
+  }
+
   const severity =
     mapRiskLevel(result.evaluatorRiskLevel) ?? mapRiskLevel(result.riskLevel);
 
   if (!severity) {
-    if (result.success === true || result.evaluatorSuccess === true) {
-      return null;
-    }
+    if (result.success === true) return null;
   }
 
   const resolvedSeverity = severity ?? "LOW";
@@ -93,6 +94,7 @@ const buildRiskFromResult = (result: AuditResult): BulkTestCaseRisk | null => {
   }
 
   return {
+    resultId: result.id,
     severity: resolvedSeverity,
     label:
       result.task?.metricDisplayName ||
@@ -152,6 +154,8 @@ export const mapAuditResultsToBulkTestCases = (
         id: taskId,
         index: index + 1,
         moduleId: primary.task?.module || "UNKNOWN",
+        moduleDisplayName:
+          primary.task?.moduleDisplayName || primary.task?.module || "UNKNOWN",
         inputPrompt: toInputPrompt(testInput) || "—",
         fullInputText: testInput || "—",
         output: actualOutput || "—",

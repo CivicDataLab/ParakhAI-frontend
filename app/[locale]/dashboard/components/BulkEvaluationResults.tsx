@@ -6,6 +6,7 @@ import { mapAuditResultsToBulkTestCases } from "@/lib/bulkEvaluation/mapAuditRes
 import { GET_AUDIT_RESULTS_QUERY } from "@/lib/bulkEvaluation/queries";
 import type {
   BulkTestCase,
+  BulkTestCaseRisk,
   ModuleIssueCount,
 } from "@/lib/bulkEvaluation/types";
 import { IconArrowsDiagonal, IconSparkles } from "@tabler/icons-react";
@@ -45,18 +46,35 @@ const formatRiskLabel = (severity: "LOW" | "MEDIUM" | "HIGH", label: string) =>
 type BulkEvaluationResultsProps = {
   auditId: string;
   orgId?: string;
+  isEditable?: boolean;
 };
 
 const BulkEvaluationResults = ({
   auditId,
   orgId,
+  isEditable = false,
 }: BulkEvaluationResultsProps) => {
   const { request, isAuthenticated, isLoading: isSessionLoading } =
     useGraphQL();
   const [items, setItems] = useState<BulkTestCase[]>([]);
-  const [moduleIssueCounts, setModuleIssueCounts] = useState<
-    ModuleIssueCount[]
-  >([]);
+  const moduleIssueCounts = useMemo<ModuleIssueCount[]>(() => {
+    const map = new Map<string, { displayName: string; issueCount: number }>();
+
+    for (const item of items) {
+      const existing = map.get(item.moduleId) ?? {
+        displayName: item.moduleDisplayName,
+        issueCount: 0,
+      };
+      existing.issueCount += item.risks.length;
+      map.set(item.moduleId, existing);
+    }
+
+    return Array.from(map.entries()).map(([moduleId, value]) => ({
+      moduleId,
+      displayName: value.displayName,
+      issueCount: value.issueCount,
+    }));
+  }, [items]);
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("issues_desc");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -84,11 +102,11 @@ const BulkEvaluationResults = ({
         orgId ? { organization: orgId } : undefined
       );
 
-      const { items: mappedItems, moduleIssueCounts: counts } =
-        mapAuditResultsToBulkTestCases(result?.auditResults ?? []);
+      const { items: mappedItems } = mapAuditResultsToBulkTestCases(
+        result?.auditResults ?? []
+      );
 
       setItems(mappedItems);
-      setModuleIssueCounts(counts);
       setVisibleCount(PAGE_SIZE);
       setSelectedModuleId(null);
     } catch (err) {
@@ -96,7 +114,6 @@ const BulkEvaluationResults = ({
         err instanceof Error ? err.message : "Failed to load evaluation results"
       );
       setItems([]);
-      setModuleIssueCounts([]);
     } finally {
       setIsLoading(false);
     }
@@ -174,6 +191,17 @@ const BulkEvaluationResults = ({
     setSelectedTestCase(testCase);
     setIsDetailSheetOpen(true);
   };
+
+  const handleTestCaseUpdate = useCallback(
+    (testCaseId: string, updatedRisks: BulkTestCaseRisk[]) => {
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === testCaseId ? { ...item, risks: updatedRisks } : item
+        )
+      );
+    },
+    []
+  );
 
   return (
     <div className="bulk-evaluation-results mb-8">
@@ -340,6 +368,9 @@ const BulkEvaluationResults = ({
         testCase={selectedTestCase}
         open={isDetailSheetOpen}
         onOpenChange={setIsDetailSheetOpen}
+        isEditable={isEditable}
+        orgId={orgId}
+        onIssuesChange={handleTestCaseUpdate}
       />
     </div>
   );

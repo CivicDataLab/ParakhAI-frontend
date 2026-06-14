@@ -84,6 +84,8 @@ export function getEvaluationStatusColor(
   switch (status?.toUpperCase()) {
     case "COMPLETED":
       return { fillColor: "#E2F5C4", textColor: "#166534" };
+    case "PENDING_REVIEW":
+      return { fillColor: "#FEF3C7", textColor: "#92400E" };
     case "RUNNING":
       return { fillColor: "#FEF3C7", textColor: "#92400E" };
     case "QUEUED":
