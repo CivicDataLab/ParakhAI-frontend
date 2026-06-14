@@ -5,6 +5,12 @@ export type BulkTestCaseRisk = {
   observation: string;
 };
 
+export type BulkTestCaseResultRef = {
+  resultId: string;
+  label: string;
+  metricKey: string;
+};
+
 export type BulkTestCase = {
   id: string;
   index: number;
@@ -14,6 +20,7 @@ export type BulkTestCase = {
   fullInputText: string;
   output: string;
   risks: BulkTestCaseRisk[];
+  allMetricResults: BulkTestCaseResultRef[];
 };
 
 export type ModuleIssueCount = {

@@ -1,4 +1,4 @@
-import type { BulkTestCase, BulkTestCaseRisk, ModuleIssueCount } from "./types";
+import type { BulkTestCase, BulkTestCaseResultRef, BulkTestCaseRisk, ModuleIssueCount } from "./types";
 
 export type AuditResultTest = {
   id?: string | null;
@@ -66,41 +66,50 @@ const toInputPrompt = (testInput: string) => {
   return firstLine || testInput.trim();
 };
 
+const LABEL_FROM = (result: AuditResult) =>
+  result.task?.metricDisplayName || result.task?.metric || result.name || "Issue";
+
 const buildRiskFromResult = (result: AuditResult): BulkTestCaseRisk | null => {
-  if (result.evaluatorSuccess === true) return null;
-  if (result.evaluatorRiskLevel) {
-    const evalRisk = result.evaluatorRiskLevel.toUpperCase().trim();
+  if (result.isReviewed) {
+    // Evaluator has explicitly reviewed — use their values
+    if (result.evaluatorSuccess === true) return null;
+
+    const evalRisk = (result.evaluatorRiskLevel || "").toUpperCase().trim();
     if (evalRisk === "NO_RISK" || evalRisk === "NONE" || evalRisk === "NO RISK") {
       return null;
     }
+
+    const severity =
+      mapRiskLevel(result.evaluatorRiskLevel) ?? mapRiskLevel(result.riskLevel);
+    const resolvedSeverity = severity ?? "LOW";
+    const observation =
+      result.evaluatorReason || result.reason || result.issueDescription || "";
+
+    if (!observation && result.evaluatorSuccess !== false) return null;
+
+    return {
+      resultId: result.id,
+      severity: resolvedSeverity,
+      label: LABEL_FROM(result),
+      observation,
+    };
   }
 
-  const severity =
-    mapRiskLevel(result.evaluatorRiskLevel) ?? mapRiskLevel(result.riskLevel);
+  // Not yet reviewed — use original AI output
+  if (result.success === true) return null;
 
-  if (!severity) {
-    if (result.success === true) return null;
-  }
+  const severity = mapRiskLevel(result.riskLevel);
+  if (!severity && result.success !== false) return null;
 
   const resolvedSeverity = severity ?? "LOW";
-  const observation =
-    result.evaluatorReason ||
-    result.reason ||
-    result.issueDescription ||
-    "";
+  const observation = result.reason || result.issueDescription || "";
 
-  if (!observation && result.success !== false && result.evaluatorSuccess !== false) {
-    return null;
-  }
+  if (!observation && result.success !== false) return null;
 
   return {
     resultId: result.id,
     severity: resolvedSeverity,
-    label:
-      result.task?.metricDisplayName ||
-      result.task?.metric ||
-      result.name ||
-      "Issue",
+    label: LABEL_FROM(result),
     observation,
   };
 };
@@ -114,12 +123,12 @@ export const mapAuditResultsToBulkTestCases = (
   const grouped = new Map<string, AuditResult[]>();
 
   for (const result of auditResults) {
-    const taskId = result.task?.id;
-    if (!taskId) continue;
+    const testId = result.task?.test?.id;
+    if (!testId) continue;
 
-    const existing = grouped.get(taskId) ?? [];
+    const existing = grouped.get(testId) ?? [];
     existing.push(result);
-    grouped.set(taskId, existing);
+    grouped.set(testId, existing);
   }
 
   const moduleIssueMap = new Map<
@@ -142,7 +151,7 @@ export const mapAuditResultsToBulkTestCases = (
   }
 
   const items = Array.from(grouped.entries()).map(
-    ([taskId, results], index) => {
+    ([testId, results], index) => {
       const primary = results[0];
       const testInput = primary.task?.test?.testInput?.trim() || "";
       const actualOutput = primary.task?.test?.actualOutput?.trim() || "";
@@ -150,8 +159,14 @@ export const mapAuditResultsToBulkTestCases = (
         .map(buildRiskFromResult)
         .filter((risk): risk is BulkTestCaseRisk => risk !== null);
 
+      const allMetricResults: BulkTestCaseResultRef[] = results.map((r) => ({
+        resultId: r.id,
+        label: r.task?.metricDisplayName || r.task?.metric || r.name || "Issue",
+        metricKey: r.task?.metric || r.name || "",
+      }));
+
       return {
-        id: taskId,
+        id: testId,
         index: index + 1,
         moduleId: primary.task?.module || "UNKNOWN",
         moduleDisplayName:
@@ -160,6 +175,7 @@ export const mapAuditResultsToBulkTestCases = (
         fullInputText: testInput || "—",
         output: actualOutput || "—",
         risks,
+        allMetricResults,
       };
     }
   );

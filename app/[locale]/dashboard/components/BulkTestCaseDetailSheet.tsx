@@ -5,7 +5,6 @@ import { Icons } from "@/components/icons";
 import { useGraphQL } from "@/lib/api";
 import { UPDATE_AUDIT_RESULT_MUTATION } from "@/lib/bulkEvaluation/queries";
 import type { BulkTestCase, BulkTestCaseRisk } from "@/lib/bulkEvaluation/types";
-import { ISSUE_TYPE_LABELS } from "@/lib/bulkEvaluation/types";
 import { IconTrash } from "@tabler/icons-react";
 import { Button, Divider, Icon, Select, Sheet, Text, TextField, toast } from "opub-ui";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -17,11 +16,6 @@ const SEVERITY_OPTIONS = [
   { value: "MEDIUM", label: "Medium" },
   { value: "LOW", label: "Low" },
 ];
-
-const ISSUE_OPTIONS = ISSUE_TYPE_LABELS.map((label) => ({
-  value: label.toLowerCase().replace(/\s+/g, "_"),
-  label,
-}));
 
 const toRiskLevel = (severity: BulkTestCaseRisk["severity"]): string =>
   `${severity}_RISK`;
@@ -180,6 +174,7 @@ const BulkTestCaseDetailSheet = ({
       ...issues,
       {
         id: `${testCase?.id ?? "issue"}-risk-${Date.now()}`,
+        resultId: data.resultId,
         label: data.label,
         severity: data.severity,
         observation: data.observation,
@@ -187,7 +182,17 @@ const BulkTestCaseDetailSheet = ({
     ];
     setIssues(updated);
     if (testCase) onIssuesChange?.(testCase.id, updated);
+
+    scheduleSave(data.resultId, {
+      evaluatorSuccess: false,
+      evaluatorRiskLevel: toRiskLevel(data.severity),
+      evaluatorReason: data.observation,
+    });
   };
+
+  const addIssueOptions = (testCase?.allMetricResults ?? [])
+    .filter((r) => !issues.some((i) => i.resultId === r.resultId))
+    .map((r) => ({ value: r.resultId, label: r.label }));
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -386,7 +391,7 @@ const BulkTestCaseDetailSheet = ({
       <AddIssueModal
         open={isAddIssueModalOpen}
         onOpenChange={setIsAddIssueModalOpen}
-        issueOptions={ISSUE_OPTIONS}
+        issueOptions={addIssueOptions}
         severityOptions={SEVERITY_OPTIONS}
         onSubmit={handleAddIssue}
       />

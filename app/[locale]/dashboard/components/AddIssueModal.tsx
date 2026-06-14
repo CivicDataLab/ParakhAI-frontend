@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Button, Dialog, Select, TextField } from "opub-ui";
 
 export type AddIssueFormData = {
+  resultId: string;
   label: string;
   severity: BulkTestCaseRisk["severity"];
   observation: string;
@@ -69,11 +70,11 @@ const AddIssueModal = ({
   const handleSubmit = () => {
     if (!validate()) return;
 
-    const label =
-      issueOptions.find((option) => option.value === form.issue)?.label ??
-      form.issue;
+    const selectedOption = issueOptions.find((option) => option.value === form.issue);
+    const label = selectedOption?.label ?? form.issue;
 
     onSubmit({
+      resultId: form.issue,
       label,
       severity: form.severity as BulkTestCaseRisk["severity"],
       observation: form.observation.trim(),
