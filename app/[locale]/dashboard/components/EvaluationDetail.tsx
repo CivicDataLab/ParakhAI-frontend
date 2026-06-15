@@ -570,7 +570,7 @@ const EvaluationDetail = ({
     }
   };
 
-  const submitBulkReview = async () => {
+  const submitBulkReview = async (recommendation: string) => {
     if (!audit || isSavingEvaluation || audit.status !== "PENDING_REVIEW") return;
 
     setIsSavingEvaluation(true);
@@ -588,7 +588,7 @@ const EvaluationDetail = ({
         };
       }>(
         SUBMIT_AUDIT_REVIEW_MUTATION,
-        { input: { auditId: audit.id } },
+        { input: { auditId: audit.id, recommendations: recommendation.trim() || null } },
         requestOptions
       );
 
@@ -635,7 +635,7 @@ const EvaluationDetail = ({
     }
 
     if (!isPlaygroundEvaluation && isBulkPendingReview) {
-      void submitBulkReview();
+      setShowSubmitRecommendationModal(true);
       return;
     }
 
@@ -1664,7 +1664,7 @@ const EvaluationDetail = ({
         title="Evaluation Recommendation"
         description="Enter your recommendation for this evaluation (optional)."
         placeholder="Enter your recommendation for this evaluation (optional)"
-        onSubmit={submitEvaluation}
+        onSubmit={isPlaygroundEvaluation ? submitEvaluation : submitBulkReview}
         isSubmitting={isSavingEvaluation}
         submitButtonText="Submit"
       />
