@@ -231,9 +231,7 @@ const BulkTestCaseDetailSheet = ({
                 color="subdued"
               />
               <Text variant="bodySm" className="text-gray-800">
-                {isEditable
-                  ? "Changes are saved automatically."
-                  : "See Issues identified and their reasons"}
+                See issues identified and their reasons
               </Text>
             </div>
 
