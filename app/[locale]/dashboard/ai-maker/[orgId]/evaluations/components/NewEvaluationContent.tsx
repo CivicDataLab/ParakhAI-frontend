@@ -1083,7 +1083,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             name: auditName,
             auditType,
             evaluationMode:
-              modeOfEvaluation === "automated" || modeOfEvaluation === "BULK" ? "BULK" : "PLAYGROUND",
+              modeOfEvaluation === "bulk" || modeOfEvaluation === "automated" ? "BULK" : "PLAYGROUND",
             auditScope: auditScope.trim() || null,
             modules: modulesList,
             metrics: metricsList,
@@ -1098,7 +1098,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               auditObjective,
               auditScope: auditScope.trim() || null,
               evaluationMode:
-                modeOfEvaluation === "automated" || modeOfEvaluation === "BULK" ? "BULK" : "PLAYGROUND",
+                modeOfEvaluation === "bulk" || modeOfEvaluation === "automated" ? "BULK" : "PLAYGROUND",
               testInputMode,
               pastedTestCases,
               selectedPromptDatasetIds: selectedPromptLibraries
