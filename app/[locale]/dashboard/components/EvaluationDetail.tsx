@@ -33,18 +33,6 @@ import {
   mapRiskLevel,
 } from "@/lib/bulkEvaluation/mapAuditResults";
 
-const AI_MODEL_BY_ID_QUERY = `
-  query GetAIModel($modelId: ID!) {
-    aiModel(modelId: $modelId) {
-      id
-      versions {
-        id
-        version
-      }
-    }
-  }
-`;
-
 const EVALUATION_NAME_TOAST_ID = "evaluation-detail-name-save";
 
 const GET_AUDIT_QUERY = `
@@ -54,11 +42,12 @@ const GET_AUDIT_QUERY = `
       name
       modelId
       modelName
+      modelVersionId
+      modelSnapshot
       status
       modules
       auditScope
       auditObjective
-      modelVersionId
       metrics
       configuration
       evaluationMode
@@ -139,6 +128,7 @@ export type Audit = {
   auditScope?: string | null;
   auditObjective?: string | null;
   modelVersionId?: number | null;
+  modelSnapshot?: any;
   id: string;
   name: string;
   modelId: string;
@@ -1105,41 +1095,15 @@ const EvaluationDetail = ({
   }, [audit?.id, audit?.name, audit?.configuration]);
 
   useEffect(() => {
-    const fetchModelVersion = async () => {
-      if (!audit?.modelId || !audit?.modelVersionId || !isAuthenticated) {
-        setModelVersion("");
-        return;
-      }
-
-      try {
-        const requestOptions = orgId ? { organization: orgId } : undefined;
-        const data = await request<{
-          aiModel: {
-            versions?: Array<{ id: number; version: string }>;
-          } | null;
-        }>(
-          AI_MODEL_BY_ID_QUERY,
-          { modelId: audit.modelId },
-          requestOptions,
-        );
-
-        const matchedVersion = data?.aiModel?.versions?.find(
-          (version) => version.id === audit.modelVersionId,
-        );
-        setModelVersion(matchedVersion?.version || "");
-      } catch {
-        setModelVersion("");
-      }
-    };
-
-    void fetchModelVersion();
-  }, [
-    audit?.modelId,
-    audit?.modelVersionId,
-    isAuthenticated,
-    orgId,
-    request,
-  ]);
+    if (!audit?.modelVersionId) {
+      setModelVersion("");
+      return;
+    }
+    const snapshot = audit.modelSnapshot || {};
+    const versions: Array<{ id: number; version: string }> = snapshot.versions || [];
+    const matched = versions.find((v) => v.id === audit.modelVersionId);
+    setModelVersion(matched?.version || "");
+  }, [audit?.modelVersionId, audit?.modelSnapshot]);
 
   const saveEvaluationName = async () => {
     if (!audit || isSavingName) return;

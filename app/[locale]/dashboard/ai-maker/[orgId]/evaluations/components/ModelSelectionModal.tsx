@@ -28,6 +28,7 @@ const AI_MODELS_QUERY = `
       name
       displayName
       modelType
+      domain
       isPublic
       versions {
         id
@@ -36,15 +37,6 @@ const AI_MODELS_QUERY = `
         status
         lifecycleStage
       }
-    }
-  }
-`;
-
-const AI_MODEL_BY_ID_QUERY = `
-  query GetAIModel($modelId: ID!) {
-    aiModel(modelId: $modelId) {
-      id
-      domain
     }
   }
 `;
@@ -62,6 +54,7 @@ type AIModel = {
   name: string;
   displayName: string;
   modelType: string;
+  domain?: string | string[] | null;
   isPublic: boolean;
   versions?: Array<{
     id: number;
@@ -293,18 +286,11 @@ const ModelSelectionModal = ({
       try {
         setIsLoadingDomains(true);
 
-        const modelResult = await request<{
-          aiModel: { domain?: string | string[] | null } | null;
-        }>(
-          AI_MODEL_BY_ID_QUERY,
-          { modelId: selectedModelId },
-          { organization: orgId },
-        );
-
-        const modelDomain = modelResult?.aiModel?.domain;
-        const domainInput = Array.isArray(modelDomain)
-          ? modelDomain.find(Boolean) || ""
-          : modelDomain || "";
+        // domain is already available from AI_MODELS_QUERY — no extra fetch needed
+        const rawDomain = selectedModel?.domain;
+        const domainInput = Array.isArray(rawDomain)
+          ? rawDomain.find(Boolean) || ""
+          : rawDomain || "";
 
         if (!domainInput) {
           setEvaluationDomainOptions([]);
@@ -338,7 +324,7 @@ const ModelSelectionModal = ({
     };
 
     void fetchDomainOptions();
-  }, [selectedModelId, open, isAuthenticated, isSessionLoading, orgId, request]);
+  }, [selectedModelId, selectedModel, open, isAuthenticated, isSessionLoading, orgId, request]);
 
   const canProceedStep1 =
     selectedModelId &&
@@ -373,6 +359,10 @@ const ModelSelectionModal = ({
 
     const resolvedEvaluationMode = evaluationMethod;
 
+    const selectedVersionObj = selectedModel?.versions?.find(
+      (v) => v.id === selectedVersionId,
+    );
+
     const searchParams = new URLSearchParams({
       modelId: selectedModelId,
       versionId: String(selectedVersionId),
@@ -380,7 +370,13 @@ const ModelSelectionModal = ({
       evaluationMode: resolvedEvaluationMode,
       auditType,
       auditObjective: auditObjective.trim(),
+      modelType: selectedModel?.modelType ?? "",
+      displayName: selectedModel?.displayName || selectedModel?.name || "",
     });
+
+    if (selectedVersionObj?.version) {
+      searchParams.set("version", selectedVersionObj.version);
+    }
 
     if (evaluationDomain.trim()) {
       searchParams.set("auditScope", evaluationDomain.trim());

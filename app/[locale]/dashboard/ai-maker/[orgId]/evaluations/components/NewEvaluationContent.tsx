@@ -33,15 +33,6 @@ import TestCases from "./TestCases";
 import type { AuditType, Module, SelectOption } from "./types";
 
 // GraphQL queries for dynamic modules and metrics
-const MODULES_BY_MODEL_TYPE_QUERY = `
-  query GetModulesByModelType($modelType: String!) {
-  modulesByModelType(modelType: $modelType) {
-    name
-    displayName
-  }
-}
-`;
-
 const METRICS_BY_MODEL_TYPE_QUERY = `
   query MetricsByModelType($modelType: String!) {
     metricsByModelType(modelType: $modelType) {
@@ -129,6 +120,7 @@ const GET_AUDIT_QUERY = `
       evaluationMode
       auditObjective
       auditScope
+      modelSnapshot
       modelId
       modelVersionId
       modelName
@@ -185,35 +177,6 @@ const UPDATE_AUDIT_MUTATION = `
 const RUN_AUDIT_MUTATION = `
   mutation RunAudit($input: RunAuditInput!) {
     runAudit(input: $input) {
-      success
-      message
-      audit {
-        id
-        name
-        status
-        modules
-        metrics
-        modelId
-        modelVersionId
-        testDatasetIds
-        configuration
-        judgeModel
-        judgeConfig
-        errorMessage
-        errorDetails
-        totalTests
-        passedTests
-        failedTests
-        skippedTests
-      }
-    }
-  }
-`;
-
-// Legacy mutation - kept for backward compatibility
-const REQUEST_AUDIT_MUTATION = `
-  mutation RequestAudit($input: RequestAuditInput!) {
-    requestAudit(input: $input) {
       success
       message
       audit {
@@ -327,6 +290,8 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const urlAuditType = searchParams.get("auditType");
   const urlAuditScope = searchParams.get("auditScope");
   const urlAuditObjective = searchParams.get("auditObjective");
+  const urlModelType = searchParams.get("modelType");
+  const urlModelDisplayName = searchParams.get("displayName");
 
   const [auditType, setAuditType] = useState<AuditType>(() => {
     const parsed = parseAuditTypeFromBackend(urlAuditType);
@@ -396,6 +361,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     latestVersion?.version ||
     "";
   const modelType = selectedModel?.modelType || "TEXT_GENERATION";
+  const selectedModelDomain = Array.isArray(selectedModel?.domain)
+    ? selectedModel.domain.find(Boolean) || ""
+    : selectedModel?.domain || "";
 
   const [evaluationScopeOptions, setEvaluationScopeOptions] = useState<
     SelectOption[]
@@ -441,43 +409,31 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   ]);
 
   // Resolve evaluation scope options via:
-  // 1) GetAIModel -> domain
+  // 1) selectedModelDomain (already loaded from AI_MODELS_QUERY or AI_MODEL_BY_ID_QUERY)
   // 2) auditDomainOptions(domain) -> domains[]
+  // Only needed before an audit exists — once urlAuditId is present, scope is
+  // already saved on the audit and GET_AUDIT_QUERY is the source of truth.
   useEffect(() => {
     const fetchAuditDomainOptions = async () => {
-      if (!selectedModelId || !isAuthenticated || isSessionLoading) {
+      if (urlAuditId || !selectedModelId || !isAuthenticated || isSessionLoading) {
+        setIsLoadingEvaluationScopeOptions(false);
+        return;
+      }
+
+      // Domain is already available from the loaded model — no extra query needed.
+      if (!selectedModelDomain) {
+        setEvaluationScopeOptions([]);
         setIsLoadingEvaluationScopeOptions(false);
         return;
       }
 
       setIsLoadingEvaluationScopeOptions(true);
       try {
-        const modelResult = await request<{
-          aiModel: {
-            id: string;
-            domain?: string | string[] | null;
-          } | null;
-        }>(
-          AI_MODEL_BY_ID_QUERY,
-          { modelId: selectedModelId },
-          { organization: orgId }
-        );
-
-        const modelDomain = modelResult?.aiModel?.domain;
-        const domainInput = Array.isArray(modelDomain)
-          ? modelDomain.find(Boolean) || ""
-          : modelDomain || "";
-
-        if (!domainInput) {
-          setEvaluationScopeOptions([]);
-          return;
-        }
-
         const domainOptionsResult = await request<{
           auditDomainOptions: { domains?: any[] | null } | null;
         }>(
           AUDIT_DOMAIN_OPTIONS_QUERY,
-          { domain: domainInput },
+          { domain: selectedModelDomain },
           { organization: orgId }
         );
 
@@ -528,7 +484,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     };
 
     fetchAuditDomainOptions();
-  }, [selectedModelId, isAuthenticated, isSessionLoading, request, orgId]);
+  }, [urlAuditId, selectedModelId, selectedModelDomain, isAuthenticated, isSessionLoading, request, orgId]);
 
   // Handle tab query parameter on mount
   useEffect(() => {
@@ -547,7 +503,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const [modeOfEvaluation, setModeOfEvaluation] = useState<string>(() => {
     const mode = urlEvaluationMode?.trim().toLowerCase();
     if (!mode) return "";
-    return mode === "automated" ? "bulk" : mode;
+    return mode === "automated" || mode === "bulk" ? "bulk" : "playground";
   });
   const [hasManualTestCases, setHasManualTestCases] = useState(false);
   const [auditScope, setAuditScope] = useState<string>(
@@ -566,7 +522,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!currentAuditId || modeOfEvaluation !== "manual") {
+    if (!currentAuditId || modeOfEvaluation !== "playground") {
       setHasManualTestCases(false);
       return;
     }
@@ -746,6 +702,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             modelId: string;
             modelVersionId: number | null;
             modelName: string | null;
+            modelSnapshot: any;
             modules: string[];
             metrics: string[];
             testDatasetIds: string[];
@@ -774,51 +731,49 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           setSelectedModelId(audit.modelId);
           setSelectedVersionId(audit.modelVersionId);
 
-          // Fetch model details to get proper name and version
+          // Use modelSnapshot (saved at evaluation time) for all model details —
+          // no extra network request needed.
           if (audit.modelId) {
             try {
-              const modelResult = await request<{
-                aiModel: {
-                  id: string;
-                  name: string;
-                  displayName: string;
-                  modelType: string;
-                  versions: Array<{
-                    id: number;
-                    version: string;
-                    isLatest: boolean;
-                    status: string;
-                  }>;
-                } | null;
-              }>(
-                AI_MODEL_BY_ID_QUERY,
-                { modelId: audit.modelId },
-                { organization: orgId }
-              );
+              const snapshot = audit.modelSnapshot || {};
+              const snapshotModelType: string =
+                snapshot.modelType || snapshot.model_type || "TEXT_GENERATION";
+              const snapshotDisplayName: string =
+                snapshot.displayName || snapshot.display_name || snapshot.name || audit.modelName || "";
+              const snapshotDomain = snapshot.domain ?? null;
+              const snapshotVersions: Array<{ id: number; version: string; isLatest: boolean; status: string }> =
+                snapshot.versions || [];
 
-              if (modelResult?.aiModel) {
-                const model = modelResult.aiModel;
-                setAuditModelName(model.displayName || model.name);
+              if (snapshotDisplayName) setAuditModelName(snapshotDisplayName);
 
-                // Find the version string for the selected version
-                if (audit.modelVersionId && model.versions) {
-                  const version = model.versions.find(
-                    (v) => v.id === audit.modelVersionId
-                  );
-                  if (version) {
-                    setAuditModelVersion(version.version);
-                  }
-                }
+              // Find the version string for the selected version
+              if (audit.modelVersionId && snapshotVersions.length > 0) {
+                const version = snapshotVersions.find((v) => v.id === audit.modelVersionId);
+                if (version) setAuditModelVersion(version.version);
+              }
 
-                // Add the model to aiModels so version info is available
-                setAiModels((prev) => {
-                  const exists = prev.find((m) => m.id === model.id);
-                  if (exists) return prev;
-                  return [...prev, model];
-                });
+              // Populate aiModels from snapshot so selectedModelDomain resolves
+              setAiModels((prev) => {
+                const exists = prev.find((m) => m.id === audit.modelId);
+                if (exists) return prev;
+                return [
+                  ...prev,
+                  {
+                    id: audit.modelId,
+                    name: snapshot.name || audit.modelName || "",
+                    displayName: snapshotDisplayName,
+                    modelType: snapshotModelType,
+                    domain: snapshotDomain,
+                    versions: snapshotVersions,
+                  },
+                ];
+              });
 
-                // Fetch all modules and metrics for this model type using MetricsByModelType
-                try {
+              // Fetch all modules and metrics for this model type using MetricsByModelType.
+              // Skip if already loaded or if this is a playground evaluation (no module selection needed).
+              const isPlaygroundAudit = audit.evaluationMode?.toLowerCase() === "manual";
+              if (!modulesFetchedRef.current && !isPlaygroundAudit) {
+              try {
                   const metricsResp = await request<{
                     metricsByModelType: Array<{
                       name: string;
@@ -831,7 +786,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                       }>;
                     }>;
                   }>(METRICS_BY_MODEL_TYPE_QUERY, {
-                    modelType: model.modelType,
+                    modelType: snapshotModelType,
                   });
 
                   const metricsData = metricsResp?.metricsByModelType || [];
@@ -928,7 +883,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                   // Mark modules as fetched to prevent regular useEffect from overwriting draft selections
                   modulesFetchedRef.current = true;
                   isFetchingRef.current = false;
-                  lastModelTypeRef.current = model.modelType;
+                  lastModelTypeRef.current = snapshotModelType;
                 } catch (metricsError) {
                   console.warn(
                     "Failed to fetch modules/metrics for draft:",
@@ -953,9 +908,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                     setSelectedModules(modulesMap);
                   }
                 }
-              }
+              } // end if (!modulesFetchedRef.current)
             } catch (modelError) {
-              console.error("Error fetching model details:", modelError);
+              console.error("Error processing model snapshot:", modelError);
             }
           }
 
@@ -990,7 +945,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             "";
           if (restoredMode) {
             const mode = String(restoredMode).trim().toLowerCase();
-            setModeOfEvaluation(mode === "automated" ? "bulk" : mode);
+            setModeOfEvaluation(mode === "automated" || mode === "bulk" ? "bulk" : "playground");
           }
 
           const restoredAuditType =
@@ -1154,7 +1109,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             name: auditName,
             auditType,
             evaluationMode:
-              modeOfEvaluation === "automated" ? "bulk" : modeOfEvaluation || "bulk",
+              modeOfEvaluation === "automated" || modeOfEvaluation === "BULK" ? "BULK" : "PLAYGROUND",
             auditScope: auditScope.trim() || null,
             modules: modulesList,
             metrics: metricsList,
@@ -1169,8 +1124,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               auditObjective,
               auditScope: auditScope.trim() || null,
               evaluationMode:
-                (modeOfEvaluation === "automated" ? "bulk" : modeOfEvaluation) ||
-                null,
+                modeOfEvaluation === "automated" || modeOfEvaluation === "BULK" ? "BULK" : "PLAYGROUND",
               testInputMode,
               pastedTestCases,
               selectedPromptDatasetIds: selectedPromptLibraries
@@ -1345,6 +1299,8 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const lastModelTypeRef = useRef<string | null>(null);
   const modelsFetchedRef = useRef(false);
   const isFetchingModelsRef = useRef(false);
+  // Cache model domain per modelId to skip redundant AI_MODEL_BY_ID_QUERY calls
+  const modelDomainCacheRef = useRef<Record<string, string>>({});
 
   // Load evaluation modules from GraphQL API using modulesByModelType
   useEffect(() => {
@@ -1366,7 +1322,8 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       isFetchingRef.current ||
       isLoadingModules ||
       invalidModelError ||
-      !selectedModelId
+      !selectedModelId ||
+      modeOfEvaluation === "playground"
     ) {
       return;
     }
@@ -1446,40 +1403,40 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         setIsLoadingModules(true);
         setModulesError(null);
 
-        const data = await request<{ modulesByModelType: Module[] }>(
-          MODULES_BY_MODEL_TYPE_QUERY,
-          { modelType }
-        );
+        const metricsResp = await request<{
+          metricsByModelType: Array<{
+            name: string;
+            displayName?: string;
+            description?: string;
+            metrics: Array<{ name: string; displayName?: string; description?: string }>;
+          }>;
+        }>(METRICS_BY_MODEL_TYPE_QUERY, { modelType });
 
-        const modulesData = Array.isArray(data?.modulesByModelType)
-          ? data.modulesByModelType
-          : [];
+        const metricsData = metricsResp?.metricsByModelType || [];
 
-        let metricsData: Array<{
-          name: string;
-          metrics: Array<{ name: string; displayName?: string }>;
-        }> = [];
-
-        try {
-          const metricsResp = await request<{
-            metricsByModelType: Array<{
-              name: string;
-              metrics: Array<{ name: string; displayName?: string }>;
-            }>;
-          }>(METRICS_BY_MODEL_TYPE_QUERY, { modelType });
-
-          metricsData = metricsResp?.metricsByModelType || [];
-        } catch (metricsError) {
-          console.warn("Failed to prefetch metricsByModelType", metricsError);
-        }
-
-        if (modulesData.length === 0) {
+        if (metricsData.length === 0) {
           applyModulesData(getFallbackEvaluationModules());
           setModulesError(
             "Evaluation modules could not be loaded from the server. Showing default modules."
           );
           return;
         }
+
+        // Derive Module[] from metricsByModelType (superset of modulesByModelType)
+        const modulesData: Module[] = metricsData.map((moduleData) => ({
+          name: moduleData.name,
+          displayName:
+            moduleData.displayName ||
+            toTitleCase(moduleData.name.replace(/_/g, " ")),
+          description: moduleData.description || "",
+          metrics: (moduleData.metrics || []).map((metric) => ({
+            name: metric.name,
+            displayName:
+              metric.displayName ||
+              toTitleCase(metric.name.replace(/_/g, " ")),
+            description: metric.description || "",
+          })),
+        }));
 
         applyModulesData(modulesData, metricsData);
       } catch (error: unknown) {
@@ -1496,7 +1453,54 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
     fetchModules();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modelType, isAuthenticated, isSessionLoading]);
+  }, [modelType, isAuthenticated, isSessionLoading, modeOfEvaluation]);
+
+  const applyModelValidation = (
+    model: {
+      id: string;
+      domain?: string | string[] | null;
+      versions?: Array<{ id: number; version: string; isLatest: boolean; status: string }>;
+    }
+  ) => {
+    // Cache domain so fetchAuditDomainOptions can skip AI_MODEL_BY_ID_QUERY
+    const domain = Array.isArray(model.domain)
+      ? model.domain.find(Boolean) || ""
+      : model.domain || "";
+    if (domain) modelDomainCacheRef.current[model.id] = domain;
+
+    if (urlVersionId) {
+      const versionExists = model.versions?.some((v) => v.id === parseInt(urlVersionId));
+      if (!versionExists) {
+        setInvalidModelError(
+          `The selected model version (ID: ${urlVersionId}) does not exist for this model. Please select a different version.`
+        );
+        setSelectedModelId(model.id);
+        setSelectedVersionId(null);
+      } else {
+        setInvalidModelError(null);
+        setSelectedModelId(model.id);
+        setSelectedVersionId(parseInt(urlVersionId));
+      }
+    } else if (urlVersion) {
+      const versionObj = model.versions?.find((v) => v.version === urlVersion);
+      if (!versionObj) {
+        setInvalidModelError(
+          `The selected model version (${urlVersion}) does not exist for this model. Please select a different version.`
+        );
+        setSelectedModelId(model.id);
+        setSelectedVersionId(null);
+      } else {
+        setInvalidModelError(null);
+        setSelectedModelId(model.id);
+        setSelectedVersionId(versionObj.id);
+      }
+    } else {
+      setInvalidModelError(null);
+      setSelectedModelId(model.id);
+      const latestVer = model.versions?.find((v) => v.isLatest);
+      if (latestVer) setSelectedVersionId(latestVer.id);
+    }
+  };
 
   // Fetch AI models from backend
   const fetchAIModels = async () => {
@@ -1516,6 +1520,54 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       setIsLoadingModels(true);
       setModelsError(null);
 
+      // When a specific model is already known from the URL, use params passed from
+      // the modal (modelType, displayName, version) to avoid a redundant GetAIModel query.
+      if (urlModelId) {
+        if (urlModelType && urlModelDisplayName) {
+          const versionId = urlVersionId ? parseInt(urlVersionId) : null;
+          const syntheticModel = {
+            id: urlModelId,
+            name: urlModelDisplayName,
+            displayName: urlModelDisplayName,
+            modelType: urlModelType,
+            domain: null as string | string[] | null,
+            versions: versionId
+              ? [{ id: versionId, version: urlVersion || "", isLatest: true, status: "ACTIVE" }]
+              : [],
+          };
+          setAiModels([syntheticModel]);
+          applyModelValidation(syntheticModel);
+          return;
+        }
+
+        // Fallback: fetch from API if URL params are incomplete
+        const modelResult = await request<{
+          aiModel: {
+            id: string;
+            name: string;
+            displayName: string;
+            modelType: string;
+            domain?: string | string[] | null;
+            versions?: Array<{ id: number; version: string; isLatest: boolean; status: string }>;
+          } | null;
+        }>(AI_MODEL_BY_ID_QUERY, { modelId: urlModelId }, { organization: orgId });
+
+        const model = modelResult?.aiModel;
+        if (!model) {
+          setInvalidModelError(
+            `The selected model (ID: ${urlModelId}) does not exist or is not available. Please select a different model.`
+          );
+          setSelectedModelId(null);
+          setSelectedVersionId(null);
+          return;
+        }
+
+        setAiModels([model]);
+        applyModelValidation(model);
+        return;
+      }
+
+      // No model in URL — fetch all models for the selector dropdown
       const modelsResponse = await request<{
         aiModels: Array<{
           id: string;
@@ -1546,70 +1598,12 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
       const models = modelsResponse?.aiModels || [];
       setAiModels(models);
+      setInvalidModelError(null);
 
-      // Validate URL parameters if they exist
-      if (urlModelId) {
-        const foundModel = models.find((m) => m.id === urlModelId);
-        if (!foundModel) {
-          setInvalidModelError(
-            `The selected model (ID: ${urlModelId}) does not exist or is not available. Please select a different model.`
-          );
-          setSelectedModelId(null);
-          setSelectedVersionId(null);
-        } else {
-          // Model exists, check version if provided
-          if (urlVersionId) {
-            const versionExists = foundModel.versions?.some(
-              (v) => v.id === parseInt(urlVersionId)
-            );
-            if (!versionExists) {
-              setInvalidModelError(
-                `The selected model version (ID: ${urlVersionId}) does not exist for this model. Please select a different version.`
-              );
-              setSelectedModelId(urlModelId);
-              setSelectedVersionId(null);
-            } else {
-              // Both model and version are valid
-              setInvalidModelError(null);
-              setSelectedModelId(urlModelId);
-              setSelectedVersionId(parseInt(urlVersionId));
-            }
-          } else if (urlVersion) {
-            const versionObj = foundModel.versions?.find(
-              (v) => v.version === urlVersion
-            );
-            if (!versionObj) {
-              setInvalidModelError(
-                `The selected model version (${urlVersion}) does not exist for this model. Please select a different version.`
-              );
-              setSelectedModelId(urlModelId);
-              setSelectedVersionId(null);
-            } else {
-              setInvalidModelError(null);
-              setSelectedModelId(urlModelId);
-              setSelectedVersionId(versionObj.id);
-            }
-          } else {
-            // Model exists but no version specified, use latest
-            setInvalidModelError(null);
-            setSelectedModelId(urlModelId);
-            const latestVer = foundModel.versions?.find((v) => v.isLatest);
-            if (latestVer) {
-              setSelectedVersionId(latestVer.id);
-            }
-          }
-        }
-      } else {
-        // No URL params, auto-select first model
-        setInvalidModelError(null);
-        if (models.length > 0 && !selectedModelId) {
-          setSelectedModelId(models[0].id);
-          const firstModel = models[0];
-          const latestVer = firstModel.versions?.find((v) => v.isLatest);
-          if (latestVer) {
-            setSelectedVersionId(latestVer.id);
-          }
-        }
+      if (models.length > 0 && !selectedModelId) {
+        setSelectedModelId(models[0].id);
+        const latestVer = models[0].versions?.find((v) => v.isLatest);
+        if (latestVer) setSelectedVersionId(latestVer.id);
       }
     } catch (error: any) {
       const errorMessage =
@@ -1626,18 +1620,20 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     }
   };
 
-  // Fetch AI models when authenticated
+  // Fetch AI models when authenticated.
+  // Skip when urlAuditId is present — model info comes from audit.modelSnapshot via fetchAuditDetails.
   useEffect(() => {
     if (
       isAuthenticated &&
       !isSessionLoading &&
+      !urlAuditId &&
       !modelsFetchedRef.current &&
       !isFetchingModelsRef.current
     ) {
       fetchAIModels();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, isSessionLoading]);
+  }, [isAuthenticated, isSessionLoading, urlAuditId]);
 
   // Re-validate when URL params change (e.g., after modal navigation)
   useEffect(() => {
@@ -1712,7 +1708,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   };
 
   const validateTestCases = (): boolean => {
-    if (modeOfEvaluation === "manual") {
+    if (modeOfEvaluation === "playground") {
       return true;
     }
 
@@ -2105,7 +2101,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
   const getModeLabel = (mode: string) => {
     const normalized = mode?.toLowerCase();
-    if (normalized === "manual") return "Playground Evaluation";
+    if (normalized === "manual" || normalized === "playground") return "Playground Evaluation";
     if (normalized === "bulk" || normalized === "automated") {
       return "Bulk Evaluation";
     }
@@ -2408,7 +2404,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                 isModeOfEvaluationLocked={hasManualTestCases}
               />
 
-              {modeOfEvaluation === "manual" ? (
+              {modeOfEvaluation === "playground" ? (
                 <ManualTestCases
                   auditId={currentAuditId || undefined}
                   modules={buildModulesAndMetrics().modules}
