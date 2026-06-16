@@ -1,6 +1,7 @@
 "use client";
 
 import { useGraphQL } from "@/lib/api";
+import { formatStatusLabel } from "@/lib/utils";
 import {
   IconPlus,
   IconSearch,
@@ -280,7 +281,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   const availableAuditors = auditors.filter((auditor) => {
     // Check if this auditor has any ACTIVE assignments
     const hasActiveAssignment = assignments.some(
-      (a) => a.auditorEmail === auditor.email && ["PENDING", "ACCEPTED"].includes(a.status)
+      (a) => a.auditorEmail === auditor.email && ["QUEUED", "ACCEPTED"].includes(a.status)
     );
 
     // The auditor is available if they DO NOT have an active assignment
@@ -805,7 +806,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                           : "bg-yellow-100 text-yellow-700"
                   }`}
                 >
-                  {assignment.status}
+                  {formatStatusLabel(assignment.status)}
                 </span>
               </div>
             </div>

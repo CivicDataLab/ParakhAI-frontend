@@ -332,9 +332,16 @@ const AIMakerDashboard = () => {
       }),
       columnHelper.accessor("evaluationMode", {
         header: "Evaluation Mode",
-        cell: (info) => (
-          <Text variant="bodySm">{info.getValue() || "--"}</Text>
-        ),
+        cell: (info) => {
+          const mode = info.getValue()?.toLowerCase();
+          const label =
+            mode === "manual"
+              ? "Playground Evaluation"
+              : mode === "bulk" || mode === "automated"
+                ? "Bulk Evaluation"
+                : info.getValue() || "--";
+          return <Text variant="bodySm">{label}</Text>;
+        },
       }),
       columnHelper.accessor("totalTests", {
         header: "Tests",

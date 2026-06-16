@@ -1,5 +1,14 @@
 export type SelectOption = { value: string; label: string };
 
+export type CustomPromptRow = {
+  id: string;
+  input: string;
+  expectedOutput: string;
+  category: string;
+  riskType: string;
+  selected: boolean;
+};
+
 export type AuditType = 'Technical' | 'Domain' | 'Cultural';
 
 export type Module = {

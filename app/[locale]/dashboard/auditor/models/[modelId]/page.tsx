@@ -4,6 +4,7 @@ import RichTextRenderer from "@/components/RichTextRenderer";
 import { useGraphQL } from "@/lib/api";
 import { useAppSession } from "@/lib/session";
 import { statusColors } from "@/lib/statusColors";
+import { formatStatusLabel } from "@/lib/utils";
 import { createColumnHelper } from "@tanstack/react-table";
 import {
   IconArrowLeft,
@@ -348,8 +349,14 @@ const AuditorModelDetailPage = () => {
     columnHelper.accessor("evaluationMode", {
       header: "Evaluation Mode",
       cell: (info) => {
-        const evaluationMode = info.getValue();
-        return <Text variant="bodySm">{evaluationMode}</Text>;
+        const mode = info.getValue()?.toLowerCase();
+        const label =
+          mode === "manual"
+            ? "Playground Evaluation"
+            : mode === "bulk" || mode === "automated"
+              ? "Bulk Evaluation"
+              : info.getValue() || "--";
+        return <Text variant="bodySm">{label}</Text>;
       },
     }),
     columnHelper.accessor("status", {
@@ -361,7 +368,7 @@ const AuditorModelDetailPage = () => {
           <span
             className={`px-2 py-1 text-xs rounded-full ${colors.bg} ${colors.text}`}
           >
-            {status}
+            {formatStatusLabel(status)}
           </span>
         );
       },
@@ -398,7 +405,7 @@ const AuditorModelDetailPage = () => {
       },
     }),
     columnHelper.accessor("completedAt", {
-      header: "Completed",
+      header: "Completed on",
       cell: (info) => (
         <Text variant="bodySm">
           {info.getValue() ? formatDate(info.getValue() as string) : "--"}
@@ -525,8 +532,8 @@ const AuditorModelDetailPage = () => {
                       const isHighlighted = highlightVersionId === v.id;
                       const colors = assignment
                         ? statusColors[assignment.status] ||
-                          statusColors.PENDING
-                        : statusColors.PENDING;
+                          statusColors.QUEUED
+                        : statusColors.QUEUED;
 
                       return (
                         <div
@@ -574,13 +581,13 @@ const AuditorModelDetailPage = () => {
                                   fillColor={colors.bgHex}
                                   textColor={colors.textHex}
                                 >
-                                  {assignment.status.replace(/_/g, " ")}
+                                  {formatStatusLabel(assignment.status)}
                                 </Tag>
                               )}
                             </div>
 
                             <div className="flex items-center gap-4">
-                              {assignment?.status === "PENDING" && (
+                              {assignment?.status === "QUEUED" && (
                                 <>
                                   <Button
                                     size="slim"
@@ -724,7 +731,7 @@ const AuditorModelDetailPage = () => {
                                 <Text variant="bodyMd" className="capitalize">
                                   {v.isLatest
                                     ? v.lifecycleStage.replace(/_/g, " ")
-                                    : v.status.replace(/_/g, " ")}
+                                    : formatStatusLabel(v.status)}
                                 </Text>
                               </div>
                             </div>

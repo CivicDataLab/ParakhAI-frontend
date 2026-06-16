@@ -2,6 +2,7 @@
 
 import { useGraphQL } from "@/lib/api";
 import { getEvaluationStatusColor } from "@/lib/statusColors";
+import { formatStatusLabel } from "@/lib/utils";
 import { useAppSession } from "@/lib/session";
 import { IconReportAnalytics } from "@tabler/icons-react";
 import { createColumnHelper } from "@tanstack/react-table";
@@ -121,7 +122,9 @@ const EvaluationsPage = () => {
   const filteredEvaluations =
     statusFilter === "ALL"
       ? evaluations
-      : evaluations.filter((e) => e.status === statusFilter);
+      : evaluations.filter(
+          (e) => e.status?.toUpperCase() === statusFilter
+        );
 
   const getEvaluationHref = (row: Evaluation) => {
     if (row.status?.toUpperCase() === "DRAFT" && row.modelId) {
@@ -171,8 +174,14 @@ const EvaluationsPage = () => {
     columnHelper.accessor("evaluationMode", {
       header: "Evaluation Mode",
       cell: (info) => {
-        const evaluationMode = info.getValue();
-        return <Text variant="bodySm">{evaluationMode}</Text>;
+        const mode = info.getValue()?.toLowerCase();
+        const label =
+          mode === "manual"
+            ? "Playground Evaluation"
+            : mode === "bulk" || mode === "automated"
+              ? "Bulk Evaluation"
+              : info.getValue() || "--";
+        return <Text variant="bodySm">{label}</Text>;
       },
     }),
     columnHelper.accessor("status", {
@@ -190,7 +199,7 @@ const EvaluationsPage = () => {
               color: colors.textColor,
             }}
           >
-            {status || "Unknown"}
+            {formatStatusLabel(status)}
           </Text>
         );
       },
@@ -227,7 +236,7 @@ const EvaluationsPage = () => {
       },
     }),
     columnHelper.accessor("completedAt", {
-      header: "Completed",
+      header: "Completed on",
       cell: (info) => (
         <Text variant="bodySm">
           {info.getValue() ? formatDate(info.getValue() as string) : "--"}
@@ -285,10 +294,11 @@ const EvaluationsPage = () => {
       <div className="flex items-center justify-between mb-8 mt-10 pl-1">
         <div>
           <Text variant="headingLg" as="h1" fontWeight="bold">
-            Evaluations
+            Evaluations History
           </Text>
           <Text variant="bodySm" className="text-gray-600 mt-1">
-            All evaluations you have conducted
+            All evaluations you have conducted. To start evaluation, go back to
+            assigned models
           </Text>
         </div>
       </div>
@@ -307,7 +317,7 @@ const EvaluationsPage = () => {
           <Text variant="bodyMd" className="text-gray-600">
             {statusFilter === "ALL"
               ? "No evaluations found"
-              : `No ${statusFilter.toLowerCase()} evaluations`}
+              : `No ${formatStatusLabel(statusFilter, { lowercase: true })} evaluations`}
           </Text>
           <Text variant="bodySm" className="text-gray-500 mt-1">
             {statusFilter === "ALL"

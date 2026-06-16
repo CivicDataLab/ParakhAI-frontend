@@ -72,7 +72,7 @@ export function toTitleCase(str: string) {
   return str.toLowerCase().replace(/\b\p{L}/gu, (char) => char.toUpperCase());
 }
 
-/** User-facing status label (e.g. PENDING → QUEUED). */
+/** User-facing status label. */
 export function formatStatusLabel(
   status?: string | null,
   options?: { lowercase?: boolean }
@@ -81,7 +81,9 @@ export function formatStatusLabel(
 
   const normalized = status.toUpperCase();
   const label =
-    normalized === "PENDING" ? "QUEUED" : normalized.replace(/_/g, " ");
+    normalized === "PENDING"
+      ? "QUEUED"
+      : normalized.replace(/_/g, " ");
 
   return options?.lowercase ? label.toLowerCase() : label;
 }

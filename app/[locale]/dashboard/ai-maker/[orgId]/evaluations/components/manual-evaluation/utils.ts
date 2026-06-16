@@ -1,10 +1,148 @@
 import { toTitleCase } from "@/lib/utils";
-import type { ModuleProgress, SubModuleInfo } from "./types";
+import type { Module } from "../types";
+import type {
+  ManualEvalWorkspaceDraft,
+  ModuleProgress,
+  SubModuleInfo,
+} from "./types";
+
+const MANUAL_EVAL_WORKSPACE_PREFIX = "manual-eval-workspace";
+
+export const MIN_PLAYGROUND_TEST_CASES = 3;
+
+export function getManualEvalWorkspaceStorageKey(
+  orgId: string,
+  auditId: string
+) {
+  return `${MANUAL_EVAL_WORKSPACE_PREFIX}:${orgId}:${auditId}`;
+}
+
+export function readManualEvalWorkspaceDraft(
+  orgId: string,
+  auditId: string
+): ManualEvalWorkspaceDraft | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.sessionStorage.getItem(
+      getManualEvalWorkspaceStorageKey(orgId, auditId)
+    );
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as ManualEvalWorkspaceDraft;
+    if (!parsed || typeof parsed !== "object") return null;
+
+    return {
+      selectedModule:
+        typeof parsed.selectedModule === "string" ? parsed.selectedModule : null,
+      sourceLanguage:
+        typeof parsed.sourceLanguage === "string" ? parsed.sourceLanguage : "en",
+      targetLanguage:
+        typeof parsed.targetLanguage === "string" ? parsed.targetLanguage : "",
+      inputPrompt:
+        typeof parsed.inputPrompt === "string" ? parsed.inputPrompt : "",
+      modelOutput:
+        typeof parsed.modelOutput === "string" ? parsed.modelOutput : "",
+      latencyMs:
+        typeof parsed.latencyMs === "number" ? parsed.latencyMs : undefined,
+      hasCalledModel: Boolean(parsed.hasCalledModel),
+      status:
+        parsed.status === "PASSED" || parsed.status === "FAILED"
+          ? parsed.status
+          : null,
+      issueRows: Array.isArray(parsed.issueRows)
+        ? parsed.issueRows.filter(
+            (row) =>
+              row &&
+              typeof row === "object" &&
+              typeof row.id === "string" &&
+              typeof row.issueType === "string" &&
+              typeof row.severity === "string" &&
+              typeof row.observations === "string" &&
+              typeof row.idealOutput === "string"
+          )
+        : [],
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function writeManualEvalWorkspaceDraft(
+  orgId: string,
+  auditId: string,
+  draft: ManualEvalWorkspaceDraft
+) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.sessionStorage.setItem(
+      getManualEvalWorkspaceStorageKey(orgId, auditId),
+      JSON.stringify(draft)
+    );
+  } catch {
+    // Ignore quota or serialization errors.
+  }
+}
+
+export function clearManualEvalWorkspaceDraft(orgId: string, auditId: string) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.sessionStorage.removeItem(
+      getManualEvalWorkspaceStorageKey(orgId, auditId)
+    );
+  } catch {
+    // Ignore storage errors.
+  }
+}
+
+const FALLBACK_MODULE_META: Record<
+  string,
+  { displayName: string; description: string }
+> = {
+  HALLUCINATION_MISINFORMATION: {
+    displayName: "Hallucination Misinformation",
+    description: "Detects false or unsafe outputs",
+  },
+  BIAS_FAIRNESS: {
+    displayName: "Bias Fairness",
+    description: "Checks whether model perpetuates stereotypes",
+  },
+  PRIVACY_SAFETY: {
+    displayName: "Privacy Safety",
+    description: "Ensures personal data is not exposed",
+  },
+};
+
+export function getFallbackEvaluationModules(): Module[] {
+  return Object.entries(FALLBACK_MODULE_META).map(([name, meta]) => ({
+    name,
+    displayName: meta.displayName,
+    description: meta.description,
+    metrics: getFallbackSubModules(name).map((subModule) => ({
+      name: subModule.name,
+      displayName: subModule.displayName,
+      description: subModule.description || "",
+    })),
+  }));
+}
 
 export function getTotalManualTestCaseCount(
   moduleProgress: ModuleProgress[] | undefined
 ): number {
   return (moduleProgress ?? []).reduce((sum, entry) => sum + entry.testCaseCount, 0);
+}
+
+export function metricsToSubModules(
+  metrics: Array<{ value: string; label: string }>
+): SubModuleInfo[] {
+  return metrics
+    .filter((metric) => metric.value)
+    .map((metric) => ({
+      name: metric.value,
+      displayName: metric.label || metric.value,
+    }));
 }
 
 export function getFallbackSubModules(moduleName: string): SubModuleInfo[] {

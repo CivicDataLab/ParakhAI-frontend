@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { Text, TextField, Label, Select, Combobox, Spinner } from "opub-ui";
 import type { SelectOption } from "./types";
 import styles from "./styles.module.scss";
@@ -71,6 +71,7 @@ interface EvaluationConfigurationProps {
     }>
   >;
   isModeOfEvaluationLocked?: boolean;
+  workspaceOnly?: boolean;
 }
 
 const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
@@ -102,26 +103,12 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
   validationErrors = {},
   setValidationErrors,
   isModeOfEvaluationLocked = false,
+  workspaceOnly = false,
 }) => {
-  const isAuditTypeModeLocked =
-    auditType === "Domain" || auditType === "Cultural";
-  const isModeOfEvaluationDisabled =
-    isAuditTypeModeLocked || isModeOfEvaluationLocked;
-
   const modeOfEvaluationOptions = [
-    { value: "automated", label: "Automated" },
+    { value: "bulk", label: "Bulk" },
     { value: "manual", label: "Manual" },
   ];
-
-  // Automatically set mode of evaluation to "manual" when domain or cultural evaluation is selected
-  useEffect(() => {
-    if (
-      (auditType === "Domain" || auditType === "Cultural") &&
-      modeOfEvaluation !== "manual"
-    ) {
-      setModeOfEvaluation("manual");
-    }
-  }, [auditType, modeOfEvaluation, setModeOfEvaluation]);
 
   // Helper function to format selected metrics as comma-separated string with truncation
   const formatSelectedMetrics = (selected: SelectOption[]): string => {
@@ -138,6 +125,224 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
 
     return joined.substring(0, 37) + "...";
   };
+
+  const modulesSection = (
+    <div className="mb-6">
+      <Text
+        variant="bodyMd"
+        fontWeight="medium"
+        className={styles.evaluationModulesLabel}
+      >
+        Evaluation Modules<span className="required-asterisk">*</span>
+      </Text>
+      {validationErrors.modules && (
+        <Text
+          variant="bodySm"
+          className="text-red-600 mt-1"
+          color="critical"
+        >
+          {validationErrors.modules}
+        </Text>
+      )}
+      {validationErrors.metrics && (
+        <Text
+          variant="bodySm"
+          className="text-red-600 mt-1"
+          color="critical"
+        >
+          {validationErrors.metrics}
+        </Text>
+      )}
+      {isLoadingModules ? (
+        <div className="mt-4 flex flex-col items-center gap-4">
+          <Spinner />
+          <Text variant="bodySm" className="text-gray-600">
+            Loading modules...
+          </Text>
+        </div>
+      ) : modules.length === 0 ? (
+        <div className="mt-4">
+          <Text variant="bodySm" className="text-gray-600">
+            No modules available for this model type.
+          </Text>
+        </div>
+      ) : (
+        <>
+          {modulesError ? (
+            <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3">
+              <Text variant="bodySm" className="text-amber-900">
+                {modulesError}
+              </Text>
+            </div>
+          ) : null}
+        <div
+          className={`flex flex-row gap-4 mt-4 ${styles.evaluationModulesRow}`}
+        >
+          {modules
+            .filter((module) => module?.name)
+            .map((module) => {
+              const moduleKey = module.name;
+              const isSelected = selectedModules[moduleKey] || false;
+              const selectedMetric = selectedMetrics[moduleKey] || [];
+
+              const metricOptions: SelectOption[] =
+                moduleMetricsOptions[moduleKey]?.length > 0
+                  ? moduleMetricsOptions[moduleKey]
+                  : Array.isArray(module.metrics)
+                    ? module.metrics
+                        .map((metric) => ({
+                          value: metric?.name || "",
+                          label:
+                            metric?.displayName ||
+                            toTitleCase(
+                              (metric?.name || "").replace(/_/g, " "),
+                            ),
+                        }))
+                        .filter((opt) => opt.value)
+                    : [];
+              return (
+                <div
+                  key={moduleKey}
+                  className={`flex flex-col gap-2 ${styles.evaluationModuleWrapper}`}
+                >
+                  <label className={styles.evaluationModuleCard}>
+                    <div className="flex items-start gap-4">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={async (e) => {
+                          const isChecked = e.target.checked;
+                          setSelectedModules((prev) => ({
+                            ...prev,
+                            [moduleKey]: isChecked,
+                          }));
+
+                          if (setValidationErrors) {
+                            setValidationErrors((prev) => ({
+                              ...prev,
+                              modules: undefined,
+                              metrics: undefined,
+                            }));
+                          }
+
+                          if (isChecked) {
+                            const optionsToSelect =
+                              moduleMetricsOptions[moduleKey]?.length > 0
+                                ? moduleMetricsOptions[moduleKey]
+                                : metricOptions;
+
+                            if (optionsToSelect.length > 0) {
+                              setSelectedMetrics((prev) => ({
+                                ...prev,
+                                [moduleKey]: optionsToSelect,
+                              }));
+                            }
+
+                            if (
+                              (!module.metrics ||
+                                module.metrics.length === 0) &&
+                              !moduleMetricsOptions[moduleKey]
+                            ) {
+                              const fetchedMetrics =
+                                await fetchMetricsForModule(moduleKey);
+                              if (fetchedMetrics.length > 0) {
+                                setModuleMetricsOptions((prev) => ({
+                                  ...prev,
+                                  [moduleKey]: fetchedMetrics,
+                                }));
+                                setSelectedMetrics((prev) => ({
+                                  ...prev,
+                                  [moduleKey]: fetchedMetrics,
+                                }));
+                              }
+                            }
+                          } else {
+                            setSelectedMetrics((prev) => {
+                              const updated = { ...prev };
+                              delete updated[moduleKey];
+                              return updated;
+                            });
+                          }
+                        }}
+                        className={styles.evaluationModuleCheckbox}
+                      />
+                      <div className="flex-1 flex flex-col">
+                        <Text
+                          variant="bodyMd"
+                          fontWeight="semibold"
+                          className="text-gray-900 mb-1"
+                        >
+                          {getModuleDisplayName(moduleKey)}
+                        </Text>
+                        <Text variant="bodySm" className="text-gray-600">
+                          {module.description ||
+                            module.displayName ||
+                            "No description available"}
+                        </Text>
+                      </div>
+                    </div>
+                  </label>
+                  {isSelected && (
+                    <div className={styles.evaluationModuleDropdown}>
+                      <Combobox
+                        name={`${moduleKey}-metrics`}
+                        label="Select sub-modules from dropdown"
+                        labelHidden
+                        list={metricOptions}
+                        selectedValue={selectedMetric}
+                        placeholder={formatSelectedMetrics(selectedMetric)}
+                        onChange={async (value) => {
+                          const nextSelected = Array.isArray(value)
+                            ? value
+                            : metricOptions.filter(
+                                (option) => option.value === value,
+                              );
+
+                          setSelectedMetrics((prev) => ({
+                            ...prev,
+                            [moduleKey]: nextSelected,
+                          }));
+
+                          if (setValidationErrors) {
+                            setValidationErrors((prev) => ({
+                              ...prev,
+                              metrics: undefined,
+                            }));
+                          }
+                          if (
+                            metricOptions.length === 0 &&
+                            value &&
+                            !moduleMetricsOptions[moduleKey]
+                          ) {
+                            const fetchedMetrics =
+                              await fetchMetricsForModule(moduleKey);
+                            if (fetchedMetrics.length > 0) {
+                              setModuleMetricsOptions((prev) => ({
+                                ...prev,
+                                [moduleKey]: fetchedMetrics,
+                              }));
+                              setSelectedMetrics((prev) => ({
+                                ...prev,
+                                [moduleKey]: fetchedMetrics,
+                              }));
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+        </div>
+        </>
+      )}
+    </div>
+  );
+
+  if (workspaceOnly) {
+    return <div className="mb-8">{modulesSection}</div>;
+  }
 
   return (
     <div className="mb-8">
@@ -398,224 +603,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
             </div>
           </div>
 
-          {/* Evaluation Modules Section */}
-          <div className="mb-6">
-            <Label
-              className={`${styles.auditFormLabel} ${styles.evaluationModulesLabel}`}
-            >
-              <Text variant="bodyMd" fontWeight="medium">
-                Evaluation Modules<span className="text-red-500">*</span>
-              </Text>
-            </Label>
-            {validationErrors.modules && (
-              <Text
-                variant="bodySm"
-                className="text-red-600 mt-1"
-                color="critical"
-              >
-                {validationErrors.modules}
-              </Text>
-            )}
-            {validationErrors.metrics && (
-              <Text
-                variant="bodySm"
-                className="text-red-600 mt-1"
-                color="critical"
-              >
-                {validationErrors.metrics}
-              </Text>
-            )}
-            {isLoadingModules ? (
-              <div className="mt-4 flex flex-col items-center gap-4">
-                <Spinner />
-                <Text variant="bodySm" className="text-gray-600">
-                  Loading modules...
-                </Text>
-              </div>
-            ) : modulesError ? (
-              <div className="mt-4">
-                <Text variant="bodySm" className="text-red-600">
-                  {modulesError}
-                </Text>
-              </div>
-            ) : modules.length === 0 ? (
-              <div className="mt-4">
-                <Text variant="bodySm" className="text-gray-600">
-                  No modules available for this model type.
-                </Text>
-              </div>
-            ) : (
-              <div
-                className={`flex flex-row gap-4 mt-4 ${styles.evaluationModulesRow}`}
-              >
-                {modules
-                  .filter((module) => module?.name)
-                  .map((module) => {
-                    const moduleKey = module.name;
-                    const isSelected = selectedModules[moduleKey] || false;
-                    const selectedMetric = selectedMetrics[moduleKey] || [];
-
-                    // Get metrics options for this module - use fetched metrics if available, otherwise use module data
-                    const metricOptions: SelectOption[] =
-                      moduleMetricsOptions[moduleKey]?.length > 0
-                        ? moduleMetricsOptions[moduleKey]
-                        : Array.isArray(module.metrics)
-                          ? module.metrics
-                              .map((metric) => ({
-                                value: metric?.name || "",
-                                label:
-                                  metric?.displayName ||
-                                  toTitleCase(
-                                    (metric?.name || "").replace(/_/g, " ")
-                                  ),
-                              }))
-                              .filter((opt) => opt.value) // Filter out invalid options
-                          : [];
-                    return (
-                      <div
-                        key={moduleKey}
-                        className={`flex flex-col gap-2 ${styles.evaluationModuleWrapper}`}
-                      >
-                        <label className={styles.evaluationModuleCard}>
-                          <div className="flex items-start gap-4">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={async (e) => {
-                                const isChecked = e.target.checked;
-                                setSelectedModules((prev) => ({
-                                  ...prev,
-                                  [moduleKey]: isChecked,
-                                }));
-
-                                // Clear validation errors when module selection changes
-                                if (setValidationErrors) {
-                                  setValidationErrors((prev) => ({
-                                    ...prev,
-                                    modules: undefined,
-                                    metrics: undefined,
-                                  }));
-                                }
-
-                                if (isChecked) {
-                                  // When module is selected, default to all available metrics for that module
-                                  const optionsToSelect =
-                                    moduleMetricsOptions[moduleKey]?.length > 0
-                                      ? moduleMetricsOptions[moduleKey]
-                                      : metricOptions;
-
-                                  if (optionsToSelect.length > 0) {
-                                    setSelectedMetrics((prev) => ({
-                                      ...prev,
-                                      [moduleKey]: optionsToSelect,
-                                    }));
-                                  }
-
-                                  // If module has no metrics in its data, fetch from API
-                                  if (
-                                    (!module.metrics ||
-                                      module.metrics.length === 0) &&
-                                    !moduleMetricsOptions[moduleKey]
-                                  ) {
-                                    const fetchedMetrics =
-                                      await fetchMetricsForModule(moduleKey);
-                                    if (fetchedMetrics.length > 0) {
-                                      setModuleMetricsOptions((prev) => ({
-                                        ...prev,
-                                        [moduleKey]: fetchedMetrics,
-                                      }));
-                                      setSelectedMetrics((prev) => ({
-                                        ...prev,
-                                        [moduleKey]: fetchedMetrics,
-                                      }));
-                                    }
-                                  }
-                                } else {
-                                  // Clear selected metric when module is unchecked
-                                  setSelectedMetrics((prev) => {
-                                    const updated = { ...prev };
-                                    delete updated[moduleKey];
-                                    return updated;
-                                  });
-                                }
-                              }}
-                              className={styles.evaluationModuleCheckbox}
-                            />
-                            <div className="flex-1 flex flex-col">
-                              <Text
-                                variant="bodyMd"
-                                fontWeight="semibold"
-                                className="text-gray-900 mb-1"
-                              >
-                                {getModuleDisplayName(moduleKey)}
-                              </Text>
-                              <Text variant="bodySm" className="text-gray-600">
-                                {module.description ||
-                                  module.displayName ||
-                                  "No description available"}
-                              </Text>
-                            </div>
-                          </div>
-                        </label>
-                        {isSelected && (
-                          <div className={styles.evaluationModuleDropdown}>
-                            <Combobox
-                              name={`${moduleKey}-metrics`}
-                              label="Select sub-modules from dropdown"
-                              labelHidden
-                              list={metricOptions}
-                              selectedValue={selectedMetric}
-                              placeholder={formatSelectedMetrics(
-                                selectedMetric
-                              )}
-                              onChange={async (value) => {
-                                const nextSelected = Array.isArray(value)
-                                  ? value
-                                  : metricOptions.filter(
-                                      (option) => option.value === value
-                                    );
-
-                                setSelectedMetrics((prev) => ({
-                                  ...prev,
-                                  [moduleKey]: nextSelected,
-                                }));
-
-                                // Clear validation errors when metrics change
-                                if (setValidationErrors) {
-                                  setValidationErrors((prev) => ({
-                                    ...prev,
-                                    metrics: undefined,
-                                  }));
-                                }
-                                // If no metrics in module data, try fetching from API
-                                if (
-                                  metricOptions.length === 0 &&
-                                  value &&
-                                  !moduleMetricsOptions[moduleKey]
-                                ) {
-                                  const fetchedMetrics =
-                                    await fetchMetricsForModule(moduleKey);
-                                  if (fetchedMetrics.length > 0) {
-                                    setModuleMetricsOptions((prev) => ({
-                                      ...prev,
-                                      [moduleKey]: fetchedMetrics,
-                                    }));
-                                    setSelectedMetrics((prev) => ({
-                                      ...prev,
-                                      [moduleKey]: fetchedMetrics,
-                                    }));
-                                  }
-                                }
-                              }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-              </div>
-            )}
-          </div>
+          {modulesSection}
 
           {/* Mode of Evaluation Section */}
           <div className="mb-6 mt-6">
@@ -637,7 +625,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                   options={modeOfEvaluationOptions}
                   value={modeOfEvaluation}
                   className={
-                    isModeOfEvaluationDisabled
+                    isModeOfEvaluationLocked
                       ? "mode-of-evaluation-select-disabled"
                       : undefined
                   }
@@ -655,20 +643,11 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                   }}
                   placeholder="Click to select from dropdown"
                   error={validationErrors.modeOfEvaluation}
-                  disabled={isModeOfEvaluationDisabled}
+                  disabled={isModeOfEvaluationLocked}
                 />
               </div>
             </div>
-            {isAuditTypeModeLocked && (
-              <Text
-                variant="bodySm"
-                className="mt-2"
-                style={{ color: "#60646C" }}
-              >
-                Only Manual Mode for Domain and Cultural Evaluations
-              </Text>
-            )}
-            {isModeOfEvaluationLocked && !isAuditTypeModeLocked && (
+            {isModeOfEvaluationLocked && (
               <Text
                 variant="bodySm"
                 className="mt-2"

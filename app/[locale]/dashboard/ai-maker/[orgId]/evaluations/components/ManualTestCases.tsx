@@ -2,13 +2,15 @@
 
 import React from "react";
 import ManualEvaluationFlow from "./manual-evaluation";
+import type { SelectOption } from "./types";
 
 interface ManualTestCasesProps {
   auditId?: string;
   modules: string[];
-  modelType?: string;
+  moduleMetrics?: Record<string, SelectOption[]>;
   supportedLanguages?: string[];
   orgId: string;
+  modelType?: string;
   onRunAudit: () => void;
   isRequestingAudit: boolean;
   onTestCaseCountChange?: (count: number) => void;
@@ -17,14 +19,14 @@ interface ManualTestCasesProps {
 const ManualTestCases: React.FC<ManualTestCasesProps> = ({
   auditId,
   modules,
-  modelType = "LLM",
+  moduleMetrics,
   supportedLanguages,
   orgId,
+  modelType = "LLM",
   onRunAudit,
   isRequestingAudit,
   onTestCaseCountChange,
 }) => {
-  // If no auditId yet, show a message to create the audit first
   if (!auditId) {
     return (
       <div className="p-8 text-center">
@@ -40,6 +42,7 @@ const ManualTestCases: React.FC<ManualTestCasesProps> = ({
     <ManualEvaluationFlow
       auditId={auditId}
       modules={modules}
+      moduleMetrics={moduleMetrics}
       modelType={modelType}
       supportedLanguages={supportedLanguages}
       orgId={orgId}

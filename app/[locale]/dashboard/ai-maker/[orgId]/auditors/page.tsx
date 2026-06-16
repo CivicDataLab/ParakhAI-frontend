@@ -8,9 +8,19 @@ import {
   IconTrash,
   IconUser,
 } from "@tabler/icons-react";
-import { useParams } from "next/navigation";
-import { Button, Dialog, Spinner, Tag, Text, TextField, Tooltip, toast } from "opub-ui";
-import { useEffect, useRef, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import {
+  AlertDialog,
+  Button,
+  Dialog,
+  Spinner,
+  Tag,
+  Text,
+  TextField,
+  Tooltip,
+  toast,
+} from "opub-ui";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // Custom Avatar component with error handling
 const Avatar = ({
@@ -205,6 +215,7 @@ const REMOVE_AUDITOR_MUTATION = `
 
 const AuditorsPage = () => {
   const params = useParams();
+  const router = useRouter();
   const locale = params?.locale || "en";
   const orgId = params?.orgId as string;
 
@@ -218,7 +229,10 @@ const AuditorsPage = () => {
   const [organization, setOrganization] = useState<{
     name: string;
     logoUrl: string | null;
+    slug?: string | null;
   } | null>(null);
+  const [showManageUsersRedirectPrompt, setShowManageUsersRedirectPrompt] =
+    useState(false);
   const [auditors, setAuditors] = useState<Auditor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -233,6 +247,30 @@ const AuditorsPage = () => {
   const [addError, setAddError] = useState<string | null>(null);
   const [selectedAuditor, setSelectedAuditor] = useState<Auditor | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+  const { manageUsersUrl, externalManageUsersUrl } = useMemo(() => {
+    const orgSlug = encodeURIComponent(
+      String(organization?.slug ?? orgId ?? "").trim()
+    );
+    const relativeAdminPath = orgSlug
+      ? `/dashboard/organization/${orgSlug}/admin`
+      : "";
+    const externalHost =
+      process.env.NEXT_PUBLIC_DATASPACE_HOST ||
+      process.env.NEXT_PUBLIC_AI_MAKER_URL ||
+      "";
+    let builtExternalUrl = "";
+    if (externalHost.trim() !== "" && relativeAdminPath) {
+      const host = externalHost.replace(/\/$/, "");
+      builtExternalUrl = /\/dashboard$/.test(host)
+        ? `${host}${relativeAdminPath.replace(/^\/dashboard/, "")}`
+        : `${host}${relativeAdminPath}`;
+    }
+    return {
+      manageUsersUrl: builtExternalUrl || relativeAdminPath,
+      externalManageUsersUrl: builtExternalUrl,
+    };
+  }, [organization?.slug, orgId, locale]);
 
   useEffect(() => {
     if (!isAuthenticated || isSessionLoading || !orgId) return;
@@ -255,6 +293,7 @@ const AuditorsPage = () => {
           setOrganization({
             name: orgResponse.organization.name,
             logoUrl: orgResponse.organization.logoUrl,
+            slug: orgResponse.organization.slug,
           });
         }
 
@@ -387,13 +426,22 @@ const AuditorsPage = () => {
             Manage evaluators who can evaluate your AI models
           </Text>
         </div>
-        <button
-          type="button"
-          className="bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white  px-8 py-3 rounded-[8px] font-medium  text-base border-none"
-          onClick={() => setIsAddModalOpen(true)}
-        >
-          Add Evaluator
-        </button>
+        <div className="flex items-center gap-3">
+          <Button
+            kind="secondary"
+            onClick={() => setShowManageUsersRedirectPrompt(true)}
+            className="!rounded-[8px] px-8 py-3 text-base font-medium"
+          >
+            Manage Users
+          </Button>
+          <Button
+            kind="primary"
+            onClick={() => setIsAddModalOpen(true)}
+            className="!rounded-[8px] !border-none bg-primaryPurple2 px-8 py-3 text-base font-medium text-white hover:bg-[#6849EE] hover:text-white"
+          >
+            Add Evaluator
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -519,7 +567,11 @@ const AuditorsPage = () => {
             content: isAdding ? "Adding..." : "Add Evaluator",
             onAction: handleAddAuditor,
             disabled: !searchResult?.found || isAdding,
-          }}
+            className:
+              !searchResult?.found || isAdding
+                ? "!rounded-[8px] !cursor-not-allowed !border-none !bg-[#8c949d] !text-white hover:!bg-[#8c949d]"
+                : "!rounded-[8px] !border-none !bg-primaryPurple2 !text-white hover:!bg-[#6849EE] hover:!text-white",
+          } as any}
           secondaryActions={[
             {
               content: "Cancel",
@@ -529,7 +581,9 @@ const AuditorsPage = () => {
                 setSearchResult(null);
                 setAddError(null);
               },
-            },
+              kind: "secondary",
+              className: "!rounded-[8px]",
+            } as any,
           ]}
         >
           <div className="space-y-4">
@@ -670,6 +724,49 @@ const AuditorsPage = () => {
         </Dialog.Content>
       </Dialog>
 
+      <AlertDialog
+        open={showManageUsersRedirectPrompt}
+        onOpenChange={setShowManageUsersRedirectPrompt}
+      >
+        <AlertDialog.Content
+          title="Redirect to CivicDataSpace"
+          primaryAction={{
+            content: "Yes, continue",
+            onAction: () => {
+              setShowManageUsersRedirectPrompt(false);
+              if (!manageUsersUrl) {
+                toast.error(
+                  "Unable to open user management. Please try again later."
+                );
+                return;
+              }
+              if (externalManageUsersUrl) {
+                window.open(
+                  manageUsersUrl,
+                  "_blank",
+                  "noopener,noreferrer"
+                );
+              } else {
+                router.push(manageUsersUrl);
+              }
+            },
+            className:
+              "bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white",
+          } as any}
+          secondaryActions={[
+            {
+              content: "No",
+              onAction: () => setShowManageUsersRedirectPrompt(false),
+              className:
+                "bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white",
+            } as any,
+          ]}
+        >
+          You are being redirected to CivicDataSpace to manage organization
+          users. Do you want to continue?
+        </AlertDialog.Content>
+      </AlertDialog>
+
       <Dialog
         open={isProfileModalOpen}
         onOpenChange={(open) => {
@@ -679,19 +776,7 @@ const AuditorsPage = () => {
           }
         }}
       >
-        <Dialog.Content
-          title="Evaluator Profile"
-          footer={<></>}
-          secondaryActions={[
-            {
-              content: "Close",
-              onAction: () => {
-                setIsProfileModalOpen(false);
-                setSelectedAuditor(null);
-              },
-            },
-          ]}
-        >
+        <Dialog.Content title="Evaluator Profile" footer={<></>}>
           {selectedAuditor && (
             <div className="space-y-4">
               <div className="flex items-center gap-4">
@@ -710,7 +795,10 @@ const AuditorsPage = () => {
                 </div>
               </div>
               <div className="ml-2">
-                <Text variant="bodySm" className="text-gray-700 whitespace-pre-wrap break-words">
+                <Text
+                  variant="bodyMd"
+                  className="text-gray-700 whitespace-pre-wrap break-words"
+                >
                   {getAuditorBio(selectedAuditor)}
                 </Text>
               </div>

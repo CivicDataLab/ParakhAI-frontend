@@ -1,29 +1,32 @@
-export const GET_EVALUATION_STATUS_QUERY = `
-  query ManualEvaluationStatus($auditId: ID!) {
-    manualEvaluationStatus(auditId: $auditId) {
-      auditId
-      totalModules
-      completedModules
-      allModulesComplete
-      canFinishEvaluation
-      moduleProgress {
-        module
-        moduleDisplayName
-        testCaseCount
-        isComplete
-        canComplete
-        passedCount
-        failedCount
+export const METRICS_BY_MODEL_TYPE_QUERY = `
+  query MetricsByModelType($modelType: String!) {
+    metricsByModelType(modelType: $modelType) {
+      name
+      displayName
+      description
+      metrics {
+        name
+        displayName
+        description
       }
     }
   }
 `;
 
+export const GET_PLAYGROUND_STATUS_QUERY = `
+  query PlaygroundEvaluationStatus($auditId: ID!) {
+    playgroundEvaluationStatus(auditId: $auditId) {
+      auditId
+      testCaseCount
+      canFinish
+    }
+  }
+`;
+
 export const GET_TEST_CASES_QUERY = `
-  query ManualTestCases($auditId: ID!, $module: String) {
-    manualTestCases(auditId: $auditId, module: $module) {
+  query ManualTestCases($auditId: ID!) {
+    manualTestCases(auditId: $auditId) {
       id
-      module
       subModule
       sourceLanguage
       targetLanguage

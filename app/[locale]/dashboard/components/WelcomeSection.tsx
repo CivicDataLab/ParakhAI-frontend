@@ -63,7 +63,7 @@ export const auditorNavItems: NavItem[] = [
   },
   {
     icon: "/images/icons/report-analytics.png",
-    label: "Evaluations",
+    label: "Evaluations History",
     isImage: true,
     path: "/dashboard/auditor/evaluations",
   },
