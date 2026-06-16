@@ -84,6 +84,7 @@ const AuditsListPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const isFetchingRef = useRef(false);
   const hasFetchedRef = useRef(false);
+  const pollStoppedRef = useRef(false);
 
   const fetchAudits = async (showLoader = true) => {
     try {
@@ -132,6 +133,7 @@ const AuditsListPage = () => {
     const startTime = Date.now();
 
     const poll = async () => {
+      if (pollStoppedRef.current) return;
       if (Date.now() - startTime > maxPollTime) return;
 
       try {
@@ -146,6 +148,13 @@ const AuditsListPage = () => {
 
     setTimeout(poll, pollInterval);
   };
+
+  // Stop polling when component unmounts
+  useEffect(() => {
+    return () => {
+      pollStoppedRef.current = true;
+    };
+  }, []);
 
   // Fetch audits on mount
   useEffect(() => {

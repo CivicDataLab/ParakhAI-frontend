@@ -1100,9 +1100,15 @@ const EvaluationDetail = ({
       return;
     }
     const snapshot = audit.modelSnapshot || {};
-    const versions: Array<{ id: number; version: string }> = snapshot.versions || [];
-    const matched = versions.find((v) => v.id === audit.modelVersionId);
-    setModelVersion(matched?.version || "");
+    // API returns either a single `version` object or a legacy `versions` array
+    const singleVersion = snapshot.version;
+    if (singleVersion && singleVersion.id === audit.modelVersionId) {
+      setModelVersion(singleVersion.version || "");
+    } else {
+      const versions: Array<{ id: number; version: string }> = snapshot.versions || [];
+      const matched = versions.find((v) => v.id === audit.modelVersionId);
+      setModelVersion(matched?.version || "");
+    }
   }, [audit?.modelVersionId, audit?.modelSnapshot]);
 
   const saveEvaluationName = async () => {

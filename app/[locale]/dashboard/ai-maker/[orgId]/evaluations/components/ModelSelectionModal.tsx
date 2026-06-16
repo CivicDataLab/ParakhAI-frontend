@@ -49,6 +49,27 @@ const AUDIT_DOMAIN_OPTIONS_QUERY = `
   }
 `;
 
+const CREATE_BLANK_AUDIT_MUTATION = `
+  mutation CreateBlankAudit($input: CreateBlankAuditInput!) {
+    createBlankAudit(input: $input) {
+      success
+      message
+      audit {
+        id
+      }
+    }
+  }
+`;
+
+const UPDATE_AUDIT_MUTATION = `
+  mutation UpdateAudit($input: UpdateAuditInput!) {
+    updateAudit(input: $input) {
+      success
+      message
+    }
+  }
+`;
+
 type AIModel = {
   id: string;
   name: string;
@@ -197,6 +218,7 @@ const ModelSelectionModal = ({
   const [auditObjective, setAuditObjective] = useState("");
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [modelsError, setModelsError] = useState<string | null>(null);
+  const [creationError, setCreationError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedModel = aiModels.find((m) => m.id === selectedModelId);
@@ -209,6 +231,7 @@ const ModelSelectionModal = ({
     setEvaluationDomain("");
     setEvaluationDomainOptions([]);
     setAuditObjective("");
+    setCreationError(null);
   };
 
   useEffect(() => {
@@ -356,38 +379,55 @@ const ModelSelectionModal = ({
     if (!canProceedStep2 || !selectedModelId || !selectedVersionId) return;
 
     setIsSubmitting(true);
+    setCreationError(null);
 
-    const resolvedEvaluationMode = evaluationMethod;
+    const createAndRedirect = async () => {
+      try {
+        const createResult = await request<{
+          createBlankAudit: { success: boolean; message: string; audit: { id: string } };
+        }>(
+          CREATE_BLANK_AUDIT_MUTATION,
+          { input: { modelId: selectedModelId, modelVersionId: selectedVersionId, name: evaluationName.trim() } },
+          { organization: orgId },
+        );
 
-    const selectedVersionObj = selectedModel?.versions?.find(
-      (v) => v.id === selectedVersionId,
-    );
+        if (!createResult?.createBlankAudit?.success || !createResult.createBlankAudit.audit?.id) {
+          throw new Error(createResult?.createBlankAudit?.message || "Failed to create evaluation.");
+        }
 
-    const searchParams = new URLSearchParams({
-      modelId: selectedModelId,
-      versionId: String(selectedVersionId),
-      name: evaluationName.trim(),
-      evaluationMode: resolvedEvaluationMode,
-      auditType,
-      auditObjective: auditObjective.trim(),
-      modelType: selectedModel?.modelType ?? "",
-      displayName: selectedModel?.displayName || selectedModel?.name || "",
-    });
+        const auditId = String(createResult.createBlankAudit.audit.id);
 
-    if (selectedVersionObj?.version) {
-      searchParams.set("version", selectedVersionObj.version);
-    }
+        await request(
+          UPDATE_AUDIT_MUTATION,
+          {
+            input: {
+              auditId,
+              name: evaluationName.trim(),
+              auditType,
+              evaluationMode: evaluationMethod === "bulk" ? "BULK" : "PLAYGROUND",
+              auditScope: evaluationDomain.trim() || null,
+              auditObjective: auditObjective.trim(),
+              configuration: {
+                auditType,
+                auditObjective: auditObjective.trim(),
+                auditScope: evaluationDomain.trim() || null,
+                evaluationMode: evaluationMethod === "bulk" ? "BULK" : "PLAYGROUND",
+              },
+            },
+          },
+          { organization: orgId },
+        );
 
-    if (evaluationDomain.trim()) {
-      searchParams.set("auditScope", evaluationDomain.trim());
-    }
+        router.push(`/${locale}/dashboard/ai-maker/${orgId}/evaluations/new?auditId=${auditId}`);
+        onOpenChange(false);
+      } catch (err: any) {
+        setCreationError(err?.message || "Failed to start evaluation. Please try again.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
 
-    router.push(
-      `/${locale}/dashboard/ai-maker/${orgId}/evaluations/new?${searchParams.toString()}`,
-    );
-
-    onOpenChange(false);
-    setIsSubmitting(false);
+    void createAndRedirect();
   };
 
   const isPrimaryDisabled =
@@ -455,6 +495,13 @@ const ModelSelectionModal = ({
         }
       >
         <div className="flex flex-col gap-6 py-2">
+          {creationError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <Text variant="bodySm" className="text-red-700">
+                {creationError}
+              </Text>
+            </div>
+          )}
           {step === 1 ? (
             <>
               {isLoadingModels ? (

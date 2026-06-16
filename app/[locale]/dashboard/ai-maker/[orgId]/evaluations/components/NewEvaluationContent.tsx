@@ -20,12 +20,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useOrganization } from "../../OrganizationContext";
 import EvaluationConfiguration from "./EvaluationConfiguration";
 import EvaluationFormOverview from "./EvaluationFormOverview";
-import { GET_PLAYGROUND_STATUS_QUERY } from "./manual-evaluation/queries";
-import type { ManualEvaluationStatus } from "./manual-evaluation/types";
-import {
-  getFallbackEvaluationModules,
-  getTotalManualTestCaseCount,
-} from "./manual-evaluation/utils";
+import { getFallbackEvaluationModules } from "./manual-evaluation/utils";
 import ManualTestCases from "./ManualTestCases";
 import ModelSelectionModal from "./ModelSelectionModal";
 import styles from "./styles.module.scss";
@@ -308,7 +303,10 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   );
   const [isCreatingAudit, setIsCreatingAudit] = useState(false);
   const [isSavingDraftBeforeExit, setIsSavingDraftBeforeExit] = useState(false);
-  const [isLoadingAuditDetails, setIsLoadingAuditDetails] = useState(false);
+  // Start as true when auditId is present so the "Initialize snapshot" effect
+  // waits for the real values before capturing a baseline, preventing a false
+  // "unsaved changes" signal that would trigger an immediate UpdateAudit.
+  const [isLoadingAuditDetails, setIsLoadingAuditDetails] = useState(!!urlAuditId);
 
   // AI Models state
   const [selectedModelId, setSelectedModelId] = useState<string | null>(
@@ -524,39 +522,8 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   useEffect(() => {
     if (!currentAuditId || modeOfEvaluation !== "playground") {
       setHasManualTestCases(false);
-      return;
     }
-
-    let cancelled = false;
-
-    const syncManualTestCaseCount = async () => {
-      try {
-        const result = await request<{
-          manualEvaluationStatus: ManualEvaluationStatus;
-        }>(
-          GET_PLAYGROUND_STATUS_QUERY,
-          { auditId: currentAuditId },
-          { organization: orgId }
-        );
-
-        if (!cancelled) {
-          setHasManualTestCases(
-            getTotalManualTestCaseCount(
-              result?.manualEvaluationStatus?.moduleProgress
-            ) > 0
-          );
-        }
-      } catch (err) {
-        console.error("Error syncing manual test case count:", err);
-      }
-    };
-
-    syncManualTestCaseCount();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [currentAuditId, modeOfEvaluation, orgId, request]);
+  }, [currentAuditId, modeOfEvaluation]);
 
   // Set auditor name from session when user is available
   useEffect(() => {
@@ -622,6 +589,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   const hasInitializedSavedSnapshotRef = useRef(false);
   const hasTriggeredLeaveAutosaveRef = useRef(false);
   const hasAutoCreatedDraftRef = useRef(false);
+  // Tracks which auditId we've already fetched details for, preventing re-fetches
+  // when effect deps like `request` change after a token refresh.
+  const fetchedAuditIdRef = useRef<string | null>(null);
   const persistOverviewTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -687,6 +657,8 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   useEffect(() => {
     const fetchAuditDetails = async () => {
       if (!urlAuditId || !isAuthenticated || isSessionLoading) return;
+      if (fetchedAuditIdRef.current === urlAuditId) return;
+      fetchedAuditIdRef.current = urlAuditId;
 
       setIsLoadingAuditDetails(true);
       try {
@@ -741,8 +713,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               const snapshotDisplayName: string =
                 snapshot.displayName || snapshot.display_name || snapshot.name || audit.modelName || "";
               const snapshotDomain = snapshot.domain ?? null;
+              // API returns either a single `version` object or a legacy `versions` array
               const snapshotVersions: Array<{ id: number; version: string; isLatest: boolean; status: string }> =
-                snapshot.versions || [];
+                snapshot.versions || (snapshot.version ? [snapshot.version] : []);
 
               if (snapshotDisplayName) setAuditModelName(snapshotDisplayName);
 
@@ -771,7 +744,8 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
               // Fetch all modules and metrics for this model type using MetricsByModelType.
               // Skip if already loaded or if this is a playground evaluation (no module selection needed).
-              const isPlaygroundAudit = audit.evaluationMode?.toLowerCase() === "manual";
+              const evalModeLower = audit.evaluationMode?.toLowerCase() || "";
+              const isPlaygroundAudit = evalModeLower === "manual" || evalModeLower === "playground";
               if (!modulesFetchedRef.current && !isPlaygroundAudit) {
               try {
                   const metricsResp = await request<{
@@ -1178,6 +1152,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     }
 
     persistOverviewTimeoutRef.current = setTimeout(() => {
+      if (!hasUnsavedDraftChangesRef.current) return;
       void updateAuditConfig(currentAuditId);
     }, 700);
 
@@ -2370,7 +2345,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                 Evaluation Workspace
               </Text>
 
-              <EvaluationConfiguration
+              {modeOfEvaluation !== "playground" && <EvaluationConfiguration
                 workspaceOnly
                 auditType={auditType}
                 setAuditType={setAuditType}
@@ -2402,7 +2377,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                 validationErrors={validationErrors}
                 setValidationErrors={setValidationErrors}
                 isModeOfEvaluationLocked={hasManualTestCases}
-              />
+              />}
 
               {modeOfEvaluation === "playground" ? (
                 <ManualTestCases
