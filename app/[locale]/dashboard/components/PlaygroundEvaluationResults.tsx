@@ -112,7 +112,7 @@ const PlaygroundEvaluationResults = ({
     const moduleIds =
       modules.length > 0
         ? modules
-        : [...new Set(testCases.map((testCase) => testCase.module))];
+        : [...new Set(testCases.map((testCase) => testCase.module).filter((m): m is string => !!m))];
 
     return moduleIds.map((moduleId) => ({
       moduleId,

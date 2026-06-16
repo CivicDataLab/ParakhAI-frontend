@@ -8,9 +8,9 @@ interface ManualTestCasesProps {
   auditId?: string;
   modules: string[];
   moduleMetrics?: Record<string, SelectOption[]>;
-  modelType?: string;
   supportedLanguages?: string[];
   orgId: string;
+  modelType?: string;
   onRunAudit: () => void;
   isRequestingAudit: boolean;
   onTestCaseCountChange?: (count: number) => void;
@@ -20,14 +20,13 @@ const ManualTestCases: React.FC<ManualTestCasesProps> = ({
   auditId,
   modules,
   moduleMetrics,
-  modelType = "LLM",
   supportedLanguages,
   orgId,
+  modelType = "LLM",
   onRunAudit,
   isRequestingAudit,
   onTestCaseCountChange,
 }) => {
-  // If no auditId yet, show a message to create the audit first
   if (!auditId) {
     return (
       <div className="p-8 text-center">

@@ -20,7 +20,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useOrganization } from "../../OrganizationContext";
 import EvaluationConfiguration from "./EvaluationConfiguration";
 import EvaluationFormOverview from "./EvaluationFormOverview";
-import { GET_EVALUATION_STATUS_QUERY } from "./manual-evaluation/queries";
+import { GET_PLAYGROUND_STATUS_QUERY } from "./manual-evaluation/queries";
 import type { ManualEvaluationStatus } from "./manual-evaluation/types";
 import {
   getFallbackEvaluationModules,
@@ -578,7 +578,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         const result = await request<{
           manualEvaluationStatus: ManualEvaluationStatus;
         }>(
-          GET_EVALUATION_STATUS_QUERY,
+          GET_PLAYGROUND_STATUS_QUERY,
           { auditId: currentAuditId },
           { organization: orgId }
         );

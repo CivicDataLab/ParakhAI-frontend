@@ -34,7 +34,7 @@ import {
 } from "./utils";
 // import ModuleSelector from "./ModuleSelector";
 import CompletedTestCases from "./CompletedTestCases";
-import { GET_EVALUATION_STATUS_QUERY, GET_TEST_CASES_QUERY } from "./queries";
+import { GET_PLAYGROUND_STATUS_QUERY, GET_TEST_CASES_QUERY } from "./queries";
 import {
   LANGUAGE_OPTIONS,
   type ManualEvaluationStatus,
@@ -222,7 +222,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
     try {
       const result = await request<{
         manualEvaluationStatus: ManualEvaluationStatus;
-      }>(GET_EVALUATION_STATUS_QUERY, { auditId }, { organization: orgId });
+      }>(GET_PLAYGROUND_STATUS_QUERY, { auditId }, { organization: orgId });
 
       if (result?.manualEvaluationStatus) {
         setModuleProgress(result.manualEvaluationStatus.moduleProgress);
