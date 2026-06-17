@@ -38,11 +38,8 @@ type CompletedTestCasesProps = {
 
 const CompletedTestCases = ({
   testCases,
-  modules,
   subModules = [],
-  getModuleDisplayName,
 }: CompletedTestCasesProps) => {
-  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [selectedTestCase, setSelectedTestCase] =
     useState<ManualTestCaseDetail | null>(null);
   const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);
@@ -50,37 +47,16 @@ const CompletedTestCases = ({
   const cardMeasureRef = useRef<HTMLDivElement | null>(null);
   const [listMaxHeight, setListMaxHeight] = useState<number | undefined>();
 
-  const moduleIssueCounts = useMemo(
-    () =>
-      modules.map((moduleId) => ({
-        moduleId,
-        displayName: getModuleDisplayName(moduleId),
-        issueCount: testCases.filter(
-          (testCase) =>
-            testCase.module === moduleId && testCase.status === "FAILED"
-        ).length,
-      })),
-    [getModuleDisplayName, modules, testCases]
-  );
-
-  useEffect(() => {
-    if (moduleIssueCounts.length > 0 && !selectedModuleId) {
-      setSelectedModuleId(moduleIssueCounts[0].moduleId);
-    }
-  }, [moduleIssueCounts, selectedModuleId]);
-
   const displayedItems = useMemo(() => {
-    const filtered = selectedModuleId
-      ? testCases.filter((testCase) => testCase.module === selectedModuleId)
-      : testCases;
-
-    return [...filtered].sort((a, b) => {
-      const byTime =
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      if (byTime !== 0) return byTime;
+    return [...testCases].sort((a, b) => {
+      if (a.createdAt && b.createdAt) {
+        const byTime =
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        if (byTime !== 0) return byTime;
+      }
       return a.id.localeCompare(b.id);
     });
-  }, [selectedModuleId, testCases]);
+  }, [testCases]);
 
   useEffect(() => {
     const card = cardMeasureRef.current;
@@ -97,20 +73,12 @@ const CompletedTestCases = ({
     const observer = new ResizeObserver(updateHeight);
     observer.observe(card);
     return () => observer.disconnect();
-  }, [displayedItems.length, selectedModuleId]);
+  }, [displayedItems.length]);
 
   const openTestCaseDetail = (testCase: ManualTestCase, index: number) => {
-    const issueKey = testCase.issueType || testCase.subModule;
-    const issueLabel = resolveIssueDisplayName(
-      issueKey,
-      subModules,
-      testCase.module
-    );
-
     setSelectedTestCase({
       ...testCase,
       displayIndex: index + 1,
-      issueLabel: issueLabel || undefined,
     });
     setIsDetailSheetOpen(true);
   };
@@ -129,28 +97,6 @@ const CompletedTestCases = ({
 
       <div className="bulk-evaluation-results-panel">
         <div className="bulk-evaluation-results-content w-full pb-4 pt-0">
-          {moduleIssueCounts.length > 0 && (
-            <div className="mb-6 flex flex-wrap gap-2">
-              {moduleIssueCounts.map((module) => {
-                const isSelected = module.moduleId === selectedModuleId;
-
-                return (
-                  <button
-                    key={module.moduleId}
-                    type="button"
-                    className={`bulk-evaluation-module-pill${
-                      isSelected ? " bulk-evaluation-module-pill--selected" : ""
-                    }`}
-                    onClick={() => setSelectedModuleId(module.moduleId)}
-                    aria-pressed={isSelected}
-                  >
-                    {module.displayName} - {module.issueCount} Issues
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
           <div
             ref={scrollContainerRef}
             className="bulk-evaluation-results-list flex w-full flex-col gap-4 overflow-y-auto"
@@ -158,16 +104,11 @@ const CompletedTestCases = ({
           >
             {displayedItems.length === 0 ? (
               <Text variant="bodySm" className="text-gray-600 py-6 block">
-                No completed test cases for the selected module.
+                No completed test cases yet.
               </Text>
             ) : (
               displayedItems.map((testCase, index) => {
-                const issueKey = testCase.issueType || testCase.subModule;
-                const issueLabel = resolveIssueDisplayName(
-                  issueKey,
-                  subModules,
-                  testCase.module
-                );
+                const isPassed = testCase.issues.length === 0;
 
                 return (
                   <div
@@ -205,17 +146,17 @@ const CompletedTestCases = ({
                       fontWeight="bold"
                       className="text-gray-900 mb-3 block"
                     >
-                      {testCase.inputPrompt}
+                      {testCase.testInput}
                     </Text>
 
                     <div className="bulk-evaluation-card-prose prose prose-sm max-w-none text-gray-700 mb-4 line-clamp-3">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {testCase.modelOutput}
+                        {testCase.actualOutput}
                       </ReactMarkdown>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      {testCase.status === "PASSED" ? (
+                      {isPassed ? (
                         <Tag
                           variation="filled"
                           fillColor="#DCFCE7"
@@ -223,19 +164,24 @@ const CompletedTestCases = ({
                         >
                           Passed
                         </Tag>
-                      ) : testCase.severity && issueLabel ? (
-                        <Tag
-                          variation="filled"
-                          fillColor={
-                            getRiskTagColors(testCase.severity).fillColor
-                          }
-                          textColor={
-                            getRiskTagColors(testCase.severity).textColor
-                          }
-                        >
-                          {formatRiskLabel(testCase.severity, issueLabel)}
-                        </Tag>
-                      ) : null}
+                      ) : (
+                        testCase.issues.map((issue, i) => {
+                          const issueLabel = resolveIssueDisplayName(
+                            issue.metricName,
+                            subModules
+                          );
+                          return (
+                            <Tag
+                              key={i}
+                              variation="filled"
+                              fillColor={getRiskTagColors(issue.severity).fillColor}
+                              textColor={getRiskTagColors(issue.severity).textColor}
+                            >
+                              {formatRiskLabel(issue.severity, issueLabel)}
+                            </Tag>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
                 );
@@ -247,6 +193,7 @@ const CompletedTestCases = ({
 
       <ManualTestCaseDetailSheet
         testCase={selectedTestCase}
+        subModules={subModules}
         open={isDetailSheetOpen}
         onOpenChange={setIsDetailSheetOpen}
       />

@@ -27,39 +27,15 @@ export const GET_AUDIT_RESULTS_QUERY = `
     auditResults(auditId: $auditId, metric: $metric) {
       id
       task {
-        id
-        audit {
-          pk
-        }
         test {
           id
-          audit {
-            pk
-          }
           testInput
-          expectedOutput
           actualOutput
-          context
-          retrievalContext
-          toolsCalled
-          expectedTools
-          createdAt
-          startedAt
-          completedAt
         }
-        status
-        startedAt
-        completedAt
         errorMessage
-        metric
-        module
-        domain
-        metricDisplayName
-        moduleDisplayName
       }
       name
       success
-      score
       riskLevel
       reason
       issueDescription
@@ -67,9 +43,6 @@ export const GET_AUDIT_RESULTS_QUERY = `
       evaluatorRiskLevel
       evaluatorReason
       isReviewed
-      reviewedAt
-      metadata
-      createdAt
     }
   }
 `;
