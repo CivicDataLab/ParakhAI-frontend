@@ -196,6 +196,53 @@ const isAuditInProgress = (status: string | null | undefined) => {
 const isAuditPendingReview = (status: string | null | undefined) =>
   status?.toUpperCase() === "PENDING_REVIEW";
 
+const isAuditFailed = (status: string | null | undefined) => {
+  const normalized = status?.toUpperCase();
+  return normalized === "FAILED" || normalized === "ERROR";
+};
+
+const formatAuditErrorDetails = (audit: Audit): string => {
+  const { errorDetails, errorMessage } = audit;
+
+  if (typeof errorDetails === "string" && errorDetails.trim()) {
+    return errorDetails.trim();
+  }
+
+  if (errorDetails && typeof errorDetails === "object") {
+    const details = errorDetails as Record<string, unknown>;
+
+    if (Object.keys(details).length > 0) {
+      for (const key of [
+        "message",
+        "detail",
+        "error",
+        "description",
+        "errorMessage",
+      ]) {
+        const value = details[key];
+        if (typeof value === "string" && value.trim()) {
+          return value.trim();
+        }
+      }
+
+      try {
+        const serialized = JSON.stringify(errorDetails, null, 2);
+        if (serialized && serialized !== "{}") {
+          return serialized;
+        }
+      } catch {
+        // Fall through to errorMessage.
+      }
+    }
+  }
+
+  if (typeof errorMessage === "string" && errorMessage.trim()) {
+    return errorMessage.trim();
+  }
+
+  return "";
+};
+
 const isPlaygroundEvaluationMode = (mode: string | null | undefined) =>
   mode?.toLowerCase() === "manual";
 
@@ -214,9 +261,10 @@ const canShowEvaluationResults = (
   audit: { status: string; completedAt: string | null },
   isPlayground: boolean
 ) =>
-  isPlayground
+  !isAuditFailed(audit.status) &&
+  (isPlayground
     ? hasCompletedAuditResults(audit)
-    : canShowBulkSummaryAndResults(audit);
+    : canShowBulkSummaryAndResults(audit));
 
 const shouldStopPolling = (
   audit: { status: string; completedAt: string | null },
@@ -1282,15 +1330,6 @@ const EvaluationDetail = ({
         </div>
       </div>
 
-      {/* Error message */}
-      {audit.errorMessage && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <Text variant="bodySm" className="text-red-800">
-            <strong>Error:</strong> {audit.errorMessage}
-          </Text>
-        </div>
-      )}
-
       <EvaluationFormOverview
         modelName={audit.modelName || "--"}
         modelVersion={modelVersion}
@@ -1317,6 +1356,39 @@ const EvaluationDetail = ({
         }
       />
 
+      {isAuditFailed(audit.status) && (
+        <div className="mb-8 mt-6">
+          <Text
+            variant="bodyMd"
+            fontWeight="bold"
+            className="mb-3 block text-[#DC2626]"
+          >
+            Evaluation failed
+          </Text>
+          <Text variant="bodyMd" className="mb-3 block text-gray-900">
+            None of the test cases returned a response from the model.
+          </Text>
+          <Text variant="bodyMd" className="mb-4 block text-gray-900">
+            This may be caused by a temporary connectivity issue, server outage,
+            or model unavailability. Please try a new evaluation after some
+            time.
+          </Text>
+          <Text
+            variant="bodyMd"
+            fontWeight="semibold"
+            className="mb-1 block text-gray-900"
+          >
+            Error details:
+          </Text>
+          <Text
+            variant="bodyMd"
+            className="block whitespace-pre-wrap text-gray-500"
+          >
+            {formatAuditErrorDetails(audit) || "No additional details available."}
+          </Text>
+        </div>
+      )}
+
       {isRunning && (
         <div className="mb-8 flex flex-col gap-1">
           <Text variant="bodySm" className="block text-gray-600">
@@ -1328,7 +1400,8 @@ const EvaluationDetail = ({
         </div>
       )}
 
-      {(audit.status === "COMPLETED" || audit.completedAt) && (
+      {(audit.status === "COMPLETED" || audit.completedAt) &&
+        !isAuditFailed(audit.status) && (
         <div className="mb-8">
           <Text variant="headingMd" fontWeight="bold" className="mb-4 block">
             Evaluator&apos;s Recommendations
@@ -1573,6 +1646,7 @@ const EvaluationDetail = ({
         ))}
 
       {/* Action Buttons */}
+      {!isAuditFailed(audit.status) && (
       <div className="flex flex-col items-center gap-4 pt-8">
         <Button
           kind="secondary"
@@ -1627,13 +1701,14 @@ const EvaluationDetail = ({
           </Button>
         </Link>
       </div>
+      )}
 
       <RecommendationModal
         open={showSubmitRecommendationModal}
         onOpenChange={setShowSubmitRecommendationModal}
         title="Evaluation Recommendation"
-        description="Enter your recommendation for this evaluation (optional)."
-        placeholder="Enter your recommendation for this evaluation (optional)"
+        description="Enter your recommendation for this evaluation."
+        placeholder="Enter your recommendation for this evaluation"
         onSubmit={isPlaygroundEvaluation ? submitEvaluation : submitBulkReview}
         isSubmitting={isSavingEvaluation}
         submitButtonText="Submit"
