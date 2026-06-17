@@ -196,6 +196,13 @@ const AuditsListPage = () => {
     if (audit.status?.toUpperCase() === "DRAFT") {
       return `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/new?auditId=${audit.id}`;
     }
+    if (
+      audit.status?.toUpperCase() === "IN_PROGRESS" &&
+      (audit.evaluationMode?.toLowerCase() === "manual" ||
+        audit.evaluationMode?.toLowerCase() === "playground")
+    ) {
+      return `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/new?auditId=${audit.id}`;
+    }
     return `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/${audit.id}`;
   };
 

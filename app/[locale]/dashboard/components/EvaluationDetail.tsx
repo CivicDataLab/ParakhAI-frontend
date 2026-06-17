@@ -20,6 +20,7 @@ import {
 import ProgressBar from "@/components/ProgressBar";
 import { useEffect, useRef, useState } from "react";
 import EvaluationFormOverview from "../ai-maker/[orgId]/evaluations/components/EvaluationFormOverview";
+import ManualEvaluationFlow from "../ai-maker/[orgId]/evaluations/components/manual-evaluation";
 import RecommendationModal from "../ai-maker/[orgId]/evaluations/components/manual-evaluation/RecommendationModal";
 import { useOrganization } from "../ai-maker/[orgId]/OrganizationContext";
 import AuditResultsList from "./AuditResultsList";
@@ -243,8 +244,10 @@ const formatAuditErrorDetails = (audit: Audit): string => {
   return "";
 };
 
-const isPlaygroundEvaluationMode = (mode: string | null | undefined) =>
-  mode?.toLowerCase() === "manual";
+const isPlaygroundEvaluationMode = (mode: string | null | undefined) => {
+  const normalized = mode?.toLowerCase();
+  return normalized === "manual" || normalized === "playground";
+};
 
 const hasCompletedAuditResults = (audit: {
   status: string;
@@ -378,7 +381,7 @@ const getRiskDistributionTotal = (distribution: RiskDistribution) =>
 
 const getModeLabel = (mode: string | null | undefined) => {
   const normalized = mode?.toLowerCase();
-  if (normalized === "manual") return "Playground Evaluation";
+  if (normalized === "manual" || normalized === "playground") return "Playground Evaluation";
   if (normalized === "bulk" || normalized === "automated") {
     return "Bulk Evaluation";
   }
@@ -473,7 +476,6 @@ type EvaluationDetailProps = {
   evaluationId: string;
   backLink: string;
   backLinkText?: string;
-  newEvaluationLink?: string;
   orgId?: string;
 };
 
@@ -481,7 +483,6 @@ const EvaluationDetail = ({
   evaluationId,
   backLink,
   backLinkText = "Back to Evaluations",
-  newEvaluationLink,
   orgId,
 }: EvaluationDetailProps) => {
   const { organization } = useOrganization();
@@ -529,8 +530,7 @@ const EvaluationDetail = ({
   const isReportReady = Boolean(auditReport?.url);
   const isEvaluationComplete =
     audit?.status === "COMPLETED" || Boolean(audit?.completedAt);
-  const isPlaygroundEvaluation =
-    audit?.evaluationMode?.toLowerCase() === "manual";
+  const isPlaygroundEvaluation = isPlaygroundEvaluationMode(audit?.evaluationMode);
   const isBulkPendingReview = audit?.status === "PENDING_REVIEW";
   const isBulkCompleted =
     !isPlaygroundEvaluation &&
@@ -1096,6 +1096,13 @@ const EvaluationDetail = ({
   const evaluationMode = getEvaluationModeColor(audit?.evaluationMode);
   const duration = getDuration();
   const isRunning = isAuditInProgress(audit?.status);
+  const isPlaygroundInProgress =
+    isPlaygroundEvaluationMode(audit?.evaluationMode) &&
+    audit?.status?.toUpperCase() === "IN_PROGRESS";
+  const auditModelType =
+    audit?.modelSnapshot?.modelType ||
+    audit?.modelSnapshot?.model_type ||
+    "TEXT_GENERATION";
   const progressPercent = Math.round(evaluationProgress ?? 0);
   const evaluationScopeSource =
     audit?.auditScope ||
@@ -1356,6 +1363,17 @@ const EvaluationDetail = ({
           "--"
         }
       />
+
+      {isPlaygroundInProgress && orgId && (
+        <ManualEvaluationFlow
+          auditId={evaluationId}
+          modules={audit.modules || []}
+          modelType={auditModelType}
+          orgId={orgId}
+          onFinishAudit={() => {}}
+          isRequestingAudit={false}
+        />
+      )}
 
       {isAuditFailed(audit.status) && (
         <div className="mb-8 mt-6">
@@ -1651,7 +1669,7 @@ const EvaluationDetail = ({
       )}
 
       {/* Action Buttons */}
-      {!isAuditFailed(audit.status) && (
+      {!isAuditFailed(audit.status) && !isPlaygroundInProgress && (
       <div className="flex flex-col items-center gap-4 pt-8">
         <Button
           kind="secondary"
