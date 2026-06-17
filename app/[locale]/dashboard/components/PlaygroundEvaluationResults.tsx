@@ -13,23 +13,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-const formatModuleName = (moduleName: string): string => {
-  const moduleMap: Record<string, string> = {
-    BIAS_FAIRNESS: "Bias and Fairness",
-    HALLUCINATION_MISINFORMATION: "Hallucination and MisInformation",
-    PRIVACY_SAFETY: "Privacy and Safety",
-  };
-
-  if (moduleMap[moduleName]) {
-    return moduleMap[moduleName];
-  }
-
-  return moduleName
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
-};
-
 const SORT_OPTIONS = [
   { value: "newest", label: "Newest First" },
   { value: "oldest", label: "Oldest First" },
@@ -58,18 +41,16 @@ const formatRiskLabel = (severity: "LOW" | "MEDIUM" | "HIGH", label: string) =>
 type PlaygroundEvaluationResultsProps = {
   auditId: string;
   orgId?: string;
-  modules: string[];
+  modules?: string[];
 };
 
 const PlaygroundEvaluationResults = ({
   auditId,
   orgId,
-  modules,
 }: PlaygroundEvaluationResultsProps) => {
   const { request, isAuthenticated, isLoading: isSessionLoading } =
     useGraphQL();
   const [testCases, setTestCases] = useState<ManualTestCase[]>([]);
-  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -108,39 +89,19 @@ const PlaygroundEvaluationResults = ({
     void fetchTestCases();
   }, [fetchTestCases, isSessionLoading]);
 
-  const moduleIssueCounts = useMemo(() => {
-    const moduleIds =
-      modules.length > 0
-        ? modules
-        : [...new Set(testCases.map((testCase) => testCase.module).filter((m): m is string => !!m))];
-
-    return moduleIds.map((moduleId) => ({
-      moduleId,
-      displayName: formatModuleName(moduleId),
-      issueCount: testCases.filter(
-        (testCase) =>
-          testCase.module === moduleId && testCase.status === "FAILED"
-      ).length,
-    }));
-  }, [modules, testCases]);
-
-  useEffect(() => {
-    if (moduleIssueCounts.length > 0 && !selectedModuleId) {
-      setSelectedModuleId(moduleIssueCounts[0].moduleId);
-    }
-  }, [moduleIssueCounts, selectedModuleId]);
-
   const displayedItems = useMemo(() => {
-    const filtered = selectedModuleId
-      ? testCases.filter((testCase) => testCase.module === selectedModuleId)
-      : testCases;
-
-    return [...filtered].sort((a, b) => {
-      const diff =
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      return sortBy === "oldest" ? diff : -diff;
+    return [...testCases].sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      const diff = aTime - bTime;
+      if (diff !== 0) {
+        return sortBy === "oldest" ? diff : -diff;
+      }
+      return sortBy === "oldest"
+        ? a.id.localeCompare(b.id)
+        : b.id.localeCompare(a.id);
     });
-  }, [selectedModuleId, sortBy, testCases]);
+  }, [sortBy, testCases]);
 
   useEffect(() => {
     const card = cardMeasureRef.current;
@@ -157,20 +118,12 @@ const PlaygroundEvaluationResults = ({
     const observer = new ResizeObserver(updateHeight);
     observer.observe(card);
     return () => observer.disconnect();
-  }, [displayedItems.length, selectedModuleId, sortBy]);
+  }, [displayedItems.length, sortBy]);
 
   const openTestCaseDetail = (testCase: ManualTestCase, index: number) => {
-    const issueKey = testCase.issueType || testCase.subModule;
-    const issueLabel = resolveIssueDisplayName(
-      issueKey,
-      [],
-      testCase.module
-    );
-
     setSelectedTestCase({
       ...testCase,
       displayIndex: index + 1,
-      issueLabel: issueLabel || undefined,
     });
     setIsDetailSheetOpen(true);
   };
@@ -185,47 +138,23 @@ const PlaygroundEvaluationResults = ({
 
       <div className="bulk-evaluation-results-panel">
         <div className="bulk-evaluation-results-content w-full pb-4 pt-0">
-          {moduleIssueCounts.length > 0 && (
-            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex flex-wrap gap-2">
-                {moduleIssueCounts.map((module) => {
-                  const isSelected = module.moduleId === selectedModuleId;
-
-                  return (
-                    <button
-                      key={module.moduleId}
-                      type="button"
-                      className={`bulk-evaluation-module-pill${
-                        isSelected
-                          ? " bulk-evaluation-module-pill--selected"
-                          : ""
-                      }`}
-                      onClick={() => setSelectedModuleId(module.moduleId)}
-                      aria-pressed={isSelected}
-                    >
-                      {module.displayName} - {module.issueCount} Issues
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="bulk-evaluation-results-sort flex shrink-0 items-center gap-2">
-                <Text variant="bodySm" fontWeight="medium">
-                  Sort
-                </Text>
-                <div className="bulk-evaluation-results-sort__select">
-                  <Select
-                    name="playground-evaluation-sort"
-                    label="Sort"
-                    labelHidden
-                    options={SORT_OPTIONS}
-                    value={sortBy}
-                    onChange={(value) => setSortBy(value as SortOption)}
-                  />
-                </div>
+          <div className="mb-6 flex justify-end">
+            <div className="bulk-evaluation-results-sort flex shrink-0 items-center gap-2">
+              <Text variant="bodySm" fontWeight="medium">
+                Sort
+              </Text>
+              <div className="bulk-evaluation-results-sort__select">
+                <Select
+                  name="playground-evaluation-sort"
+                  label="Sort"
+                  labelHidden
+                  options={SORT_OPTIONS}
+                  value={sortBy}
+                  onChange={(value) => setSortBy(value as SortOption)}
+                />
               </div>
             </div>
-          )}
+          </div>
 
           {error && (
             <Text variant="bodySm" className="text-red-600 mb-4 block">
@@ -239,12 +168,7 @@ const PlaygroundEvaluationResults = ({
             style={listMaxHeight ? { maxHeight: listMaxHeight } : undefined}
           >
             {displayedItems.map((testCase, index) => {
-              const issueKey = testCase.issueType || testCase.subModule;
-              const issueLabel = resolveIssueDisplayName(
-                issueKey,
-                [],
-                testCase.module
-              );
+              const isPassed = testCase.issues.length === 0;
 
               return (
                 <div
@@ -282,17 +206,17 @@ const PlaygroundEvaluationResults = ({
                     fontWeight="bold"
                     className="text-gray-900 mb-3 block"
                   >
-                    {testCase.inputPrompt}
+                    {testCase.testInput}
                   </Text>
 
                   <div className="bulk-evaluation-card-prose prose prose-sm max-w-none text-gray-700 mb-4 line-clamp-3">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {testCase.modelOutput}
+                      {testCase.actualOutput}
                     </ReactMarkdown>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    {testCase.status === "PASSED" ? (
+                    {isPassed ? (
                       <Tag
                         variation="filled"
                         fillColor="#DCFCE7"
@@ -300,19 +224,28 @@ const PlaygroundEvaluationResults = ({
                       >
                         Passed
                       </Tag>
-                    ) : testCase.severity && issueLabel ? (
-                      <Tag
-                        variation="filled"
-                        fillColor={
-                          getRiskTagColors(testCase.severity).fillColor
-                        }
-                        textColor={
-                          getRiskTagColors(testCase.severity).textColor
-                        }
-                      >
-                        {formatRiskLabel(testCase.severity, issueLabel)}
-                      </Tag>
-                    ) : null}
+                    ) : (
+                      testCase.issues.map((issue, issueIndex) => {
+                        const issueLabel = resolveIssueDisplayName(
+                          issue.metricName,
+                          []
+                        );
+                        return (
+                          <Tag
+                            key={issueIndex}
+                            variation="filled"
+                            fillColor={
+                              getRiskTagColors(issue.severity).fillColor
+                            }
+                            textColor={
+                              getRiskTagColors(issue.severity).textColor
+                            }
+                          >
+                            {formatRiskLabel(issue.severity, issueLabel)}
+                          </Tag>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               );
@@ -320,7 +253,7 @@ const PlaygroundEvaluationResults = ({
 
             {!isLoading && displayedItems.length === 0 && !error && (
               <Text variant="bodySm" className="text-gray-600 py-6 block">
-                No inputs found for the selected module.
+                No evaluation inputs found.
               </Text>
             )}
 
