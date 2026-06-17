@@ -1562,7 +1562,6 @@ const EvaluationDetail = ({
           <PlaygroundEvaluationResults
             auditId={evaluationId}
             orgId={orgId}
-            modules={audit.modules || []}
           />
         ) : (
           <BulkEvaluationResults
