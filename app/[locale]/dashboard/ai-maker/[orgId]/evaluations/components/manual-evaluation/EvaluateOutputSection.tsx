@@ -24,6 +24,7 @@ type EvaluateOutputSectionProps = {
   issueRows: EvaluationIssueRow[];
   subModules: SubModuleInfo[];
   onIssueRowsChange: (rows: EvaluationIssueRow[]) => void;
+  onAddIssue: () => void;
   onSave: () => void;
   isSaving?: boolean;
   saveDisabled?: boolean;
@@ -33,6 +34,7 @@ const EvaluateOutputSection = ({
   issueRows,
   subModules,
   onIssueRowsChange,
+  onAddIssue,
   onSave,
   isSaving = false,
   saveDisabled = false,
@@ -186,12 +188,11 @@ const EvaluateOutputSection = ({
       <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
         <Button
           kind="secondary"
-          onClick={() =>
-            onIssueRowsChange([...issueRows, createEvaluationIssueRow()])
-          }
+          onClick={onAddIssue}
+          disabled={saveDisabled}
           className="rounded-[6px]"
         >
-          Add Another Issue
+          Add Issue
         </Button>
         <Button
           kind="secondary"
@@ -199,7 +200,7 @@ const EvaluateOutputSection = ({
           disabled={saveDisabled || isSaving}
           className="rounded-[6px] bg-[#26007b] text-white hover:bg-[#4003c4] hover:text-white disabled:opacity-50"
         >
-          {isSaving ? "Saving..." : "Save and Test New Input"}
+          {isSaving ? "Saving..." : "Save Test Case"}
         </Button>
       </div>
     </div>

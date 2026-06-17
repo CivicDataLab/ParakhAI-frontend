@@ -4,7 +4,8 @@ import { Icons } from "@/components/icons";
 import { Button, Divider, Icon, Sheet, Tag, Text } from "opub-ui";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { ManualTestCase } from "./types";
+import type { ManualTestCase, SubModuleInfo } from "./types";
+import { resolveIssueDisplayName } from "./utils";
 
 const getRiskTagColors = (
   severity: "LOW" | "MEDIUM" | "HIGH"
@@ -26,20 +27,23 @@ const formatRiskLabel = (severity: "LOW" | "MEDIUM" | "HIGH", label: string) =>
 
 export type ManualTestCaseDetail = ManualTestCase & {
   displayIndex: number;
-  issueLabel?: string;
 };
 
 type ManualTestCaseDetailSheetProps = {
   testCase: ManualTestCaseDetail | null;
+  subModules?: SubModuleInfo[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
 
 const ManualTestCaseDetailSheet = ({
   testCase,
+  subModules = [],
   open,
   onOpenChange,
 }: ManualTestCaseDetailSheetProps) => {
+  const isPassed = testCase ? testCase.issues.length === 0 : false;
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <Sheet.Content
@@ -86,7 +90,7 @@ const ManualTestCaseDetailSheet = ({
                   </Text>
                   <div className="bulk-evaluation-sheet-prose max-w-none text-gray-800">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {testCase.inputPrompt}
+                      {testCase.testInput}
                     </ReactMarkdown>
                   </div>
                 </section>
@@ -103,82 +107,12 @@ const ManualTestCaseDetailSheet = ({
                   </Text>
                   <div className="bulk-evaluation-sheet-prose max-w-none text-gray-800">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {testCase.modelOutput}
+                      {testCase.actualOutput}
                     </ReactMarkdown>
                   </div>
                 </section>
 
-                {testCase.status === "FAILED" &&
-                  (testCase.comments ||
-                    testCase.idealOutput ||
-                    (testCase.severity && testCase.issueLabel)) && (
-                    <>
-                      <Divider />
-                      <section className="space-y-6">
-                        {testCase.severity && testCase.issueLabel ? (
-                          <div className="flex flex-wrap items-center gap-3">
-                            <Text
-                              variant="bodyMd"
-                              fontWeight="semibold"
-                              className="text-gray-900"
-                            >
-                              Issue Identified
-                            </Text>
-                            <Tag
-                              variation="filled"
-                              fillColor={
-                                getRiskTagColors(testCase.severity).fillColor
-                              }
-                              textColor={
-                                getRiskTagColors(testCase.severity).textColor
-                              }
-                            >
-                              {formatRiskLabel(
-                                testCase.severity,
-                                testCase.issueLabel
-                              )}
-                            </Tag>
-                          </div>
-                        ) : null}
-
-                        {testCase.comments ? (
-                          <div>
-                            <Text
-                              variant="bodyMd"
-                              fontWeight="semibold"
-                              className="mb-2 block text-gray-900"
-                            >
-                              Observations
-                            </Text>
-                            <div className="bulk-evaluation-sheet-prose max-w-none text-gray-800">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {testCase.comments}
-                              </ReactMarkdown>
-                            </div>
-                          </div>
-                        ) : null}
-
-                        {testCase.idealOutput ? (
-                          <div>
-                            <Text
-                              variant="bodyMd"
-                              fontWeight="semibold"
-                              className="mb-2 block text-gray-900"
-                            >
-                              Ideal Output
-                            </Text>
-                            <div className="bulk-evaluation-sheet-prose max-w-none text-gray-800">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {testCase.idealOutput}
-                              </ReactMarkdown>
-                            </div>
-                          </div>
-                        ) : null}
-                      </section>
-                    </>
-                  )}
-
-                {testCase.status === "PASSED" && (
+                {isPassed ? (
                   <>
                     <Divider />
                     <section>
@@ -191,6 +125,70 @@ const ManualTestCaseDetailSheet = ({
                       </Tag>
                     </section>
                   </>
+                ) : (
+                  testCase.issues.map((issue, i) => {
+                    const issueLabel = resolveIssueDisplayName(
+                      issue.metricName,
+                      subModules
+                    );
+                    return (
+                      <div key={i}>
+                        <Divider />
+                        <section className="space-y-6">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <Text
+                              variant="bodyMd"
+                              fontWeight="semibold"
+                              className="text-gray-900"
+                            >
+                              Issue {testCase.issues.length > 1 ? i + 1 : ""} Identified
+                            </Text>
+                            <Tag
+                              variation="filled"
+                              fillColor={getRiskTagColors(issue.severity).fillColor}
+                              textColor={getRiskTagColors(issue.severity).textColor}
+                            >
+                              {formatRiskLabel(issue.severity, issueLabel)}
+                            </Tag>
+                          </div>
+
+                          {issue.comments ? (
+                            <div>
+                              <Text
+                                variant="bodyMd"
+                                fontWeight="semibold"
+                                className="mb-2 block text-gray-900"
+                              >
+                                Observations
+                              </Text>
+                              <div className="bulk-evaluation-sheet-prose max-w-none text-gray-800">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                  {issue.comments}
+                                </ReactMarkdown>
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {issue.idealOutput ? (
+                            <div>
+                              <Text
+                                variant="bodyMd"
+                                fontWeight="semibold"
+                                className="mb-2 block text-gray-900"
+                              >
+                                Ideal Output
+                              </Text>
+                              <div className="bulk-evaluation-sheet-prose max-w-none text-gray-800">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                  {issue.idealOutput}
+                                </ReactMarkdown>
+                              </div>
+                            </div>
+                          ) : null}
+                        </section>
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>
