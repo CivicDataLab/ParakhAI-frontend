@@ -63,7 +63,6 @@ type PromptDataset = {
   taskType?: string;
   domain?: string;
   resourceCount: number;
-  promptFormat?: string;
 };
 
 interface TestCasesProps {
@@ -97,11 +96,15 @@ const PROMPT_DATASETS_QUERY = `
         domain
         targetLanguages
       }
+      
       resources {
         id
         name
-        promptFormat
-        promptCount
+        noOfEntries
+        schema {
+          fieldName
+          format
+        }
       }
     }
   }
@@ -278,8 +281,8 @@ const TestCases: React.FC<TestCasesProps> = ({
             resources: Array<{
               id: string;
               name: string;
-              promptFormat?: string;
-              promptCount?: number;
+              noOfEntries?: number;
+              schema?: Array<{ fieldName: string; format: string }>;
             }>;
           }>;
         }>(PROMPT_DATASETS_QUERY, {
@@ -296,7 +299,6 @@ const TestCases: React.FC<TestCasesProps> = ({
           taskType: ds.promptMetadata?.taskType,
           domain: ds.promptMetadata?.domain,
           resourceCount: ds.resources?.length || 0,
-          promptFormat: ds.resources?.[0]?.promptFormat,
         }));
 
         setPromptDatasets(formatted);
