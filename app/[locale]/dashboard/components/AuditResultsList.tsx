@@ -265,7 +265,13 @@ const AuditResultsList = ({
   );
 
   return (
-    <>
+    <div className="bulk-evaluation-results mb-8">
+      <div className="bulk-evaluation-results-header mb-4">
+        <Text variant="headingMd" fontWeight="bold">
+          Evaluation Results
+        </Text>
+      </div>
+
       <div className="bulk-evaluation-results-panel">
         <div className="bulk-evaluation-results-content w-full pb-4 pt-0">
           {moduleIssueCounts.length > 0 && (
@@ -438,7 +444,7 @@ const AuditResultsList = ({
         orgId={orgId}
         onIssuesChange={handleTestCaseUpdate}
       />
-    </>
+    </div>
   );
 };
 

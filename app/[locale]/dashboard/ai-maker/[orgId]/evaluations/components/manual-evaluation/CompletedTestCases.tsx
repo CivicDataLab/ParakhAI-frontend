@@ -108,7 +108,10 @@ const CompletedTestCases = ({
               </Text>
             ) : (
               displayedItems.map((testCase, index) => {
-                const isPassed = testCase.issues.length === 0;
+                const failedIssues = testCase.issues.filter(
+                  (issue) => issue.status === "FAILED"
+                );
+                const isPassed = failedIssues.length === 0;
 
                 return (
                   <div
@@ -165,7 +168,7 @@ const CompletedTestCases = ({
                           Passed
                         </Tag>
                       ) : (
-                        testCase.issues.map((issue, i) => {
+                        failedIssues.map((issue, i) => {
                           const issueLabel = resolveIssueDisplayName(
                             issue.metricName,
                             subModules

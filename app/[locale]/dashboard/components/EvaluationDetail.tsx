@@ -21,8 +21,7 @@ import { useEffect, useRef, useState } from "react";
 import EvaluationFormOverview from "../ai-maker/[orgId]/evaluations/components/EvaluationFormOverview";
 import RecommendationModal from "../ai-maker/[orgId]/evaluations/components/manual-evaluation/RecommendationModal";
 import { useOrganization } from "../ai-maker/[orgId]/OrganizationContext";
-import BulkEvaluationResults from "./BulkEvaluationResults";
-import PlaygroundEvaluationResults from "./PlaygroundEvaluationResults";
+import AuditResultsList from "./AuditResultsList";
 import {
   GET_AUDIT_RESULTS_QUERY,
   SUBMIT_AUDIT_REVIEW_MUTATION,
@@ -1557,19 +1556,18 @@ const EvaluationDetail = ({
         </div>
       )}
 
-      {canShowEvaluationResults(audit, isPlaygroundEvaluation) &&
-        (isPlaygroundEvaluation ? (
-          <PlaygroundEvaluationResults
-            auditId={evaluationId}
-            orgId={orgId}
-          />
-        ) : (
-          <BulkEvaluationResults
-            auditId={evaluationId}
-            orgId={orgId}
-            isEditable={isBulkPendingReview}
-          />
-        ))}
+      {canShowEvaluationResults(audit, isPlaygroundEvaluation) && (
+        <AuditResultsList
+          auditId={evaluationId}
+          orgId={orgId}
+          isEditable={!isPlaygroundEvaluation && isBulkPendingReview}
+          bannerVariant={
+            isPlaygroundEvaluation || !isBulkPendingReview
+              ? "reviewed"
+              : "pending"
+          }
+        />
+      )}
 
       {/* Action Buttons */}
       <div className="flex flex-col items-center gap-4 pt-8">
