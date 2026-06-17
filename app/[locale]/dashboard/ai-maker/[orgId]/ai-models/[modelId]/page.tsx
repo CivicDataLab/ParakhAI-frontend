@@ -19,6 +19,7 @@ import {
   Tag,
   Text,
   toast,
+  Tooltip,
 } from "opub-ui";
 import React from "react";
 import AuditorInvitation from "../../evaluations/components/AuditorInvitation";
@@ -477,23 +478,30 @@ const ModelDetailPage = () => {
                         </div>
 
                         <div className="flex items-center gap-3">
-                          <Button
-                            kind="secondary"
-                            disabled={isDeprecated}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (isDeprecated) {
-                                toast.error(
-                                  "Sorry this model version is deprecated",
-                                );
-                                return;
-                              }
-                              handleNewEvaluation(v.id);
-                            }}
-                            className="!rounded-[8px]"
-                          >
-                            Start Evaluation
-                          </Button>
+                          {isDeprecated ? (
+                            <Tooltip content="This model version is deprecated">
+                              <span className="inline-flex cursor-not-allowed">
+                                <Button
+                                  kind="secondary"
+                                  disabled
+                                  className="!rounded-[8px] pointer-events-none"
+                                >
+                                  Start Evaluation
+                                </Button>
+                              </span>
+                            </Tooltip>
+                          ) : (
+                            <Button
+                              kind="secondary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleNewEvaluation(v.id);
+                              }}
+                              className="!rounded-[8px]"
+                            >
+                              Start Evaluation
+                            </Button>
+                          )}
                           <Button
                             kind="primary"
                             onClick={(e) => {
