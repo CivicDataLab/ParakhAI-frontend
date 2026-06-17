@@ -763,6 +763,13 @@ div:has(> .start-evaluation-modal-footer) {
   width: 100%;
 }
 
+/* Recommendation modal: right-aligned footer buttons */
+div:has(> .recommendation-modal-footer) {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
 /* Dialog header extra action: flag icon left to the X */
 /* Custom Dialog layout - ensure scroll works: Radix Content contains .PromptDlg inner div */
 [data-radix-dialog-content]:has(.PromptDlg) {
@@ -4198,7 +4205,8 @@ div:has(> .start-evaluation-modal-footer) {
 
 .prompt-library-warning-banner__icon {
   color: #ad5700;
-  margin-top: 2px;
+  margin-top: 1px;
+  flex-shrink: 0;
 }
 
 .prompt-library-warning-banner__content {

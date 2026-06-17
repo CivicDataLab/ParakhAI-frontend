@@ -5,25 +5,13 @@ import { Button, Divider, Icon, Sheet, Tag, Text } from "opub-ui";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { ManualTestCase, SubModuleInfo } from "./types";
-import { resolveIssueDisplayName } from "./utils";
-
-const getRiskTagColors = (
-  severity: "LOW" | "MEDIUM" | "HIGH"
-): { fillColor: string; textColor: string } => {
-  switch (severity) {
-    case "HIGH":
-      return { fillColor: "#FCE7F3", textColor: "#E11D48" };
-    case "MEDIUM":
-      return { fillColor: "#FFFBEB", textColor: "#92400E" };
-    case "LOW":
-      return { fillColor: "#EFF6FF", textColor: "#2563EB" };
-    default:
-      return { fillColor: "#F3F4F6", textColor: "#374151" };
-  }
-};
-
-const formatRiskLabel = (severity: "LOW" | "MEDIUM" | "HIGH", label: string) =>
-  `${severity.charAt(0) + severity.slice(1).toLowerCase()} risk - ${label}`;
+import {
+  formatRiskLabel,
+  getFailedManualTestCaseIssues,
+  getIssueRiskTagColors,
+  isManualTestCasePassed,
+  resolveIssueDisplayName,
+} from "./utils";
 
 export type ManualTestCaseDetail = ManualTestCase & {
   displayIndex: number;
@@ -42,7 +30,10 @@ const ManualTestCaseDetailSheet = ({
   open,
   onOpenChange,
 }: ManualTestCaseDetailSheetProps) => {
-  const isPassed = testCase ? testCase.issues.length === 0 : false;
+  const failedIssues = testCase
+    ? getFailedManualTestCaseIssues(testCase.issues)
+    : [];
+  const isPassed = testCase ? isManualTestCasePassed(testCase) : false;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -126,11 +117,12 @@ const ManualTestCaseDetailSheet = ({
                     </section>
                   </>
                 ) : (
-                  testCase.issues.map((issue, i) => {
+                  failedIssues.map((issue, i) => {
                     const issueLabel = resolveIssueDisplayName(
                       issue.metricName,
                       subModules
                     );
+                    const riskLabel = formatRiskLabel(issue.severity, issueLabel);
                     return (
                       <div key={i}>
                         <Divider />
@@ -141,15 +133,17 @@ const ManualTestCaseDetailSheet = ({
                               fontWeight="semibold"
                               className="text-gray-900"
                             >
-                              Issue {testCase.issues.length > 1 ? i + 1 : ""} Identified
+                              Issue {failedIssues.length > 1 ? i + 1 : ""} Identified
                             </Text>
-                            <Tag
-                              variation="filled"
-                              fillColor={getRiskTagColors(issue.severity).fillColor}
-                              textColor={getRiskTagColors(issue.severity).textColor}
-                            >
-                              {formatRiskLabel(issue.severity, issueLabel)}
-                            </Tag>
+                            {riskLabel ? (
+                              <Tag
+                                variation="filled"
+                                fillColor={getIssueRiskTagColors(issue.severity).fillColor}
+                                textColor={getIssueRiskTagColors(issue.severity).textColor}
+                              >
+                                {riskLabel}
+                              </Tag>
+                            ) : null}
                           </div>
 
                           {issue.comments ? (

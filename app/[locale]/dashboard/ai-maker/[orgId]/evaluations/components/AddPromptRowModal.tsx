@@ -31,6 +31,41 @@ const emptyForm = () => ({
   riskType: "",
 });
 
+const isMisinformationCategoryOption = (option: SelectOption) => {
+  const label = option.label.trim().toLowerCase();
+  const value = option.value.trim().toLowerCase();
+
+  return (
+    label === "misinformation" ||
+    label.includes("misinformation") ||
+    value === "misinformation" ||
+    value.includes("misinformation")
+  );
+};
+
+const isMisinformationCategory = (
+  categoryValue: string,
+  categoryOptions: SelectOption[],
+) => {
+  if (!categoryValue.trim()) return false;
+
+  const selected = categoryOptions.find(
+    (option) => option.value === categoryValue,
+  );
+
+  if (selected) {
+    return isMisinformationCategoryOption(selected);
+  }
+
+  const normalized = categoryValue.trim().toLowerCase();
+  return (
+    normalized === "misinformation" || normalized.includes("misinformation")
+  );
+};
+
+const hasMisinformationCategoryOption = (categoryOptions: SelectOption[]) =>
+  categoryOptions.some(isMisinformationCategoryOption);
+
 const AddPromptRowModal = ({
   open,
   onOpenChange,
@@ -41,6 +76,14 @@ const AddPromptRowModal = ({
   const [errors, setErrors] = useState<FormErrors>({});
 
   const riskTypeOptions = useMemo(() => RISK_TYPE_OPTIONS, []);
+
+  const isReferenceOutputRequired = useMemo(() => {
+    if (form.category.trim()) {
+      return isMisinformationCategory(form.category, categoryOptions);
+    }
+
+    return hasMisinformationCategoryOption(categoryOptions);
+  }, [form.category, categoryOptions]);
 
   useEffect(() => {
     if (!open) {
@@ -55,7 +98,7 @@ const AddPromptRowModal = ({
     if (!form.input.trim()) {
       nextErrors.input = "Test input is required";
     }
-    if (!form.expectedOutput.trim()) {
+    if (isReferenceOutputRequired && !form.expectedOutput.trim()) {
       nextErrors.expectedOutput = "Reference output is required";
     }
     if (!form.category.trim()) {
@@ -123,7 +166,8 @@ const AddPromptRowModal = ({
           <TextField
             name="referenceOutput"
             label="Reference Output"
-            requiredIndicator
+            requiredIndicator={isReferenceOutputRequired}
+            required={isReferenceOutputRequired}
             multiline={4}
             value={form.expectedOutput}
             onChange={(value) => {
@@ -150,6 +194,12 @@ const AddPromptRowModal = ({
               setForm((prev) => ({ ...prev, category: value }));
               if (errors.category) {
                 setErrors((prev) => ({ ...prev, category: undefined }));
+              }
+              if (
+                errors.expectedOutput &&
+                !isMisinformationCategory(value, categoryOptions)
+              ) {
+                setErrors((prev) => ({ ...prev, expectedOutput: undefined }));
               }
             }}
             error={errors.category}

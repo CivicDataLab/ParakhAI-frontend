@@ -600,8 +600,8 @@ const ModelSelectionModal = ({
                             Bulk Evaluation
                           </Text>
                           <Text variant="bodySm" className="text-gray-600 block">
-                            Has pre-made prompt datasets &amp; AI assistance to
-                            test multiple prompts
+                            Use prompt datasets &amp; AI assistance to test the
+                            model for risks
                           </Text>
                         </div>
                       </label>

@@ -1,16 +1,14 @@
 "use client";
 
-import { Icons } from "@/components/icons";
 import { useGraphQL } from "@/lib/api";
 import { toTitleCase } from "@/lib/utils";
 import type { ColumnDef } from "@tanstack/react-table";
-import { IconTrash } from "@tabler/icons-react";
+import { IconAlertCircleFilled, IconTrash } from "@tabler/icons-react";
 import { Button, DataTable, Icon, Spinner, Text } from "opub-ui";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import AddPromptRowModal from "./AddPromptRowModal";
 import type { CustomPromptRow, SelectOption } from "./types";
 
-const MAX_SUBMODULES_PER_EVALUATION = 10;
 const MAX_TASKS_PER_EVALUATION = 200;
 
 const createPromptRow = (
@@ -493,27 +491,24 @@ const TestCases: React.FC<TestCasesProps> = ({
   );
 
   const submoduleWarningBanner = (
-    copy: React.ReactNode,
-  ) => (
     <div className="prompt-library-warning-banner">
-      <Icon
-        source={Icons.alert}
+      <IconAlertCircleFilled
         size={18}
-        className="prompt-library-warning-banner__icon flex-shrink-0"
+        className="prompt-library-warning-banner__icon shrink-0"
+        aria-hidden
       />
       <div className="prompt-library-warning-banner__content space-y-1">
         <Text variant="bodySm" fontWeight="semibold" className="text-gray-900">
-          Number of sub-modules selected: {selectedSubModuleCount}/
-          {MAX_SUBMODULES_PER_EVALUATION}
-        </Text>
-        <Text variant="bodySm" fontWeight="semibold" className="text-gray-900">
-          Maximum Tasks per Evaluation: {MAX_TASKS_PER_EVALUATION}
+          Maximum test cases for your current selection: {maxInputPrompts}{" "}
+          input prompts
         </Text>
         <Text variant="bodySm" className="text-gray-800">
-          One task is one input run across one selected sub-module
+          This is the number of input prompts ParakhAI will run from the
+          selected library. This limit adjusts based on how many sub-modules
+          you&apos;ve chosen.
         </Text>
         <Text variant="bodySm" className="text-gray-800">
-          {copy}
+          The test case limit helps keep evaluations efficient and reliable.
         </Text>
       </div>
     </div>
@@ -615,16 +610,7 @@ const TestCases: React.FC<TestCasesProps> = ({
         </div>
       </div>
 
-      {submoduleWarningBanner(
-        <>
-          A maximum of{" "}
-          <strong className="font-semibold text-gray-900">
-            {maxInputPrompts} input prompts
-          </strong>{" "}
-          will be taken from your selected prompt library. To run more prompts,
-          unselect some sub-modules.
-        </>,
-      )}
+      {submoduleWarningBanner}
       </>
       )}
 
@@ -674,15 +660,7 @@ const TestCases: React.FC<TestCasesProps> = ({
             </div>
           </div>
 
-          {submoduleWarningBanner(
-            <>
-              In the next step, you can select a maximum of{" "}
-              <strong className="font-semibold text-gray-900">
-                {maxInputPrompts} input prompts
-              </strong>
-              . To run more prompts, unselect some sub-modules.
-            </>,
-          )}
+          {submoduleWarningBanner}
 
           <AddPromptRowModal
             open={isAddRowModalOpen}

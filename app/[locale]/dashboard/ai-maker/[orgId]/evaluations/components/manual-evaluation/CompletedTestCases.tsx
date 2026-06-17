@@ -9,25 +9,13 @@ import ManualTestCaseDetailSheet, {
   type ManualTestCaseDetail,
 } from "./ManualTestCaseDetailSheet";
 import type { ManualTestCase, SubModuleInfo } from "./types";
-import { resolveIssueDisplayName } from "./utils";
-
-const getRiskTagColors = (
-  severity: "LOW" | "MEDIUM" | "HIGH"
-): { fillColor: string; textColor: string } => {
-  switch (severity) {
-    case "HIGH":
-      return { fillColor: "#FCE7F3", textColor: "#E11D48" };
-    case "MEDIUM":
-      return { fillColor: "#FFFBEB", textColor: "#92400E" };
-    case "LOW":
-      return { fillColor: "#EFF6FF", textColor: "#2563EB" };
-    default:
-      return { fillColor: "#F3F4F6", textColor: "#374151" };
-  }
-};
-
-const formatRiskLabel = (severity: "LOW" | "MEDIUM" | "HIGH", label: string) =>
-  `${severity.charAt(0) + severity.slice(1).toLowerCase()} risk - ${label}`;
+import {
+  formatRiskLabel,
+  getFailedManualTestCaseIssues,
+  getIssueRiskTagColors,
+  isManualTestCasePassed,
+  resolveIssueDisplayName,
+} from "./utils";
 
 type CompletedTestCasesProps = {
   testCases: ManualTestCase[];
@@ -173,14 +161,16 @@ const CompletedTestCases = ({
                             issue.metricName,
                             subModules
                           );
+                          const riskLabel = formatRiskLabel(issue.severity, issueLabel);
+                          if (!riskLabel) return null;
                           return (
                             <Tag
                               key={i}
                               variation="filled"
-                              fillColor={getRiskTagColors(issue.severity).fillColor}
-                              textColor={getRiskTagColors(issue.severity).textColor}
+                              fillColor={getIssueRiskTagColors(issue.severity).fillColor}
+                              textColor={getIssueRiskTagColors(issue.severity).textColor}
                             >
-                              {formatRiskLabel(issue.severity, issueLabel)}
+                              {riskLabel}
                             </Tag>
                           );
                         })
