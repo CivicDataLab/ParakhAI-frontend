@@ -6,7 +6,13 @@ import { IconMinus, IconPlus } from '@tabler/icons-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { ManualTestCase, SubModuleInfo } from './types';
-import { resolveIssueDisplayName } from './utils';
+import {
+  formatRiskLabel,
+  getFailedManualTestCaseIssues,
+  getIssueRiskTagColors,
+  isManualTestCasePassed,
+  resolveIssueDisplayName,
+} from './utils';
 
 interface TestCaseHistoryProps {
   testCases: ManualTestCase[];
@@ -56,7 +62,8 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
       <div className="flex flex-col gap-5">
         {sortedTestCases.map((tc, index) => {
           const isExpanded = expandedCards.has(tc.id);
-          const isPassed = tc.issues.length === 0;
+          const isPassed = isManualTestCasePassed(tc);
+          const failedIssues = getFailedManualTestCaseIssues(tc.issues);
 
           return (
             <div
@@ -76,28 +83,19 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
                       Passed
                     </Tag>
                   ) : (
-                    tc.issues.map((issue, i) => {
+                    failedIssues.map((issue, i) => {
                       const issueLabel = resolveIssueDisplayName(issue.metricName, subModules);
+                      const colors = getIssueRiskTagColors(issue.severity);
+                      const riskLabel = formatRiskLabel(issue.severity, issueLabel);
+                      if (!riskLabel) return null;
                       return (
                         <Tag
                           key={i}
                           variation="filled"
-                          fillColor={
-                            issue.severity === 'HIGH'
-                              ? '#E93D82'
-                              : issue.severity === 'MEDIUM'
-                                ? '#F5D08C'
-                                : '#5EB0EF'
-                          }
-                          textColor={
-                            issue.severity === 'HIGH'
-                              ? '#FFFFFF'
-                              : issue.severity === 'MEDIUM'
-                                ? '#0A0704'
-                                : '#FFFFFF'
-                          }
+                          fillColor={colors.fillColor}
+                          textColor={colors.textColor}
                         >
-                          {`${issue.severity.charAt(0) + issue.severity.slice(1).toLowerCase()} risk - ${issueLabel}`}
+                          {riskLabel}
                         </Tag>
                       );
                     })
@@ -130,10 +128,10 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
                     </div>
                   </div>
 
-                  {tc.issues.map((issue, i) => issue.comments ? (
+                  {failedIssues.map((issue, i) => issue.comments ? (
                     <div key={i}>
                       <Text variant="bodySm" fontWeight="medium" className="mb-2 block">
-                        {tc.issues.length > 1 ? `Issue ${i + 1} Comments` : 'Comments'}
+                        {failedIssues.length > 1 ? `Issue ${i + 1} Comments` : 'Comments'}
                       </Text>
                       <div className="prose prose-sm max-w-none break-words text-gray-900">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{issue.comments}</ReactMarkdown>

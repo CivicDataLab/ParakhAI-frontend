@@ -17,12 +17,12 @@ import {
   TextField,
   toast,
 } from "opub-ui";
+import ProgressBar from "@/components/ProgressBar";
 import { useEffect, useRef, useState } from "react";
 import EvaluationFormOverview from "../ai-maker/[orgId]/evaluations/components/EvaluationFormOverview";
 import RecommendationModal from "../ai-maker/[orgId]/evaluations/components/manual-evaluation/RecommendationModal";
 import { useOrganization } from "../ai-maker/[orgId]/OrganizationContext";
-import BulkEvaluationResults from "./BulkEvaluationResults";
-import PlaygroundEvaluationResults from "./PlaygroundEvaluationResults";
+import AuditResultsList from "./AuditResultsList";
 import {
   GET_AUDIT_RESULTS_QUERY,
   SUBMIT_AUDIT_REVIEW_MUTATION,
@@ -1096,6 +1096,7 @@ const EvaluationDetail = ({
   const evaluationMode = getEvaluationModeColor(audit?.evaluationMode);
   const duration = getDuration();
   const isRunning = isAuditInProgress(audit?.status);
+  const progressPercent = Math.round(evaluationProgress ?? 0);
   const evaluationScopeSource =
     audit?.auditScope ||
     audit?.configuration?.auditScope ||
@@ -1390,13 +1391,19 @@ const EvaluationDetail = ({
       )}
 
       {isRunning && (
-        <div className="mb-8 flex flex-col gap-1">
+        <div className="mb-8 flex flex-col gap-2">
           <Text variant="bodySm" className="block text-gray-600">
             Evaluation results will load once the evaluation is completed.
           </Text>
           <Text variant="bodySm" className="block text-gray-600">
-            Evaluation Progress : {Math.round(evaluationProgress ?? 0)}%
+            Evaluation Progress : {progressPercent}%
           </Text>
+          <ProgressBar
+            value={progressPercent}
+            max={100}
+            color="highlight"
+            size="small"
+          />
         </div>
       )}
 
@@ -1630,20 +1637,18 @@ const EvaluationDetail = ({
         </div>
       )}
 
-      {canShowEvaluationResults(audit, isPlaygroundEvaluation) &&
-        (isPlaygroundEvaluation ? (
-          <PlaygroundEvaluationResults
-            auditId={evaluationId}
-            orgId={orgId}
-            modules={audit.modules || []}
-          />
-        ) : (
-          <BulkEvaluationResults
-            auditId={evaluationId}
-            orgId={orgId}
-            isEditable={isBulkPendingReview}
-          />
-        ))}
+      {canShowEvaluationResults(audit, isPlaygroundEvaluation) && (
+        <AuditResultsList
+          auditId={evaluationId}
+          orgId={orgId}
+          isEditable={!isPlaygroundEvaluation && isBulkPendingReview}
+          bannerVariant={
+            isPlaygroundEvaluation || !isBulkPendingReview
+              ? "reviewed"
+              : "pending"
+          }
+        />
+      )}
 
       {/* Action Buttons */}
       {!isAuditFailed(audit.status) && (

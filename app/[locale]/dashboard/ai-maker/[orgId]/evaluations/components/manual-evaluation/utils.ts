@@ -1,10 +1,70 @@
 import { toTitleCase } from "@/lib/utils";
 import type { Module } from "../types";
 import type {
+  IssueSeverity,
   ManualEvalWorkspaceDraft,
+  ManualTestCase,
+  ManualTestCaseIssue,
   ModuleProgress,
   SubModuleInfo,
 } from "./types";
+
+export function normalizeIssueSeverity(
+  severity?: string | null
+): IssueSeverity | null {
+  const normalized = (severity || "").toUpperCase();
+  if (!normalized) return null;
+  if (normalized.includes("HIGH")) return "HIGH";
+  if (normalized.includes("MEDIUM")) return "MEDIUM";
+  if (normalized.includes("LOW")) return "LOW";
+  return null;
+}
+
+export function getIssueRiskTagColors(
+  severity?: string | null
+): { fillColor: string; textColor: string } {
+  switch (normalizeIssueSeverity(severity)) {
+    case "HIGH":
+      return { fillColor: "#FCE7F3", textColor: "#E11D48" };
+    case "MEDIUM":
+      return { fillColor: "#FFFBEB", textColor: "#92400E" };
+    case "LOW":
+      return { fillColor: "#EFF6FF", textColor: "#2563EB" };
+    default:
+      return { fillColor: "#F3F4F6", textColor: "#374151" };
+  }
+}
+
+export function formatRiskLabel(
+  severity: string | null | undefined,
+  label: string
+): string {
+  const normalized = normalizeIssueSeverity(severity);
+  if (!normalized) return label;
+  const severityText = `${normalized.charAt(0) + normalized.slice(1).toLowerCase()} risk`;
+  return label ? `${severityText} - ${label}` : severityText;
+}
+
+export function getFailedManualTestCaseIssues(
+  issues: ManualTestCaseIssue[]
+): ManualTestCaseIssue[] {
+  return issues.filter((issue) => {
+    const status = (issue.status || "").toUpperCase();
+    if (status === "PASSED") return false;
+    if (status === "FAILED") return true;
+
+    return Boolean(
+      issue.metricName?.trim() ||
+        issue.severity ||
+        issue.comments?.trim() ||
+        issue.idealOutput?.trim()
+    );
+  });
+}
+
+export function isManualTestCasePassed(testCase: ManualTestCase): boolean {
+  return getFailedManualTestCaseIssues(testCase.issues).length === 0;
+}
 
 const MANUAL_EVAL_WORKSPACE_PREFIX = "manual-eval-workspace";
 

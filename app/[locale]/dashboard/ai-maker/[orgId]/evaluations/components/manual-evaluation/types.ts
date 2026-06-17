@@ -49,10 +49,12 @@ export interface ManualEvalWorkspaceDraft {
   issueRows: ManualEvalIssueRowDraft[];
 }
 
+export type IssueSeverity = "LOW" | "MEDIUM" | "HIGH";
+
 export interface ManualTestCaseIssue {
   metricName: string;
   status: string;
-  severity: "LOW" | "MEDIUM" | "HIGH";
+  severity?: IssueSeverity | string | null;
   comments?: string;
   idealOutput?: string;
 }
