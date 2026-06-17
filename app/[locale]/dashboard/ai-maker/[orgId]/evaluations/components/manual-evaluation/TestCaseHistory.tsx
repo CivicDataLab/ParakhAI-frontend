@@ -32,6 +32,14 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
       if (byTime !== 0) return byTime;
       return a.id.localeCompare(b.id);
     });
+
+  // Only show "Errors leading to skipped tests" section when we truly have
+  // skipped test cases. The backend sometimes returns that entry even when
+  // the skipped count is 0, so we guard it here.
+  const hasSkippedTests = moduleTestCases.some((tc) => {
+    const status = String((tc as any).status || "").toUpperCase();
+    return status === "SKIPPED" || status === "SKIPPED_TESTS";
+  });
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   if (moduleTestCases.length === 0) {
@@ -65,6 +73,19 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
             subModules,
             moduleName
           );
+
+              const isErrorsLeadingToSkippedTests =
+                (typeof issueKey === "string" &&
+                  issueKey.toUpperCase().includes("ERRORS_LEADING_TO_SKIPPED")) ||
+                (typeof issueDisplayName === "string" &&
+                  issueDisplayName
+                    .toLowerCase()
+                    .includes("errors leading to skipped tests"));
+
+              if (isErrorsLeadingToSkippedTests && !hasSkippedTests) {
+                return null;
+              }
+
           return (
             <div
               key={tc.id}
