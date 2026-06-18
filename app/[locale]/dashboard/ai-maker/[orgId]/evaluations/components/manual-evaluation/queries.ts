@@ -54,6 +54,16 @@ export const SUBMIT_TEST_CASE_MUTATION = `
   }
 `;
 
+export const GENERATE_PLAYGROUND_REASON_MUTATION = `
+  mutation GeneratePlaygroundReason($input: GenerateReasonInput!) {
+    generatePlaygroundReason(input: $input) {
+      success
+      message
+      reason
+    }
+  }
+`;
+
 export const FINISH_EVALUATION_MUTATION = `
   mutation FinishManualEvaluation($input: FinishManualEvaluationInput!) {
     finishManualEvaluation(input: $input) {
