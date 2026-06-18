@@ -107,7 +107,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
 
   const hasRestoredWorkspaceRef = useRef(false);
   const persistWorkspaceTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-  const metricsLoadedRef = useRef(false);
+  // const metricsLoadedRef = useRef(false);
   // Tracks the auditId we've already loaded initial data for to prevent duplicate
   // fetches when useCallback deps like `request` change after auth stabilises.
   const loadedForAuditIdRef = useRef<string | null>(null);
@@ -177,19 +177,19 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
 
     const loadInitialData = async () => {
       setIsLoading(true);
-      await Promise.all([fetchEvaluationStatus(), fetchTestCases()]);
+      await Promise.all([fetchEvaluationStatus(), fetchTestCases(), fetchMetrics()]);
       setIsLoading(false);
     };
     loadInitialData();
-  }, [auditId, fetchEvaluationStatus, fetchTestCases]);
+  }, [auditId, fetchEvaluationStatus, fetchTestCases, fetchMetrics]);
 
   // Lazy-load metrics only once model output is received — only needed for the issue type dropdown
-  useEffect(() => {
-    if (hasCalledModel && !metricsLoadedRef.current && modelType) {
-      metricsLoadedRef.current = true;
-      void fetchMetrics();
-    }
-  }, [hasCalledModel, fetchMetrics, modelType]);
+  // useEffect(() => {
+  //   if (hasCalledModel && !metricsLoadedRef.current && modelType) {
+  //     metricsLoadedRef.current = true;
+  //     void fetchMetrics();
+  //   }
+  // }, [hasCalledModel, fetchMetrics, modelType]);
 
   useEffect(() => {
     onTestCaseCountChange?.(testCases.length);
