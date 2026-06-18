@@ -28,6 +28,7 @@ import {
   GET_TEST_CASES_QUERY,
   METRICS_BY_MODEL_TYPE_QUERY,
   SUBMIT_TEST_CASE_MUTATION,
+  GENERATE_PLAYGROUND_REASON_MUTATION,
 } from "./queries";
 import {
   LANGUAGE_OPTIONS,
@@ -107,7 +108,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
 
   const hasRestoredWorkspaceRef = useRef(false);
   const persistWorkspaceTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-  const metricsLoadedRef = useRef(false);
+  // const metricsLoadedRef = useRef(false);
   // Tracks the auditId we've already loaded initial data for to prevent duplicate
   // fetches when useCallback deps like `request` change after auth stabilises.
   const loadedForAuditIdRef = useRef<string | null>(null);
@@ -177,19 +178,19 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
 
     const loadInitialData = async () => {
       setIsLoading(true);
-      await Promise.all([fetchEvaluationStatus(), fetchTestCases()]);
+      await Promise.all([fetchEvaluationStatus(), fetchTestCases(), fetchMetrics()]);
       setIsLoading(false);
     };
     loadInitialData();
-  }, [auditId, fetchEvaluationStatus, fetchTestCases]);
+  }, [auditId, fetchEvaluationStatus, fetchTestCases, fetchMetrics]);
 
   // Lazy-load metrics only once model output is received — only needed for the issue type dropdown
-  useEffect(() => {
-    if (hasCalledModel && !metricsLoadedRef.current && modelType) {
-      metricsLoadedRef.current = true;
-      void fetchMetrics();
-    }
-  }, [hasCalledModel, fetchMetrics, modelType]);
+  // useEffect(() => {
+  //   if (hasCalledModel && !metricsLoadedRef.current && modelType) {
+  //     metricsLoadedRef.current = true;
+  //     void fetchMetrics();
+  //   }
+  // }, [hasCalledModel, fetchMetrics, modelType]);
 
   useEffect(() => {
     onTestCaseCountChange?.(testCases.length);
@@ -308,6 +309,51 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
       setError(err.message || "Error calling model");
     } finally {
       setIsCallingModel(false);
+    }
+  };
+
+  const handleGenerateReason = async (rowId: string, issueType: string, severity: string) => {
+    if (!issueType || !severity) {
+      setError("Please select an Issue and Risk Severity first.");
+      return;
+    }
+
+    setError(null);
+    try {
+      const result = await request<{
+        generatePlaygroundReason: {
+          success: boolean;
+          message: string;
+          reason: string;
+        };
+      }>(
+        GENERATE_PLAYGROUND_REASON_MUTATION,
+        {
+          input: {
+            auditId,
+            metricName: issueType,
+            severity,
+            inputPrompt: inputPrompt.trim(),
+            modelOutput,
+          },
+        },
+        { organization: orgId }
+      );
+
+      if (result?.generatePlaygroundReason?.success) {
+        // Update the specific row's observations with the generated reason
+        setIssueRows((prev) =>
+          prev.map((row) =>
+            row.id === rowId
+              ? { ...row, observations: result.generatePlaygroundReason.reason }
+              : row
+          )
+        );
+      } else {
+        setError(result?.generatePlaygroundReason?.message || "Failed to generate reason");
+      }
+    } catch (err: any) {
+      setError(err.message || "Error generating reason");
     }
   };
 
@@ -656,6 +702,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
             onIssueRowsChange={setIssueRows}
             onAddIssue={handleAddIssue}
             onSave={handleSubmitTestCase}
+            onGenerateReason={handleGenerateReason}
             isSaving={isSubmitting}
             saveDisabled={
               !issueRows[issueRows.length - 1]?.issueType ||

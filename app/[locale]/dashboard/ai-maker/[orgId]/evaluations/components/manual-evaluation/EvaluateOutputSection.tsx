@@ -3,6 +3,7 @@
 import { IconTrash } from "@tabler/icons-react";
 import { Button, Combobox, Icon, Select, Text, TextField } from "opub-ui";
 import { SEVERITY_OPTIONS, type SubModuleInfo } from "./types";
+import { useState } from "react";
 
 export type EvaluationIssueRow = {
   id: string;
@@ -26,6 +27,7 @@ type EvaluateOutputSectionProps = {
   onIssueRowsChange: (rows: EvaluationIssueRow[]) => void;
   onAddIssue: () => void;
   onSave: () => void;
+  onGenerateReason: (rowId: string, issueType: string, severity: string) => Promise<void>;
   isSaving?: boolean;
   saveDisabled?: boolean;
 };
@@ -36,6 +38,7 @@ const EvaluateOutputSection = ({
   onIssueRowsChange,
   onAddIssue,
   onSave,
+  onGenerateReason,
   isSaving = false,
   saveDisabled = false,
 }: EvaluateOutputSectionProps) => {
@@ -54,6 +57,13 @@ const EvaluateOutputSection = ({
         row.id === rowId ? { ...row, [field]: value } : row
       )
     );
+  };
+  const [generatingRows, setGeneratingRows] = useState<Record<string, boolean>>({});
+
+  const handleGenerateClick = async (rowId: string, issueType: string, severity: string) => {
+    setGeneratingRows((prev) => ({ ...prev, [rowId]: true }));
+    await onGenerateReason(rowId, issueType, severity);
+    setGeneratingRows((prev) => ({ ...prev, [rowId]: false }));
   };
 
   const removeRow = (rowId: string) => {
@@ -142,8 +152,10 @@ const EvaluateOutputSection = ({
                 <button
                   type="button"
                   className="evaluate-output-ai-assist-link"
+                  onClick={() => handleGenerateClick(row.id, row.issueType, row.severity)}
+                  disabled={!row.issueType || !row.severity || generatingRows[row.id]}
                 >
-                  Generate with AI Assistance
+                  {generatingRows[row.id] ? "Generating..." : "Generate with AI Assistance"}
                 </button>
               </div>
               <div className="comments-textfield-wrapper mt-2">
