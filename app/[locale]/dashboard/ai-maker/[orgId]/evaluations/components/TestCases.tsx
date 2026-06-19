@@ -1,15 +1,15 @@
 "use client";
 
 import { useGraphQL } from "@/lib/api";
-import { toTitleCase } from "@/lib/utils";
+import { toTitleCase, stripMarkdown } from "@/lib/utils";
 import type { ColumnDef } from "@tanstack/react-table";
 import { IconAlertCircleFilled, IconTrash } from "@tabler/icons-react";
-import { Button, DataTable, Icon, Spinner, Text } from "opub-ui";
+import { Button, DataTable, Icon, Spinner, Text, Tooltip } from "opub-ui";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import AddPromptRowModal from "./AddPromptRowModal";
 import type { CustomPromptRow, SelectOption } from "./types";
 
-const MAX_TASKS_PER_EVALUATION = 200;
+const MAX_TASKS_PER_EVALUATION = 250;
 
 const createPromptRow = (
   data: Omit<CustomPromptRow, "id" | "selected">,
@@ -63,7 +63,30 @@ type PromptDataset = {
   taskType?: string;
   domain?: string;
   resourceCount: number;
+  hasExpectedOutputColumn: boolean;
+  testCaseCount: number;
 };
+
+const isMisinformationMetric = (metric: SelectOption) => {
+  const label = metric.label.trim().toLowerCase();
+  const value = metric.value.trim().toLowerCase();
+
+  return (
+    label === "misinformation" ||
+    label.includes("misinformation") ||
+    value === "misinformation" ||
+    value.includes("misinformation")
+  );
+};
+
+const datasetHasExpectedOutputColumn = (
+  resources?: Array<{ schema?: Array<{ fieldName: string }> }>,
+) =>
+  (resources ?? []).some((resource) =>
+    (resource.schema ?? []).some(
+      (field) => field.fieldName === "expected_output",
+    ),
+  );
 
 interface TestCasesProps {
   /** Organization whose DataSpace prompt datasets to load (route org or assignment org). */
@@ -150,6 +173,17 @@ const TestCases: React.FC<TestCasesProps> = ({
         const metrics = selectedMetrics[moduleName];
         return count + (Array.isArray(metrics) ? metrics.length : 0);
       }, 0),
+    [selectedModules, selectedMetrics],
+  );
+
+  const isMisinformationSelected = useMemo(
+    () =>
+      Object.entries(selectedModules).some(([moduleName, isSelected]) => {
+        if (!isSelected) return false;
+        const metrics = selectedMetrics[moduleName];
+        if (!Array.isArray(metrics)) return false;
+        return metrics.some(isMisinformationMetric);
+      }),
     [selectedModules, selectedMetrics],
   );
 
@@ -299,6 +333,8 @@ const TestCases: React.FC<TestCasesProps> = ({
           taskType: ds.promptMetadata?.taskType,
           domain: ds.promptMetadata?.domain,
           resourceCount: ds.resources?.length || 0,
+          hasExpectedOutputColumn: datasetHasExpectedOutputColumn(ds.resources),
+          testCaseCount: ds.resources?.[0]?.noOfEntries || 0,
         }));
 
         setPromptDatasets(formatted);
@@ -351,6 +387,17 @@ const TestCases: React.FC<TestCasesProps> = ({
     selectedPromptLibraries[0]?.id != null
       ? String(selectedPromptLibraries[0].id)
       : null;
+
+  const showMisinformationSchemaWarning = useMemo(() => {
+    if (!isMisinformationSelected || !selectedLibraryId) return false;
+
+    const selectedDataset = promptDatasets.find(
+      (dataset) => String(dataset.id) === selectedLibraryId,
+    );
+    if (!selectedDataset) return false;
+
+    return !selectedDataset.hasExpectedOutputColumn;
+  }, [isMisinformationSelected, selectedLibraryId, promptDatasets]);
 
   const handlePromptLibrarySelect = useCallback(
     (dataset: PromptDataset) => {
@@ -409,20 +456,26 @@ const TestCases: React.FC<TestCasesProps> = ({
       },
     },
     {
-      accessorKey: "taskType",
-      header: "Module",
-      cell: ({ getValue }) => {
-        const value = getValue<string>();
-        return value
-          ? toTitleCase(value.replace(/_/g, " "))
-          : "All Modules";
-      },
+      accessorKey: "testCaseCount",
+      header: "No. of Test Cases",
+      cell: ({ getValue }) => getValue<number>() || 0,
     },
     {
-      id: "owner",
-      header: "Owner",
+      accessorKey: "description",
+      header: "Description",
       enableSorting: false,
-      cell: () => "ParakhAI",
+      cell: ({ getValue }) => {
+        const fullText = stripMarkdown(getValue<string>() || "").trim();
+        if (!fullText) return "--";
+
+        return (
+          <Tooltip content={fullText}>
+            <span className="block max-w-[280px] truncate text-gray-900">
+              {fullText}
+            </span>
+          </Tooltip>
+        );
+      },
     },
   ],
     [handlePromptLibrarySelect, selectedLibraryId]
@@ -540,10 +593,10 @@ const TestCases: React.FC<TestCasesProps> = ({
             />
             <div className="flex-1">
               <Text variant="bodyMd" fontWeight="semibold" className="text-gray-900">
-                Select from premade libraries
+                Select a prompt library
               </Text>
               <Text variant="bodySm" className="text-gray-600 block">
-                Select a pre-made prompt datasets curated for your evaluation
+                Select an existing prompt datasets curated for your evaluation
                 scope (healthcare etc.)
               </Text>
             </div>
@@ -610,6 +663,12 @@ const TestCases: React.FC<TestCasesProps> = ({
           />
         )}
         </div>
+        {showMisinformationSchemaWarning && (
+          <Text variant="bodySm" color="critical" className="mt-4">
+            Warning: The selected library cannot be used with sub-module
+            Misinformation because it does not have an expected output column.
+          </Text>
+        )}
       </div>
 
       {submoduleWarningBanner}
@@ -626,14 +685,8 @@ const TestCases: React.FC<TestCasesProps> = ({
               Add your own prompts
             </Text>
 
-            <div className="test-cases-table custom-prompts-table">
-              {customPromptRows.length === 0 ? (
-                <div className="custom-prompts-empty-cell">
-                  <Text variant="bodySm" className="text-gray-500">
-                    Add an issue to enter your own prompt.
-                  </Text>
-                </div>
-              ) : (
+            {customPromptRows.length > 0 && (
+              <div className="test-cases-table custom-prompts-table">
                 <DataTable
                   key={customPromptTableKey}
                   rows={customPromptRows}
@@ -641,8 +694,8 @@ const TestCases: React.FC<TestCasesProps> = ({
                   hideSelection
                   hideFooter={customPromptRows.length <= 10}
                 />
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="custom-prompts-add-row">
               <Button
@@ -651,7 +704,7 @@ const TestCases: React.FC<TestCasesProps> = ({
                 disabled={selectedCustomPromptCount >= maxInputPrompts}
                 className="!rounded-[8px]"
               >
-                Add an issue
+                Add Input Prompt
               </Button>
               {selectedCustomPromptCount >= maxInputPrompts && (
                 <Text variant="bodySm" className="text-gray-600">

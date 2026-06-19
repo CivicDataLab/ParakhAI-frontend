@@ -24,6 +24,7 @@ import ManualEvaluationFlow from "../ai-maker/[orgId]/evaluations/components/man
 import RecommendationModal from "../ai-maker/[orgId]/evaluations/components/manual-evaluation/RecommendationModal";
 import { useOrganization } from "../ai-maker/[orgId]/OrganizationContext";
 import AuditResultsList from "./AuditResultsList";
+import SkippedTestsErrorsCard from "./SkippedTestsErrorsCard";
 import {
   GET_AUDIT_RESULTS_QUERY,
   SUBMIT_AUDIT_REVIEW_MUTATION,
@@ -536,7 +537,7 @@ const EvaluationDetail = ({
     !isPlaygroundEvaluation &&
     (audit?.status === "COMPLETED" || Boolean(audit?.completedAt));
   const showDownloadActions = isPlaygroundEvaluation
-    ? isEvaluationSaved
+    ? isEvaluationComplete
     : isBulkCompleted || isEvaluationSaved;
   const isAwaitingReport = showDownloadActions && !isReportReady;
 
@@ -547,66 +548,6 @@ const EvaluationDetail = ({
     setRiskDistribution({});
     setAuditReport(null);
   }, [evaluationId]);
-
-  const submitEvaluation = async (recommendation: string) => {
-    if (!audit || isSavingEvaluation || isEvaluationSaved) return;
-
-    setIsSavingEvaluation(true);
-    try {
-      const requestOptions = orgId ? { organization: orgId } : undefined;
-      const existingConfig =
-        audit.configuration && typeof audit.configuration === "object"
-          ? audit.configuration
-          : {};
-
-      const result = await request<{
-        updateAudit: {
-          success: boolean;
-          message?: string | null;
-          audit?: { configuration?: unknown };
-        };
-      }>(
-        UPDATE_AUDIT_MUTATION,
-        {
-          input: {
-            auditId: audit.id,
-            configuration: {
-              ...existingConfig,
-              recommendation: recommendation.trim() || null,
-            },
-          },
-        },
-        requestOptions
-      );
-
-      if (!result?.updateAudit?.success) {
-        console.error(
-          result?.updateAudit?.message || "Failed to submit evaluation."
-        );
-        return;
-      }
-
-      const trimmed = recommendation.trim();
-      setEvaluatorRecommendation(trimmed);
-      setAudit((prev) =>
-        prev
-          ? {
-              ...prev,
-              configuration: {
-                ...existingConfig,
-                recommendation: trimmed || null,
-              },
-            }
-          : prev
-      );
-      setIsEvaluationSaved(true);
-      setShowSubmitRecommendationModal(false);
-    } catch (err: any) {
-      console.error("Submit evaluation failed:", err);
-    } finally {
-      setIsSavingEvaluation(false);
-    }
-  };
 
   const submitBulkReview = async (recommendation: string) => {
     if (!audit || isSavingEvaluation || audit.status !== "PENDING_REVIEW") return;
@@ -669,11 +610,6 @@ const EvaluationDetail = ({
   const handlePrimaryActionClick = () => {
     if (showDownloadActions) {
       void downloadReport();
-      return;
-    }
-
-    if (!isPlaygroundEvaluation && isBulkPendingReview) {
-      setShowSubmitRecommendationModal(true);
       return;
     }
 
@@ -758,11 +694,7 @@ const EvaluationDetail = ({
             auditData.audit.configuration,
             auditData.audit
           );
-          if (
-            !isPlayground &&
-            hasCompletedAuditResults(auditData.audit) &&
-            !hasReport
-          ) {
+          if (hasCompletedAuditResults(auditData.audit) && !hasReport) {
             startFinalisationPolling();
           }
         } else if (isAuditInProgress(auditData.audit.status)) {
@@ -1058,7 +990,6 @@ const EvaluationDetail = ({
 
   useEffect(() => {
     if (!audit || !isAuthenticated || isSessionLoading) return;
-    if (isPlaygroundEvaluationMode(audit.evaluationMode)) return;
     if (!hasCompletedAuditResults(audit)) return;
     if (isReportReady) return;
     if (isFinalisationPollingRef.current) return;
@@ -1670,16 +1601,24 @@ const EvaluationDetail = ({
 
       {/* Action Buttons */}
       {!isAuditFailed(audit.status) && !isPlaygroundInProgress && (
+      <>
       <div className="flex flex-col items-center gap-4 pt-8">
+        {!showDownloadActions &&
+          !isPlaygroundEvaluation &&
+          isBulkPendingReview &&
+          !isSavingEvaluation && (
+          <Text variant="bodyMd" color="critical" className="text-center">
+            Ready to submit? Submitting will finalise this evaluation. This action cannot be undone.
+          </Text>
+        )}
+        {(!isPlaygroundEvaluation || showDownloadActions) && (
         <Button
           kind="secondary"
           disabled={
             isSavingEvaluation ||
             (showDownloadActions
               ? !isReportReady || isDownloading
-              : isPlaygroundEvaluation
-                ? !isEvaluationComplete
-                : !isBulkPendingReview)
+              : !isBulkPendingReview)
           }
           icon={
             showDownloadActions ? (
@@ -1709,6 +1648,7 @@ const EvaluationDetail = ({
                   : "Download Report"
               : "Submit"}
         </Button>
+        )}
         {isAwaitingReport && (
           <Text variant="bodySm" className="text-gray-600 text-center">
             Your report is being generated. This button will enable automatically
@@ -1724,6 +1664,15 @@ const EvaluationDetail = ({
           </Button>
         </Link>
       </div>
+
+      {!isPlaygroundEvaluation && (audit.skippedTests || 0) > 0 && (
+        <SkippedTestsErrorsCard
+          errorMessage={
+            audit.errorMessage?.trim() || "No additional error details available."
+          }
+        />
+      )}
+      </>
       )}
 
       <RecommendationModal
@@ -1732,7 +1681,7 @@ const EvaluationDetail = ({
         title="Evaluation Recommendation"
         description="Enter your recommendation for this evaluation."
         placeholder="Enter your recommendation for this evaluation"
-        onSubmit={isPlaygroundEvaluation ? submitEvaluation : submitBulkReview}
+        onSubmit={submitBulkReview}
         isSubmitting={isSavingEvaluation}
         submitButtonText="Submit"
       />

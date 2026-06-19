@@ -176,7 +176,7 @@ const EvaluationsPage = () => {
       cell: (info) => {
         const mode = info.getValue()?.toLowerCase();
         const label =
-          mode === "manual"
+          mode === "manual" || mode === "playground"
             ? "Playground Evaluation"
             : mode === "bulk" || mode === "automated"
               ? "Bulk Evaluation"

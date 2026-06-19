@@ -33,7 +33,7 @@ const ModelOutputDisplay: React.FC<ModelOutputDisplayProps> = ({
 
       <div className="border border-gray-200 rounded-lg p-4 bg-white min-h-[120px] max-h-[300px] overflow-y-auto">
         {output ? (
-          <div className="prose prose-sm max-w-none break-words text-gray-900">
+          <div className="bulk-evaluation-sheet-prose prose prose-sm max-w-none break-words text-gray-900">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{output}</ReactMarkdown>
           </div>
         ) : (

@@ -27,6 +27,10 @@ export const GET_AUDIT_RESULTS_QUERY = `
     auditResults(auditId: $auditId, metric: $metric) {
       id
       task {
+        module
+        moduleDisplayName
+        metric
+        metricDisplayName
         test {
           id
           testInput
