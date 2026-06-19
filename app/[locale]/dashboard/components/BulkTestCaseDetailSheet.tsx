@@ -304,7 +304,13 @@ const BulkTestCaseDetailSheet = ({
                                 disabled
                               />
                             </div>
-                            <div className="w-32 shrink-0">
+                            <div
+                              className={`w-32 shrink-0${
+                                !isEditable
+                                  ? " bulk-test-case-detail-issue-type-select"
+                                  : ""
+                              }`}
+                            >
                               <Select
                                 name={`severity-${issue.id}`}
                                 label="Severity"

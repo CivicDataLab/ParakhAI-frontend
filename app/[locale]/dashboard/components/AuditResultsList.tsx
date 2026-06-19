@@ -94,13 +94,14 @@ const AuditResultsList = ({
       map.set(item.moduleId, existing);
     }
 
-    return Array.from(map.entries()).map(([moduleId, value]) => ({
-      moduleId,
-      displayName: value.displayName,
-      issueCount: value.issueCount,
-    }));
+    return Array.from(map.entries())
+      .map(([moduleId, value]) => ({
+        moduleId,
+        displayName: value.displayName,
+        issueCount: value.issueCount,
+      }))
+      .filter((entry) => entry.issueCount > 0);
   }, [items]);
-  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("issues_desc");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [isLoading, setIsLoading] = useState(false);
@@ -169,7 +170,6 @@ const AuditResultsList = ({
 
       setItems(resolvedItems);
       setVisibleCount(PAGE_SIZE);
-      setSelectedModuleId(null);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to load evaluation results"
@@ -185,22 +185,12 @@ const AuditResultsList = ({
     void fetchResults();
   }, [fetchResults, isSessionLoading]);
 
-  useEffect(() => {
-    if (moduleIssueCounts.length > 0 && !selectedModuleId) {
-      setSelectedModuleId(moduleIssueCounts[0].moduleId);
-    }
-  }, [moduleIssueCounts, selectedModuleId]);
-
   const sortedItems = useMemo(() => {
-    const filtered = selectedModuleId
-      ? items.filter((testCase) => testCase.moduleId === selectedModuleId)
-      : items;
-
-    return [...filtered].sort((a, b) => {
+    return [...items].sort((a, b) => {
       const diff = b.risks.length - a.risks.length;
       return sortBy === "issues_desc" ? diff : -diff;
     });
-  }, [items, selectedModuleId, sortBy]);
+  }, [items, sortBy]);
 
   const displayedItems = useMemo(
     () => sortedItems.slice(0, visibleCount),
@@ -211,7 +201,7 @@ const AuditResultsList = ({
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [selectedModuleId, sortBy, auditId]);
+  }, [sortBy, auditId]);
 
   useEffect(() => {
     const node = loadMoreRef.current;
@@ -246,7 +236,7 @@ const AuditResultsList = ({
     const observer = new ResizeObserver(updateHeight);
     observer.observe(card);
     return () => observer.disconnect();
-  }, [displayedItems.length, sortBy, selectedModuleId]);
+  }, [displayedItems.length, sortBy]);
 
   const openTestCaseDetail = (testCase: BulkTestCase) => {
     setSelectedTestCase(testCase);
@@ -274,31 +264,22 @@ const AuditResultsList = ({
 
       <div className="bulk-evaluation-results-panel">
         <div className="bulk-evaluation-results-content w-full pb-4 pt-0">
-          {moduleIssueCounts.length > 0 && (
+          {items.length > 0 && (
             <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              {moduleIssueCounts.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {moduleIssueCounts.map((module) => {
-                  const isSelected = module.moduleId === selectedModuleId;
-
-                  return (
-                    <button
-                      key={module.moduleId}
-                      type="button"
-                      className={`bulk-evaluation-module-pill${
-                        isSelected
-                          ? " bulk-evaluation-module-pill--selected"
-                          : ""
-                      }`}
-                      onClick={() => setSelectedModuleId(module.moduleId)}
-                      aria-pressed={isSelected}
-                    >
-                      {module.displayName} - {module.issueCount} Issues
-                    </button>
-                  );
-                })}
+                {moduleIssueCounts.map((module) => (
+                  <span
+                    key={module.moduleId}
+                    className="bulk-evaluation-module-pill"
+                  >
+                    {module.displayName} - {module.issueCount} Issues
+                  </span>
+                ))}
               </div>
+              )}
 
-              <div className="bulk-evaluation-results-sort flex shrink-0 items-center gap-2">
+              <div className="bulk-evaluation-results-sort flex shrink-0 items-center gap-2 lg:ml-auto">
                 <Text variant="bodySm" fontWeight="medium">
                   Sort
                 </Text>

@@ -12,6 +12,8 @@ export const EVALUATION_STATUS_FILTER_OPTIONS: StatusFilterOption[] = [
   { label: "Draft", value: "DRAFT" },
   { label: "Queued", value: "QUEUED" },
   { label: "Running", value: "RUNNING" },
+  { label: "In Progress", value: "IN_PROGRESS" },
+  { label: "Pending Review", value: "PENDING_REVIEW" },
   { label: "Completed", value: "COMPLETED" },
   { label: "Failed", value: "FAILED" },
   { label: "Cancelled", value: "CANCELLED" },

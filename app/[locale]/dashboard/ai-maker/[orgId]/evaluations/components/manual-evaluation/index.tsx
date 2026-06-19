@@ -22,6 +22,7 @@ import {
   writeManualEvalWorkspaceDraft,
 } from "./utils";
 import CompletedTestCases from "./CompletedTestCases";
+import RecommendationModal from "./RecommendationModal";
 import {
   FINISH_EVALUATION_MUTATION,
   GET_PLAYGROUND_STATUS_QUERY,
@@ -103,8 +104,11 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   const [isCallingModel, setIsCallingModel] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFinishingEvaluation, setIsFinishingEvaluation] = useState(false);
+  const [showFinishRecommendationModal, setShowFinishRecommendationModal] =
+    useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [modelCallError, setModelCallError] = useState<string | null>(null);
 
   const hasRestoredWorkspaceRef = useRef(false);
   const persistWorkspaceTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
@@ -274,6 +278,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
 
     setIsCallingModel(true);
     setError(null);
+    setModelCallError(null);
 
     try {
       const result = await request<{
@@ -296,14 +301,23 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
         { organization: orgId }
       );
 
-      if (result?.callModelForManualEval?.success) {
-        setModelOutput(result.callModelForManualEval.output || "");
-        setLatencyMs(result.callModelForManualEval.latencyMs);
+      const modelResponse = result?.callModelForManualEval;
+
+      if (modelResponse?.success) {
+        setModelCallError(null);
+        setModelOutput(modelResponse.output || "");
+        setLatencyMs(modelResponse.latencyMs);
         setHasCalledModel(true);
-      } else {
-        setError(
-          result?.callModelForManualEval?.message || "Failed to call model"
+      } else if (!modelResponse?.output?.trim()) {
+        const errorLog =
+          modelResponse?.message?.trim() || "Unknown error occurred.";
+        setModelCallError(
+          `No output was returned by the model. This may be caused by a temporary connectivity issue, server outage, or model unavailability. See error details below:\n${errorLog}`
         );
+        setModelOutput("");
+        setLatencyMs(undefined);
+        setHasCalledModel(false);
+        setStatus(null);
       }
     } catch (err: any) {
       setError(err.message || "Error calling model");
@@ -501,7 +515,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
     }
   };
 
-  const handleFinishEvaluation = async () => {
+  const handleFinishEvaluation = async (recommendation: string) => {
     if (!canFinish) {
       setError(
         `Evaluate at least ${MIN_PLAYGROUND_TEST_CASES} test cases to finish the evaluation.`
@@ -521,12 +535,18 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
         };
       }>(
         FINISH_EVALUATION_MUTATION,
-        { input: { auditId, recommendation: null } },
+        {
+          input: {
+            auditId,
+            recommendation: recommendation.trim() || null,
+          },
+        },
         { organization: orgId }
       );
 
       if (result?.finishManualEvaluation?.success) {
         clearManualEvalWorkspaceDraft(orgId, auditId);
+        setShowFinishRecommendationModal(false);
         router.push(
           `/${locale}/dashboard/ai-maker/${orgId}/evaluations/${auditId}`
         );
@@ -549,6 +569,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
     setHasCalledModel(false);
     setStatus(null);
     setIssueRows([]);
+    setModelCallError(null);
     addIssueChainRef.current = Promise.resolve(null);
     writeManualEvalWorkspaceDraft(orgId, auditId, {
       selectedModule: null,
@@ -634,6 +655,15 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
               onChange={setInputPrompt}
               placeholder="Type your prompt here"
             />
+            {modelCallError && (
+              <Text
+                variant="bodySm"
+                color="critical"
+                className="mt-3 block whitespace-pre-wrap"
+              >
+                {modelCallError}
+              </Text>
+            )}
             <div className="mt-4 flex justify-end">
               <Button
                 kind="primary"
@@ -658,7 +688,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
               ) : null}
             </div>
             <div className="mb-4 min-h-[200px] max-h-[300px] overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 px-4 py-0">
-              <div className="-ml-4">
+              <div className="bulk-evaluation-sheet-prose -ml-4">
                 {hasCalledModel ? (
                   modelOutput ? (
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -747,15 +777,26 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
       <div className="flex items-center justify-center gap-6 pt-8 border-t border-gray-200">
         <Button
           kind="primary"
-          onClick={() => {
-            void handleFinishEvaluation();
-          }}
+          onClick={() => setShowFinishRecommendationModal(true)}
           disabled={isFinishingEvaluation || !canFinish}
           className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
         >
           {isFinishingEvaluation ? "Finishing..." : "Finish Evaluation"}
         </Button>
       </div>
+
+      <RecommendationModal
+        open={showFinishRecommendationModal}
+        onOpenChange={setShowFinishRecommendationModal}
+        title="Evaluation Recommendation"
+        description="Enter your recommendation for this evaluation."
+        placeholder="Enter your recommendation for this evaluation"
+        onSubmit={(recommendation) => {
+          void handleFinishEvaluation(recommendation);
+        }}
+        isSubmitting={isFinishingEvaluation}
+        submitButtonText="Finish Evaluation"
+      />
     </div>
   );
 };

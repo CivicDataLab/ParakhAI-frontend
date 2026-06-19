@@ -23,6 +23,7 @@ import {
 } from "opub-ui";
 import React from "react";
 import AuditorInvitation from "../../evaluations/components/AuditorInvitation";
+import ModelSelectionModal from "../../evaluations/components/ModelSelectionModal";
 import { useOrganization } from "../../OrganizationContext";
 import "../../evaluations/evaluations-page.css";
 
@@ -207,6 +208,11 @@ const ModelDetailPage = () => {
     } | null>(null);
   const [showEditRedirectPrompt, setShowEditRedirectPrompt] =
     React.useState(false);
+  const [isEvaluationModalOpen, setIsEvaluationModalOpen] =
+    React.useState(false);
+  const [evaluationModalVersionId, setEvaluationModalVersionId] = React.useState<
+    string | undefined
+  >();
 
   const editModelUrl = React.useMemo(() => {
     const orgSlug = encodeURIComponent(
@@ -265,12 +271,29 @@ const ModelDetailPage = () => {
   }, [isAuthenticated, modelId, orgId, request]);
 
   const handleNewEvaluation = (versionId?: string) => {
-    let url = `/${locale}/dashboard/ai-maker/${orgId}/evaluations/new?modelId=${modelId}`;
-    if (versionId) {
-      url += `&versionId=${versionId}`;
-    }
-    router.push(url);
+    setEvaluationModalVersionId(versionId);
+    setIsEvaluationModalOpen(true);
   };
+
+  const preselectedModelForModal = React.useMemo(() => {
+    if (!model) return null;
+
+    return {
+      id: model.id,
+      name: model.name,
+      displayName: model.displayName,
+      modelType: model.modelType,
+      domain: model.sectors?.[0] ?? null,
+      isPublic: model.isPublic,
+      versions: model.versions.map((version) => ({
+        id: Number(version.id),
+        version: version.version,
+        isLatest: version.isLatest,
+        status: version.status,
+        lifecycleStage: version.lifecycleStage,
+      })),
+    };
+  }, [model]);
 
   const getAuditLink = (evaluation: Evaluation) => {
     if (evaluation.status?.toUpperCase() === "DRAFT") {
@@ -327,7 +350,7 @@ const ModelDetailPage = () => {
       cell: (info) => {
         const mode = info.getValue()?.toLowerCase();
         const label =
-          mode === "manual"
+          mode === "manual" || mode === "playground"
             ? "Playground Evaluation"
             : mode === "bulk" || mode === "automated"
               ? "Bulk Evaluation"
@@ -858,6 +881,21 @@ const ModelDetailPage = () => {
           versionLabel={selectedVersionForAuditor.version}
         />
       )}
+
+      <ModelSelectionModal
+        open={isEvaluationModalOpen}
+        onOpenChange={(open) => {
+          setIsEvaluationModalOpen(open);
+          if (!open) {
+            setEvaluationModalVersionId(undefined);
+          }
+        }}
+        orgId={orgId}
+        preselectedModelId={modelId}
+        preselectedVersionId={evaluationModalVersionId}
+        preselectedModel={preselectedModelForModal}
+        lockModelSelection
+      />
 
       <AlertDialog
         open={showEditRedirectPrompt}

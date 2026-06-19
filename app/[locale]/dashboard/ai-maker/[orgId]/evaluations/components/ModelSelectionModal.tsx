@@ -137,6 +137,18 @@ const pickDefaultVersionId = (versions?: AIModel["versions"]) => {
   return (latest ?? versions[0]).id;
 };
 
+const resolveVersionId = (
+  versions?: AIModel["versions"],
+  preferredId?: string | number | null,
+) => {
+  if (!versions?.length) return null;
+  if (preferredId != null) {
+    const match = versions.find((v) => String(v.id) === String(preferredId));
+    if (match) return match.id;
+  }
+  return pickDefaultVersionId(versions);
+};
+
 const parseDomainOptions = (domains: unknown[]): SelectOption[] => {
   const options: SelectOption[] = [];
 
@@ -181,12 +193,22 @@ interface ModelSelectionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   orgId: string;
+  preselectedModelId?: string;
+  preselectedVersionId?: string | number;
+  preselectedModel?: AIModel | null;
+  lockModelSelection?: boolean;
+  variant?: "ai-maker" | "auditor";
 }
 
 const ModelSelectionModal = ({
   open,
   onOpenChange,
   orgId,
+  preselectedModelId,
+  preselectedVersionId,
+  preselectedModel,
+  lockModelSelection = false,
+  variant = "ai-maker",
 }: ModelSelectionModalProps) => {
   const router = useRouter();
   const params = useParams();
@@ -261,11 +283,35 @@ const ModelSelectionModal = ({
         );
 
         const models = filterModelsWithActiveVersions(data?.aiModels || []);
-        setAiModels(models);
+        let nextModels = models;
 
-        if (models.length > 0) {
-          setSelectedModelId(models[0].id);
-          setSelectedVersionId(pickDefaultVersionId(models[0].versions));
+        if (
+          lockModelSelection &&
+          preselectedModel &&
+          !models.some((model) => model.id === preselectedModel.id)
+        ) {
+          const [lockedModel] = filterModelsWithActiveVersions([preselectedModel]);
+          if (lockedModel) {
+            nextModels = [lockedModel, ...models];
+          }
+        }
+
+        setAiModels(nextModels);
+
+        if (nextModels.length > 0) {
+          const initialModelId =
+            preselectedModelId &&
+            nextModels.some((model) => model.id === preselectedModelId)
+              ? preselectedModelId
+              : nextModels[0].id;
+          const initialModel = nextModels.find(
+            (model) => model.id === initialModelId,
+          );
+
+          setSelectedModelId(initialModelId);
+          setSelectedVersionId(
+            resolveVersionId(initialModel?.versions, preselectedVersionId),
+          );
         }
       } catch (error: any) {
         const errorMessage =
@@ -281,13 +327,22 @@ const ModelSelectionModal = ({
     };
 
     fetchModels();
-  }, [open, isAuthenticated, isSessionLoading, orgId, request]);
+  }, [
+    open,
+    isAuthenticated,
+    isSessionLoading,
+    orgId,
+    request,
+    preselectedModelId,
+    preselectedVersionId,
+    preselectedModel,
+    lockModelSelection,
+  ]);
 
   useEffect(() => {
-    if (selectedModel?.versions?.length) {
-      setSelectedVersionId(pickDefaultVersionId(selectedModel.versions));
-    }
-  }, [selectedModel]);
+    if (!selectedModel?.versions?.length || lockModelSelection) return;
+    setSelectedVersionId(pickDefaultVersionId(selectedModel.versions));
+  }, [selectedModel, lockModelSelection]);
 
   useEffect(() => {
     if (!open) {
@@ -418,7 +473,11 @@ const ModelSelectionModal = ({
           { organization: orgId },
         );
 
-        router.push(`/${locale}/dashboard/ai-maker/${orgId}/evaluations/new?auditId=${auditId}`);
+        router.push(
+          variant === "auditor"
+            ? `/${locale}/dashboard/auditor/evaluations/new?modelId=${selectedModelId}&versionId=${selectedVersionId}&auditId=${auditId}`
+            : `/${locale}/dashboard/ai-maker/${orgId}/evaluations/new?auditId=${auditId}`,
+        );
         onOpenChange(false);
       } catch (err: any) {
         setCreationError(err?.message || "Failed to start evaluation. Please try again.");
@@ -529,7 +588,13 @@ const ModelSelectionModal = ({
                         label: model.displayName || model.name,
                       }))}
                       value={selectedModelId || ""}
+                      className={
+                        lockModelSelection
+                          ? "mode-of-evaluation-select-disabled"
+                          : undefined
+                      }
                       onChange={(value) => {
+                        if (lockModelSelection) return;
                         setSelectedModelId(value);
                         const model = aiModels.find((m) => m.id === value);
                         setSelectedVersionId(
@@ -549,9 +614,15 @@ const ModelSelectionModal = ({
                         value={
                           selectedVersionId ? String(selectedVersionId) : ""
                         }
-                        onChange={(value) =>
-                          setSelectedVersionId(value ? Number(value) : null)
+                        className={
+                          lockModelSelection
+                            ? "mode-of-evaluation-select-disabled"
+                            : undefined
                         }
+                        onChange={(value) => {
+                          if (lockModelSelection) return;
+                          setSelectedVersionId(value ? Number(value) : null);
+                        }}
                       />
                     ) : (
                       <div />

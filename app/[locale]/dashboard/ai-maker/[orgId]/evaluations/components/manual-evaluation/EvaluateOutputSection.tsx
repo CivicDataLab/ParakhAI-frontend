@@ -158,12 +158,12 @@ const EvaluateOutputSection = ({
                   {generatingRows[row.id] ? "Generating..." : "Generate with AI Assistance"}
                 </button>
               </div>
-              <div className="comments-textfield-wrapper mt-2">
+              <div className="comments-textfield-wrapper evaluate-output-comments-textfield mt-2">
                 <TextField
                   name={`observations-${row.id}`}
                   label="Reasons or Observations"
                   labelHidden
-                  multiline={12}
+                  multiline={4}
                   value={row.observations}
                   onChange={(value) => updateRow(row.id, "observations", value)}
                   placeholder="Type here"
@@ -171,18 +171,18 @@ const EvaluateOutputSection = ({
               </div>
             </div>
 
-            <div className="evaluate-output-issue-grid__right flex flex-col">
+            <div className="evaluate-output-issue-grid__right flex min-w-0 flex-col">
               <div className="audit-form-label">
                 <Text variant="bodyMd" fontWeight="medium">
                   Ideal Output (optional)
                 </Text>
               </div>
-              <div className="comments-textfield-wrapper mt-2">
+              <div className="comments-textfield-wrapper evaluate-output-comments-textfield mt-2">
                 <TextField
                   name={`idealOutput-${row.id}`}
                   label="Ideal Output"
                   labelHidden
-                  multiline={12}
+                  multiline={4}
                   value={row.idealOutput}
                   onChange={(value) => updateRow(row.id, "idealOutput", value)}
                   placeholder="Type here"
@@ -212,7 +212,7 @@ const EvaluateOutputSection = ({
           disabled={saveDisabled || isSaving}
           className="rounded-[6px] bg-[#26007b] text-white hover:bg-[#4003c4] hover:text-white disabled:opacity-50"
         >
-          {isSaving ? "Saving..." : "Save Test Case"}
+          {isSaving ? "Saving..." : "Save and Test New Input"}
         </Button>
       </div>
     </div>

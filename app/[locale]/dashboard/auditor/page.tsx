@@ -14,7 +14,8 @@ import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Badge, Button, DataTable, Spinner, Text, toast } from "opub-ui";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import ModelSelectionModal from "../ai-maker/[orgId]/evaluations/components/ModelSelectionModal";
 
 // Types
 type AuditorAssignment = {
@@ -113,6 +114,8 @@ const AuditorDashboard = () => {
     testCasesCount: number;
     failedTestCasesCount: number;
   } | null>(null);
+  const [evaluationModalAssignment, setEvaluationModalAssignment] =
+    useState<AuditorAssignment | null>(null);
 
 
   useEffect(() => {
@@ -187,10 +190,33 @@ const AuditorDashboard = () => {
   };
 
   const handleStartEvaluation = (assignment: AuditorAssignment) => {
-    router.push(
-      `/${locale}/dashboard/auditor/evaluations/new?modelId=${assignment.modelId}&versionId=${assignment.modelVersionId}`,
-    );
+    setEvaluationModalAssignment(assignment);
   };
+
+  const preselectedModelForModal = useMemo(() => {
+    if (!evaluationModalAssignment) return null;
+
+    const assignment = evaluationModalAssignment;
+    const versionLabel =
+      assignment.versionLabel?.replace(/^v/i, "") ||
+      String(assignment.modelVersionId);
+
+    return {
+      id: assignment.modelId,
+      name: assignment.modelName || assignment.modelId,
+      displayName: assignment.modelName || assignment.modelId,
+      modelType: "",
+      isPublic: true,
+      versions: [
+        {
+          id: assignment.modelVersionId,
+          version: versionLabel,
+          isLatest: true,
+          status: "ACTIVE",
+        },
+      ],
+    };
+  }, [evaluationModalAssignment]);
 
   const handleViewModel = (assignment: AuditorAssignment) => {
     router.push(`/${locale}/dashboard/auditor/models/${assignment.modelId}`);
@@ -541,6 +567,22 @@ const AuditorDashboard = () => {
         )}
       </div>
 
+      {evaluationModalAssignment && (
+        <ModelSelectionModal
+          open={!!evaluationModalAssignment}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEvaluationModalAssignment(null);
+            }
+          }}
+          orgId={evaluationModalAssignment.organizationId}
+          preselectedModelId={evaluationModalAssignment.modelId}
+          preselectedVersionId={evaluationModalAssignment.modelVersionId}
+          preselectedModel={preselectedModelForModal}
+          lockModelSelection
+          variant="auditor"
+        />
+      )}
     </>
   );
 };
