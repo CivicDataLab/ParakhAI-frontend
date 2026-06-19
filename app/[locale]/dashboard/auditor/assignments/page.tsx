@@ -225,7 +225,7 @@ const AssignmentsPage = () => {
       header: "Status",
       cell: (info) => {
         const status = info.getValue();
-        const colors = statusColors[status] || statusColors.QUEUED;
+        const colors = statusColors[status] || statusColors.PENDING;
         console.log("info", info.row.original);
         return (
           <span
@@ -256,7 +256,7 @@ const AssignmentsPage = () => {
       cell: ({ row }) => {
         const status = row.original.status;
 
-        if (status === "QUEUED") {
+        if (status === "PENDING") {
           return (
             <div className="flex items-center gap-2">
               <Button

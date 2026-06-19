@@ -88,6 +88,17 @@ export function formatStatusLabel(
   return options?.lowercase ? label.toLowerCase() : label;
 }
 
+/** Assignment status label — preserves API values (e.g. PENDING stays PENDING). */
+export function formatAssignmentStatusLabel(
+  status?: string | null,
+  options?: { lowercase?: boolean },
+): string {
+  if (!status) return "Unknown";
+
+  const label = status.toUpperCase().replace(/_/g, " ");
+  return options?.lowercase ? label.toLowerCase() : label;
+}
+
 const convertMap: any = {
   border: (value: { width: any; style: any; color: any }) => {
     return `${value.width} ${value.style} ${value.color}`;
