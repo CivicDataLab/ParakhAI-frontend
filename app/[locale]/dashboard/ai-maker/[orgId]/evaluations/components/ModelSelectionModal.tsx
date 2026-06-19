@@ -299,19 +299,24 @@ const ModelSelectionModal = ({
         setAiModels(nextModels);
 
         if (nextModels.length > 0) {
-          const initialModelId =
-            preselectedModelId &&
-            nextModels.some((model) => model.id === preselectedModelId)
+          if (lockModelSelection && preselectedModelId) {
+            const initialModelId = nextModels.some(
+              (model) => model.id === preselectedModelId,
+            )
               ? preselectedModelId
               : nextModels[0].id;
-          const initialModel = nextModels.find(
-            (model) => model.id === initialModelId,
-          );
+            const initialModel = nextModels.find(
+              (model) => model.id === initialModelId,
+            );
 
-          setSelectedModelId(initialModelId);
-          setSelectedVersionId(
-            resolveVersionId(initialModel?.versions, preselectedVersionId),
-          );
+            setSelectedModelId(initialModelId);
+            setSelectedVersionId(
+              resolveVersionId(initialModel?.versions, preselectedVersionId),
+            );
+          } else {
+            setSelectedModelId(nextModels[0].id);
+            setSelectedVersionId(pickDefaultVersionId(nextModels[0].versions));
+          }
         }
       } catch (error: any) {
         const errorMessage =
@@ -583,18 +588,18 @@ const ModelSelectionModal = ({
                       name="modelSelect"
                       label="Select an AI Model"
                       requiredIndicator
-                      options={aiModels.map((model) => ({
-                        value: model.id,
-                        label: model.displayName || model.name,
-                      }))}
-                      value={selectedModelId || ""}
+                      disabled={lockModelSelection}
                       className={
                         lockModelSelection
                           ? "mode-of-evaluation-select-disabled"
                           : undefined
                       }
+                      options={aiModels.map((model) => ({
+                        value: model.id,
+                        label: model.displayName || model.name,
+                      }))}
+                      value={selectedModelId || ""}
                       onChange={(value) => {
-                        if (lockModelSelection) return;
                         setSelectedModelId(value);
                         const model = aiModels.find((m) => m.id === value);
                         setSelectedVersionId(
@@ -607,6 +612,12 @@ const ModelSelectionModal = ({
                         name="versionSelect"
                         label="Select a Version"
                         requiredIndicator
+                        disabled={lockModelSelection}
+                        className={
+                          lockModelSelection
+                            ? "mode-of-evaluation-select-disabled"
+                            : undefined
+                        }
                         options={selectedModel.versions.map((ver) => ({
                           value: String(ver.id),
                           label: `Version ${ver.version}`,
@@ -614,15 +625,9 @@ const ModelSelectionModal = ({
                         value={
                           selectedVersionId ? String(selectedVersionId) : ""
                         }
-                        className={
-                          lockModelSelection
-                            ? "mode-of-evaluation-select-disabled"
-                            : undefined
+                        onChange={(value) =>
+                          setSelectedVersionId(value ? Number(value) : null)
                         }
-                        onChange={(value) => {
-                          if (lockModelSelection) return;
-                          setSelectedVersionId(value ? Number(value) : null);
-                        }}
                       />
                     ) : (
                       <div />
