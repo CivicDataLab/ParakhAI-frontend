@@ -891,10 +891,14 @@ const ModelDetailPage = () => {
           }
         }}
         orgId={orgId}
-        preselectedModelId={modelId}
-        preselectedVersionId={evaluationModalVersionId}
-        preselectedModel={preselectedModelForModal}
-        lockModelSelection
+        {...(isEvaluationModalOpen
+          ? {
+              preselectedModelId: modelId,
+              preselectedVersionId: evaluationModalVersionId,
+              preselectedModel: preselectedModelForModal,
+              lockModelSelection: true,
+            }
+          : {})}
       />
 
       <AlertDialog
