@@ -9,7 +9,7 @@ import {
   IconUserCheck,
 } from "@tabler/icons-react";
 import { Button, Dialog, Spinner, Tag, Text, TextField, toast } from "opub-ui";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 
 /** Profile image for search hit — same behavior as Add Evaluator on auditors page */
 const SearchResultAvatar = ({
@@ -242,6 +242,16 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   };
 
   useEffect(() => {
+    if (!isModalOpen) return;
+
+    setShowAddNew(false);
+    setEmailInput("");
+    setSearchResult(null);
+    setSelectedAuditorId("");
+    setNotes("");
+  }, [isModalOpen]);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -281,7 +291,9 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   const availableAuditors = auditors.filter((auditor) => {
     // Check if this auditor has any ACTIVE assignments
     const hasActiveAssignment = assignments.some(
-      (a) => a.auditorEmail === auditor.email && ["QUEUED", "ACCEPTED"].includes(a.status)
+      (a) =>
+        a.auditorEmail === auditor.email &&
+        ["PENDING", "ACCEPTED"].includes(a.status),
     );
 
     // The auditor is available if they DO NOT have an active assignment
@@ -403,7 +415,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
         ADD_AUDITOR_MUTATION,
         {
           organizationId,
-          input: { email: searchResult.user.email },
+          input: { userId: searchResult.user.id },
         },
         { organization: organizationId }
       );
@@ -463,11 +475,21 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
 
   const handleCloseInviteModal = () => {
     setIsModalOpen(false);
-    setSelectedAuditorId("");
-    setNotes("");
-    setShowAddNew(false);
-    setEmailInput("");
+    if (!isControlled) {
+      setSelectedAuditorId("");
+      setNotes("");
+      setShowAddNew(false);
+      setEmailInput("");
+      setSearchResult(null);
+    }
+  };
+
+  const handleShowAddByEmail = (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
     setSearchResult(null);
+    setEmailInput("");
+    setShowAddNew(true);
   };
 
   const auditorOptions = [
@@ -489,6 +511,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   const inviteDialog = (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <Dialog.Content
+        key={showAddNew ? "invite-by-email" : "invite-select"}
         title={
           versionLabel
             ? `Invite Evaluator for Version ${versionLabel}`
@@ -571,7 +594,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
               </div>
 
               <div className="pt-2 border-t">
-                <Button kind="tertiary" onClick={() => setShowAddNew(true)}>
+                <Button kind="tertiary" onClick={handleShowAddByEmail}>
                   Can&apos;t find the evaluator? Add by email
                 </Button>
               </div>
@@ -580,7 +603,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
             <>
               <Text variant="bodySm" className="text-gray-600">
                 Search for a user by email. If found, they will be added as an
-                auditor to your organization and assigned to this model version.
+                evaluator to your organization and assigned to this model version.
               </Text>
 
               <div>

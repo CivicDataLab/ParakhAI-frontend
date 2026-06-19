@@ -3,7 +3,7 @@
 import { useGraphQL } from "@/lib/api";
 import { useAppSession } from "@/lib/session";
 import { statusColors } from "@/lib/statusColors";
-import { formatStatusLabel } from "@/lib/utils";
+import { formatAssignmentStatusLabel, formatStatusLabel } from "@/lib/utils";
 import {
   IconCheck,
   IconClock,
@@ -223,7 +223,7 @@ const AuditorDashboard = () => {
   };
 
   // Filter assignments by status
-  const queuedAssignments = assignments.filter((a) => a.status === "QUEUED");
+  const pendingAssignments = assignments.filter((a) => a.status === "PENDING");
   const activeAssignments = assignments.filter(
     (a) => a.status === "ACCEPTED" || a.status === "IN_PROGRESS",
   );
@@ -253,7 +253,7 @@ const AuditorDashboard = () => {
 
   const columnHelper = createColumnHelper<AuditorAssignment>();
 
-  const queuedColumns = [
+  const pendingColumns = [
     columnHelper.accessor("modelName", {
       header: "Model",
       cell: (info) => (
@@ -285,12 +285,12 @@ const AuditorDashboard = () => {
       header: "Status",
       cell: (info) => {
         const status = info.getValue();
-        const colors = statusColors[status] || statusColors.QUEUED;
+        const colors = statusColors[status] || statusColors.PENDING;
         return (
           <span
             className={`px-2 py-1 text-xs rounded-full ${colors.bg} ${colors.text}`}
           >
-            {formatStatusLabel(status)}
+            {formatAssignmentStatusLabel(status)}
           </span>
         );
       },
@@ -375,7 +375,7 @@ const AuditorDashboard = () => {
       header: "Status",
       cell: (info) => {
         const status = info.getValue();
-        const colors = statusColors[status] || statusColors.QUEUED;
+        const colors = statusColors[status] || statusColors.PENDING;
         return (
           <span
             className={`px-2 py-1 text-xs rounded-full ${colors.bg} ${colors.text}`}
@@ -496,14 +496,14 @@ const AuditorDashboard = () => {
           >
             Pending Invitations
           </Text>
-          {/* {queuedAssignments.length > 0 && (
+          {/* {pendingAssignments.length > 0 && (
             <Badge status="attention">
-              {String(queuedAssignments.length)}
+              {String(pendingAssignments.length)}
             </Badge>
           )} */}
         </div>
 
-        {queuedAssignments.length === 0 ? (
+        {pendingAssignments.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 rounded-lg border border-gray-200">
             <IconClock size={32} className="text-gray-400 mb-3" />
             <Text variant="bodyMd" className="text-gray-600">
@@ -517,12 +517,12 @@ const AuditorDashboard = () => {
         ) : (
           <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
             <DataTable
-              rows={queuedAssignments}
-              columns={queuedColumns}
+              rows={pendingAssignments}
+              columns={pendingColumns}
               hoverable={true}
               hideSelection={true}
               truncate={false}
-              hideFooter={queuedAssignments.length <= 10}
+              hideFooter={pendingAssignments.length <= 10}
             />
           </div>
         )}

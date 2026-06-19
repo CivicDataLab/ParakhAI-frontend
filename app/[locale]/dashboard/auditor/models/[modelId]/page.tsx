@@ -561,8 +561,8 @@ const AuditorModelDetailPage = () => {
                       const isHighlighted = highlightVersionId === v.id;
                       const colors = assignment
                         ? statusColors[assignment.status] ||
-                          statusColors.QUEUED
-                        : statusColors.QUEUED;
+                          statusColors.PENDING
+                        : statusColors.PENDING;
 
                       return (
                         <div
@@ -616,7 +616,7 @@ const AuditorModelDetailPage = () => {
                             </div>
 
                             <div className="flex items-center gap-4">
-                              {assignment?.status === "QUEUED" && (
+                              {assignment?.status === "PENDING" && (
                                 <>
                                   <Button
                                     size="slim"

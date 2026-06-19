@@ -17,6 +17,12 @@ export const statusColors: Record<string, StatusColorEntry> = {
     bgHex: "#fff9ed",
     textHex: "#ad5700",
   },
+  PENDING: {
+    bg: "bg-statusPendingBg",
+    text: "text-statusPendingText",
+    bgHex: "#fff9ed",
+    textHex: "#ad5700",
+  },
   ACCEPTED: {
     bg: "bg-statusAcceptedBg",
     text: "text-statusAcceptedText",
