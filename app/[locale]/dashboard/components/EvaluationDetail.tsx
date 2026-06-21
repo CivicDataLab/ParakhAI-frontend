@@ -124,6 +124,16 @@ const UPDATE_AUDIT_MUTATION = `
   }
 `;
 
+// GraphQL query to generate audit report
+const GENERATE_AUDIT_REPORT_QUERY = `
+  query GenerateAuditReport($auditId: ID!) {
+    generateAuditReport(auditId: $auditId) {
+      success
+      message
+    }
+  }
+`;
+
 export type Audit = {
   auditType: string;
   evaluationMode: string;
@@ -517,11 +527,11 @@ const EvaluationDetail = ({
   const lastFetchedAuditIdRef = useRef<string | null>(null);
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isProgressPollingRef = useRef(false);
-  const isFinalisationPollingRef = useRef(false);
   const [evaluationProgress, setEvaluationProgress] = useState<number | null>(
     null
   );
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [isSavingEvaluation, setIsSavingEvaluation] = useState(false);
   const [isEvaluationSaved, setIsEvaluationSaved] = useState(false);
   const [showSubmitRecommendationModal, setShowSubmitRecommendationModal] =
@@ -539,7 +549,6 @@ const EvaluationDetail = ({
   const showDownloadActions = isPlaygroundEvaluation
     ? isEvaluationComplete
     : isBulkCompleted || isEvaluationSaved;
-  const isAwaitingReport = showDownloadActions && !isReportReady;
 
   useEffect(() => {
     setIsEvaluationSaved(false);
@@ -592,10 +601,9 @@ const EvaluationDetail = ({
         );
       }
 
-      toast.success("Review submitted. Generating report…");
+      toast.success("Review submitted successfully.");
       setIsEvaluationSaved(true);
       stopProgressPolling();
-      startFinalisationPolling();
     } catch (err: unknown) {
       toast.error(
         err instanceof Error
@@ -607,9 +615,43 @@ const EvaluationDetail = ({
     }
   };
 
+  const generateReport = async () => {
+    if (!evaluationId || isGeneratingReport) return;
+    setIsGeneratingReport(true);
+    try {
+      const requestOptions = orgId ? { organization: orgId } : undefined;
+      const reportResult = await request<{
+        generateAuditReport: {
+          success: boolean;
+          message?: string | null;
+        };
+      }>(
+        GENERATE_AUDIT_REPORT_QUERY,
+        { auditId: evaluationId },
+        requestOptions
+      );
+
+      if (!reportResult?.generateAuditReport?.success) {
+        toast.error("Failed to generate report.");
+        return;
+      }
+
+      toast.success("Report generated successfully!");
+      await fetchAuditSummary(audit?.configuration);
+    } catch (err: unknown) {
+      toast.error("Failed to generate report.");
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
   const handlePrimaryActionClick = () => {
     if (showDownloadActions) {
-      void downloadReport();
+      if (isReportReady) {
+        void downloadReport();
+      } else {
+        void generateReport();
+      }
       return;
     }
 
@@ -690,13 +732,10 @@ const EvaluationDetail = ({
         );
 
         if (canShowEvaluationResults(auditData.audit, isPlayground)) {
-          const { hasReport } = await fetchAuditSummary(
+          await fetchAuditSummary(
             auditData.audit.configuration,
             auditData.audit
           );
-          if (hasCompletedAuditResults(auditData.audit) && !hasReport) {
-            startFinalisationPolling();
-          }
         } else if (isAuditInProgress(auditData.audit.status)) {
           setEvaluationProgress(
             typeof auditData.audit.progressPercentage === "number"
@@ -810,15 +849,7 @@ const EvaluationDetail = ({
 
   const stopProgressPolling = () => {
     isProgressPollingRef.current = false;
-    if (!isFinalisationPollingRef.current && pollTimeoutRef.current) {
-      clearTimeout(pollTimeoutRef.current);
-      pollTimeoutRef.current = null;
-    }
-  };
-
-  const stopFinalisationPolling = () => {
-    isFinalisationPollingRef.current = false;
-    if (!isProgressPollingRef.current && pollTimeoutRef.current) {
+    if (pollTimeoutRef.current) {
       clearTimeout(pollTimeoutRef.current);
       pollTimeoutRef.current = null;
     }
@@ -826,7 +857,6 @@ const EvaluationDetail = ({
 
   const stopAllPolling = () => {
     isProgressPollingRef.current = false;
-    isFinalisationPollingRef.current = false;
     if (pollTimeoutRef.current) {
       clearTimeout(pollTimeoutRef.current);
       pollTimeoutRef.current = null;
@@ -912,64 +942,6 @@ const EvaluationDetail = ({
     void poll();
   };
 
-  const startFinalisationPolling = () => {
-    if (isFinalisationPollingRef.current) return;
-
-    isFinalisationPollingRef.current = true;
-    const requestOptions = orgId ? { organization: orgId } : undefined;
-
-    const poll = async () => {
-      if (!isFinalisationPollingRef.current) {
-        return;
-      }
-
-      try {
-        const data = await request<{ audit: Audit }>(
-          GET_AUDIT_QUERY,
-          { auditId: evaluationId },
-          requestOptions
-        );
-
-        if (data?.audit) {
-          setAudit((prev) => ({
-            ...data.audit,
-            modelName: data.audit.modelName || prev?.modelName || null,
-          }));
-
-          if (
-            data.audit.status === "FAILED" ||
-            data.audit.status === "ERROR"
-          ) {
-            stopFinalisationPolling();
-            return;
-          }
-        }
-
-        const auditForSummary = data?.audit ?? audit;
-        const { hasReport } = await fetchAuditSummary(
-          auditForSummary?.configuration,
-          auditForSummary ?? undefined
-        );
-
-        if (
-          auditForSummary &&
-          hasCompletedAuditResults(auditForSummary) &&
-          hasReport
-        ) {
-          stopFinalisationPolling();
-          return;
-        }
-
-        scheduleNextPoll(poll, isFinalisationPollingRef);
-      } catch (err) {
-        console.error("Finalisation polling error:", err);
-        scheduleNextPoll(poll, isFinalisationPollingRef);
-      }
-    };
-
-    void poll();
-  };
-
   useEffect(() => {
     if (!audit || !isAuthenticated || isSessionLoading) return;
 
@@ -987,27 +959,6 @@ const EvaluationDetail = ({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audit?.status, audit?.evaluationMode, evaluationId, isAuthenticated, isSessionLoading]);
-
-  useEffect(() => {
-    if (!audit || !isAuthenticated || isSessionLoading) return;
-    if (!hasCompletedAuditResults(audit)) return;
-    if (isReportReady) return;
-    if (isFinalisationPollingRef.current) return;
-
-    startFinalisationPolling();
-
-    return () => {
-      stopFinalisationPolling();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    audit?.status,
-    audit?.completedAt,
-    evaluationId,
-    isAuthenticated,
-    isReportReady,
-    isSessionLoading,
-  ]);
 
   useEffect(() => {
     return () => {
@@ -1616,12 +1567,13 @@ const EvaluationDetail = ({
           kind="secondary"
           disabled={
             isSavingEvaluation ||
+            isGeneratingReport ||
             (showDownloadActions
-              ? !isReportReady || isDownloading
+              ? isDownloading
               : !isBulkPendingReview)
           }
           icon={
-            showDownloadActions ? (
+            showDownloadActions && isReportReady ? (
               <Icon
                 source={IconDownload}
                 size={18}
@@ -1631,10 +1583,8 @@ const EvaluationDetail = ({
           }
           onClick={handlePrimaryActionClick}
           className={
-            showDownloadActions
-              ? isReportReady
-                ? "bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base [&_svg]:text-white [&_svg]:fill-white [&_svg]:stroke-white [&_*]:text-white [&_*]:fill-white [&_*]:stroke-white"
-                : "bg-[#6849EE] hover:bg-[#6849EE] hover:!bg-[#6849EE] text-black hover:text-black hover:!text-black px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base [&_svg]:text-black [&_svg]:fill-black [&_svg]:stroke-black [&_*]:text-black [&_*]:fill-black [&_*]:stroke-black"
+            showDownloadActions && isReportReady
+              ? "bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base [&_svg]:text-white [&_svg]:fill-white [&_svg]:stroke-white [&_*]:text-white [&_*]:fill-white [&_*]:stroke-white"
               : "bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base"
           }
         >
@@ -1643,13 +1593,15 @@ const EvaluationDetail = ({
             : showDownloadActions
               ? isDownloading
                 ? "Downloading..."
-                : isAwaitingReport
+                : isGeneratingReport
                   ? "Generating Report..."
-                  : "Download Report"
+                  : isReportReady
+                    ? "Download Report"
+                    : "Generate Report"
               : "Submit"}
         </Button>
         )}
-        {isAwaitingReport && (
+        {isGeneratingReport && (
           <Text variant="bodySm" className="text-gray-600 text-center">
             Your report is being generated. This button will enable automatically
             when it is ready.
