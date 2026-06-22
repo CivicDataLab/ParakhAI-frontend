@@ -5,13 +5,6 @@ import type { AuditResult } from "@/lib/bulkEvaluation/mapAuditResults";
 import { mapAuditResultsToBulkTestCases } from "@/lib/bulkEvaluation/mapAuditResults";
 import { GET_AUDIT_RESULTS_QUERY } from "@/lib/bulkEvaluation/queries";
 
-const GET_AUDIT_METRIC_SUMMARY_QUERY = `
-  query GetAuditMetricSummary($audit_id: ID!) {
-    auditSummaries(auditId: $audit_id) {
-      metricSummary
-    }
-  }
-`;
 import type {
   BulkTestCase,
   BulkTestCaseRisk,
@@ -71,6 +64,7 @@ type AuditResultsListProps = {
   orgId?: string;
   isEditable?: boolean;
   bannerVariant?: "pending" | "reviewed";
+  metricSummary?: Record<string, Record<string, unknown>>;
 };
 
 const AuditResultsList = ({
@@ -78,6 +72,7 @@ const AuditResultsList = ({
   orgId,
   isEditable = false,
   bannerVariant = "pending",
+  metricSummary: metricSummaryProp = {},
 }: AuditResultsListProps) => {
   const { request, isAuthenticated, isLoading: isSessionLoading } =
     useGraphQL();
@@ -122,26 +117,17 @@ const AuditResultsList = ({
     setError(null);
 
     try {
-      const [resultData, summaryData] = await Promise.all([
-        request<{ auditResults: AuditResult[] }>(
-          GET_AUDIT_RESULTS_QUERY,
-          { auditId, metric: null },
-          orgId ? { organization: orgId } : undefined
-        ),
-        request<{ auditSummaries: Array<{ metricSummary: Record<string, Record<string, unknown>> | null }> }>(
-          GET_AUDIT_METRIC_SUMMARY_QUERY,
-          { audit_id: auditId },
-          orgId ? { organization: orgId } : undefined
-        ),
-      ]);
+      const resultData = await request<{ auditResults: AuditResult[] }>(
+        GET_AUDIT_RESULTS_QUERY,
+        { auditId, metric: null },
+        orgId ? { organization: orgId } : undefined
+      );
 
-      // Build metricName → moduleId reverse map from the summary's metricSummary
+      // Build metricName → moduleId reverse map from the passed-in metricSummary
       const metricToModule: Record<string, string> = {};
-      for (const summary of summaryData?.auditSummaries ?? []) {
-        for (const [moduleId, metrics] of Object.entries(summary.metricSummary ?? {})) {
-          for (const metricName of Object.keys(metrics)) {
-            metricToModule[metricName] = moduleId;
-          }
+      for (const [moduleId, metrics] of Object.entries(metricSummaryProp)) {
+        for (const metricName of Object.keys(metrics)) {
+          metricToModule[metricName] = moduleId;
         }
       }
 
@@ -178,7 +164,7 @@ const AuditResultsList = ({
     } finally {
       setIsLoading(false);
     }
-  }, [auditId, isAuthenticated, orgId, request]);
+  }, [auditId, isAuthenticated, metricSummaryProp, orgId, request]);
 
   useEffect(() => {
     if (isSessionLoading) return;
