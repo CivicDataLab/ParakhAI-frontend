@@ -26,7 +26,6 @@ type PromptLibrary = {
   taskType?: string;
   domain?: string;
   resourceCount: number;
-  promptFormat?: string;
   createdAt?: string;
   promptsCount?: number;
   auditsCount?: number;
@@ -50,8 +49,11 @@ const PROMPT_DATASETS_QUERY = `
       resources {
         id
         name
-        promptFormat
-        promptCount
+        noOfEntries
+        schema {
+          fieldName
+          format
+        }
       }
     }
   }
@@ -198,8 +200,8 @@ const PromptLibrariesPage = () => {
             resources: Array<{
               id: string;
               name: string;
-              promptFormat?: string;
-              promptCount?: number;
+              noOfEntries?: number;
+              schema?: Array<{ fieldName: string; format: string }>;
             }>;
           }>;
         }>(
@@ -219,8 +221,7 @@ const PromptLibrariesPage = () => {
           taskType: ds.promptMetadata?.taskType,
           domain: ds.promptMetadata?.domain,
           resourceCount: ds.resources?.length || 0,
-          promptFormat: ds.resources?.[0]?.promptFormat,
-          promptsCount: ds.resources?.[0]?.promptCount || 0,
+          promptsCount: ds.resources?.[0]?.noOfEntries || 0,
           auditsCount: Math.floor(Math.random() * 300), // Placeholder since API doesn't provide audits
           sectors: ds.promptMetadata?.domain
             ? [ds.promptMetadata.domain]
@@ -340,9 +341,14 @@ const PromptLibrariesPage = () => {
     <>
       <div className="prompt-libraries-content">
         <div className="prompt-page-header mt-10">
-          <Text as="h1" className="prompt-page-title" fontWeight="bold">
-            Prompt Libraries
-          </Text>
+          <div>
+            <Text as="h1" className="prompt-page-title" fontWeight="bold">
+              Prompt Libraries
+            </Text>
+            <Text variant="bodySm" className="text-gray-600 mt-1">
+              View available prompt datasets
+            </Text>
+          </div>
         </div>
 
         <div className="prompt-search-row">

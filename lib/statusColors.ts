@@ -11,6 +11,12 @@ export type StatusColorEntry = {
 
 export const statusColors: Record<string, StatusColorEntry> = {
   // Assignment statuses
+  QUEUED: {
+    bg: "bg-statusPendingBg",
+    text: "text-statusPendingText",
+    bgHex: "#fff9ed",
+    textHex: "#ad5700",
+  },
   PENDING: {
     bg: "bg-statusPendingBg",
     text: "text-statusPendingText",
@@ -61,3 +67,51 @@ export const statusColors: Record<string, StatusColorEntry> = {
     textHex: "#cd2b31",
   },
 };
+
+export type TagColors = {
+  fillColor: string;
+  textColor: string;
+};
+
+const DEFAULT_EVALUATION_STATUS_COLORS: TagColors = {
+  fillColor: "#F3F4F6",
+  textColor: "#374151",
+};
+
+const EVALUATION_MODE_COLORS: TagColors = {
+  fillColor: "#d6d7d8",
+  textColor: "#374151",
+};
+
+/** Tag fill/text colors for evaluation (audit) status badges in tables and detail views. */
+export function getEvaluationStatusColor(
+  status?: string | null,
+): TagColors {
+  switch (status?.toUpperCase()) {
+    case "COMPLETED":
+      return { fillColor: "#E2F5C4", textColor: "#166534" };
+    case "PENDING_REVIEW":
+      return { fillColor: "#FEF3C7", textColor: "#92400E" };
+    case "IN_PROGRESS":
+      return { fillColor: "#FEF3C7", textColor: "#92400E" };
+    case "QUEUED":
+    case "PENDING":
+      return { fillColor: "#E0E7FF", textColor: "#3730A3" };
+    case "DRAFT":
+      return { fillColor: "#FEF9C3", textColor: "#854D0E" };
+    case "FAILED":
+    case "ERROR":
+      return { fillColor: "#FEE2E2", textColor: "#DC2626" };
+    case "CANCELLED":
+      return { fillColor: "#F3F4F6", textColor: "#6B7280" };
+    default:
+      return DEFAULT_EVALUATION_STATUS_COLORS;
+  }
+}
+
+/** Tag fill/text colors for evaluation mode badges (e.g. manual vs bulk). */
+export function getEvaluationModeColor(_mode?: string | null): TagColors {
+  return EVALUATION_MODE_COLORS;
+}
+
+export { formatStatusLabel } from "./utils";

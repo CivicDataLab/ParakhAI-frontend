@@ -1,14 +1,20 @@
 "use client";
 
 import { useGraphQL } from "@/lib/api";
+import { getEvaluationStatusColor } from "@/lib/statusColors";
+import { formatStatusLabel } from "@/lib/utils";
 import { useAppSession } from "@/lib/session";
-import { IconEye, IconReportAnalytics } from "@tabler/icons-react";
+import { IconReportAnalytics } from "@tabler/icons-react";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { statusColors } from "@/lib/statusColors";
+import { useParams } from "next/navigation";
+import {
+  EVALUATION_STATUS_FILTER_OPTIONS,
+  StatusFilterTabs,
+} from "@/app/[locale]/dashboard/components/StatusFilterTabs";
 import { Badge, Button, DataTable, Spinner, Text } from "opub-ui";
 import { useEffect, useState } from "react";
+import "./auditor-evaluations-page.css";
 
 // Types
 type Evaluation = {
@@ -58,15 +64,6 @@ const auditTypeLabels: Record<string, string> = {
   CULTURAL_AUDIT: "Cultural",
 };
 
-const statusOptions = [
-  { label: "All", value: "ALL" },
-  { label: "Draft", value: "DRAFT" },
-  { label: "Pending", value: "PENDING" },
-  { label: "Running", value: "RUNNING" },
-  { label: "Completed", value: "COMPLETED" },
-  { label: "Failed", value: "FAILED" },
-];
-
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString("en-GB", {
     day: "numeric",
@@ -77,7 +74,6 @@ const formatDate = (dateString: string) => {
 
 const EvaluationsPage = () => {
   const params = useParams();
-  const router = useRouter();
   const locale = params?.locale || "en";
   const {
     request,
@@ -126,7 +122,9 @@ const EvaluationsPage = () => {
   const filteredEvaluations =
     statusFilter === "ALL"
       ? evaluations
-      : evaluations.filter((e) => e.status === statusFilter);
+      : evaluations.filter(
+          (e) => e.status?.toUpperCase() === statusFilter
+        );
 
   const getEvaluationHref = (row: Evaluation) => {
     if (row.status?.toUpperCase() === "DRAFT" && row.modelId) {
@@ -176,26 +174,38 @@ const EvaluationsPage = () => {
     columnHelper.accessor("evaluationMode", {
       header: "Evaluation Mode",
       cell: (info) => {
-        const evaluationMode = info.getValue();
-        return <Text variant="bodySm">{evaluationMode}</Text>;
+        const mode = info.getValue()?.toLowerCase();
+        const label =
+          mode === "manual" || mode === "playground"
+            ? "Playground Evaluation"
+            : mode === "bulk" || mode === "automated"
+              ? "Bulk Evaluation"
+              : info.getValue() || "--";
+        return <Text variant="bodySm">{label}</Text>;
       },
     }),
     columnHelper.accessor("status", {
       header: "Status",
       cell: (info) => {
         const status = info.getValue();
-        const colors = statusColors[status] || statusColors.DRAFT;
+        const colors = getEvaluationStatusColor(status);
         return (
-          <span
-            className={`px-2 py-1 text-xs rounded-full ${colors.bg} ${colors.text}`}
+          <Text
+            variant="bodySm"
+            as="span"
+            className="inline-block rounded px-2 py-0.5"
+            style={{
+              backgroundColor: colors.fillColor,
+              color: colors.textColor,
+            }}
           >
-            {status}
-          </span>
+            {formatStatusLabel(status)}
+          </Text>
         );
       },
     }),
     columnHelper.accessor("totalTests", {
-      header: "Test Result",
+      header: "Tests",
       cell: (info) => {
         const total = info.getValue();
         const row = info.row.original;
@@ -225,32 +235,34 @@ const EvaluationsPage = () => {
         );
       },
     }),
-    columnHelper.accessor("createdAt", {
-      header: "Evaluated On",
+    columnHelper.accessor("completedAt", {
+      header: "Completed on",
       cell: (info) => (
-        <Text variant="bodySm">{formatDate(info.getValue())}</Text>
+        <Text variant="bodySm">
+          {info.getValue() ? formatDate(info.getValue() as string) : "--"}
+        </Text>
       ),
     }),
-    columnHelper.display({
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Button
-            kind="tertiary"
-            size="slim"
-            onClick={() =>
-              router.push(getEvaluationHref(row.original))
-            }
-          >
-            <div className="flex items-center justify-center gap-1">
-              <IconEye size={16} className="mr-1" />
-              <span className="pt-0.5">View</span>
-            </div>
-          </Button>
-        </div>
-      ),
-    }),
+    // columnHelper.display({
+    //   id: "actions",
+    //   header: "Actions",
+    //   cell: ({ row }) => (
+    //     <div className="flex items-center gap-2">
+    //       <Button
+    //         kind="tertiary"
+    //         size="slim"
+    //         onClick={() =>
+    //           router.push(getEvaluationHref(row.original))
+    //         }
+    //       >
+    //         <div className="flex items-center justify-center gap-1">
+    //           <IconEye size={16} className="mr-1" />
+    //           <span className="pt-0.5">View</span>
+    //         </div>
+    //       </Button>
+    //     </div>
+    //   ),
+    // }),
   ];
 
   if (loading) {
@@ -282,40 +294,21 @@ const EvaluationsPage = () => {
       <div className="flex items-center justify-between mb-8 mt-10 pl-1">
         <div>
           <Text variant="headingLg" as="h1" fontWeight="bold">
-            Evaluations
+            Evaluations History
           </Text>
           <Text variant="bodySm" className="text-gray-600 mt-1">
-            All evaluations you have conducted
+            All evaluations you have conducted. To start evaluation, go back to
+            assigned models
           </Text>
         </div>
       </div>
 
-      {/* Filter Section - same as assignments page */}
-      <div className="mb-6 flex items-center gap-4">
-        <div className="flex flex-wrap gap-2 pl-1">
-          {statusOptions.map((option) => (
-            <Button
-              kind="secondary"
-              size="slim"
-              key={option.value}
-              onClick={() => setStatusFilter(option.value)}
-              className={`px-3 py-1.5 text-sm transition-colors ${
-                statusFilter === option.value
-                  ? "bg-primaryPurple2 text-white"
-                  : "bg-gray-100 text-gray-700 hover:primaryPurple2"
-              }`}
-            >
-              {option.label}
-              {option.value !== "ALL" && (
-                <span className="ml-1.5 text-xs">
-                  ({evaluations.filter((e) => e.status === option.value).length}
-                  )
-                </span>
-              )}
-            </Button>
-          ))}
-        </div>
-      </div>
+      <StatusFilterTabs
+        options={EVALUATION_STATUS_FILTER_OPTIONS}
+        value={statusFilter}
+        onChange={setStatusFilter}
+        items={evaluations}
+      />
 
       {/* Evaluations Table - same as assignments page */}
       {filteredEvaluations.length === 0 ? (
@@ -324,7 +317,7 @@ const EvaluationsPage = () => {
           <Text variant="bodyMd" className="text-gray-600">
             {statusFilter === "ALL"
               ? "No evaluations found"
-              : `No ${statusFilter.toLowerCase()} evaluations`}
+              : `No ${formatStatusLabel(statusFilter, { lowercase: true })} evaluations`}
           </Text>
           <Text variant="bodySm" className="text-gray-500 mt-1">
             {statusFilter === "ALL"
@@ -338,7 +331,7 @@ const EvaluationsPage = () => {
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="auditor-evaluations-table bg-white rounded-lg border border-gray-200 overflow-hidden">
           <DataTable
             rows={filteredEvaluations}
             columns={columns}
@@ -346,7 +339,7 @@ const EvaluationsPage = () => {
             hoverable={true}
             hideSelection={true}
             hideFooter={filteredEvaluations.length <= 10}
-            sortColumns={["createdAt", "status", "auditType", "evaluationMode"]}
+            sortColumns={["completedAt", "status", "auditType", "evaluationMode"]}
           />
         </div>
       )}

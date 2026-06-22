@@ -2,8 +2,10 @@
 
 import RichTextRenderer from "@/components/RichTextRenderer";
 import { useGraphQL } from "@/lib/api";
+import { isDeprecatedLifecycle } from "@/lib/lifecycle";
 import { useAppSession } from "@/lib/session";
 import { statusColors } from "@/lib/statusColors";
+import { formatStatusLabel } from "@/lib/utils";
 import { createColumnHelper } from "@tanstack/react-table";
 import {
   IconArrowLeft,
@@ -26,6 +28,7 @@ import {
   toast,
 } from "opub-ui";
 import React from "react";
+import ModelSelectionModal from "../../../ai-maker/[orgId]/evaluations/components/ModelSelectionModal";
 
 const GET_AI_MODEL = `
   query GetAIModel($modelId: ID!) {
@@ -242,6 +245,9 @@ const AuditorModelDetailPage = () => {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [updatingId, setUpdatingId] = React.useState<string | null>(null);
+  const [evaluationModalVersionId, setEvaluationModalVersionId] = React.useState<
+    number | null
+  >(null);
 
   React.useEffect(() => {
     if (!isAuthenticated) return;
@@ -314,11 +320,35 @@ const AuditorModelDetailPage = () => {
   };
 
   const handleStartEvaluation = (versionId: number) => {
-    // Navigate to auditor's evaluation creation page
-    router.push(
-      `/${locale}/dashboard/auditor/evaluations/new?modelId=${modelId}&versionId=${versionId}`,
-    );
+    setEvaluationModalVersionId(versionId);
   };
+
+  const evaluationModalAssignment = React.useMemo(() => {
+    if (evaluationModalVersionId == null) return null;
+    return getAssignmentForVersion(evaluationModalVersionId);
+  }, [evaluationModalVersionId, assignments]);
+
+  const preselectedModelForModal = React.useMemo(() => {
+    if (!model || evaluationModalVersionId == null) return null;
+
+    return {
+      id: model.id,
+      name: model.name,
+      displayName: model.displayName,
+      modelType: model.modelType,
+      domain: model.sectors?.[0] ?? null,
+      isPublic: model.isPublic,
+      versions: model.versions
+        .filter((version) => !isDeprecatedLifecycle(version.lifecycleStage))
+        .map((version) => ({
+          id: Number(version.id),
+          version: version.version,
+          isLatest: version.isLatest,
+          status: version.status,
+          lifecycleStage: version.lifecycleStage,
+        })),
+    };
+  }, [model, evaluationModalVersionId]);
 
   const assignedVersionIds = new Set(assignments.map((a) => a.modelVersionId));
   const assignedVersions =
@@ -348,8 +378,14 @@ const AuditorModelDetailPage = () => {
     columnHelper.accessor("evaluationMode", {
       header: "Evaluation Mode",
       cell: (info) => {
-        const evaluationMode = info.getValue();
-        return <Text variant="bodySm">{evaluationMode}</Text>;
+        const mode = info.getValue()?.toLowerCase();
+        const label =
+          mode === "manual" || mode === "playground"
+            ? "Playground Evaluation"
+            : mode === "bulk" || mode === "automated"
+              ? "Bulk Evaluation"
+              : info.getValue() || "--";
+        return <Text variant="bodySm">{label}</Text>;
       },
     }),
     columnHelper.accessor("status", {
@@ -361,13 +397,13 @@ const AuditorModelDetailPage = () => {
           <span
             className={`px-2 py-1 text-xs rounded-full ${colors.bg} ${colors.text}`}
           >
-            {status}
+            {formatStatusLabel(status)}
           </span>
         );
       },
     }),
     columnHelper.accessor("totalTests", {
-      header: "Test Result",
+      header: "Tests",
       cell: (info) => {
         const total = info.getValue();
         const row = info.row.original;
@@ -397,10 +433,12 @@ const AuditorModelDetailPage = () => {
         );
       },
     }),
-    columnHelper.accessor("createdAt", {
-      header: "Evaluated On",
+    columnHelper.accessor("completedAt", {
+      header: "Completed on",
       cell: (info) => (
-        <Text variant="bodySm">{formatDate(info.getValue())}</Text>
+        <Text variant="bodySm">
+          {info.getValue() ? formatDate(info.getValue() as string) : "--"}
+        </Text>
       ),
     }),
     columnHelper.accessor("id", {
@@ -572,7 +610,7 @@ const AuditorModelDetailPage = () => {
                                   fillColor={colors.bgHex}
                                   textColor={colors.textHex}
                                 >
-                                  {assignment.status.replace(/_/g, " ")}
+                                  {formatStatusLabel(assignment.status)}
                                 </Tag>
                               )}
                             </div>
@@ -722,7 +760,7 @@ const AuditorModelDetailPage = () => {
                                 <Text variant="bodyMd" className="capitalize">
                                   {v.isLatest
                                     ? v.lifecycleStage.replace(/_/g, " ")
-                                    : v.status.replace(/_/g, " ")}
+                                    : formatStatusLabel(v.status)}
                                 </Text>
                               </div>
                             </div>
@@ -937,6 +975,22 @@ const AuditorModelDetailPage = () => {
         </div>
       </div>
 
+      {evaluationModalAssignment && evaluationModalVersionId != null && (
+        <ModelSelectionModal
+          open={evaluationModalVersionId != null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEvaluationModalVersionId(null);
+            }
+          }}
+          orgId={evaluationModalAssignment.organizationId}
+          preselectedModelId={modelId}
+          preselectedVersionId={evaluationModalVersionId}
+          preselectedModel={preselectedModelForModal}
+          lockModelSelection
+          variant="auditor"
+        />
+      )}
     </>
   );
 };

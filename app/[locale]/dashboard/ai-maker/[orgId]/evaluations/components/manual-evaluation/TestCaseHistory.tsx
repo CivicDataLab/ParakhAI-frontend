@@ -6,8 +6,13 @@ import { IconMinus, IconPlus } from '@tabler/icons-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { ManualTestCase, SubModuleInfo } from './types';
-import { toTitleCase } from '@/lib/utils';
-import { resolveIssueDisplayName } from './utils';
+import {
+  formatRiskLabel,
+  getFailedManualTestCaseIssues,
+  getIssueRiskTagColors,
+  isManualTestCasePassed,
+  resolveIssueDisplayName,
+} from './utils';
 
 interface TestCaseHistoryProps {
   testCases: ManualTestCase[];
@@ -18,23 +23,21 @@ interface TestCaseHistoryProps {
 
 const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
   testCases,
-  moduleName,
   moduleDisplayName,
   subModules = [],
 }) => {
-  // Order by submission time so "Test Case N" matches the sequence shown during entry
-  // (API may return newest-first; labels use array index only).
-  const moduleTestCases = testCases
-    .filter((tc) => tc.module === moduleName)
-    .sort((a, b) => {
+  const sortedTestCases = [...testCases].sort((a, b) => {
+    if (a.createdAt && b.createdAt) {
       const byTime =
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       if (byTime !== 0) return byTime;
-      return a.id.localeCompare(b.id);
-    });
+    }
+    return a.id.localeCompare(b.id);
+  });
+
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
-  if (moduleTestCases.length === 0) {
+  if (sortedTestCases.length === 0) {
     return null;
   }
 
@@ -51,20 +54,17 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
   };
 
   return (
-  <div>
+    <div>
       <Text variant="headingMd" className="mb-4">
         Previous Test Cases for {moduleDisplayName}
       </Text>
 
       <div className="flex flex-col gap-5">
-        {moduleTestCases.map((tc, index) => {
+        {sortedTestCases.map((tc, index) => {
           const isExpanded = expandedCards.has(tc.id);
-          const issueKey = tc.issueType || tc.subModule;
-          const issueDisplayName = resolveIssueDisplayName(
-            issueKey,
-            subModules,
-            moduleName
-          );
+          const isPassed = isManualTestCasePassed(tc);
+          const failedIssues = getFailedManualTestCaseIssues(tc.issues);
+
           return (
             <div
               key={tc.id}
@@ -78,35 +78,28 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
                   <Text variant="bodyMd" fontWeight="medium">
                     Test Case {index + 1}
                   </Text>
-                  <Tag
-                    variation="filled"
-                    fillColor={
-                      tc.status === 'PASSED'
-                        ? '#BBF7D0'
-                        : tc.severity === 'HIGH'
-                          ? '#E93D82'
-                          : tc.severity === 'MEDIUM'
-                            ? '#F5D08C'
-                            : tc.severity === 'LOW'
-                              ? '#5EB0EF'
-                              : '#FECACA'
-                    }
-                    textColor={
-                      tc.status === 'PASSED'
-                        ? '#15803D'
-                        : tc.severity === 'HIGH'
-                          ? '#FFFFFF'
-                          : tc.severity === 'MEDIUM'
-                            ? '#0A0704'
-                            : tc.severity === 'LOW'
-                              ? '#FFFFFF'
-                              : '#DC2626'
-                    }
-                  >
-                    {tc.status === 'FAILED' && tc.severity && issueKey
-                      ? `${tc.severity.charAt(0) + tc.severity.slice(1).toLowerCase()} risk - ${issueDisplayName}`
-                      : toTitleCase(tc.status.toLowerCase())}
-                  </Tag>
+                  {isPassed ? (
+                    <Tag variation="filled" fillColor="#BBF7D0" textColor="#15803D">
+                      Passed
+                    </Tag>
+                  ) : (
+                    failedIssues.map((issue, i) => {
+                      const issueLabel = resolveIssueDisplayName(issue.metricName, subModules);
+                      const colors = getIssueRiskTagColors(issue.severity);
+                      const riskLabel = formatRiskLabel(issue.severity, issueLabel);
+                      if (!riskLabel) return null;
+                      return (
+                        <Tag
+                          key={i}
+                          variation="filled"
+                          fillColor={colors.fillColor}
+                          textColor={colors.textColor}
+                        >
+                          {riskLabel}
+                        </Tag>
+                      );
+                    })
+                  )}
                 </div>
                 {isExpanded ? (
                   <IconMinus className="text-gray-600" size={20} />
@@ -122,7 +115,7 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
                       Input
                     </Text>
                     <div className="prose prose-sm max-w-none break-words text-gray-900">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{tc.inputPrompt || ''}</ReactMarkdown>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{tc.testInput}</ReactMarkdown>
                     </div>
                   </div>
 
@@ -131,20 +124,20 @@ const TestCaseHistory: React.FC<TestCaseHistoryProps> = ({
                       Output
                     </Text>
                     <div className="prose prose-sm max-w-none break-words text-gray-900">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{tc.modelOutput || ''}</ReactMarkdown>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{tc.actualOutput}</ReactMarkdown>
                     </div>
                   </div>
 
-                  {tc.comments && (
-                    <div>
+                  {failedIssues.map((issue, i) => issue.comments ? (
+                    <div key={i}>
                       <Text variant="bodySm" fontWeight="medium" className="mb-2 block">
-                        Comments
+                        {failedIssues.length > 1 ? `Issue ${i + 1} Comments` : 'Comments'}
                       </Text>
                       <div className="prose prose-sm max-w-none break-words text-gray-900">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{tc.comments}</ReactMarkdown>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{issue.comments}</ReactMarkdown>
                       </div>
                     </div>
-                  )}
+                  ) : null)}
                 </div>
               )}
             </div>

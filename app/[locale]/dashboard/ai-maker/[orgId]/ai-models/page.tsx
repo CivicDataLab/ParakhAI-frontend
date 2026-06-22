@@ -3,9 +3,11 @@
 import { Icons } from "@/components/icons";
 import { Pagination } from "@/components/Pagination/Pagination";
 import { useGraphQL } from "@/lib/api";
+import { stripMarkdown } from "@/lib/utils";
 import { IconChevronDown, IconMinus, IconX } from "@tabler/icons-react";
 import { useParams, useRouter } from "next/navigation";
 import {
+  AlertDialog,
   Button,
   Card,
   DataTable,
@@ -23,6 +25,7 @@ type AIModel = {
   name: string;
   displayName: string;
   version: string;
+  description?: string;
   modelType: string;
   isPublic: boolean;
   organization?: string;
@@ -52,6 +55,7 @@ const AI_MODELS_QUERY = `
       name
       displayName
       version
+      description
       modelType
       isPublic
       organization
@@ -139,8 +143,10 @@ const AIModelsPage = () => {
   const router = useRouter();
   const params = useParams();
   const locale = params?.locale || "en";
+  const orgId = params?.orgId as string;
 
   const [searchValue, setSearchValue] = React.useState("");
+  const [showRedirectPrompt, setShowRedirectPrompt] = React.useState(false);
   const [selectedSectors, setSelectedSectors] = React.useState<string[]>([]);
   const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = React.useState(false);
@@ -155,6 +161,27 @@ const AIModelsPage = () => {
   const [showNotice, setShowNotice] = React.useState(true);
   const [aiModels, setAiModels] = React.useState<AIModel[]>([]);
   const { organization } = useOrganization();
+  const orgSlug = encodeURIComponent(
+    String(organization?.slug ?? orgId ?? "").trim(),
+  );
+  const inAppPath = `/${locale}/dashboard/ai-maker/${orgId}/ai-models`;
+  const externalHost =
+    process.env.NEXT_PUBLIC_DATASPACE_HOST ||
+    process.env.NEXT_PUBLIC_AI_MAKER_URL ||
+    "";
+  const externalPath = orgSlug
+    ? `/dashboard/organization/${orgSlug}/aimodels?tab=registered`
+    : "";
+  let externalUrl = "";
+  if (externalHost.trim() !== "" && externalPath) {
+    const host = externalHost.replace(/\/$/, "");
+    if (/\/dashboard$/.test(host)) {
+      externalUrl = `${host}${externalPath.replace(/^\/dashboard/, "")}`;
+    } else {
+      externalUrl = `${host}${externalPath}`;
+    }
+  }
+  const addModelUrl = externalUrl || inAppPath;
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const modelTypeLabels: Record<string, string> = {
@@ -209,6 +236,7 @@ const AIModelsPage = () => {
             name: string;
             displayName: string;
             version: string;
+            description?: string;
             modelType: string;
             isPublic: boolean;
             organization?: string;
@@ -234,6 +262,7 @@ const AIModelsPage = () => {
           name: model.name,
           displayName: model.displayName,
           version: model.version,
+          description: model.description,
           modelType: model.modelType,
           isPublic: model.isPublic,
           organization: model.organization,
@@ -383,13 +412,19 @@ const AIModelsPage = () => {
     <>
       <div className="ai-models-content">
         <div className="prompt-page-header mt-10 text-left">
-          <Text
-            as="h1"
-            className="prompt-page-title text-left"
-            fontWeight="bold"
-          >
-            AI Models
-          </Text>
+          <div>
+            <Text
+              as="h1"
+              className="prompt-page-title text-left"
+              fontWeight="bold"
+            >
+              AI Models
+            </Text>
+            <Text variant="bodySm" className="text-gray-600 mt-1">
+              Browse and manage AI models registered for evaluation in your
+              organization
+            </Text>
+          </div>
         </div>
 
         <div className="prompt-search-row mb-8">
@@ -424,6 +459,13 @@ const AIModelsPage = () => {
             </div>
           </div>
           <div className="prompt-search-actions">
+            <Button
+              kind="primary"
+              onClick={() => setShowRedirectPrompt(true)}
+              className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-medium text-base border-none"
+            >
+              Add A New Model
+            </Button>
             {/* Temporarily hidden for now. Keep this Add Filters block for future use.
             <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
               <Popover.Trigger asChild>
@@ -629,7 +671,9 @@ const AIModelsPage = () => {
                   >
                     <Card
                       title={model.displayName}
-                      // description={`${modelTypeLabels[model.modelType] || model.modelType} - Version ${model.version}`}
+                      description={
+                        stripMarkdown(model.description || "") || ""
+                      }
                       variation="collapsed"
                       iconColor="highlight"
                       metadataContent={metadataContent}
@@ -739,6 +783,39 @@ const AIModelsPage = () => {
           </div>
         </Dialog.Content>
       </Dialog>
+
+      <AlertDialog
+        open={showRedirectPrompt}
+        onOpenChange={setShowRedirectPrompt}
+      >
+        <AlertDialog.Content
+          title="Redirect to CivicDataSpace"
+          primaryAction={{
+            content: "Yes, continue",
+            onAction: () => {
+              setShowRedirectPrompt(false);
+              if (externalUrl) {
+                window.open(addModelUrl, "_blank", "noopener,noreferrer");
+              } else {
+                router.push(addModelUrl);
+              }
+            },
+            className:
+              "bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white",
+          } as any}
+          secondaryActions={[
+            {
+              content: "No",
+              onAction: () => setShowRedirectPrompt(false),
+              className:
+                "bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white",
+            } as any,
+          ]}
+        >
+          You are being redirected to CivicDataSpace to add a model. Do you want
+          to continue?
+        </AlertDialog.Content>
+      </AlertDialog>
     </>
   );
 };

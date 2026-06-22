@@ -16,7 +16,6 @@ const EvaluationDetailPage = () => {
       evaluationId={evaluationId}
       backLink={`/${locale}/dashboard/ai-maker/${orgId}/evaluations`}
       backLinkText="Back to List"
-      newEvaluationLink={`/${locale}/dashboard/ai-maker/${orgId}/evaluations/new`}
       orgId={orgId}
     />
   );

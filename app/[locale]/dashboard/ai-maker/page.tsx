@@ -6,9 +6,9 @@ import { useDashboardStore } from "@/config/store";
 import { useGraphQL } from "@/lib/api";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { Text } from "opub-ui";
-import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { AlertDialog, Button, Text } from "opub-ui";
+import { useEffect, useMemo, useState } from "react";
 
 type Organization = {
   id: string;
@@ -67,11 +67,36 @@ const EntityCard = ({ org, locale }: { org: Organization; locale: string }) => {
 const OrganizationSelection = () => {
   const params = useParams();
   const locale = params?.locale || "en";
+  const router = useRouter();
   const { request } = useGraphQL();
   const { setAllEntityDetails } = useDashboardStore();
 
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showRedirectPrompt, setShowRedirectPrompt] = useState(false);
+
+  const inAppPath = `/${locale}/dashboard/ai-maker`;
+  const externalHost =
+    process.env.NEXT_PUBLIC_DATASPACE_HOST ||
+    process.env.NEXT_PUBLIC_AI_MAKER_URL ||
+    "";
+  const externalPath = "/dashboard/organization";
+
+  const { addOrganizationUrl, externalUrl } = useMemo(() => {
+    let builtExternalUrl = "";
+    if (externalHost.trim() !== "") {
+      const host = externalHost.replace(/\/$/, "");
+      if (/\/dashboard$/.test(host)) {
+        builtExternalUrl = `${host}${externalPath.replace(/^\/dashboard/, "")}`;
+      } else {
+        builtExternalUrl = `${host}${externalPath}`;
+      }
+    }
+    return {
+      externalUrl: builtExternalUrl,
+      addOrganizationUrl: builtExternalUrl || inAppPath,
+    };
+  }, [externalHost, inAppPath]);
 
   const GET_MY_ORGANIZATIONS = `
     query GetMyOrganizations {
@@ -102,6 +127,12 @@ const OrganizationSelection = () => {
     fetchOrgs();
   }, [request]);
 
+  useEffect(() => {
+    if (!loading && organizations.length === 0) {
+      setShowRedirectPrompt(true);
+    }
+  }, [loading, organizations.length]);
+
   return (
     <div className="flex flex-col min-h-screen bg-[var(--page-background)]">
       <BreadCrumbs
@@ -113,11 +144,20 @@ const OrganizationSelection = () => {
       />
 
       <div className="flex-1 container mb-40 mt-10 mx-10">
-        <div className="flex flex-col gap-6 py-10">
+        <div className="flex flex-col gap-3 py-10">
           <Text variant="headingXl">Select Organization</Text>
-          <Text variant="bodyMd" className="text-gray-600">
-            Choose an organization to access its AI Maker dashboard.
-          </Text>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <Text variant="bodyMd" className="text-gray-600">
+              Choose an organization to access its AI Maker dashboard.
+            </Text>
+            <Button
+              kind="primary"
+              onClick={() => setShowRedirectPrompt(true)}
+              className="shrink-0 bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-medium text-base border-none"
+            >
+              Add Organisation
+            </Button>
+          </div>
         </div>
 
         {loading ? (
@@ -138,6 +178,39 @@ const OrganizationSelection = () => {
           </div>
         )}
       </div>
+
+      <AlertDialog
+        open={showRedirectPrompt}
+        onOpenChange={setShowRedirectPrompt}
+      >
+        <AlertDialog.Content
+          title="Redirect to CivicDataSpace"
+          primaryAction={{
+            content: "Yes, continue",
+            onAction: () => {
+              setShowRedirectPrompt(false);
+              if (externalUrl) {
+                window.open(addOrganizationUrl, "_blank", "noopener,noreferrer");
+              } else {
+                router.push(addOrganizationUrl);
+              }
+            },
+            className:
+              "bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white",
+          } as any}
+          secondaryActions={[
+            {
+              content: "No",
+              onAction: () => setShowRedirectPrompt(false),
+              className:
+                "bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white",
+            } as any,
+          ]}
+        >
+          You are being redirected to CivicDataSpace to add an organisation. Do
+          you want to continue?
+        </AlertDialog.Content>
+      </AlertDialog>
     </div>
   );
 };

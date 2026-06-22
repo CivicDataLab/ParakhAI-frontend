@@ -1,10 +1,17 @@
 "use client";
 
+import {
+  EVALUATION_STATUS_FILTER_OPTIONS,
+  StatusFilterTabs,
+} from "@/app/[locale]/dashboard/components/StatusFilterTabs";
 import { useGraphQL } from "@/lib/api";
+import { getEvaluationStatusColor } from "@/lib/statusColors";
+import { formatStatusLabel } from "@/lib/utils";
 import { createColumnHelper } from "@tanstack/react-table";
+import { IconReportAnalytics } from "@tabler/icons-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Button, DataTable, Spinner, Tag, Text } from "opub-ui";
+import { Badge, Button, DataTable, Spinner, Text } from "opub-ui";
 import { useEffect, useRef, useState } from "react";
 import { useOrganization } from "../OrganizationContext";
 import ModelSelectionModal from "./components/ModelSelectionModal";
@@ -12,11 +19,13 @@ import "./evaluations-page.css";
 
 // GraphQL query to fetch user's audits
 const AUDITS_QUERY = `
-  query GetAudits($status: String, $limit: Int) {
-    audits(status: $status, limit: $limit) {
+  query GetAudits($limit: Int, $offset: Int) {
+    audits(limit: $limit, offset: $offset, filters: null, sortOptions: null) {
+      data{
       id
       name
       modelId
+      modelName
       status
       modules
       metrics
@@ -29,13 +38,16 @@ const AUDITS_QUERY = `
       startedAt
       completedAt
     }
+    totalItemsCount
   }
+}
 `;
 
 type Audit = {
   id: string;
   name: string;
   modelId: string;
+  modelName: string | null;
   status: string;
   modules: string[];
   metrics: string[];
@@ -47,6 +59,12 @@ type Audit = {
   createdAt: string;
   startedAt: string | null;
   completedAt: string | null;
+};
+
+const auditTypeLabels: Record<string, string> = {
+  TECHNICAL_AUDIT: "Technical",
+  DOMAIN_AUDIT: "Domain",
+  CULTURAL_AUDIT: "Cultural",
 };
 
 const AuditsListPage = () => {
@@ -62,9 +80,11 @@ const AuditsListPage = () => {
   const [audits, setAudits] = useState<Audit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const isFetchingRef = useRef(false);
   const hasFetchedRef = useRef(false);
+  const pollStoppedRef = useRef(false);
 
   const fetchAudits = async (showLoader = true) => {
     try {
@@ -73,7 +93,7 @@ const AuditsListPage = () => {
       }
       setError(null);
 
-      const auditsData = await request<{ audits: Audit[] }>(
+      const auditsData = await request<{ audits: { data: Audit[], totalItemsCount: number } }>(
         AUDITS_QUERY,
         {
           status: null,
@@ -82,12 +102,16 @@ const AuditsListPage = () => {
         { organization: params.orgId as string }
       );
 
-      const nextAudits = auditsData?.audits || [];
+      const nextAudits = auditsData?.audits?.data || [];
       setAudits(nextAudits);
 
       const hasActiveAudits = nextAudits.some((audit) => {
         const status = audit.status?.toUpperCase();
-        return status === "PENDING" || status === "RUNNING";
+        return (
+          status === "QUEUED" ||
+          status === "PENDING" ||
+          status === "IN_PROGRESS"
+        );
       });
 
       return hasActiveAudits;
@@ -109,6 +133,7 @@ const AuditsListPage = () => {
     const startTime = Date.now();
 
     const poll = async () => {
+      if (pollStoppedRef.current) return;
       if (Date.now() - startTime > maxPollTime) return;
 
       try {
@@ -123,6 +148,13 @@ const AuditsListPage = () => {
 
     setTimeout(poll, pollInterval);
   };
+
+  // Stop polling when component unmounts
+  useEffect(() => {
+    return () => {
+      pollStoppedRef.current = true;
+    };
+  }, []);
 
   // Fetch audits on mount
   useEffect(() => {
@@ -159,30 +191,16 @@ const AuditsListPage = () => {
     });
   };
 
-  // Get status tag color
-  const getStatusColor = (status: string) => {
-    switch (status?.toUpperCase()) {
-      case "COMPLETED":
-        return { fillColor: "#E2F5C4", textColor: "#166534" };
-      case "RUNNING":
-        return { fillColor: "#FEF3C7", textColor: "#92400E" };
-      case "PENDING":
-        return { fillColor: "#E0E7FF", textColor: "#3730A3" };
-      case "DRAFT":
-        return { fillColor: "#FEF9C3", textColor: "#854D0E" };
-      case "FAILED":
-      case "ERROR":
-        return { fillColor: "#FEE2E2", textColor: "#DC2626" };
-      case "CANCELLED":
-        return { fillColor: "#F3F4F6", textColor: "#6B7280" };
-      default:
-        return { fillColor: "#F3F4F6", textColor: "#374151" };
-    }
-  };
-
   // Get the appropriate link for an audit based on its status
   const getAuditLink = (audit: Audit) => {
     if (audit.status?.toUpperCase() === "DRAFT") {
+      return `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/new?auditId=${audit.id}`;
+    }
+    if (
+      audit.status?.toUpperCase() === "IN_PROGRESS" &&
+      (audit.evaluationMode?.toLowerCase() === "manual" ||
+        audit.evaluationMode?.toLowerCase() === "playground")
+    ) {
       return `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/new?auditId=${audit.id}`;
     }
     return `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/${audit.id}`;
@@ -201,19 +219,42 @@ const AuditsListPage = () => {
         </Link>
       ),
     }),
+    columnHelper.accessor("modelName", {
+      header: "Model",
+      cell: (info) => (
+        <Text variant="bodySm">
+          {info.getValue() ||
+            `Model ${info.row.original.modelId?.slice(0, 8) || "-"}`}
+        </Text>
+      ),
+    }),
+    columnHelper.accessor("auditType", {
+      header: "Evaluation Type",
+      cell: (info) => {
+        const typeValue = info.getValue();
+        const label = typeValue
+          ? auditTypeLabels[typeValue] || typeValue
+          : "--";
+        return <Badge>{label}</Badge>;
+      },
+    }),
     columnHelper.accessor("status", {
       header: "Status",
       cell: (info) => {
         const status = info.getValue();
-        const colors = getStatusColor(status);
+        const colors = getEvaluationStatusColor(status);
         return (
-          <Tag
-            variation="filled"
-            fillColor={colors.fillColor}
-            textColor={colors.textColor}
+          <Text
+            variant="bodySm"
+            as="span"
+            className="inline-block rounded px-2 py-0.5"
+            style={{
+              backgroundColor: colors.fillColor,
+              color: colors.textColor,
+            }}
           >
-            {status || "Unknown"}
-          </Tag>
+            {formatStatusLabel(status)}
+          </Text>
         );
       },
     }),
@@ -231,17 +272,16 @@ const AuditsListPage = () => {
     columnHelper.accessor("evaluationMode", {
       header: "Evaluation Mode",
       cell: (info) => {
-        const evaluationMode = info.getValue();
-        return <Text variant="bodySm">{evaluationMode}</Text>;
+        const mode = info.getValue()?.toLowerCase();
+        const label =
+          mode === "manual" || mode === "playground"
+            ? "Playground Evaluation"
+            : mode === "bulk" || mode === "automated"
+              ? "Bulk Evaluation"
+              : info.getValue() || "--";
+        return <Text variant="bodySm">{label}</Text>;
       },
     }),
-    // columnHelper.accessor("auditType", {
-    //   header: "Audit Type",
-    //   cell: (info) => {
-    //     const auditType = info.getValue();
-    //     return <Badge>{auditType}</Badge>;
-    //   },
-    // }),
     columnHelper.accessor("totalTests", {
       header: "Tests",
       cell: (info) => {
@@ -293,12 +333,19 @@ const AuditsListPage = () => {
     //   ),
     // }),
     columnHelper.accessor("completedAt", {
-      header: "Completed",
+      header: "Completed on",
       cell: (info) => (
         <Text variant="bodySm">{formatDate(info.getValue())}</Text>
       ),
     }),
   ];
+
+  const filteredAudits =
+    statusFilter === "ALL"
+      ? audits
+      : audits.filter(
+          (audit) => audit.status?.toUpperCase() === statusFilter
+        );
 
   // Handle new audit button click - open modal
   const handleNewAudit = () => {
@@ -309,9 +356,14 @@ const AuditsListPage = () => {
     <>
       {/* Header */}
       <div className="flex items-center justify-between mb-6 mt-10">
-        <Text variant="headingLg" as="h1" fontWeight="bold">
-          Evaluations
-        </Text>
+        <div>
+          <Text variant="headingLg" as="h1" fontWeight="bold">
+            Evaluations
+          </Text>
+          <Text variant="bodySm" className="text-gray-600 mt-1">
+            Create and manage evaluation runs to assess your AI models
+          </Text>
+        </div>
         <Button
           kind="secondary"
           onClick={handleNewAudit}
@@ -361,25 +413,46 @@ const AuditsListPage = () => {
           </Button>
         </div>
       ) : (
-        <div className="evaluations-table-evaluation-mode-col">
-          <DataTable
-            rows={audits}
-            columns={columns}
-            hoverable
-            sortColumns={[
-              "name",
-              "status",
-              "evaluationMode",
-              "auditType",
-              "completedAt",
-              // "createdAt",
-            ]}
-            initialSortColumnIndex={5}
-            defaultSortDirection="desc"
-            hideSelection
-            truncate
+        <>
+          <StatusFilterTabs
+            options={EVALUATION_STATUS_FILTER_OPTIONS}
+            value={statusFilter}
+            onChange={setStatusFilter}
+            items={audits}
           />
-        </div>
+
+          {filteredAudits.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 bg-white rounded-lg border border-gray-200">
+              <IconReportAnalytics size={32} className="text-gray-400 mb-3" />
+              <Text variant="bodyMd" className="text-gray-600">
+                {`No ${formatStatusLabel(statusFilter, { lowercase: true })} evaluations`}
+              </Text>
+              <Text variant="bodySm" className="text-gray-500 mt-1">
+                Try selecting a different filter
+              </Text>
+            </div>
+          ) : (
+            <div className="evaluations-table-evaluation-mode-col">
+              <DataTable
+                rows={filteredAudits}
+                columns={columns}
+                hoverable
+                sortColumns={[
+                  "name",
+                  "modelName",
+                  "auditType",
+                  "status",
+                  "evaluationMode",
+                  "completedAt",
+                ]}
+                initialSortColumnIndex={7}
+                defaultSortDirection="desc"
+                hideSelection
+                truncate
+              />
+            </div>
+          )}
+        </>
       )}
 
       {/* Model Selection Modal */}

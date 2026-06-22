@@ -1,6 +1,7 @@
 "use client";
 
 import { useGraphQL } from "@/lib/api";
+import { formatStatusLabel } from "@/lib/utils";
 import {
   IconPlus,
   IconSearch,
@@ -8,7 +9,7 @@ import {
   IconUserCheck,
 } from "@tabler/icons-react";
 import { Button, Dialog, Spinner, Tag, Text, TextField, toast } from "opub-ui";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 
 /** Profile image for search hit — same behavior as Add Evaluator on auditors page */
 const SearchResultAvatar = ({
@@ -241,6 +242,16 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   };
 
   useEffect(() => {
+    if (!isModalOpen) return;
+
+    setShowAddNew(false);
+    setEmailInput("");
+    setSearchResult(null);
+    setSelectedAuditorId("");
+    setNotes("");
+  }, [isModalOpen]);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -280,7 +291,9 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   const availableAuditors = auditors.filter((auditor) => {
     // Check if this auditor has any ACTIVE assignments
     const hasActiveAssignment = assignments.some(
-      (a) => a.auditorEmail === auditor.email && ["PENDING", "ACCEPTED"].includes(a.status)
+      (a) =>
+        a.auditorEmail === auditor.email &&
+        ["PENDING", "ACCEPTED"].includes(a.status),
     );
 
     // The auditor is available if they DO NOT have an active assignment
@@ -402,7 +415,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
         ADD_AUDITOR_MUTATION,
         {
           organizationId,
-          input: { email: searchResult.user.email },
+          input: { userId: searchResult.user.id },
         },
         { organization: organizationId }
       );
@@ -448,6 +461,37 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
     }
   };
 
+  const isAssignPrimaryDisabled = showAddNew
+    ? !searchResult?.found || isAddingNew
+    : !selectedAuditorId || isAssigning;
+
+  const assignPrimaryLabel = showAddNew
+    ? isAddingNew
+      ? "Adding..."
+      : "Add & Assign Evaluator"
+    : isAssigning
+      ? "Assigning..."
+      : "Assign Evaluator";
+
+  const handleCloseInviteModal = () => {
+    setIsModalOpen(false);
+    if (!isControlled) {
+      setSelectedAuditorId("");
+      setNotes("");
+      setShowAddNew(false);
+      setEmailInput("");
+      setSearchResult(null);
+    }
+  };
+
+  const handleShowAddByEmail = (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setSearchResult(null);
+    setEmailInput("");
+    setShowAddNew(true);
+  };
+
   const auditorOptions = [
     { label: "Select an evaluator...", value: "" },
     ...availableAuditors.map((auditor) => {
@@ -467,6 +511,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   const inviteDialog = (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <Dialog.Content
+        key={showAddNew ? "invite-by-email" : "invite-select"}
         title={
           versionLabel
             ? `Invite Evaluator for Version ${versionLabel}`
@@ -474,38 +519,24 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
         }
         footer={<></>}
         primaryAction={{
-          content: showAddNew
-            ? isAddingNew
-              ? "Adding..."
-              : "Add & Assign Evaluator"
-            : isAssigning
-              ? "Assigning..."
-              : "Assign Evaluator",
-          onAction: showAddNew
-            ? handleAddNewAuditor
-            : () => handleAssignAuditor(),
-          disabled: showAddNew
-            ? !searchResult?.found || isAddingNew
-            : !selectedAuditorId || isAssigning,
-          ...(showAddNew
-            ? {
-                className:
-                  "!rounded-[8px] !min-h-[46px] !px-6 !font-semibold !shadow-sm disabled:!cursor-not-allowed disabled:!bg-[#8c949d] disabled:!text-white disabled:!opacity-100 disabled:hover:!bg-[#8c949d]",
-              }
-            : {}),
-        }}
+          content: assignPrimaryLabel,
+          onAction: () => {
+            if (isAssignPrimaryDisabled) return;
+            if (showAddNew) void handleAddNewAuditor();
+            else void handleAssignAuditor();
+          },
+          disabled: isAssignPrimaryDisabled,
+          className: isAssignPrimaryDisabled
+            ? "!rounded-[8px] !cursor-not-allowed !border-none !bg-[#8c949d] !text-white hover:!bg-[#8c949d]"
+            : "!rounded-[8px] !border-none !bg-primaryPurple2 !text-white hover:!bg-[#6849EE] hover:!text-white",
+        } as any}
         secondaryActions={[
           {
             content: "Cancel",
-            onAction: () => {
-              setIsModalOpen(false);
-              setSelectedAuditorId("");
-              setNotes("");
-              setShowAddNew(false);
-              setEmailInput("");
-              setSearchResult(null);
-            },
-          },
+            onAction: handleCloseInviteModal,
+            kind: "secondary",
+            className: "!rounded-[8px]",
+          } as any,
         ]}
       >
         <div className="space-y-4">
@@ -558,13 +589,13 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Add any notes for the auditor..."
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
               </div>
 
               <div className="pt-2 border-t">
-                <Button kind="tertiary" onClick={() => setShowAddNew(true)}>
-                  Can&apos;t find the auditor? Add by email
+                <Button kind="tertiary" onClick={handleShowAddByEmail}>
+                  Can&apos;t find the evaluator? Add by email
                 </Button>
               </div>
             </>
@@ -572,7 +603,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
             <>
               <Text variant="bodySm" className="text-gray-600">
                 Search for a user by email. If found, they will be added as an
-                auditor to your organization and assigned to this model version.
+                evaluator to your organization and assigned to this model version.
               </Text>
 
               <div>
@@ -714,7 +745,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                     setSearchResult(null);
                   }}
                 >
-                  Back to auditor list
+                  Back
                 </Button>
               </div>
             </>
@@ -798,7 +829,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                           : "bg-yellow-100 text-yellow-700"
                   }`}
                 >
-                  {assignment.status}
+                  {formatStatusLabel(assignment.status)}
                 </span>
               </div>
             </div>

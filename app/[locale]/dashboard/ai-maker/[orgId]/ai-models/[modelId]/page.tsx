@@ -2,14 +2,30 @@
 
 import RichTextRenderer from "@/components/RichTextRenderer";
 import { useGraphQL } from "@/lib/api";
+import { isDeprecatedLifecycle } from "@/lib/lifecycle";
+import { getEvaluationStatusColor } from "@/lib/statusColors";
+import { formatStatusLabel } from "@/lib/utils";
 import { createColumnHelper } from "@tanstack/react-table";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Avatar, Badge, Button, DataTable, Spinner, Tag, Text } from "opub-ui";
+import {
+  AlertDialog,
+  Avatar,
+  Badge,
+  Button,
+  DataTable,
+  Spinner,
+  Tag,
+  Text,
+  toast,
+  Tooltip,
+} from "opub-ui";
 import React from "react";
 import AuditorInvitation from "../../evaluations/components/AuditorInvitation";
+import ModelSelectionModal from "../../evaluations/components/ModelSelectionModal";
 import { useOrganization } from "../../OrganizationContext";
+import "../../evaluations/evaluations-page.css";
 
 const GET_AI_MODEL = `
   query GetAIModel($modelId: ID!) {
@@ -48,10 +64,12 @@ const GET_AI_MODEL = `
 `;
 
 const GET_EVALUATIONS = `
-  query GetEvaluations($modelId: ID, $limit: Int) {
-    audits(modelId: $modelId, limit: $limit) {
+ query GetAudits($limit: Int, $offset: Int, $filters: [FilterSpec!]) {
+    audits(limit: $limit, offset: $offset, filters: $filters, sortOptions: null) {
+      data{
       id
       name
+      modelName
       status
       auditType
       totalTests
@@ -61,10 +79,12 @@ const GET_EVALUATIONS = `
       createdAt
       startedAt
       completedAt
-      modelName
+      evaluationMode
       requestedByName
     }
+    totalItemsCount
   }
+}
 `;
 
 type AIModel = {
@@ -94,7 +114,7 @@ type AIModel = {
     version: string;
     isLatest: boolean;
     status: string;
-    lifecycleStage: string;
+    lifecycleStage?: string | null;
     createdAt: string;
   }>;
 };
@@ -104,11 +124,13 @@ type Evaluation = {
   name: string;
   status: string;
   auditType?: string;
+  evaluationMode?: string;
   totalTests: number | null;
   passedTests: number | null;
   failedTests: number | null;
   skippedTests: number | null;
   createdAt: string;
+  completedAt: string | null;
   modelName: string | null;
   requestedByName: string | null;
 };
@@ -144,15 +166,16 @@ const auditTypeLabels: Record<string, string> = {
 
 const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || "";
 
-// Helper for formatted date
-const formatDate = (dateString: string) => {
-  return new Date(dateString)
-    .toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    })
-    .replace(/\//g, " / ");
+const formatEvaluationDate = (dateString: string | null) => {
+  if (!dateString) return "--";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
 // Helper for formatted date (Short)
@@ -183,6 +206,34 @@ const ModelDetailPage = () => {
       id: number;
       version: string;
     } | null>(null);
+  const [showEditRedirectPrompt, setShowEditRedirectPrompt] =
+    React.useState(false);
+  const [isEvaluationModalOpen, setIsEvaluationModalOpen] =
+    React.useState(false);
+  const [evaluationModalVersionId, setEvaluationModalVersionId] = React.useState<
+    string | undefined
+  >();
+
+  const editModelUrl = React.useMemo(() => {
+    const orgSlug = encodeURIComponent(
+      String(organization?.slug ?? orgId ?? "").trim(),
+    );
+    const externalHost =
+      process.env.NEXT_PUBLIC_DATASPACE_HOST ||
+      process.env.NEXT_PUBLIC_AI_MAKER_URL ||
+      "";
+    const externalPath =
+      orgSlug && modelId
+        ? `/dashboard/organization/${orgSlug}/aimodels/edit/${modelId}/details`
+        : "";
+
+    if (!externalHost.trim() || !externalPath) return "";
+
+    const host = externalHost.replace(/\/$/, "");
+    return /\/dashboard$/.test(host)
+      ? `${host}${externalPath.replace(/^\/dashboard/, "")}`
+      : `${host}${externalPath}`;
+  }, [organization?.slug, orgId, modelId]);
 
   React.useEffect(() => {
     if (!isAuthenticated) return;
@@ -196,18 +247,19 @@ const ModelDetailPage = () => {
             { modelId },
             { organization: orgId },
           ),
-          request<{ audits: Evaluation[] }>(
+          request<{ audits: { data: Evaluation[], totalItemsCount: number } }>(
             GET_EVALUATIONS,
             {
-              modelId,
-              limit: 10,
+              limit: 100,
+              offset: 0,
+              filters: { field: "model_id", condition: "exact", value: modelId },
             },
             { organization: orgId },
           ),
         ]);
 
         if (modelResponse?.aiModel) setModel(modelResponse.aiModel);
-        if (evalResponse?.audits) setEvaluations(evalResponse.audits);
+        if (evalResponse?.audits?.data) setEvaluations(evalResponse.audits?.data);
       } catch (err: any) {
         setError(err.message || "Failed to fetch model details");
       } finally {
@@ -219,11 +271,35 @@ const ModelDetailPage = () => {
   }, [isAuthenticated, modelId, orgId, request]);
 
   const handleNewEvaluation = (versionId?: string) => {
-    let url = `/${locale}/dashboard/ai-maker/${orgId}/evaluations/new?modelId=${modelId}`;
-    if (versionId) {
-      url += `&versionId=${versionId}`;
+    setEvaluationModalVersionId(versionId);
+    setIsEvaluationModalOpen(true);
+  };
+
+  const preselectedModelForModal = React.useMemo(() => {
+    if (!model) return null;
+
+    return {
+      id: model.id,
+      name: model.name,
+      displayName: model.displayName,
+      modelType: model.modelType,
+      domain: model.sectors?.[0] ?? null,
+      isPublic: model.isPublic,
+      versions: model.versions.map((version) => ({
+        id: Number(version.id),
+        version: version.version,
+        isLatest: version.isLatest,
+        status: version.status,
+        lifecycleStage: version.lifecycleStage,
+      })),
+    };
+  }, [model]);
+
+  const getAuditLink = (evaluation: Evaluation) => {
+    if (evaluation.status?.toUpperCase() === "DRAFT") {
+      return `/${locale}/dashboard/ai-maker/${orgId}/evaluations/new?auditId=${evaluation.id}`;
     }
-    router.push(url);
+    return `/${locale}/dashboard/ai-maker/${orgId}/evaluations/${evaluation.id}`;
   };
 
   const columnHelper = createColumnHelper<Evaluation>();
@@ -232,47 +308,92 @@ const ModelDetailPage = () => {
       header: "Evaluation Name",
       cell: (info) => (
         <Link
-          href={`/${locale}/dashboard/ai-maker/${orgId}/evaluations/${info.row.original.id}`}
-          className="text-primary-purple hover:underline"
+          href={getAuditLink(info.row.original)}
+          className="text-primary-purple hover:underline font-medium"
         >
-          {info.getValue() || "Untitled Evaluation"}
+          {info.getValue() || `Evaluation #${info.row.original.id.slice(0, 8)}`}
         </Link>
       ),
     }),
-    columnHelper.accessor("createdAt", {
-      header: "Evaluation Time",
-      cell: (info) => formatDate(info.getValue()),
-    }),
-    columnHelper.accessor("id", {
-      header: "Evaluation ID",
-      cell: (info) => (
-        <span className="text-gray-600">ID #{info.getValue().slice(0, 8)}</span>
-      ),
-    }),
     columnHelper.accessor("auditType", {
-      header: "Type",
+      header: "Evaluation Type",
       cell: (info) => {
         const typeValue = info.getValue();
+        const label = typeValue
+          ? auditTypeLabels[typeValue] || typeValue
+          : "--";
+        return <Badge>{label}</Badge>;
+      },
+    }),
+    columnHelper.accessor("status", {
+      header: "Status",
+      cell: (info) => {
+        const status = info.getValue();
+        const colors = getEvaluationStatusColor(status);
         return (
-          <Text variant="bodyMd" fontWeight="medium">
-            {auditTypeLabels[typeValue || ""] || "Technical"}
+          <Text
+            variant="bodySm"
+            as="span"
+            className="inline-block rounded px-2 py-0.5"
+            style={{
+              backgroundColor: colors.fillColor,
+              color: colors.textColor,
+            }}
+          >
+            {formatStatusLabel(status)}
           </Text>
         );
       },
     }),
-    // columnHelper.accessor("requestedByName", {
-    //   header: "Expert",
-    //   cell: (info) => (
-    //     <div className="flex items-center gap-2">
-    //       <Avatar
-    //         showInitials
-    //         name={info.getValue() || "Expert"}
-    //         size="extraSmall"
-    //       />
-    //       <Text variant="bodySm">{info.getValue() || "Unknown"}</Text>
-    //     </div>
-    //   ),
-    // }),
+    columnHelper.accessor("evaluationMode", {
+      header: "Evaluation Mode",
+      cell: (info) => {
+        const mode = info.getValue()?.toLowerCase();
+        const label =
+          mode === "manual" || mode === "playground"
+            ? "Playground Evaluation"
+            : mode === "bulk" || mode === "automated"
+              ? "Bulk Evaluation"
+              : info.getValue() || "--";
+        return <Text variant="bodySm">{label}</Text>;
+      },
+    }),
+    columnHelper.accessor("totalTests", {
+      header: "Tests",
+      cell: (info) => {
+        const total = info.getValue() || 0;
+        const passed = info.row.original.passedTests || 0;
+        const failed = info.row.original.failedTests || 0;
+
+        if (!total || passed == null || failed == null) {
+          return <Text variant="bodySm">--</Text>;
+        }
+
+        return (
+          <div className="flex items-center gap-2">
+            <div className="test-result-bar">
+              <div
+                className="test-result-pass"
+                style={{ width: `${(passed / total) * 100}%` }}
+              />
+              <div
+                className="test-result-fail"
+                style={{ width: `${(failed / total) * 100}%` }}
+              />
+            </div>
+            <Text variant="bodySm">
+              {passed}/{total} passed
+            </Text>
+          </div>
+        );
+      },
+    }),
+    columnHelper.accessor("completedAt", {
+      header: "Completed on",
+      cell: (info) => (
+        <Text variant="bodySm">{formatEvaluationDate(info.getValue())}</Text>
+      ),
+    }),
   ];
 
   if (loading) {
@@ -302,24 +423,21 @@ const ModelDetailPage = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1 min-w-0  lg:border-r border-gray-100">
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-3">
-                <Text variant="heading3xl" fontWeight="semibold">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <Text
+                  variant="heading3xl"
+                  fontWeight="semibold"
+                  className="min-w-0"
+                >
                   {model.displayName}
                 </Text>
-
-                {/* <div className="flex flex-wrap gap-2">
-                  {model.tags?.slice(0, 2).map((tag, index) => (
-                    <span className="self-start sm:self-auto">
-                      <Tag
-                        variation="filled"
-                        fillColor={"bg-purple-200"}
-                        textColor={"text-purple-800"}
-                      >
-                        {tag}
-                      </Tag>
-                    </span>
-                  ))}
-                </div> */}
+                <Button
+                  kind="primary"
+                  onClick={() => setShowEditRedirectPrompt(true)}
+                  className="shrink-0 bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-medium text-base border-none"
+                >
+                  Edit model
+                </Button>
               </div>
 
               <div className="overflow-hidden flex flex-col gap-2 mt-8">
@@ -347,7 +465,12 @@ const ModelDetailPage = () => {
                 </div>
 
                 <div className="flex flex-col gap-4">
-                  {(model.versions || []).map((v) => (
+                  {(model.versions || []).map((v) => {
+                    const isDeprecated = isDeprecatedLifecycle(
+                      v.lifecycleStage,
+                    );
+
+                    return (
                     <div
                       key={v.id}
                       className="mt-2 flex flex-col gap-2 border-solid border-2 border-baseGraySlateSolid6 bg-white bg-white p-4 rounded-2 lg:mx-0 lg:p-4 shadow-sm"
@@ -377,23 +500,33 @@ const ModelDetailPage = () => {
                           )}
                         </div>
 
-                        <div className="flex items-center gap-4">
-                          <button
-                            type="button"
-                            style={{ textDecoration: "none" }}
-                            className="prompt-add-filters-link no-underline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleNewEvaluation(v.id);
-                            }}
-                          >
-                            Start Evaluation
-                          </button>
-
-                          <button
-                            type="button"
-                            style={{ textDecoration: "none" }}
-                            className="prompt-add-filters-link"
+                        <div className="flex items-center gap-3">
+                          {isDeprecated ? (
+                            <Tooltip content="This model version is deprecated">
+                              <span className="inline-flex cursor-not-allowed">
+                                <Button
+                                  kind="secondary"
+                                  disabled
+                                  className="!rounded-[8px] pointer-events-none"
+                                >
+                                  Start Evaluation
+                                </Button>
+                              </span>
+                            </Tooltip>
+                          ) : (
+                            <Button
+                              kind="secondary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleNewEvaluation(v.id);
+                              }}
+                              className="!rounded-[8px]"
+                            >
+                              Start Evaluation
+                            </Button>
+                          )}
+                          <Button
+                            kind="primary"
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedVersionForAuditor({
@@ -401,9 +534,10 @@ const ModelDetailPage = () => {
                                 version: v.version,
                               });
                             }}
+                            className="!rounded-[8px] !border-none !bg-primaryPurple2 !text-white hover:!bg-[#6849EE] hover:!text-white"
                           >
                             Invite Evaluators
-                          </button>
+                          </Button>
                         </div>
                       </div>
 
@@ -473,14 +607,15 @@ const ModelDetailPage = () => {
                           <div className="px-4 py-3 border-t md:border-t-0 border-baseGraySlateSolid4">
                             <Text variant="bodyMd" className="capitalize">
                               {v.isLatest
-                                ? v.lifecycleStage.replace(/_/g, " ")
-                                : v.status.replace(/_/g, " ")}
+                                ? (v.lifecycleStage || "").replace(/_/g, " ")
+                                : formatStatusLabel(v.status)}
                             </Text>
                           </div>
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                   {(model.versions || []).length === 0 && (
                     <div className="p-6 border border-dashed border-gray-300 rounded-lg text-center bg-gray-50">
                       <Text variant="bodyMd" className="text-gray-500">
@@ -699,12 +834,22 @@ const ModelDetailPage = () => {
             </Text>
           </div>
           {evaluations.length > 0 ? (
-            <div className="bg-purple-50/30 rounded-lg overflow-hidden border border-purple-100">
+            <div className="evaluations-table-model-detail-col">
               <DataTable
                 rows={evaluations}
                 columns={columns}
-                hideSelection={true}
-                hideFooter={false}
+                hoverable
+                sortColumns={[
+                  "name",
+                  "auditType",
+                  "status",
+                  "evaluationMode",
+                  "completedAt",
+                ]}
+                initialSortColumnIndex={5}
+                defaultSortDirection="desc"
+                hideSelection
+                truncate
               />
             </div>
           ) : (
@@ -736,6 +881,60 @@ const ModelDetailPage = () => {
           versionLabel={selectedVersionForAuditor.version}
         />
       )}
+
+      <ModelSelectionModal
+        open={isEvaluationModalOpen}
+        onOpenChange={(open) => {
+          setIsEvaluationModalOpen(open);
+          if (!open) {
+            setEvaluationModalVersionId(undefined);
+          }
+        }}
+        orgId={orgId}
+        {...(isEvaluationModalOpen
+          ? {
+              preselectedModelId: modelId,
+              preselectedVersionId: evaluationModalVersionId,
+              preselectedModel: preselectedModelForModal,
+              lockModelSelection: true,
+            }
+          : {})}
+      />
+
+      <AlertDialog
+        open={showEditRedirectPrompt}
+        onOpenChange={setShowEditRedirectPrompt}
+      >
+        <AlertDialog.Content
+          title="Redirect to CivicDataSpace"
+          primaryAction={{
+            content: "Yes, continue",
+            onAction: () => {
+              setShowEditRedirectPrompt(false);
+              if (editModelUrl) {
+                window.open(editModelUrl, "_blank", "noopener,noreferrer");
+              } else {
+                toast.error(
+                  "Unable to open model editor. Please try again later.",
+                );
+              }
+            },
+            className:
+              "bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white",
+          } as any}
+          secondaryActions={[
+            {
+              content: "No",
+              onAction: () => setShowEditRedirectPrompt(false),
+              className:
+                "bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white",
+            } as any,
+          ]}
+        >
+          You are being redirected to CivicDataSpace to edit this model. Do you
+          want to continue?
+        </AlertDialog.Content>
+      </AlertDialog>
     </>
   );
 };
