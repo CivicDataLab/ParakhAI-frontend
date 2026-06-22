@@ -92,7 +92,7 @@ export function getEvaluationStatusColor(
       return { fillColor: "#E2F5C4", textColor: "#166534" };
     case "PENDING_REVIEW":
       return { fillColor: "#FEF3C7", textColor: "#92400E" };
-    case "RUNNING":
+    case "IN_PROGRESS":
       return { fillColor: "#FEF3C7", textColor: "#92400E" };
     case "QUEUED":
     case "PENDING":
