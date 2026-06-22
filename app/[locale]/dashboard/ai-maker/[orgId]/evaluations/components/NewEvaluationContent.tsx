@@ -29,8 +29,8 @@ import type { AuditType, Module, SelectOption } from "./types";
 
 // GraphQL queries for dynamic modules and metrics
 const METRICS_BY_MODEL_TYPE_QUERY = `
-  query MetricsByModelType($modelType: String!) {
-    metricsByModelType(modelType: $modelType) {
+  query MetricsByModelType($modelType: String!,$domain: String!) {
+    metricsByModelType(modelType: $modelType, domain: $domain) {
       name
       displayName
       description
@@ -746,6 +746,12 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               // Skip if already loaded or if this is a playground evaluation (no module selection needed).
               const evalModeLower = audit.evaluationMode?.toLowerCase() || "";
               const isPlaygroundAudit = evalModeLower === "manual" || evalModeLower === "playground";
+              const auditConfig = audit.configuration || {};
+              const scopeForMetrics =
+                audit.auditScope ||
+                (typeof auditConfig.auditScope === "string" ? auditConfig.auditScope : "") ||
+                urlAuditScope ||
+                "";
               if (!modulesFetchedRef.current && !isPlaygroundAudit) {
               try {
                   const metricsResp = await request<{
@@ -761,6 +767,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                     }>;
                   }>(METRICS_BY_MODEL_TYPE_QUERY, {
                     modelType: snapshotModelType,
+                    domain: scopeForMetrics,
                   });
 
                   const metricsData = metricsResp?.metricsByModelType || [];
@@ -1385,7 +1392,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             description?: string;
             metrics: Array<{ name: string; displayName?: string; description?: string }>;
           }>;
-        }>(METRICS_BY_MODEL_TYPE_QUERY, { modelType });
+        }>(METRICS_BY_MODEL_TYPE_QUERY, { modelType, domain: auditScope });
 
         const metricsData = metricsResp?.metricsByModelType || [];
 
@@ -1664,7 +1671,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           name: string;
           metrics: Array<{ name: string; displayName?: string }>;
         }>;
-      }>(METRICS_BY_MODEL_TYPE_QUERY, { modelType });
+      }>(METRICS_BY_MODEL_TYPE_QUERY, { modelType, domain: auditScope });
 
       const metricsData = data?.metricsByModelType || [];
       const moduleMetrics = metricsData.find((m: any) => m.name === moduleName);
@@ -2387,6 +2394,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                     selectedMetrics as Record<string, SelectOption[]>
                   }
                   modelType={modelType}
+                  auditScope={auditScope}
                   orgId={orgId}
                   onRunAudit={handleRunAudit}
                   isRequestingAudit={isRequestingAudit}
