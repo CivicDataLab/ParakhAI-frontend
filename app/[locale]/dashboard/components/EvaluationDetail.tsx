@@ -734,8 +734,10 @@ const EvaluationDetail = ({
         );
 
         if (canShowEvaluationResults(auditData.audit, isPlayground)) {
-          await fetchAuditSummary(auditData.audit.configuration);
-          await fetchAuditResults();
+          await Promise.all([
+            fetchAuditSummary(auditData.audit.configuration),
+            fetchAuditResults(),
+          ]);
         } else if (isAuditInProgress(auditData.audit.status)) {
           setEvaluationProgress(
             typeof auditData.audit.progressPercentage === "number"
@@ -914,8 +916,10 @@ const EvaluationDetail = ({
           if (shouldStopPolling(data.audit, isPlayground)) {
             stopProgressPolling();
             if (canShowEvaluationResults(data.audit, isPlayground)) {
-              await fetchAuditSummary(data.audit.configuration);
-              await fetchAuditResults();
+              await Promise.all([
+                fetchAuditSummary(data.audit.configuration),
+                fetchAuditResults(),
+              ]);
             }
             return;
           }
@@ -925,8 +929,10 @@ const EvaluationDetail = ({
             canShowEvaluationResults(data.audit, isPlayground)
           ) {
             stopProgressPolling();
-            await fetchAuditSummary(data.audit.configuration);
-            await fetchAuditResults();
+            await Promise.all([
+              fetchAuditSummary(data.audit.configuration),
+              fetchAuditResults(),
+            ]);
             return;
           }
         }
