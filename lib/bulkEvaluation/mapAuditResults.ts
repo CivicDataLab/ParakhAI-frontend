@@ -1,4 +1,5 @@
 import type { BulkTestCase, BulkTestCaseResultRef, BulkTestCaseRisk, ModuleIssueCount } from "./types";
+import { toTitleCase } from "@/lib/utils";
 
 export type AuditResultTest = {
   id?: string | null;
@@ -66,8 +67,13 @@ const toInputPrompt = (testInput: string) => {
   return firstLine || testInput.trim();
 };
 
+const humanizeKey = (key: string) => toTitleCase(key.replace(/_/g, " "));
+
 const LABEL_FROM = (result: AuditResult) =>
-  result.task?.metricDisplayName || result.task?.metric || result.name || "Issue";
+  result.task?.metricDisplayName ||
+  (result.task?.metric ? humanizeKey(result.task.metric) : null) ||
+  (result.name ? humanizeKey(result.name) : null) ||
+  "Issue";
 
 const buildRiskFromResult = (result: AuditResult): BulkTestCaseRisk | null => {
   if (result.isReviewed) {
