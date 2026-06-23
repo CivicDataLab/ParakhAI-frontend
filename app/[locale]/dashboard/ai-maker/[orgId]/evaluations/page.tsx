@@ -110,7 +110,7 @@ const AuditsListPage = () => {
         return (
           status === "QUEUED" ||
           status === "PENDING" ||
-          status === "RUNNING"
+          status === "IN_PROGRESS"
         );
       });
 

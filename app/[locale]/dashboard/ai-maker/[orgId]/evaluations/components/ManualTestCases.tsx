@@ -11,6 +11,7 @@ interface ManualTestCasesProps {
   supportedLanguages?: string[];
   orgId: string;
   modelType?: string;
+  auditScope?: string;
   onRunAudit: () => void;
   isRequestingAudit: boolean;
   onTestCaseCountChange?: (count: number) => void;
@@ -23,6 +24,7 @@ const ManualTestCases: React.FC<ManualTestCasesProps> = ({
   supportedLanguages,
   orgId,
   modelType = "LLM",
+  auditScope,
   onRunAudit,
   isRequestingAudit,
   onTestCaseCountChange,
@@ -44,6 +46,7 @@ const ManualTestCases: React.FC<ManualTestCasesProps> = ({
       modules={modules}
       moduleMetrics={moduleMetrics}
       modelType={modelType}
+      domain={auditScope}
       supportedLanguages={supportedLanguages}
       orgId={orgId}
       onFinishAudit={onRunAudit}

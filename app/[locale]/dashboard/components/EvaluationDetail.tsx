@@ -199,7 +199,7 @@ const getEvaluatorLabel = (auditType: string | null | undefined) => {
 const isAuditInProgress = (status: string | null | undefined) => {
   const normalized = status?.toUpperCase();
   return (
-    normalized === "RUNNING" ||
+    normalized === "IN_PROGRESS" ||
     normalized === "QUEUED" ||
     normalized === "PENDING"
   );

@@ -54,6 +54,7 @@ interface ManualEvaluationFlowProps {
   modules: string[];
   moduleMetrics?: Record<string, SelectOption[]>;
   modelType: string;
+  domain?: string;
   supportedLanguages?: string[];
   orgId: string;
   onFinishAudit: () => void;
@@ -64,6 +65,7 @@ interface ManualEvaluationFlowProps {
 const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   auditId,
   modelType,
+  domain,
   supportedLanguages,
   orgId,
   onTestCaseCountChange,
@@ -145,7 +147,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           displayName: string;
           metrics: Array<{ name: string; displayName: string }>;
         }>;
-      }>(METRICS_BY_MODEL_TYPE_QUERY, { modelType }, { organization: orgId });
+      }>(METRICS_BY_MODEL_TYPE_QUERY, { modelType, domain: domain ?? "" }, { organization: orgId });
 
       const modules = result?.metricsByModelType ?? [];
       const allMetrics = modules.flatMap((m) => m.metrics ?? []);

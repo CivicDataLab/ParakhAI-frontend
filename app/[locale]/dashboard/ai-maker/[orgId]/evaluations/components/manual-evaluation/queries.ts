@@ -1,6 +1,6 @@
 export const METRICS_BY_MODEL_TYPE_QUERY = `
-  query MetricsByModelType($modelType: String!) {
-    metricsByModelType(modelType: $modelType) {
+  query MetricsByModelType($modelType: String!, $domain: String!) {
+    metricsByModelType(modelType: $modelType, domain: $domain) {
       name
       displayName
       description
