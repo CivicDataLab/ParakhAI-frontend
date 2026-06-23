@@ -3,7 +3,7 @@
 import { useGraphQL } from "@/lib/api";
 import { useAppSession } from "@/lib/session";
 import { statusColors } from "@/lib/statusColors";
-import { formatAssignmentStatusLabel, formatStatusLabel } from "@/lib/utils";
+import { formatAssignmentStatusLabel, formatStatusLabel, isPendingAssignmentStatus } from "@/lib/utils";
 import {
   IconCheck,
   IconClock,
@@ -223,7 +223,9 @@ const AuditorDashboard = () => {
   };
 
   // Filter assignments by status
-  const pendingAssignments = assignments.filter((a) => a.status === "PENDING");
+  const pendingAssignments = assignments.filter((a) =>
+    isPendingAssignmentStatus(a.status),
+  );
   const activeAssignments = assignments.filter(
     (a) => a.status === "ACCEPTED" || a.status === "IN_PROGRESS",
   );

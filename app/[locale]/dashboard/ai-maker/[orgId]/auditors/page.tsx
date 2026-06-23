@@ -36,7 +36,7 @@ const Avatar = ({
 }) => {
   const [imageError, setImageError] = useState(false);
   const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || "";
-  let imageSrc = dataspaceUrl+src;
+  const imageSrc = src ? `${dataspaceUrl.replace(/\/$/, "")}${src}` : "";
 
   if (!imageSrc || imageError) {
     return <IconUser size={size} className="text-purple-600" />;

@@ -88,15 +88,23 @@ export function formatStatusLabel(
   return options?.lowercase ? label.toLowerCase() : label;
 }
 
-/** Assignment status label — preserves API values (e.g. PENDING stays PENDING). */
+/** Assignment status label — shows PENDING for pending invitations (API may send PENDING or QUEUED). */
 export function formatAssignmentStatusLabel(
   status?: string | null,
   options?: { lowercase?: boolean },
 ): string {
   if (!status) return "Unknown";
 
-  const label = status.toUpperCase().replace(/_/g, " ");
+  const normalized = status.toUpperCase();
+  const displayStatus = normalized === "QUEUED" ? "PENDING" : normalized;
+  const label = displayStatus.replace(/_/g, " ");
   return options?.lowercase ? label.toLowerCase() : label;
+}
+
+/** Pending invitation — API may return PENDING or QUEUED. */
+export function isPendingAssignmentStatus(status?: string | null): boolean {
+  const normalized = status?.toUpperCase();
+  return normalized === "PENDING" || normalized === "QUEUED";
 }
 
 const convertMap: any = {
