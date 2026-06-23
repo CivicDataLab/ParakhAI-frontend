@@ -322,6 +322,28 @@ html,
 body {
   background-color: var(--page-background) !important;
   min-height: 100%;
+  font-family:
+    var(--font-inter),
+    var(--font-noto-devanagari),
+    var(--font-noto-tamil),
+    var(--font-noto-kannada),
+    var(--font-noto-telugu),
+    var(--font-noto-malayalam),
+    var(--font-noto-bengali),
+    var(--font-noto-gujarati),
+    var(--font-noto-gurmukhi),
+    var(--font-noto-oriya),
+    var(--font-noto-meetei-mayek),
+    var(--font-noto-ol-chiki),
+    var(--font-noto-arabic),
+    var(--font-noto-chakma),
+    var(--font-noto-limbu),
+    var(--font-noto-lepcha),
+    var(--font-noto-syloti-nagri),
+    var(--font-noto-sinhala),
+    var(--font-noto-saurashtra),
+    var(--font-noto-myanmar),
+    sans-serif;
 }
 
 /* Role card styles - flex-shrink was the issue, not the approach */
