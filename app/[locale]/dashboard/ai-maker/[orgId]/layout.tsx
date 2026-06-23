@@ -3,7 +3,7 @@
 import BreadCrumbs from "@/components/Breadcrumbs";
 import { useGraphQL } from "@/lib/api";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import WelcomeSection from "../../components/WelcomeSection";
 import { OrganizationContext } from "./OrganizationContext";
 
@@ -36,24 +36,30 @@ export default function AIMakerLayout({
     logoUrl: string | null;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const isFetchingRef = useRef(false);
+  const lastFetchedOrgIdRef = useRef<string | null>(null);
 
-  // Fetch organization details
   useEffect(() => {
     if (!isAuthenticated || isSessionLoading || !orgId) return;
+    if (isFetchingRef.current || lastFetchedOrgIdRef.current === orgId) return;
+
+    isFetchingRef.current = true;
 
     const fetchOrganization = async () => {
       try {
         setIsLoading(true);
 
-        const orgData = await request(GET_ORG_DETAILS, { orgId: orgId });
+        const orgData = await request(GET_ORG_DETAILS, { orgId });
 
         if (orgData?.organization) {
           setOrganization(orgData.organization);
+          lastFetchedOrgIdRef.current = orgId;
         }
       } catch (err: any) {
         console.error("Error fetching organization:", err);
       } finally {
         setIsLoading(false);
+        isFetchingRef.current = false;
       }
     };
 
