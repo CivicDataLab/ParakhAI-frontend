@@ -1547,6 +1547,7 @@ const EvaluationDetail = ({
               ? "reviewed"
               : "pending"
           }
+          metricSummary={metricSummary as Record<string, Record<string, unknown>>}
         />
       )}
 
