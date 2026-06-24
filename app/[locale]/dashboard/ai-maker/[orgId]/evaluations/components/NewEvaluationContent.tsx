@@ -1915,8 +1915,10 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   }
 
   const handleBackToList = async () => {
-    const saved = await saveDraftProgress();
-    if (!saved) return;
+    if (evaluationStatus === "DRAFT") {
+      const saved = await saveDraftProgress();
+      if (!saved) return;
+    }
 
     isNavigatingAwayRef.current = true;
     router.push(evaluationsListPath);
@@ -2067,6 +2069,15 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   };
 
   const draftStatusColors = getEvaluationStatusColor("DRAFT");
+
+  const isCancelDisabled = (() => {
+    if (isCancelling) return true;
+    if (["COMPLETED", "FAILED", "CANCELLED"].includes(evaluationStatus)) return true;
+    if (modeOfEvaluation === "playground") {
+      return !["DRAFT", "IN_PROGRESS"].includes(evaluationStatus);
+    }
+    return !["DRAFT", "PENDING_REVIEW"].includes(evaluationStatus);
+  })();
 
   const getEvaluatorLabel = (type: AuditType) => {
     switch (type) {
@@ -2240,7 +2251,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               kind="tertiary"
               variant="critical"
               onClick={handleCancelEvaluation}
-              disabled={isCancelling}
+              disabled={isCancelDisabled}
               className={styles.cancelAuditButton}
             >
               <span className="inline-flex items-center">
