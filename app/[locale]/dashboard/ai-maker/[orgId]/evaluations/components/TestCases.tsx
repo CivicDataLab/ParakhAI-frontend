@@ -427,20 +427,19 @@ const TestCases: React.FC<TestCasesProps> = ({
         const dataset = row.original;
         const datasetId = String(dataset.id);
         const isSelected = selectedLibraryId === datasetId;
-        const isDisabled = selectedLibraryId !== null && !isSelected;
 
         return (
           <input
-            type="checkbox"
+            type="radio"
+            name="promptLibrary"
             checked={isSelected}
-            disabled={isDisabled}
             aria-label={`Select ${dataset.title}`}
-            onChange={(event) => {
+            onChange={() => {}}
+            onClick={(event) => {
               event.stopPropagation();
               handlePromptLibrarySelect(dataset);
             }}
-            onClick={(event) => event.stopPropagation()}
-            className="prompt-library-row-checkbox h-4 w-4 accent-[#644fc1] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+            className="h-4 w-4 text-primary-purple focus:ring-primary-purple focus:ring-2 cursor-pointer"
           />
         );
       },
