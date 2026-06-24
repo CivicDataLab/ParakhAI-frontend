@@ -1,9 +1,7 @@
 "use client";
 
-import { useGraphQL } from "@/lib/api";
 import type { AuditResult } from "@/lib/bulkEvaluation/mapAuditResults";
 import { mapAuditResultsToBulkTestCases } from "@/lib/bulkEvaluation/mapAuditResults";
-import { GET_AUDIT_RESULTS_QUERY } from "@/lib/bulkEvaluation/queries";
 
 import type {
   BulkTestCase,
@@ -65,6 +63,7 @@ type AuditResultsListProps = {
   isEditable?: boolean;
   bannerVariant?: "pending" | "reviewed";
   metricSummary?: Record<string, Record<string, unknown>>;
+  results: AuditResult[] | null;
 };
 
 const AuditResultsList = ({
@@ -73,9 +72,8 @@ const AuditResultsList = ({
   isEditable = false,
   bannerVariant = "pending",
   metricSummary: metricSummaryProp = {},
+  results,
 }: AuditResultsListProps) => {
-  const { request, isAuthenticated, isLoading: isSessionLoading } =
-    useGraphQL();
   const [items, setItems] = useState<BulkTestCase[]>([]);
   const moduleIssueCounts = useMemo<ModuleIssueCount[]>(() => {
     const map = new Map<string, { displayName: string; issueCount: number }>();
@@ -99,8 +97,6 @@ const AuditResultsList = ({
   }, [items]);
   const [sortBy, setSortBy] = useState<SortOption>("issues_desc");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [selectedTestCase, setSelectedTestCase] = useState<BulkTestCase | null>(
     null
   );
@@ -110,66 +106,39 @@ const AuditResultsList = ({
   const cardMeasureRef = useRef<HTMLDivElement | null>(null);
   const [listMaxHeight, setListMaxHeight] = useState<number | undefined>();
 
-  const fetchResults = useCallback(async () => {
-    if (!isAuthenticated) return;
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const resultData = await request<{ auditResults: AuditResult[] }>(
-        GET_AUDIT_RESULTS_QUERY,
-        { auditId, metric: null },
-        orgId ? { organization: orgId } : undefined
-      );
-
-      // Build metricName → moduleId reverse map from the passed-in metricSummary
-      const metricToModule: Record<string, string> = {};
-      for (const [moduleId, metrics] of Object.entries(metricSummaryProp)) {
-        for (const metricName of Object.keys(metrics)) {
-          metricToModule[metricName] = moduleId;
-        }
-      }
-
-      const { items: mappedItems } = mapAuditResultsToBulkTestCases(
-        resultData?.auditResults ?? []
-      );
-
-      // Resolve "UNKNOWN" moduleIds using the summary mapping
-      const singleFallbackModule =
-        Object.keys(metricToModule).length > 0
-          ? Object.values(metricToModule)[0]
-          : null;
-
-      const resolvedItems = mappedItems.map((item) => {
-        if (item.moduleId !== "UNKNOWN") return item;
-        const metricKey = item.allMetricResults[0]?.metricKey;
-        const moduleId =
-          (metricKey ? metricToModule[metricKey] : null) ?? singleFallbackModule;
-        if (!moduleId) return item;
-        return {
-          ...item,
-          moduleId,
-          moduleDisplayName: formatModuleDisplayName(moduleId),
-        };
-      });
-
-      setItems(resolvedItems);
-      setVisibleCount(PAGE_SIZE);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load evaluation results"
-      );
-      setItems([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [auditId, isAuthenticated, metricSummaryProp, orgId, request]);
-
   useEffect(() => {
-    if (isSessionLoading) return;
-    void fetchResults();
-  }, [fetchResults, isSessionLoading]);
+    if (results === null) return;
+
+    const metricToModule: Record<string, string> = {};
+    for (const [moduleId, metrics] of Object.entries(metricSummaryProp)) {
+      for (const metricName of Object.keys(metrics)) {
+        metricToModule[metricName] = moduleId;
+      }
+    }
+
+    const { items: mappedItems } = mapAuditResultsToBulkTestCases(results);
+
+    const singleFallbackModule =
+      Object.keys(metricToModule).length > 0
+        ? Object.values(metricToModule)[0]
+        : null;
+
+    const resolvedItems = mappedItems.map((item) => {
+      if (item.moduleId !== "UNKNOWN") return item;
+      const metricKey = item.allMetricResults[0]?.metricKey;
+      const moduleId =
+        (metricKey ? metricToModule[metricKey] : null) ?? singleFallbackModule;
+      if (!moduleId) return item;
+      return {
+        ...item,
+        moduleId,
+        moduleDisplayName: formatModuleDisplayName(moduleId),
+      };
+    });
+
+    setItems(resolvedItems);
+    setVisibleCount(PAGE_SIZE);
+  }, [results, metricSummaryProp]);
 
   const sortedItems = useMemo(() => {
     return [...items].sort((a, b) => {
@@ -187,7 +156,7 @@ const AuditResultsList = ({
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [sortBy, auditId]);
+  }, [sortBy]);
 
   useEffect(() => {
     const node = loadMoreRef.current;
@@ -283,13 +252,7 @@ const AuditResultsList = ({
             </div>
           )}
 
-          {error && (
-            <Text variant="bodySm" className="text-red-600 mb-4 block">
-              {error}
-            </Text>
-          )}
-
-          {isLoading && items.length === 0 && (
+          {results === null && (
             <div className="flex justify-center py-8">
               <Spinner />
             </div>
@@ -363,19 +326,13 @@ const AuditResultsList = ({
               </div>
             ))}
 
-            {!isLoading && displayedItems.length === 0 && !error && (
+            {results !== null && displayedItems.length === 0 && (
               <Text variant="bodySm" className="text-gray-600 py-6 block">
                 No inputs found for the selected module.
               </Text>
             )}
 
             <div ref={loadMoreRef} className="h-4 shrink-0" aria-hidden="true" />
-
-            {isLoading && items.length > 0 && (
-              <div className="flex shrink-0 justify-center py-4">
-                <Spinner />
-              </div>
-            )}
           </div>
         </div>
       </div>

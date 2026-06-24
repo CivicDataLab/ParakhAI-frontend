@@ -5,7 +5,7 @@ import { useGraphQL } from "@/lib/api";
 import { isDeprecatedLifecycle } from "@/lib/lifecycle";
 import { useAppSession } from "@/lib/session";
 import { statusColors } from "@/lib/statusColors";
-import { formatStatusLabel } from "@/lib/utils";
+import { formatAssignmentStatusLabel, formatStatusLabel, isPendingAssignmentStatus } from "@/lib/utils";
 import { createColumnHelper } from "@tanstack/react-table";
 import {
   IconArrowLeft,
@@ -610,13 +610,14 @@ const AuditorModelDetailPage = () => {
                                   fillColor={colors.bgHex}
                                   textColor={colors.textHex}
                                 >
-                                  {formatStatusLabel(assignment.status)}
+                                  {formatAssignmentStatusLabel(assignment.status)}
                                 </Tag>
                               )}
                             </div>
 
                             <div className="flex items-center gap-4">
-                              {assignment?.status === "PENDING" && (
+                              {assignment &&
+                                isPendingAssignmentStatus(assignment.status) && (
                                 <>
                                   <Button
                                     size="slim"

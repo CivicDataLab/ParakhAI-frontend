@@ -3,7 +3,7 @@
 import { useGraphQL } from "@/lib/api";
 import { useAppSession } from "@/lib/session";
 import { statusColors } from "@/lib/statusColors";
-import { formatStatusLabel } from "@/lib/utils";
+import { formatAssignmentStatusLabel, formatStatusLabel, isPendingAssignmentStatus } from "@/lib/utils";
 import {
   IconCheck,
   IconFilter,
@@ -226,12 +226,11 @@ const AssignmentsPage = () => {
       cell: (info) => {
         const status = info.getValue();
         const colors = statusColors[status] || statusColors.PENDING;
-        console.log("info", info.row.original);
         return (
           <span
             className={`px-2 py-1 text-xs rounded-full ${colors.bg} ${colors.text}`}
           >
-            {formatStatusLabel(status)}
+            {formatAssignmentStatusLabel(status)}
           </span>
         );
       },
@@ -256,7 +255,7 @@ const AssignmentsPage = () => {
       cell: ({ row }) => {
         const status = row.original.status;
 
-        if (status === "PENDING") {
+        if (isPendingAssignmentStatus(status)) {
           return (
             <div className="flex items-center gap-2">
               <Button
