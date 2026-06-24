@@ -38,6 +38,7 @@ const METRICS_BY_MODEL_TYPE_QUERY = `
         name
         displayName
         description
+        mandatoryInputs
       }
     }
   }
@@ -763,6 +764,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                         name: string;
                         displayName?: string;
                         description?: string;
+                        mandatoryInputs?: string[];
                       }>;
                     }>;
                   }>(METRICS_BY_MODEL_TYPE_QUERY, {
@@ -811,6 +813,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                           label:
                             metric.displayName ||
                             toTitleCase(metric.name.replace(/_/g, " ")),
+                          mandatoryInputs: metric.mandatoryInputs || [],
                         })
                       );
                       moduleMetricsOptionsMap[moduleMetrics.name] =
@@ -1318,7 +1321,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       modulesData: Module[],
       metricsData: Array<{
         name: string;
-        metrics: Array<{ name: string; displayName?: string }>;
+        metrics: Array<{ name: string; displayName?: string; mandatoryInputs?: string[] }>;
       }> = []
     ) => {
       setModules(modulesData);
@@ -1337,6 +1340,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             label:
               metric.displayName ||
               toTitleCase(metric.name.replace(/_/g, " ")),
+            mandatoryInputs: metric.mandatoryInputs || [],
           }));
 
           initialModuleMetrics[moduleMetrics.name] = metricsOptions;
@@ -1362,6 +1366,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               label:
                 metric?.displayName ||
                 toTitleCase((metric?.name || "").replace(/_/g, " ")),
+              mandatoryInputs: metric?.mandatoryInputs || [],
             }))
             .filter((opt) => opt.value);
 
@@ -1390,7 +1395,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             name: string;
             displayName?: string;
             description?: string;
-            metrics: Array<{ name: string; displayName?: string; description?: string }>;
+            metrics: Array<{ name: string; displayName?: string; description?: string; mandatoryInputs?: string[] }>;
           }>;
         }>(METRICS_BY_MODEL_TYPE_QUERY, { modelType, domain: auditScope });
 
@@ -1417,6 +1422,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               metric.displayName ||
               toTitleCase(metric.name.replace(/_/g, " ")),
             description: metric.description || "",
+            mandatoryInputs: metric.mandatoryInputs || [],
           })),
         }));
 
@@ -1669,7 +1675,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       const data = await request<{
         metricsByModelType: Array<{
           name: string;
-          metrics: Array<{ name: string; displayName?: string }>;
+          metrics: Array<{ name: string; displayName?: string; mandatoryInputs?: string[] }>;
         }>;
       }>(METRICS_BY_MODEL_TYPE_QUERY, { modelType, domain: auditScope });
 
@@ -1683,6 +1689,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         value: metric.name,
         label:
           metric.displayName || toTitleCase(metric.name.replace(/_/g, " ")),
+        mandatoryInputs: metric.mandatoryInputs || [],
       }));
     } catch (error: any) {
       return [];

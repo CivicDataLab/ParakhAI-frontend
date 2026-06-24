@@ -8,6 +8,7 @@ export const METRICS_BY_MODEL_TYPE_QUERY = `
         name
         displayName
         description
+        mandatoryInputs
       }
     }
   }

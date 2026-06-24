@@ -1,4 +1,4 @@
-export type SelectOption = { value: string; label: string };
+export type SelectOption = { value: string; label: string; mandatoryInputs?: string[] };
 
 export type CustomPromptRow = {
   id: string;
@@ -19,6 +19,7 @@ export type Module = {
     name: string;
     displayName: string;
     description: string;
+    mandatoryInputs?: string[];
   }>;
 };
 

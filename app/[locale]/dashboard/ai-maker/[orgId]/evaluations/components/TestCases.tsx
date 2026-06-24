@@ -63,29 +63,17 @@ type PromptDataset = {
   taskType?: string;
   domain?: string;
   resourceCount: number;
-  hasExpectedOutputColumn: boolean;
+  schemaFieldNames: string[];
   testCaseCount: number;
 };
 
-const isMisinformationMetric = (metric: SelectOption) => {
-  const label = metric.label.trim().toLowerCase();
-  const value = metric.value.trim().toLowerCase();
-
-  return (
-    label === "misinformation" ||
-    label.includes("misinformation") ||
-    value === "misinformation" ||
-    value.includes("misinformation")
-  );
-};
-
-const datasetHasExpectedOutputColumn = (
+const getDatasetSchemaFieldNames = (
   resources?: Array<{ schema?: Array<{ fieldName: string }> }>,
-) =>
-  (resources ?? []).some((resource) =>
-    (resource.schema ?? []).some(
-      (field) => field.fieldName === "expected_output",
-    ),
+): string[] =>
+  Array.from(
+    new Set(
+      (resources ?? []).flatMap((r) => (r.schema ?? []).map((f) => f.fieldName))
+    )
   );
 
 interface TestCasesProps {
@@ -176,16 +164,6 @@ const TestCases: React.FC<TestCasesProps> = ({
     [selectedModules, selectedMetrics],
   );
 
-  const isMisinformationSelected = useMemo(
-    () =>
-      Object.entries(selectedModules).some(([moduleName, isSelected]) => {
-        if (!isSelected) return false;
-        const metrics = selectedMetrics[moduleName];
-        if (!Array.isArray(metrics)) return false;
-        return metrics.some(isMisinformationMetric);
-      }),
-    [selectedModules, selectedMetrics],
-  );
 
   const maxInputPrompts =
     selectedSubModuleCount > 0
@@ -283,10 +261,6 @@ const TestCases: React.FC<TestCasesProps> = ({
   );
   const hasTestCases =
     testSourceMode === "library" ? hasPromptLibraries : hasCustomTestCases;
-  const isRunEvaluationDisabled = isRequestingAudit || !hasTestCases;
-  const runEvaluationButtonClassName = isRunEvaluationDisabled
-    ? "!rounded-[8px] !cursor-not-allowed !border-none !bg-[#8c949d] !text-white hover:!bg-[#8c949d] hover:!text-white px-8 py-3 text-base font-bold"
-    : "!rounded-[8px] !border-none !bg-primaryPurple2 px-8 py-3 text-base font-bold !text-white hover:!bg-[#6849EE] hover:!text-white";
   const validationError = !hasTestCases
     ? testSourceMode === "library"
       ? "Please select a prompt library to run the evaluation"
@@ -333,7 +307,7 @@ const TestCases: React.FC<TestCasesProps> = ({
           taskType: ds.promptMetadata?.taskType,
           domain: ds.promptMetadata?.domain,
           resourceCount: ds.resources?.length || 0,
-          hasExpectedOutputColumn: datasetHasExpectedOutputColumn(ds.resources),
+          schemaFieldNames: getDatasetSchemaFieldNames(ds.resources),
           testCaseCount: ds.resources?.[0]?.noOfEntries || 0,
         }));
 
@@ -394,16 +368,36 @@ const TestCases: React.FC<TestCasesProps> = ({
     return dataset?.testCaseCount ?? 0;
   }, [selectedLibraryId, promptDatasets]);
 
-  const showMisinformationSchemaWarning = useMemo(() => {
-    if (!isMisinformationSelected || !selectedLibraryId) return false;
-
+  const missingColumnsByMetric = useMemo(() => {
+    if (!selectedLibraryId) return [];
     const selectedDataset = promptDatasets.find(
-      (dataset) => String(dataset.id) === selectedLibraryId,
+      (ds) => String(ds.id) === selectedLibraryId,
     );
-    if (!selectedDataset) return false;
+    if (!selectedDataset) return [];
+    const result: { metricLabel: string; missingColumns: string[] }[] = [];
+    Object.entries(selectedModules).forEach(([moduleName, isSelected]) => {
+      if (!isSelected) return;
+      const metrics = selectedMetrics[moduleName];
+      if (!Array.isArray(metrics)) return;
+      metrics.forEach((metric) => {
+        const missing = (metric.mandatoryInputs || []).filter(
+          (col) => !selectedDataset.schemaFieldNames.includes(col),
+        );
+        if (missing.length > 0) {
+          result.push({ metricLabel: metric.label, missingColumns: missing });
+        }
+      });
+    });
+    return result;
+  }, [selectedModules, selectedMetrics, selectedLibraryId, promptDatasets]);
 
-    return !selectedDataset.hasExpectedOutputColumn;
-  }, [isMisinformationSelected, selectedLibraryId, promptDatasets]);
+  const hasSchemaConflict =
+    testSourceMode === "library" && missingColumnsByMetric.length > 0;
+  const isRunEvaluationDisabled =
+    isRequestingAudit || !hasTestCases || hasSchemaConflict;
+  const runEvaluationButtonClassName = isRunEvaluationDisabled
+    ? "!rounded-[8px] !cursor-not-allowed !border-none !bg-[#8c949d] !text-white hover:!bg-[#8c949d] hover:!text-white px-8 py-3 text-base font-bold"
+    : "!rounded-[8px] !border-none !bg-primaryPurple2 px-8 py-3 text-base font-bold !text-white hover:!bg-[#6849EE] hover:!text-white";
 
   const handlePromptLibrarySelect = useCallback(
     (dataset: PromptDataset) => {
@@ -691,11 +685,16 @@ const TestCases: React.FC<TestCasesProps> = ({
           />
         )}
         </div>
-        {showMisinformationSchemaWarning && (
-          <Text variant="bodySm" color="critical" className="mt-4">
-            Warning: The selected library cannot be used with sub-module
-            Misinformation because it does not have an expected output column.
-          </Text>
+        {missingColumnsByMetric.length > 0 && (
+          <div className="mt-4 space-y-1">
+            {missingColumnsByMetric.map(({ metricLabel, missingColumns }) => (
+              <Text key={metricLabel} variant="bodySm" color="critical">
+                Warning: <strong>{metricLabel}</strong> requires column(s){" "}
+                <strong>{missingColumns.join(", ")}</strong> which are missing
+                from the selected library.
+              </Text>
+            ))}
+          </div>
         )}
       </div>
 
