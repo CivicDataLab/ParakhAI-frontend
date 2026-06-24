@@ -981,7 +981,7 @@ const EvaluationDetail = ({
 
   const statusColors = getEvaluationStatusColor(audit?.status);
   const evaluationMode = getEvaluationModeColor(audit?.evaluationMode);
-  const duration = getDuration();
+  // const duration = getDuration();
   const isRunning = isAuditInProgress(audit?.status);
   const isPlaygroundInProgress =
     isPlaygroundEvaluationMode(audit?.evaluationMode) &&
@@ -1237,7 +1237,7 @@ const EvaluationDetail = ({
         evalId={audit.id}
         createdAt={formatDate(audit.createdAt)}
         completedAt={formatDate(audit.completedAt)}
-        duration={duration || "--"}
+        // duration={duration || "--"}
         scope={evaluationScopeDisplay}
         mode={getModeLabel(audit.evaluationMode)}
         evaluator={getEvaluatorLabel(audit.auditType)}
