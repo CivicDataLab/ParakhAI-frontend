@@ -388,6 +388,12 @@ const TestCases: React.FC<TestCasesProps> = ({
       ? String(selectedPromptLibraries[0].id)
       : null;
 
+  const selectedLibraryEntryCount = useMemo(() => {
+    if (!selectedLibraryId) return 0;
+    const dataset = promptDatasets.find((ds) => String(ds.id) === selectedLibraryId);
+    return dataset?.testCaseCount ?? 0;
+  }, [selectedLibraryId, promptDatasets]);
+
   const showMisinformationSchemaWarning = useMemo(() => {
     if (!isMisinformationSelected || !selectedLibraryId) return false;
 
@@ -556,6 +562,18 @@ const TestCases: React.FC<TestCasesProps> = ({
     [categoryLabelByValue, handleDeletePromptRow, riskTypeLabelByValue],
   );
 
+  const runsLine: string | null = (() => {
+    if (!selectedLibraryId) {
+      return selectedSubModuleCount === 0
+        ? "This limit adjusts based on how many sub-modules you've chosen."
+        : null;
+    }
+    if (selectedLibraryEntryCount <= maxInputPrompts) {
+      return "ParakhAI will run all input prompts from the selected library. This limit adjusts based on how many sub-modules you've chosen.";
+    }
+    return `ParakhAI will run the first ${maxInputPrompts} input prompts from the selected library. This limit adjusts based on how many sub-modules you've chosen.`;
+  })();
+
   const submoduleWarningBanner = (
     <div className="prompt-library-warning-banner">
       <IconAlertCircleFilled
@@ -568,11 +586,11 @@ const TestCases: React.FC<TestCasesProps> = ({
           Maximum test cases for your current selection: {maxInputPrompts}{" "}
           input prompts
         </Text>
-        <Text variant="bodySm" className="text-gray-800">
-          This is the number of input prompts ParakhAI will run from the
-          selected library. This limit adjusts based on how many sub-modules
-          you&apos;ve chosen.
-        </Text>
+        {runsLine && (
+          <Text variant="bodySm" className="text-gray-800">
+            {runsLine}
+          </Text>
+        )}
         <Text variant="bodySm" className="text-gray-800">
           The test case limit helps keep evaluations efficient and reliable.
         </Text>
