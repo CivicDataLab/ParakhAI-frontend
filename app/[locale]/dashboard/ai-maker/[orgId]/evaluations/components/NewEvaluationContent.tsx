@@ -2331,7 +2331,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                   : evaluationCreatedAt || "--"
               }
               completedAt="--"
-              duration="--"
               scope={overviewScopeLabel}
               mode={getModeLabel(modeOfEvaluation)}
               evaluator={getEvaluatorLabel(auditType)}

@@ -23,7 +23,7 @@ const ManualTestCases: React.FC<ManualTestCasesProps> = ({
   moduleMetrics,
   supportedLanguages,
   orgId,
-  modelType = "LLM",
+  modelType = "TEXT_GENERATION",
   auditScope,
   onRunAudit,
   isRequestingAudit,
