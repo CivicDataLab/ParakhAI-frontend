@@ -443,9 +443,20 @@ const TestCases: React.FC<TestCasesProps> = ({
       accessorKey: "title",
       header: "Name",
       enableSorting: true,
-      cell: ({ getValue }) => (
-        <span className="text-primary-purple">{getValue<string>()}</span>
-      ),
+      cell: ({ row, getValue }) => {
+        const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_URL?.replace(/\/$/, "");
+        return (
+          <a
+            href={`${dataspaceUrl}/datasets/${row.original.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-purple hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {getValue<string>()}
+          </a>
+        );
+      },
     },
     {
       accessorKey: "domain",

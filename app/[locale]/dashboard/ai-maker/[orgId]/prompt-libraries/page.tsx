@@ -3,14 +3,11 @@
 import { Icons } from "@/components/icons";
 import { Pagination } from "@/components/Pagination/Pagination";
 import { useGraphQL } from "@/lib/api";
-import { IconChevronDown, IconMinus, IconX } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
 import { stripMarkdown, toTitleCase } from "@/lib/utils";
 import {
   Button,
   Card,
-  DataTable,
-  Dialog,
   Popover,
   Spinner,
   Tag,
@@ -143,10 +140,6 @@ const PromptLibrariesPage = () => {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [sectorsExpanded, setSectorsExpanded] = React.useState(true);
   const [tagsExpanded, setTagsExpanded] = React.useState(true);
-  const [selectedLibrary, setSelectedLibrary] =
-    React.useState<PromptLibrary | null>(null);
-  const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [showNotice, setShowNotice] = React.useState(true);
   const [promptLibraries, setPromptLibraries] = React.useState<PromptLibrary[]>(
     []
   );
@@ -285,57 +278,10 @@ const PromptLibrariesPage = () => {
     }
   }, [totalPages, currentPage]);
 
-  // Handle card click to open dialog
   const handleCardClick = (library: PromptLibrary) => {
-    setSelectedLibrary(library);
-    // setDialogOpen(true);
+    const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_URL?.replace(/\/$/, "");
+    window.open(`${dataspaceUrl}/datasets/${library.id}`, "_blank", "noopener,noreferrer");
   };
-
-  // Sample table data - replace with actual API call based on selectedLibrary
-  const tableData = React.useMemo(() => {
-    if (!selectedLibrary) return [];
-
-    // Generate sample data based on selected library
-    return Array.from({ length: 13 }, (_, index) => ({
-      input: "Content",
-      idealOutput: "Content",
-      columnName1: "Content",
-      columnName2: "Content",
-    }));
-  }, [selectedLibrary]);
-
-  // Define table columns
-  const columns = React.useMemo(
-    () => [
-      {
-        accessorKey: "input",
-        header: (
-          <span className="dt-header-with-icon">
-            <img
-              src="/images/icons/arrows-sort.png"
-              alt=""
-              width={12}
-              height={12}
-            />
-            <span>Input</span>
-          </span>
-        ),
-      },
-      {
-        accessorKey: "idealOutput",
-        header: "Ideal Output",
-      },
-      {
-        accessorKey: "columnName1",
-        header: "Column name",
-      },
-      {
-        accessorKey: "columnName2",
-        header: "Column name",
-      },
-    ],
-    []
-  );
 
   return (
     <>
@@ -627,86 +573,6 @@ const PromptLibrariesPage = () => {
         />
       </div>
 
-      {/* Dialog for showing library details */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <Dialog.Content
-          title=""
-          headerHidden
-          large
-          // limitHeight
-          className="PromptDlg h-full p-2"
-          // style={{ maxHeight: "60vh" }}
-          primaryAction={{
-            content: "",
-            onAction: () => {},
-          }}
-          secondaryActions={[
-            {
-              content: "",
-              onAction: () => setDialogOpen(false),
-            },
-          ]}
-        >
-          <div className="PromptDlg__hdr">
-            <div className="PromptDlg__actions">
-              <button
-                className="PromptDlg__flag"
-                aria-label="Flag this library"
-                onClick={() => {}}
-              >
-                <img
-                  src="/images/icons/flag-2-filled.png"
-                  alt="Flag"
-                  width={18}
-                  height={18}
-                />
-              </button>
-
-              <button
-                className="PromptDlg__close"
-                aria-label="Close"
-                // onClick={() => setDialogOpen(false)}
-              >
-                <IconX size={18} />
-              </button>
-            </div>
-          </div>
-
-          {selectedLibrary && (
-            <Text as="h2" className="prompt-dialog-title" fontWeight="bold">
-              {selectedLibrary.title}
-            </Text>
-          )}
-
-          {showNotice && (
-            <div className="PromptDlg__note">
-              <span>
-                Notice something wrong with this prompt library? Flag the issue
-                by clicking the red flag above.
-              </span>
-              <button
-                type="button"
-                className="PromptDlg__noteClose"
-                aria-label="Dismiss notice"
-                onClick={() => setShowNotice(false)}
-              >
-                <IconX size={12} stroke={2} color="#000000" />
-              </button>
-            </div>
-          )}
-
-          <div className="PromptDlg__body">
-            {selectedLibrary && (
-              <DataTable
-                rows={tableData}
-                columns={columns}
-                hideSelection={true}
-                hideFooter={true}
-              />
-            )}
-          </div>
-        </Dialog.Content>
-      </Dialog>
     </>
   );
 };
