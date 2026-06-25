@@ -63,6 +63,7 @@ type AuditResultsListProps = {
   isEditable?: boolean;
   bannerVariant?: "pending" | "reviewed";
   metricSummary?: Record<string, Record<string, unknown>>;
+  selectedMetricCount?: number;
   results: AuditResult[] | null;
 };
 
@@ -72,6 +73,7 @@ const AuditResultsList = ({
   isEditable = false,
   bannerVariant = "pending",
   metricSummary: metricSummaryProp = {},
+  selectedMetricCount = 0,
   results,
 }: AuditResultsListProps) => {
   const [items, setItems] = useState<BulkTestCase[]>([]);
@@ -366,6 +368,7 @@ const AuditResultsList = ({
         onOpenChange={setIsDetailSheetOpen}
         isEditable={isEditable}
         orgId={orgId}
+        selectedMetricCount={selectedMetricCount}
         onIssuesChange={handleTestCaseUpdate}
       />
     </div>

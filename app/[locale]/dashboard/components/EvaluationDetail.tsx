@@ -1557,6 +1557,7 @@ const EvaluationDetail = ({
               : "pending"
           }
           metricSummary={metricSummary as Record<string, Record<string, unknown>>}
+          selectedMetricCount={audit?.metrics?.length ?? 0}
           results={auditResults}
         />
       )}

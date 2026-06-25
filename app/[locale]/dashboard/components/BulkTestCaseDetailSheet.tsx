@@ -28,6 +28,7 @@ type BulkTestCaseDetailSheetProps = {
   onOpenChange: (open: boolean) => void;
   isEditable?: boolean;
   orgId?: string;
+  selectedMetricCount?: number;
   onIssuesChange?: (testCaseId: string, risks: BulkTestCaseRisk[]) => void;
 };
 
@@ -37,6 +38,7 @@ const BulkTestCaseDetailSheet = ({
   onOpenChange,
   isEditable = false,
   orgId,
+  selectedMetricCount = 0,
   onIssuesChange,
 }: BulkTestCaseDetailSheetProps) => {
   const { request } = useGraphQL();
@@ -193,6 +195,8 @@ const BulkTestCaseDetailSheet = ({
   const addIssueOptions = (testCase?.allMetricResults ?? [])
     .filter((r) => !issues.some((i) => i.resultId === r.resultId))
     .map((r) => ({ value: r.resultId, label: r.label }));
+
+  const canAddIssue = selectedMetricCount > 1 && addIssueOptions.length > 0;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -379,6 +383,7 @@ const BulkTestCaseDetailSheet = ({
                       <Button
                         kind="secondary"
                         onClick={() => setIsAddIssueModalOpen(true)}
+                        disabled={!canAddIssue}
                         className="!rounded-[8px]"
                       >
                         Add an issue
