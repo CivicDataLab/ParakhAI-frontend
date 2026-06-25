@@ -775,74 +775,42 @@ body {
   margin-bottom: 12px;
 }
 
-/* Hide divider inside Dialog content */
-[data-radix-dialog-content] [class*="Divider"] {
-  display: none;
-}
-
 /* Modal footers: full-width centered buttons */
 div:has(> .start-evaluation-modal-footer),
 div:has(> .add-prompt-row-modal-footer) {
   width: 100%;
 }
 
-/* Start evaluation modal step 2 only: outer scrollbar, fixed header/footer */
-[data-radix-dialog-content][data-start-evaluation-step="2"] {
-  bottom: auto !important;
-  max-height: min(600px, calc(100dvh - 2rem)) !important;
-  overflow: hidden !important;
-}
-
-@media (max-height: 720px) {
-  [data-radix-dialog-content][data-start-evaluation-step="2"] {
-    max-height: calc(100dvh - 1rem) !important;
-  }
-}
-
-@media (max-width: 47.9975em) {
-  [data-radix-dialog-content][data-start-evaluation-step="2"] {
-    max-height: calc(100dvh - 2rem) !important;
-  }
-}
-
-[data-radix-dialog-content][data-start-evaluation-step="2"]
-  .start-evaluation-modal-content {
-  min-height: 0 !important;
-  max-height: min(470px, calc(100dvh - 11rem)) !important;
-  overflow-y: auto !important;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-gutter: stable both-edges;
-}
-
-@media (max-width: 47.9975em) {
-  [data-radix-dialog-content][data-start-evaluation-step="2"]
-    .start-evaluation-modal-content {
-    max-height: calc(100dvh - 11rem) !important;
-  }
-}
-
-/* Add prompt row modal: fixed header/footer, fit within viewport when zoomed */
-[data-radix-dialog-content]:has(.add-prompt-row-modal-content) {
+/* Start evaluation modal step 2: override opub-ui limitHeight, pin footer, keep body scrollbar */
+/* [data-radix-dialog-content][data-start-evaluation-step="2"] {
   display: grid !important;
   grid-template-rows: 0 auto minmax(0, 1fr) auto !important;
+  bottom: auto !important;
   top: 50% !important;
   left: 50% !important;
   right: auto !important;
-  bottom: auto !important;
   transform: translate(-50%, -50%) !important;
   max-height: min(600px, calc(100dvh - 2rem)) !important;
   height: auto !important;
   overflow: hidden !important;
-}
+} */
 
+/* [data-radix-dialog-content][data-start-evaluation-step="2"] > .sr-only {
+  height: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+} */
+/* 
 @media (max-height: 720px) {
-  [data-radix-dialog-content]:has(.add-prompt-row-modal-content) {
+  [data-radix-dialog-content][data-start-evaluation-step="2"] {
     max-height: calc(100dvh - 1rem) !important;
   }
 }
 
 @media (max-width: 47.9975em) {
-  [data-radix-dialog-content]:has(.add-prompt-row-modal-content) {
+  [data-radix-dialog-content][data-start-evaluation-step="2"] {
     top: auto !important;
     left: 0 !important;
     right: 0 !important;
@@ -853,17 +821,17 @@ div:has(> .add-prompt-row-modal-footer) {
   }
 }
 
-[data-radix-dialog-content]:has(.add-prompt-row-modal-content) > .sr-only {
-  height: 0 !important;
+[data-radix-dialog-content][data-start-evaluation-step="2"]
+  .start-evaluation-modal-content {
   min-height: 0 !important;
-  overflow: hidden !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
+  max-height: none !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable both-edges;
+} */
 
 .add-prompt-row-modal-content {
   min-height: 0 !important;
-  overflow: hidden !important;
 }
 
 /* Add Issue modal: allow form body to scroll when zoomed, keep footer visible */
