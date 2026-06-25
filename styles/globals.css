@@ -4400,8 +4400,8 @@ div:has(> .recommendation-modal-footer) {
 
 .test-cases-table.custom-prompts-table table th:last-child,
 .test-cases-table.custom-prompts-table table td:last-child {
-  width: 56px;
-  max-width: 56px;
+  width: 88px;
+  max-width: 88px;
   padding-left: 0.5rem;
   padding-right: 1rem;
   text-align: center;
@@ -4437,6 +4437,30 @@ div:has(> .recommendation-modal-footer) {
 
 .custom-prompts-add-row-button:hover {
   background: #f5f2ff !important;
+}
+
+.custom-prompt-row-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.custom-prompt-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border: none;
+  background: transparent;
+  color: #6d7175;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.custom-prompt-action-button:hover {
+  color: #644fc1;
+  background-color: #f5f2ff;
 }
 
 .custom-prompt-delete-button {
