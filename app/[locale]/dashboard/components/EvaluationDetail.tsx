@@ -606,6 +606,7 @@ const EvaluationDetail = ({
       toast.success("Review submitted successfully.");
       setIsEvaluationSaved(true);
       stopProgressPolling();
+      await fetchAuditSummary(audit.configuration);
     } catch (err: unknown) {
       toast.error(
         err instanceof Error
@@ -808,7 +809,10 @@ const EvaluationDetail = ({
         summary?.metricSummary
       );
 
-      setRiskDistribution(resolvedRisk);
+      setRiskDistribution((prev) => {
+        if (getRiskDistributionTotal(resolvedRisk) > 0) return resolvedRisk;
+        return prev;
+      });
 
       const recommendationText = parseEvaluatorRecommendation(
         summary?.recommendations,
