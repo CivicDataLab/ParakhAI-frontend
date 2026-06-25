@@ -92,6 +92,15 @@ const EvaluateOutputSection = ({
             label: sm.displayName,
           }));
         
+        const selectedMetric = subModules.find((sm) => sm.name === row.issueType);
+        const metricRequiresExpectedOutput =
+          selectedMetric?.mandatoryInputs?.includes("expected_output") ?? false;
+        const generateDisabled =
+          !row.issueType ||
+          !row.severity ||
+          generatingRows[row.id] ||
+          metricRequiresExpectedOutput;
+
         return (
         <div
             key={row.id}
@@ -168,7 +177,7 @@ const EvaluateOutputSection = ({
                   type="button"
                   className="evaluate-output-ai-assist-link"
                   onClick={() => handleGenerateClick(row.id, row.issueType, row.severity)}
-                  disabled={!row.issueType || !row.severity || generatingRows[row.id]}
+                  disabled={generateDisabled}
                 >
                   {generatingRows[row.id] ? "Generating..." : "Generate with AI Assistance"}
                 </button>
