@@ -5606,6 +5606,11 @@ table th {
   text-decoration: underline;
 }
 
+.evaluate-output-ai-assist-link:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
 .evaluate-output-comments-textfield textarea,
 .evaluate-output-comments-textfield [class*="TextField"] textarea {
   min-height: 200px;

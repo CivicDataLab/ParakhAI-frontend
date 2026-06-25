@@ -145,7 +145,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
         metricsByModelType: Array<{
           name: string;
           displayName: string;
-          metrics: Array<{ name: string; displayName: string }>;
+          metrics: Array<{ name: string; displayName: string; mandatoryInputs?: string[] }>;
         }>;
       }>(METRICS_BY_MODEL_TYPE_QUERY, { modelType, domain: domain ?? "" }, { organization: orgId });
 
@@ -155,6 +155,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
         allMetrics.map((m) => ({
           name: m.name,
           displayName: m.displayName || m.name,
+          mandatoryInputs: m.mandatoryInputs ?? [],
         }))
       );
     } catch (err) {
