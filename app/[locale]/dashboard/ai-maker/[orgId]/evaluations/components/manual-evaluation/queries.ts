@@ -20,6 +20,7 @@ export const GET_PLAYGROUND_STATUS_QUERY = `
       auditId
       testCaseCount
       canFinish
+      auditStatus
     }
   }
 `;
