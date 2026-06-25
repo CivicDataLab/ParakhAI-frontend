@@ -3,10 +3,11 @@
 import { useGraphQL } from "@/lib/api";
 import { toTitleCase, stripMarkdown } from "@/lib/utils";
 import type { ColumnDef } from "@tanstack/react-table";
-import { IconAlertCircleFilled, IconTrash } from "@tabler/icons-react";
+import { IconAlertCircleFilled, IconPencil, IconTrash } from "@tabler/icons-react";
 import { Button, DataTable, Icon, Spinner, Text, Tooltip } from "opub-ui";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import AddPromptRowModal from "./AddPromptRowModal";
+import EditPromptRowSheet from "./EditPromptRowSheet";
 import type { CustomPromptRow, SelectOption } from "./types";
 
 const MAX_TASKS_PER_EVALUATION = 250;
@@ -55,6 +56,58 @@ const serializeCustomPromptRows = (rows: CustomPromptRow[]) =>
       [row.input, row.expectedOutput, row.category, row.riskType].join(", "),
     )
     .join("\n");
+
+type MissingColumnsByMetric = {
+  metricLabel: string;
+  missingColumns: string[];
+};
+
+const getCustomPromptColumnValue = (
+  row: CustomPromptRow,
+  columnName: string,
+): string => {
+  const normalized = columnName.trim().toLowerCase();
+
+  switch (normalized) {
+    case "input":
+    case "input_prompt":
+      return row.input;
+    case "expected_output":
+    case "reference_output":
+      return row.expectedOutput;
+    case "category":
+      return row.category;
+    case "risk_type":
+    case "risktype":
+      return row.riskType;
+    default:
+      return "";
+  }
+};
+
+const collectMissingColumnsByMetric = (
+  selectedModules: Record<string, boolean>,
+  selectedMetrics: Record<string, SelectOption[]>,
+  getMissingColumnsForMetric: (mandatoryInputs: string[]) => string[],
+): MissingColumnsByMetric[] => {
+  const result: MissingColumnsByMetric[] = [];
+
+  Object.entries(selectedModules).forEach(([moduleName, isSelected]) => {
+    if (!isSelected) return;
+
+    const metrics = selectedMetrics[moduleName];
+    if (!Array.isArray(metrics)) return;
+
+    metrics.forEach((metric) => {
+      const missing = getMissingColumnsForMetric(metric.mandatoryInputs || []);
+      if (missing.length > 0) {
+        result.push({ metricLabel: metric.label, missingColumns: missing });
+      }
+    });
+  });
+
+  return result;
+};
 
 type PromptDataset = {
   id: string;
@@ -148,6 +201,10 @@ const TestCases: React.FC<TestCasesProps> = ({
     () => parsePastedTestCases(pastedTestCases),
   );
   const [isAddRowModalOpen, setIsAddRowModalOpen] = useState(false);
+  const [isEditRowSheetOpen, setIsEditRowSheetOpen] = useState(false);
+  const [editingPromptRow, setEditingPromptRow] = useState<CustomPromptRow | null>(
+    null,
+  );
   const [customPromptTableKey, setCustomPromptTableKey] = useState(0);
 
   const handleRunEvaluation = () => {
@@ -188,6 +245,23 @@ const TestCases: React.FC<TestCasesProps> = ({
     (rowId: string) => {
       updateCustomPromptRows(
         customPromptRows.filter((row) => row.id !== rowId),
+      );
+      setCustomPromptTableKey((prev) => prev + 1);
+    },
+    [customPromptRows, updateCustomPromptRows],
+  );
+
+  const handleOpenEditPromptRow = useCallback((row: CustomPromptRow) => {
+    setEditingPromptRow(row);
+    setIsEditRowSheetOpen(true);
+  }, []);
+
+  const handleEditPromptRow = useCallback(
+    (rowId: string, rowData: Omit<CustomPromptRow, "id" | "selected">) => {
+      updateCustomPromptRows(
+        customPromptRows.map((row) =>
+          row.id === rowId ? { ...row, ...rowData } : row,
+        ),
       );
       setCustomPromptTableKey((prev) => prev + 1);
     },
@@ -352,25 +426,35 @@ const TestCases: React.FC<TestCasesProps> = ({
       (ds) => String(ds.id) === selectedLibraryId,
     );
     if (!selectedDataset) return [];
-    const result: { metricLabel: string; missingColumns: string[] }[] = [];
-    Object.entries(selectedModules).forEach(([moduleName, isSelected]) => {
-      if (!isSelected) return;
-      const metrics = selectedMetrics[moduleName];
-      if (!Array.isArray(metrics)) return;
-      metrics.forEach((metric) => {
-        const missing = (metric.mandatoryInputs || []).filter(
+
+    return collectMissingColumnsByMetric(
+      selectedModules,
+      selectedMetrics,
+      (mandatoryInputs) =>
+        mandatoryInputs.filter(
           (col) => !selectedDataset.schemaFieldNames.includes(col),
-        );
-        if (missing.length > 0) {
-          result.push({ metricLabel: metric.label, missingColumns: missing });
-        }
-      });
-    });
-    return result;
+        ),
+    );
   }, [selectedModules, selectedMetrics, selectedLibraryId, promptDatasets]);
 
+  const missingCustomColumnsByMetric = useMemo(() => {
+    const rowsWithInput = customPromptRows.filter((row) => row.input.trim());
+
+    return collectMissingColumnsByMetric(
+      selectedModules,
+      selectedMetrics,
+      (mandatoryInputs) =>
+        mandatoryInputs.filter((col) =>
+          rowsWithInput.some(
+            (row) => !getCustomPromptColumnValue(row, col).trim(),
+          ),
+        ),
+    );
+  }, [customPromptRows, selectedModules, selectedMetrics]);
+
   const hasSchemaConflict =
-    testSourceMode === "library" && missingColumnsByMetric.length > 0;
+    (testSourceMode === "library" && missingColumnsByMetric.length > 0) ||
+    (testSourceMode === "custom" && missingCustomColumnsByMetric.length > 0);
   const isRunEvaluationDisabled =
     isRequestingAudit || !hasTestCases || hasSchemaConflict;
   const runEvaluationButtonClassName = isRunEvaluationDisabled
@@ -492,25 +576,38 @@ const TestCases: React.FC<TestCasesProps> = ({
         ),
       },
       {
-        id: "delete",
+        id: "actions",
         header: "",
         enableSorting: false,
         cell: ({ row }) => (
-          <button
-            type="button"
-            aria-label="Delete prompt row"
-            onClick={(event) => {
-              event.stopPropagation();
-              handleDeletePromptRow(row.original.id);
-            }}
-            className="custom-prompt-delete-button"
-          >
-            <Icon source={IconTrash} size={18} />
-          </button>
+          <div className="custom-prompt-row-actions">
+            <button
+              type="button"
+              aria-label="Edit prompt row"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleOpenEditPromptRow(row.original);
+              }}
+              className="custom-prompt-action-button"
+            >
+              <Icon source={IconPencil} size={18} />
+            </button>
+            <button
+              type="button"
+              aria-label="Delete prompt row"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleDeletePromptRow(row.original.id);
+              }}
+              className="custom-prompt-action-button custom-prompt-delete-button"
+            >
+              <Icon source={IconTrash} size={18} />
+            </button>
+          </div>
         ),
       },
     ],
-    [handleDeletePromptRow],
+    [handleDeletePromptRow, handleOpenEditPromptRow],
   );
 
   const runsLine: string | null = (() => {
@@ -698,6 +795,20 @@ const TestCases: React.FC<TestCasesProps> = ({
                 </Text>
               )}
             </div>
+
+            {missingCustomColumnsByMetric.length > 0 && (
+              <div className="mt-4 space-y-1">
+                {missingCustomColumnsByMetric.map(
+                  ({ metricLabel, missingColumns }) => (
+                    <Text key={metricLabel} variant="bodySm" color="critical">
+                      Warning: <strong>{metricLabel}</strong> requires column(s){" "}
+                      <strong>{missingColumns.join(", ")}</strong> which are
+                      missing from the added prompts.
+                    </Text>
+                  ),
+                )}
+              </div>
+            )}
           </div>
 
           {submoduleWarningBanner}
@@ -707,6 +818,14 @@ const TestCases: React.FC<TestCasesProps> = ({
             onOpenChange={setIsAddRowModalOpen}
             categoryOptions={categoryOptions}
             onSubmit={handleSubmitPromptRow}
+          />
+
+          <EditPromptRowSheet
+            row={editingPromptRow}
+            open={isEditRowSheetOpen}
+            onOpenChange={setIsEditRowSheetOpen}
+            categoryOptions={categoryOptions}
+            onSubmit={handleEditPromptRow}
           />
         </>
       )}
