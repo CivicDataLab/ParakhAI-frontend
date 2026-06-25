@@ -12,36 +12,64 @@ import { IconReportAnalytics } from "@tabler/icons-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Badge, Button, DataTable, Spinner, Text } from "opub-ui";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useOrganization } from "../OrganizationContext";
 import ModelSelectionModal from "./components/ModelSelectionModal";
 import "./evaluations-page.css";
 
-// GraphQL query to fetch user's audits
+// Full fetch — used on initial load
 const AUDITS_QUERY = `
-  query GetAudits($limit: Int, $offset: Int) {
-    audits(limit: $limit, offset: $offset, filters: null, sortOptions: null) {
-      data{
-      id
-      name
-      modelId
-      modelName
-      status
-      modules
-      metrics
-      evaluationMode
-      auditType
-      totalTests
-      passedTests
-      failedTests
-      createdAt
-      startedAt
-      completedAt
+  query GetAudits($limit: Int, $offset: Int, $filters: [FilterSpec!]) {
+    audits(limit: $limit, offset: $offset, filters: $filters, sortOptions: null) {
+      data {
+        id
+        name
+        modelId
+        modelName
+        status
+        modules
+        metrics
+        evaluationMode
+        auditType
+        totalTests
+        passedTests
+        failedTests
+        createdAt
+        startedAt
+        completedAt
+      }
+      totalItemsCount
     }
-    totalItemsCount
   }
-}
 `;
+
+// Lightweight poll — only id, name, status, and completedAt for non-terminal evaluations
+const AUDITS_STATUS_POLL_QUERY = `
+  query GetAudits($limit: Int, $offset: Int, $filters: [FilterSpec!]) {
+    audits(limit: $limit, offset: $offset, filters: $filters, sortOptions: null) {
+      data {
+        id
+        name
+        status
+        completedAt
+      }
+    }
+  }
+`;
+
+const ACTIVE_AUDIT_STATUSES = [
+  "QUEUED",
+  "IN_PROGRESS",
+  "PENDING_REVIEW",
+  "DRAFT",
+  "RUNNING",
+] as const;
+
+const ACTIVE_STATUS_FILTER = {
+  field: "status",
+  condition: "in",
+  value: ACTIVE_AUDIT_STATUSES.join(","),
+};
 
 type Audit = {
   id: string;
@@ -61,6 +89,46 @@ type Audit = {
   completedAt: string | null;
 };
 
+type AuditStatusUpdate = {
+  id: string;
+  name: string;
+  status: string;
+  completedAt: string | null;
+};
+
+const isActiveAuditStatus = (status?: string | null) =>
+  ACTIVE_AUDIT_STATUSES.includes(
+    (status?.toUpperCase() ?? "") as (typeof ACTIVE_AUDIT_STATUSES)[number],
+  );
+
+const hasActiveAudits = (items: Array<{ status?: string | null }>) =>
+  items.some((audit) => isActiveAuditStatus(audit.status));
+
+const mergeAuditStatusUpdates = (
+  current: Audit[],
+  updates: AuditStatusUpdate[],
+): Audit[] => {
+  if (updates.length === 0) return current;
+
+  const updateById = new Map(updates.map((update) => [update.id, update]));
+  const next = [...current];
+
+  for (let i = 0; i < next.length; i++) {
+    const update = updateById.get(next[i].id);
+    if (update) {
+      next[i] = {
+        ...next[i],
+        id: update.id,
+        name: update.name,
+        status: update.status,
+        completedAt: update.completedAt,
+      };
+    }
+  }
+
+  return next;
+};
+
 const auditTypeLabels: Record<string, string> = {
   TECHNICAL_AUDIT: "Technical",
   DOMAIN_AUDIT: "Domain",
@@ -70,6 +138,7 @@ const auditTypeLabels: Record<string, string> = {
 const AuditsListPage = () => {
   const params = useParams();
   const locale = params.locale || "en";
+  const orgId = params.orgId as string;
   const {
     request,
     isAuthenticated,
@@ -82,98 +151,143 @@ const AuditsListPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const isFetchingRef = useRef(false);
-  const hasFetchedRef = useRef(false);
-  const pollStoppedRef = useRef(false);
+  const [shouldPoll, setShouldPoll] = useState(false);
 
-  const fetchAudits = async (showLoader = true) => {
+  const requestRef = useRef(request);
+  const orgIdRef = useRef(orgId);
+  const auditsRef = useRef(audits);
+  const hasFetchedRef = useRef(false);
+  const isFetchingRef = useRef(false);
+
+  useEffect(() => {
+    requestRef.current = request;
+  }, [request]);
+
+  useEffect(() => {
+    orgIdRef.current = orgId;
+  }, [orgId]);
+
+  useEffect(() => {
+    auditsRef.current = audits;
+  }, [audits]);
+
+  const fetchAudits = useCallback(async (showLoader = false) => {
     try {
       if (showLoader) {
         setIsLoading(true);
       }
       setError(null);
 
-      const auditsData = await request<{ audits: { data: Audit[], totalItemsCount: number } }>(
+      const auditsData = await requestRef.current<{
+        audits: { data: Audit[]; totalItemsCount: number };
+      }>(
         AUDITS_QUERY,
         {
-          status: null,
           limit: 100,
+          offset: 0,
+          filters: null,
         },
-        { organization: params.orgId as string }
+        { organization: orgIdRef.current },
       );
 
-      const nextAudits = auditsData?.audits?.data || [];
+      const nextAudits = auditsData?.audits?.data ?? [];
       setAudits(nextAudits);
-
-      const hasActiveAudits = nextAudits.some((audit) => {
-        const status = audit.status?.toUpperCase();
-        return (
-          status === "QUEUED" ||
-          status === "PENDING" ||
-          status === "IN_PROGRESS"
-        );
-      });
-
-      return hasActiveAudits;
-    } catch (err: any) {
+      return hasActiveAudits(nextAudits);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to load audits";
       console.error("Error fetching audits:", err);
-      setError(err?.message || "Failed to load audits");
-      return false;
+      setError(message);
+      return hasActiveAudits(auditsRef.current);
     } finally {
       if (showLoader) {
         setIsLoading(false);
       }
-      isFetchingRef.current = false;
     }
-  };
-
-  const startPolling = () => {
-    const pollInterval = 15000;
-    const maxPollTime = 300000;
-    const startTime = Date.now();
-
-    const poll = async () => {
-      if (pollStoppedRef.current) return;
-      if (Date.now() - startTime > maxPollTime) return;
-
-      try {
-        const hasActiveAudits = await fetchAudits(false);
-        if (!hasActiveAudits) return;
-      } catch (err) {
-        console.error("Polling error:", err);
-      }
-
-      setTimeout(poll, pollInterval);
-    };
-
-    setTimeout(poll, pollInterval);
-  };
-
-  // Stop polling when component unmounts
-  useEffect(() => {
-    return () => {
-      pollStoppedRef.current = true;
-    };
   }, []);
 
-  // Fetch audits on mount
+  const pollAuditStatuses = useCallback(async () => {
+    try {
+      const auditsData = await requestRef.current<{
+        audits: { data: AuditStatusUpdate[] };
+      }>(
+        AUDITS_STATUS_POLL_QUERY,
+        {
+          limit: 100,
+          offset: 0,
+          filters: ACTIVE_STATUS_FILTER,
+        },
+        { organization: orgIdRef.current },
+      );
+
+      const statusUpdates = auditsData?.audits?.data ?? [];
+      const polledIds = new Set(statusUpdates.map((update) => update.id));
+      const missingActiveIds = auditsRef.current
+        .filter((audit) => isActiveAuditStatus(audit.status))
+        .filter((audit) => !polledIds.has(audit.id));
+
+      if (missingActiveIds.length > 0) {
+        return fetchAudits(false);
+      }
+
+      if (statusUpdates.length === 0) {
+        return hasActiveAudits(auditsRef.current);
+      }
+
+      const nextAudits = mergeAuditStatusUpdates(
+        auditsRef.current,
+        statusUpdates,
+      );
+      setAudits(nextAudits);
+      return hasActiveAudits(nextAudits);
+    } catch (err) {
+      console.error("Polling error:", err);
+      return hasActiveAudits(auditsRef.current);
+    }
+  }, [fetchAudits]);
+
+  // Initial full fetch
   useEffect(() => {
     if (!isAuthenticated || isSessionLoading) return;
-    if (isFetchingRef.current || hasFetchedRef.current) return;
+    if (isFetchingRef.current) return;
 
     isFetchingRef.current = true;
+    const isInitialLoad = !hasFetchedRef.current;
 
     const loadAudits = async () => {
-      const hasActiveAudits = await fetchAudits(true);
-      hasFetchedRef.current = true;
-
-      if (hasActiveAudits) {
-        startPolling();
+      try {
+        const hasActive = await fetchAudits(isInitialLoad);
+        hasFetchedRef.current = true;
+        setShouldPoll(hasActive);
+      } finally {
+        isFetchingRef.current = false;
       }
     };
 
-    loadAudits();
-  }, [isAuthenticated, isSessionLoading, request, params.orgId]);
+    void loadAudits();
+  }, [isAuthenticated, isSessionLoading, orgId, fetchAudits]);
+
+  // Poll only id/name/status for non-terminal evaluations
+  useEffect(() => {
+    if (!shouldPoll || !isAuthenticated) return;
+
+    const pollInterval = window.setInterval(() => {
+      void pollAuditStatuses().then((hasActive) => {
+        if (!hasActive) {
+          setShouldPoll(false);
+        }
+      });
+    }, 15000);
+
+    const pollTimeout = window.setTimeout(() => {
+      setShouldPoll(false);
+    }, 300000);
+
+    return () => {
+      window.clearInterval(pollInterval);
+      window.clearTimeout(pollTimeout);
+    };
+  }, [shouldPoll, isAuthenticated, pollAuditStatuses]);
 
   // Column helper for DataTable
   const columnHelper = createColumnHelper<Audit>();

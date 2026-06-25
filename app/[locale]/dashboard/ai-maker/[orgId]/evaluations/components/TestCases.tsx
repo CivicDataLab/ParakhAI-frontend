@@ -213,28 +213,6 @@ const TestCases: React.FC<TestCasesProps> = ({
     return options;
   }, [selectedModules, selectedMetrics]);
 
-  const categoryLabelByValue = useMemo(
-    () =>
-      Object.fromEntries(
-        categoryOptions.map((option) => [option.value, option.label]),
-      ),
-    [categoryOptions],
-  );
-
-  const riskTypeLabelByValue = useMemo(
-    () => ({
-      high: "High",
-      medium: "Medium",
-      low: "Low",
-    }),
-    [],
-  );
-
-  const getOptionLabel = (
-    value: string,
-    labels: Record<string, string>,
-  ) => labels[value] || toTitleCase(value.replace(/_/g, " "));
-
   const handleOpenAddRowModal = useCallback(() => {
     if (selectedCustomPromptCount >= maxInputPrompts) return;
     setIsAddRowModalOpen(true);
@@ -514,26 +492,6 @@ const TestCases: React.FC<TestCasesProps> = ({
         ),
       },
       {
-        accessorKey: "category",
-        header: "Category",
-        enableSorting: false,
-        cell: ({ getValue }) => (
-          <Text variant="bodySm" className="text-gray-900">
-            {getOptionLabel(getValue<string>(), categoryLabelByValue)}
-          </Text>
-        ),
-      },
-      {
-        accessorKey: "riskType",
-        header: "Risk Type",
-        enableSorting: false,
-        cell: ({ getValue }) => (
-          <Text variant="bodySm" className="text-gray-900">
-            {getOptionLabel(getValue<string>(), riskTypeLabelByValue)}
-          </Text>
-        ),
-      },
-      {
         id: "delete",
         header: "",
         enableSorting: false,
@@ -552,7 +510,7 @@ const TestCases: React.FC<TestCasesProps> = ({
         ),
       },
     ],
-    [categoryLabelByValue, handleDeletePromptRow, riskTypeLabelByValue],
+    [handleDeletePromptRow],
   );
 
   const runsLine: string | null = (() => {
