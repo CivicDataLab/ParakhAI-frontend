@@ -537,6 +537,9 @@ const ModelSelectionModal = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <Dialog.Content
         title="Start an Evaluation"
+        data-start-evaluation-step={step === 2 ? "2" : undefined}
+        limitHeight={step === 2}
+        className={step === 2 ? "start-evaluation-modal-content" : undefined}
         footer={
           <div className="start-evaluation-modal-footer flex w-full items-center justify-center gap-4">
             <Button
