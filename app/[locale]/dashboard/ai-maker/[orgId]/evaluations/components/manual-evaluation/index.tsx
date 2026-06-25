@@ -656,6 +656,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
               value={inputPrompt}
               onChange={setInputPrompt}
               placeholder="Type your prompt here"
+              disabled={isCallingModel}
             />
             {modelCallError && (
               <Text
@@ -691,7 +692,11 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
             </div>
             <div className="mb-4 min-h-[200px] max-h-[300px] overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 px-4 py-0">
               <div className="bulk-evaluation-sheet-prose -ml-4">
-                {hasCalledModel ? (
+                {isCallingModel ? (
+                  <Text variant="bodyMd" className="text-gray-500">
+                    Generating ....
+                  </Text>
+                ) : hasCalledModel ? (
                   modelOutput ? (
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {modelOutput || ""}
