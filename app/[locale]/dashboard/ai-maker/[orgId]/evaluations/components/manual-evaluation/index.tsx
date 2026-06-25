@@ -60,6 +60,7 @@ interface ManualEvaluationFlowProps {
   onFinishAudit: () => void;
   isRequestingAudit: boolean;
   onTestCaseCountChange?: (count: number) => void;
+  onAuditStatusChange?: (status: string) => void;
 }
 
 const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
@@ -69,6 +70,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   supportedLanguages,
   orgId,
   onTestCaseCountChange,
+  onAuditStatusChange,
 }) => {
   const router = useRouter();
   const params = useParams();
@@ -126,17 +128,21 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           auditId: string;
           testCaseCount: number;
           canFinish: boolean;
+          auditStatus: string;
         };
       }>(GET_PLAYGROUND_STATUS_QUERY, { auditId }, { organization: orgId });
 
       if (result?.playgroundEvaluationStatus) {
         setTestCaseCount(result.playgroundEvaluationStatus.testCaseCount);
         setCanFinish(result.playgroundEvaluationStatus.canFinish);
+        if (result.playgroundEvaluationStatus.auditStatus) {
+          onAuditStatusChange?.(result.playgroundEvaluationStatus.auditStatus);
+        }
       }
     } catch (err) {
       console.error("Error fetching evaluation status:", err);
     }
-  }, [auditId, orgId, request]);
+  }, [auditId, orgId, request, onAuditStatusChange]);
 
   const fetchMetrics = useCallback(async () => {
     if (!modelType) return;

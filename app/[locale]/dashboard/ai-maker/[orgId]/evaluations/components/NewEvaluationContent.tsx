@@ -2075,7 +2075,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     }
   };
 
-  const draftStatusColors = getEvaluationStatusColor("DRAFT");
+  const statusColors = getEvaluationStatusColor(evaluationStatus);
 
   const isCancelDisabled = (() => {
     if (isCancelling) return true;
@@ -2229,10 +2229,10 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             </div>
             <Tag
               variation="filled"
-              fillColor={draftStatusColors.fillColor}
-              textColor={draftStatusColors.textColor}
+              fillColor={statusColors.fillColor}
+              textColor={statusColors.textColor}
             >
-              Draft
+              {toTitleCase(evaluationStatus.replace(/_/g, " "))}
             </Tag>
           </div>
 
@@ -2416,6 +2416,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                   onRunAudit={handleRunAudit}
                   isRequestingAudit={isRequestingAudit}
                   onTestCaseCountChange={handleManualTestCaseCountChange}
+                  onAuditStatusChange={setEvaluationStatus}
                 />
               ) : modeOfEvaluation ? (
                 <TestCases
