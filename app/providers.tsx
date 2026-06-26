@@ -53,11 +53,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <SessionProvider
-      // Refetch session every 4 minutes to proactively refresh tokens
-      // This ensures the JWT callback runs periodically to check/refresh tokens
-      refetchInterval={4 * 60}
-      // Also refetch when window regains focus (user returns to tab)
-      refetchOnWindowFocus={true}
+      // Disable periodic session refetches and window focus refetches
+      // since we now use on-demand token validation before API requests.
+      refetchInterval={0}
+      refetchOnWindowFocus={false}
     >
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>{children}</TooltipProvider>

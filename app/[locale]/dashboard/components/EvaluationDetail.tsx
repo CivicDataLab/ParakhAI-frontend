@@ -1,6 +1,7 @@
 "use client";
 
 import { useGraphQL } from "@/lib/api";
+import { apiFetch } from "@/lib/api-client";
 import {
   getEvaluationModeColor,
   getEvaluationStatusColor,
@@ -499,7 +500,6 @@ const EvaluationDetail = ({
   const { organization } = useOrganization();
   const {
     request,
-    accessToken,
     isAuthenticated,
     isLoading: isSessionLoading,
   } = useGraphQL();
@@ -672,10 +672,9 @@ const EvaluationDetail = ({
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
-      if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
       if (orgId) headers["organization"] = orgId;
 
-      const res = await fetch(
+      const res = await apiFetch(
         `${backendUrl}/api/audits/${evaluationId}/report/download/`,
         { method: "GET", headers }
       );
@@ -804,7 +803,7 @@ const EvaluationDetail = ({
         setMetricSummary(summary.metricSummary);
       }
 
-      let resolvedRisk = resolveRiskDistribution(
+      const resolvedRisk = resolveRiskDistribution(
         summary?.riskDistribution,
         summary?.metricSummary
       );
@@ -975,13 +974,13 @@ const EvaluationDetail = ({
     };
   }, [evaluationId]);
 
-  const getDuration = () => {
-    if (!audit?.startedAt || !audit?.completedAt) return null;
-    const start = new Date(audit.startedAt);
-    const end = new Date(audit.completedAt);
-    const seconds = Math.round((end.getTime() - start.getTime()) / 1000);
-    return `${seconds}s`;
-  };
+  // const getDuration = () => {
+  //   if (!audit?.startedAt || !audit?.completedAt) return null;
+  //   const start = new Date(audit.startedAt);
+  //   const end = new Date(audit.completedAt);
+  //   const seconds = Math.round((end.getTime() - start.getTime()) / 1000);
+  //   return `${seconds}s`;
+  // };
 
   const statusColors = getEvaluationStatusColor(audit?.status);
   const evaluationMode = getEvaluationModeColor(audit?.evaluationMode);
