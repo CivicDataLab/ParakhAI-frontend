@@ -196,7 +196,7 @@ const BulkTestCaseDetailSheet = ({
     .filter((r) => !issues.some((i) => i.resultId === r.resultId))
     .map((r) => ({ value: r.resultId, label: r.label }));
 
-  const canAddIssue = selectedMetricCount > 1 && addIssueOptions.length > 0;
+  const canAddIssue = issues.length < selectedMetricCount;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
