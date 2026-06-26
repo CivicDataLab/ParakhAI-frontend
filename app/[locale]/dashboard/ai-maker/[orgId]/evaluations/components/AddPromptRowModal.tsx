@@ -84,6 +84,7 @@ const AddPromptRowModal = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <Dialog.Content
         title="Add Input Prompt"
+        className="add-prompt-row-modal-content max-h-[calc(100vh-50vh)] overflow-y-scroll"
         footer={
           <div className="add-prompt-row-modal-footer flex w-full items-center justify-center gap-4">
             <Button
@@ -109,6 +110,7 @@ const AddPromptRowModal = ({
             label="Test Input"
             requiredIndicator
             multiline={4}
+            maxHeight={104}
             value={form.input}
             onChange={(value) => {
               setForm((prev) => ({ ...prev, input: value }));
@@ -125,6 +127,7 @@ const AddPromptRowModal = ({
             requiredIndicator={isReferenceOutputRequired}
             required={isReferenceOutputRequired}
             multiline={4}
+            maxHeight={104}
             value={form.expectedOutput}
             onChange={(value) => {
               setForm((prev) => ({ ...prev, expectedOutput: value }));

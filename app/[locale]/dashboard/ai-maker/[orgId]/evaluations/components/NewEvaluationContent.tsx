@@ -38,6 +38,7 @@ const METRICS_BY_MODEL_TYPE_QUERY = `
         name
         displayName
         description
+        mandatoryInputs
       }
     }
   }
@@ -763,6 +764,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                         name: string;
                         displayName?: string;
                         description?: string;
+                        mandatoryInputs?: string[];
                       }>;
                     }>;
                   }>(METRICS_BY_MODEL_TYPE_QUERY, {
@@ -811,6 +813,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                           label:
                             metric.displayName ||
                             toTitleCase(metric.name.replace(/_/g, " ")),
+                          mandatoryInputs: metric.mandatoryInputs || [],
                         })
                       );
                       moduleMetricsOptionsMap[moduleMetrics.name] =
@@ -1318,7 +1321,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       modulesData: Module[],
       metricsData: Array<{
         name: string;
-        metrics: Array<{ name: string; displayName?: string }>;
+        metrics: Array<{ name: string; displayName?: string; mandatoryInputs?: string[] }>;
       }> = []
     ) => {
       setModules(modulesData);
@@ -1337,6 +1340,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             label:
               metric.displayName ||
               toTitleCase(metric.name.replace(/_/g, " ")),
+            mandatoryInputs: metric.mandatoryInputs || [],
           }));
 
           initialModuleMetrics[moduleMetrics.name] = metricsOptions;
@@ -1362,6 +1366,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               label:
                 metric?.displayName ||
                 toTitleCase((metric?.name || "").replace(/_/g, " ")),
+              mandatoryInputs: metric?.mandatoryInputs || [],
             }))
             .filter((opt) => opt.value);
 
@@ -1390,7 +1395,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             name: string;
             displayName?: string;
             description?: string;
-            metrics: Array<{ name: string; displayName?: string; description?: string }>;
+            metrics: Array<{ name: string; displayName?: string; description?: string; mandatoryInputs?: string[] }>;
           }>;
         }>(METRICS_BY_MODEL_TYPE_QUERY, { modelType, domain: auditScope });
 
@@ -1417,6 +1422,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               metric.displayName ||
               toTitleCase(metric.name.replace(/_/g, " ")),
             description: metric.description || "",
+            mandatoryInputs: metric.mandatoryInputs || [],
           })),
         }));
 
@@ -1669,7 +1675,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       const data = await request<{
         metricsByModelType: Array<{
           name: string;
-          metrics: Array<{ name: string; displayName?: string }>;
+          metrics: Array<{ name: string; displayName?: string; mandatoryInputs?: string[] }>;
         }>;
       }>(METRICS_BY_MODEL_TYPE_QUERY, { modelType, domain: auditScope });
 
@@ -1683,6 +1689,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         value: metric.name,
         label:
           metric.displayName || toTitleCase(metric.name.replace(/_/g, " ")),
+        mandatoryInputs: metric.mandatoryInputs || [],
       }));
     } catch (error: any) {
       return [];
@@ -1915,8 +1922,10 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   }
 
   const handleBackToList = async () => {
-    const saved = await saveDraftProgress();
-    if (!saved) return;
+    if (evaluationStatus === "DRAFT") {
+      const saved = await saveDraftProgress();
+      if (!saved) return;
+    }
 
     isNavigatingAwayRef.current = true;
     router.push(evaluationsListPath);
@@ -2066,7 +2075,16 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     }
   };
 
-  const draftStatusColors = getEvaluationStatusColor("DRAFT");
+  const statusColors = getEvaluationStatusColor(evaluationStatus);
+
+  const isCancelDisabled = (() => {
+    if (isCancelling) return true;
+    if (["COMPLETED", "FAILED", "CANCELLED"].includes(evaluationStatus)) return true;
+    if (modeOfEvaluation === "playground") {
+      return !["DRAFT", "IN_PROGRESS"].includes(evaluationStatus);
+    }
+    return !["DRAFT", "PENDING_REVIEW"].includes(evaluationStatus);
+  })();
 
   const getEvaluatorLabel = (type: AuditType) => {
     switch (type) {
@@ -2211,10 +2229,10 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             </div>
             <Tag
               variation="filled"
-              fillColor={draftStatusColors.fillColor}
-              textColor={draftStatusColors.textColor}
+              fillColor={statusColors.fillColor}
+              textColor={statusColors.textColor}
             >
-              Draft
+              {toTitleCase(evaluationStatus.replace(/_/g, " "))}
             </Tag>
           </div>
 
@@ -2240,7 +2258,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               kind="tertiary"
               variant="critical"
               onClick={handleCancelEvaluation}
-              disabled={isCancelling}
+              disabled={isCancelDisabled}
               className={styles.cancelAuditButton}
             >
               <span className="inline-flex items-center">
@@ -2331,7 +2349,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                   : evaluationCreatedAt || "--"
               }
               completedAt="--"
-              duration="--"
               scope={overviewScopeLabel}
               mode={getModeLabel(modeOfEvaluation)}
               evaluator={getEvaluatorLabel(auditType)}
@@ -2399,6 +2416,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                   onRunAudit={handleRunAudit}
                   isRequestingAudit={isRequestingAudit}
                   onTestCaseCountChange={handleManualTestCaseCountChange}
+                  onAuditStatusChange={setEvaluationStatus}
                 />
               ) : modeOfEvaluation ? (
                 <TestCases

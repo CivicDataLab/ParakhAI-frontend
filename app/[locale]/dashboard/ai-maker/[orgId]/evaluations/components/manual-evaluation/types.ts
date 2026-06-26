@@ -2,6 +2,7 @@ export interface SubModuleInfo {
   name: string;
   displayName: string;
   description?: string;
+  mandatoryInputs?: string[];
 }
 
 export interface ModuleProgress {

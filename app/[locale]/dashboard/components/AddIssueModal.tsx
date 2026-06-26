@@ -86,6 +86,7 @@ const AddIssueModal = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <Dialog.Content
         title="Add an Issue"
+        className="add-prompt-row-modal-content add-issue-modal-content max-h-[calc(100vh-50vh)] overflow-y-scroll"
         footer={
           <div className="add-prompt-row-modal-footer flex w-full items-center justify-center gap-4">
             <Button
@@ -145,6 +146,7 @@ const AddIssueModal = ({
             label="Reasons or Observations"
             requiredIndicator
             multiline={6}
+            maxHeight={156}
             value={form.observation}
             onChange={(value) => {
               setForm((prev) => ({ ...prev, observation: value }));

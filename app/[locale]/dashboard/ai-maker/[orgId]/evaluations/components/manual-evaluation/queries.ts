@@ -8,6 +8,7 @@ export const METRICS_BY_MODEL_TYPE_QUERY = `
         name
         displayName
         description
+        mandatoryInputs
       }
     }
   }
@@ -19,6 +20,7 @@ export const GET_PLAYGROUND_STATUS_QUERY = `
       auditId
       testCaseCount
       canFinish
+      auditStatus
     }
   }
 `;

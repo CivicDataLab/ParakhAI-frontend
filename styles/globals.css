@@ -322,6 +322,28 @@ html,
 body {
   background-color: var(--page-background) !important;
   min-height: 100%;
+  font-family:
+    var(--font-inter),
+    var(--font-noto-devanagari),
+    var(--font-noto-tamil),
+    var(--font-noto-kannada),
+    var(--font-noto-telugu),
+    var(--font-noto-malayalam),
+    var(--font-noto-bengali),
+    var(--font-noto-gujarati),
+    var(--font-noto-gurmukhi),
+    var(--font-noto-oriya),
+    var(--font-noto-meetei-mayek),
+    var(--font-noto-ol-chiki),
+    var(--font-noto-arabic),
+    var(--font-noto-chakma),
+    var(--font-noto-limbu),
+    var(--font-noto-lepcha),
+    var(--font-noto-syloti-nagri),
+    var(--font-noto-sinhala),
+    var(--font-noto-saurashtra),
+    var(--font-noto-myanmar),
+    sans-serif;
 }
 
 /* Role card styles - flex-shrink was the issue, not the approach */
@@ -753,14 +775,86 @@ body {
   margin-bottom: 12px;
 }
 
-/* Hide divider inside Dialog content */
-[data-radix-dialog-content] [class*="Divider"] {
-  display: none;
+/* Modal footers: full-width centered buttons */
+div:has(> .start-evaluation-modal-footer),
+div:has(> .add-prompt-row-modal-footer) {
+  width: 100%;
 }
 
-/* Start evaluation modal: full-width centered footer buttons */
-div:has(> .start-evaluation-modal-footer) {
-  width: 100%;
+/* Start evaluation modal step 2: override opub-ui limitHeight, pin footer, keep body scrollbar */
+/* [data-radix-dialog-content][data-start-evaluation-step="2"] {
+  display: grid !important;
+  grid-template-rows: 0 auto minmax(0, 1fr) auto !important;
+  bottom: auto !important;
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translate(-50%, -50%) !important;
+  max-height: min(600px, calc(100dvh - 2rem)) !important;
+  height: auto !important;
+  overflow: hidden !important;
+} */
+
+/* [data-radix-dialog-content][data-start-evaluation-step="2"] > .sr-only {
+  height: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+} */
+/* 
+@media (max-height: 720px) {
+  [data-radix-dialog-content][data-start-evaluation-step="2"] {
+    max-height: calc(100dvh - 1rem) !important;
+  }
+}
+
+@media (max-width: 47.9975em) {
+  [data-radix-dialog-content][data-start-evaluation-step="2"] {
+    top: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 1rem !important;
+    transform: none !important;
+    max-height: calc(100dvh - 2rem) !important;
+    margin-inline: var(--space-2, 0.5rem);
+  }
+}
+
+[data-radix-dialog-content][data-start-evaluation-step="2"]
+  .start-evaluation-modal-content {
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable both-edges;
+} */
+
+.add-prompt-row-modal-content {
+  min-height: 0 !important;
+}
+
+/* Add Issue modal: allow form body to scroll when zoomed, keep footer visible */
+.add-issue-modal-content {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: auto;
+  scrollbar-color: auto;
+}
+
+.add-prompt-row-modal-content textarea,
+.add-prompt-row-modal-content [class*="TextField"] textarea {
+  overflow-y: auto !important;
+  resize: none;
+  scrollbar-width: auto;
+  scrollbar-color: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.add-issue-modal-content textarea,
+.add-issue-modal-content [class*="TextField"] textarea {
+  max-height: min(156px, 30dvh) !important;
 }
 
 /* Recommendation modal: right-aligned footer buttons */
@@ -4378,8 +4472,8 @@ div:has(> .recommendation-modal-footer) {
 
 .test-cases-table.custom-prompts-table table th:last-child,
 .test-cases-table.custom-prompts-table table td:last-child {
-  width: 56px;
-  max-width: 56px;
+  width: 88px;
+  max-width: 88px;
   padding-left: 0.5rem;
   padding-right: 1rem;
   text-align: center;
@@ -4415,6 +4509,30 @@ div:has(> .recommendation-modal-footer) {
 
 .custom-prompts-add-row-button:hover {
   background: #f5f2ff !important;
+}
+
+.custom-prompt-row-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.custom-prompt-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border: none;
+  background: transparent;
+  color: #6d7175;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.custom-prompt-action-button:hover {
+  color: #644fc1;
+  background-color: #f5f2ff;
 }
 
 .custom-prompt-delete-button {
@@ -5558,6 +5676,11 @@ table th {
 
 .evaluate-output-ai-assist-link:hover {
   text-decoration: underline;
+}
+
+.evaluate-output-ai-assist-link:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
 }
 
 .evaluate-output-comments-textfield textarea,

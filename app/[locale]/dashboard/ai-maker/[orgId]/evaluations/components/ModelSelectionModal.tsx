@@ -534,11 +534,13 @@ const ModelSelectionModal = ({
   ];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}  >
       <Dialog.Content
         title="Start an Evaluation"
+        data-start-evaluation-step={step === 2 ? "2" : undefined}
+        className={"start-evaluation-modal-content max-h-[calc(100vh-50vh)] overflow-y-scroll"}
         footer={
-          <div className="start-evaluation-modal-footer flex w-full items-center justify-center gap-4">
+          <div className="start-evaluation-modal-footer flex w-full !w-[100%] items-center justify-center gap-4">
             <Button
               kind="secondary"
               onClick={handleBack}
@@ -792,7 +794,7 @@ const ModelSelectionModal = ({
                 name="auditObjective"
                 label="Evaluation Objective"
                 requiredIndicator
-                multiline={4}
+                multiline={3}
                 value={auditObjective}
                 onChange={setAuditObjective}
               />

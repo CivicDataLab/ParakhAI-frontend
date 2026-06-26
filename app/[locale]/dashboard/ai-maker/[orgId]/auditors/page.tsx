@@ -36,7 +36,7 @@ const Avatar = ({
 }) => {
   const [imageError, setImageError] = useState(false);
   const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || "";
-  let imageSrc = dataspaceUrl+src;
+  const imageSrc = src ? `${dataspaceUrl.replace(/\/$/, "")}${src}` : "";
 
   if (!imageSrc || imageError) {
     return <IconUser size={size} className="text-purple-600" />;
@@ -370,6 +370,8 @@ const AuditorsPage = () => {
           setAuditors(auditorsResponse.organizationAuditors.auditors || []);
         }
 
+        toast.success("Evaluator added successfully");
+
         // Close modal and reset
         setIsAddModalOpen(false);
         setEmailInput("");
@@ -377,13 +379,15 @@ const AuditorsPage = () => {
       } else {
         const errorMessage =
           response?.addAuditorToOrganization?.message ||
-          "Failed to add auditor";
+          "Failed to add evaluator";
 
         setAddError(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (err: any) {
-      const errorMessage = err?.message || "Error adding auditor";
+      const errorMessage = err?.message || "Error adding evaluator";
       setAddError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsAdding(false);
     }

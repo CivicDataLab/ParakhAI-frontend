@@ -10,7 +10,7 @@ type EvaluationFormOverviewProps = {
   evalId: string;
   createdAt: string;
   completedAt: string;
-  duration: string;
+  // duration: string;
   scope: string;
   mode: string;
   evaluator: string;
@@ -48,7 +48,7 @@ const EvaluationFormOverview = ({
   evalId,
   createdAt,
   completedAt,
-  duration,
+  // duration,
   scope,
   mode,
   evaluator,
@@ -105,11 +105,11 @@ const EvaluationFormOverview = ({
             <OverviewField label="Eval ID" value={evalId} large />
             <OverviewField label="Created on" value={createdAt} />
             <OverviewField label="Completed on" value={completedAt} />
-            <OverviewField label="Duration" value={duration} />
+            {/* <OverviewField label="Duration" value={duration} /> */}
+            <OverviewField label="Scope" value={scope} />
           </div>
 
           <div className="space-y-4">
-            <OverviewField label="Scope" value={scope} />
             <OverviewField label="Mode" value={mode} />
             <OverviewField label="Evaluator" value={evaluator} />
             <OverviewField label="Modules" value={modules} />

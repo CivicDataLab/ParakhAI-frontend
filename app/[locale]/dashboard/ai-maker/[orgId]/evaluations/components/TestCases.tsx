@@ -3,10 +3,11 @@
 import { useGraphQL } from "@/lib/api";
 import { toTitleCase, stripMarkdown } from "@/lib/utils";
 import type { ColumnDef } from "@tanstack/react-table";
-import { IconAlertCircleFilled, IconTrash } from "@tabler/icons-react";
+import { IconAlertCircleFilled, IconPencil, IconTrash } from "@tabler/icons-react";
 import { Button, DataTable, Icon, Spinner, Text, Tooltip } from "opub-ui";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import AddPromptRowModal from "./AddPromptRowModal";
+import EditPromptRowSheet from "./EditPromptRowSheet";
 import type { CustomPromptRow, SelectOption } from "./types";
 
 const MAX_TASKS_PER_EVALUATION = 250;
@@ -56,6 +57,58 @@ const serializeCustomPromptRows = (rows: CustomPromptRow[]) =>
     )
     .join("\n");
 
+type MissingColumnsByMetric = {
+  metricLabel: string;
+  missingColumns: string[];
+};
+
+const getCustomPromptColumnValue = (
+  row: CustomPromptRow,
+  columnName: string,
+): string => {
+  const normalized = columnName.trim().toLowerCase();
+
+  switch (normalized) {
+    case "input":
+    case "input_prompt":
+      return row.input;
+    case "expected_output":
+    case "reference_output":
+      return row.expectedOutput;
+    case "category":
+      return row.category;
+    case "risk_type":
+    case "risktype":
+      return row.riskType;
+    default:
+      return "";
+  }
+};
+
+const collectMissingColumnsByMetric = (
+  selectedModules: Record<string, boolean>,
+  selectedMetrics: Record<string, SelectOption[]>,
+  getMissingColumnsForMetric: (mandatoryInputs: string[]) => string[],
+): MissingColumnsByMetric[] => {
+  const result: MissingColumnsByMetric[] = [];
+
+  Object.entries(selectedModules).forEach(([moduleName, isSelected]) => {
+    if (!isSelected) return;
+
+    const metrics = selectedMetrics[moduleName];
+    if (!Array.isArray(metrics)) return;
+
+    metrics.forEach((metric) => {
+      const missing = getMissingColumnsForMetric(metric.mandatoryInputs || []);
+      if (missing.length > 0) {
+        result.push({ metricLabel: metric.label, missingColumns: missing });
+      }
+    });
+  });
+
+  return result;
+};
+
 type PromptDataset = {
   id: string;
   title: string;
@@ -63,29 +116,17 @@ type PromptDataset = {
   taskType?: string;
   domain?: string;
   resourceCount: number;
-  hasExpectedOutputColumn: boolean;
+  schemaFieldNames: string[];
   testCaseCount: number;
 };
 
-const isMisinformationMetric = (metric: SelectOption) => {
-  const label = metric.label.trim().toLowerCase();
-  const value = metric.value.trim().toLowerCase();
-
-  return (
-    label === "misinformation" ||
-    label.includes("misinformation") ||
-    value === "misinformation" ||
-    value.includes("misinformation")
-  );
-};
-
-const datasetHasExpectedOutputColumn = (
+const getDatasetSchemaFieldNames = (
   resources?: Array<{ schema?: Array<{ fieldName: string }> }>,
-) =>
-  (resources ?? []).some((resource) =>
-    (resource.schema ?? []).some(
-      (field) => field.fieldName === "expected_output",
-    ),
+): string[] =>
+  Array.from(
+    new Set(
+      (resources ?? []).flatMap((r) => (r.schema ?? []).map((f) => f.fieldName))
+    )
   );
 
 interface TestCasesProps {
@@ -160,6 +201,10 @@ const TestCases: React.FC<TestCasesProps> = ({
     () => parsePastedTestCases(pastedTestCases),
   );
   const [isAddRowModalOpen, setIsAddRowModalOpen] = useState(false);
+  const [isEditRowSheetOpen, setIsEditRowSheetOpen] = useState(false);
+  const [editingPromptRow, setEditingPromptRow] = useState<CustomPromptRow | null>(
+    null,
+  );
   const [customPromptTableKey, setCustomPromptTableKey] = useState(0);
 
   const handleRunEvaluation = () => {
@@ -176,16 +221,6 @@ const TestCases: React.FC<TestCasesProps> = ({
     [selectedModules, selectedMetrics],
   );
 
-  const isMisinformationSelected = useMemo(
-    () =>
-      Object.entries(selectedModules).some(([moduleName, isSelected]) => {
-        if (!isSelected) return false;
-        const metrics = selectedMetrics[moduleName];
-        if (!Array.isArray(metrics)) return false;
-        return metrics.some(isMisinformationMetric);
-      }),
-    [selectedModules, selectedMetrics],
-  );
 
   const maxInputPrompts =
     selectedSubModuleCount > 0
@@ -216,6 +251,23 @@ const TestCases: React.FC<TestCasesProps> = ({
     [customPromptRows, updateCustomPromptRows],
   );
 
+  const handleOpenEditPromptRow = useCallback((row: CustomPromptRow) => {
+    setEditingPromptRow(row);
+    setIsEditRowSheetOpen(true);
+  }, []);
+
+  const handleEditPromptRow = useCallback(
+    (rowId: string, rowData: Omit<CustomPromptRow, "id" | "selected">) => {
+      updateCustomPromptRows(
+        customPromptRows.map((row) =>
+          row.id === rowId ? { ...row, ...rowData } : row,
+        ),
+      );
+      setCustomPromptTableKey((prev) => prev + 1);
+    },
+    [customPromptRows, updateCustomPromptRows],
+  );
+
   const categoryOptions = useMemo(() => {
     const options: SelectOption[] = [];
 
@@ -234,28 +286,6 @@ const TestCases: React.FC<TestCasesProps> = ({
 
     return options;
   }, [selectedModules, selectedMetrics]);
-
-  const categoryLabelByValue = useMemo(
-    () =>
-      Object.fromEntries(
-        categoryOptions.map((option) => [option.value, option.label]),
-      ),
-    [categoryOptions],
-  );
-
-  const riskTypeLabelByValue = useMemo(
-    () => ({
-      high: "High",
-      medium: "Medium",
-      low: "Low",
-    }),
-    [],
-  );
-
-  const getOptionLabel = (
-    value: string,
-    labels: Record<string, string>,
-  ) => labels[value] || toTitleCase(value.replace(/_/g, " "));
 
   const handleOpenAddRowModal = useCallback(() => {
     if (selectedCustomPromptCount >= maxInputPrompts) return;
@@ -283,10 +313,6 @@ const TestCases: React.FC<TestCasesProps> = ({
   );
   const hasTestCases =
     testSourceMode === "library" ? hasPromptLibraries : hasCustomTestCases;
-  const isRunEvaluationDisabled = isRequestingAudit || !hasTestCases;
-  const runEvaluationButtonClassName = isRunEvaluationDisabled
-    ? "!rounded-[8px] !cursor-not-allowed !border-none !bg-[#8c949d] !text-white hover:!bg-[#8c949d] hover:!text-white px-8 py-3 text-base font-bold"
-    : "!rounded-[8px] !border-none !bg-primaryPurple2 px-8 py-3 text-base font-bold !text-white hover:!bg-[#6849EE] hover:!text-white";
   const validationError = !hasTestCases
     ? testSourceMode === "library"
       ? "Please select a prompt library to run the evaluation"
@@ -333,7 +359,7 @@ const TestCases: React.FC<TestCasesProps> = ({
           taskType: ds.promptMetadata?.taskType,
           domain: ds.promptMetadata?.domain,
           resourceCount: ds.resources?.length || 0,
-          hasExpectedOutputColumn: datasetHasExpectedOutputColumn(ds.resources),
+          schemaFieldNames: getDatasetSchemaFieldNames(ds.resources),
           testCaseCount: ds.resources?.[0]?.noOfEntries || 0,
         }));
 
@@ -388,16 +414,52 @@ const TestCases: React.FC<TestCasesProps> = ({
       ? String(selectedPromptLibraries[0].id)
       : null;
 
-  const showMisinformationSchemaWarning = useMemo(() => {
-    if (!isMisinformationSelected || !selectedLibraryId) return false;
+  const selectedLibraryEntryCount = useMemo(() => {
+    if (!selectedLibraryId) return 0;
+    const dataset = promptDatasets.find((ds) => String(ds.id) === selectedLibraryId);
+    return dataset?.testCaseCount ?? 0;
+  }, [selectedLibraryId, promptDatasets]);
 
+  const missingColumnsByMetric = useMemo(() => {
+    if (!selectedLibraryId) return [];
     const selectedDataset = promptDatasets.find(
-      (dataset) => String(dataset.id) === selectedLibraryId,
+      (ds) => String(ds.id) === selectedLibraryId,
     );
-    if (!selectedDataset) return false;
+    if (!selectedDataset) return [];
 
-    return !selectedDataset.hasExpectedOutputColumn;
-  }, [isMisinformationSelected, selectedLibraryId, promptDatasets]);
+    return collectMissingColumnsByMetric(
+      selectedModules,
+      selectedMetrics,
+      (mandatoryInputs) =>
+        mandatoryInputs.filter(
+          (col) => !selectedDataset.schemaFieldNames.includes(col),
+        ),
+    );
+  }, [selectedModules, selectedMetrics, selectedLibraryId, promptDatasets]);
+
+  const missingCustomColumnsByMetric = useMemo(() => {
+    const rowsWithInput = customPromptRows.filter((row) => row.input.trim());
+
+    return collectMissingColumnsByMetric(
+      selectedModules,
+      selectedMetrics,
+      (mandatoryInputs) =>
+        mandatoryInputs.filter((col) =>
+          rowsWithInput.some(
+            (row) => !getCustomPromptColumnValue(row, col).trim(),
+          ),
+        ),
+    );
+  }, [customPromptRows, selectedModules, selectedMetrics]);
+
+  const hasSchemaConflict =
+    (testSourceMode === "library" && missingColumnsByMetric.length > 0) ||
+    (testSourceMode === "custom" && missingCustomColumnsByMetric.length > 0);
+  const isRunEvaluationDisabled =
+    isRequestingAudit || !hasTestCases || hasSchemaConflict;
+  const runEvaluationButtonClassName = isRunEvaluationDisabled
+    ? "!rounded-[8px] !cursor-not-allowed !border-none !bg-[#8c949d] !text-white hover:!bg-[#8c949d] hover:!text-white px-8 py-3 text-base font-bold"
+    : "!rounded-[8px] !border-none !bg-primaryPurple2 px-8 py-3 text-base font-bold !text-white hover:!bg-[#6849EE] hover:!text-white";
 
   const handlePromptLibrarySelect = useCallback(
     (dataset: PromptDataset) => {
@@ -421,20 +483,19 @@ const TestCases: React.FC<TestCasesProps> = ({
         const dataset = row.original;
         const datasetId = String(dataset.id);
         const isSelected = selectedLibraryId === datasetId;
-        const isDisabled = selectedLibraryId !== null && !isSelected;
 
         return (
           <input
-            type="checkbox"
+            type="radio"
+            name="promptLibrary"
             checked={isSelected}
-            disabled={isDisabled}
             aria-label={`Select ${dataset.title}`}
-            onChange={(event) => {
+            onChange={() => {}}
+            onClick={(event) => {
               event.stopPropagation();
               handlePromptLibrarySelect(dataset);
             }}
-            onClick={(event) => event.stopPropagation()}
-            className="prompt-library-row-checkbox h-4 w-4 accent-[#644fc1] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+            className="h-4 w-4 text-primary-purple focus:ring-primary-purple focus:ring-2 cursor-pointer"
           />
         );
       },
@@ -443,9 +504,20 @@ const TestCases: React.FC<TestCasesProps> = ({
       accessorKey: "title",
       header: "Name",
       enableSorting: true,
-      cell: ({ getValue }) => (
-        <span className="text-primary-purple">{getValue<string>()}</span>
-      ),
+      cell: ({ row, getValue }) => {
+        const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_URL?.replace(/\/$/, "");
+        return (
+          <a
+            href={`${dataspaceUrl}/datasets/${row.original.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-purple hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {getValue<string>()}
+          </a>
+        );
+      },
     },
     {
       accessorKey: "domain",
@@ -504,46 +576,51 @@ const TestCases: React.FC<TestCasesProps> = ({
         ),
       },
       {
-        accessorKey: "category",
-        header: "Category",
-        enableSorting: false,
-        cell: ({ getValue }) => (
-          <Text variant="bodySm" className="text-gray-900">
-            {getOptionLabel(getValue<string>(), categoryLabelByValue)}
-          </Text>
-        ),
-      },
-      {
-        accessorKey: "riskType",
-        header: "Risk Type",
-        enableSorting: false,
-        cell: ({ getValue }) => (
-          <Text variant="bodySm" className="text-gray-900">
-            {getOptionLabel(getValue<string>(), riskTypeLabelByValue)}
-          </Text>
-        ),
-      },
-      {
-        id: "delete",
+        id: "actions",
         header: "",
         enableSorting: false,
         cell: ({ row }) => (
-          <button
-            type="button"
-            aria-label="Delete prompt row"
-            onClick={(event) => {
-              event.stopPropagation();
-              handleDeletePromptRow(row.original.id);
-            }}
-            className="custom-prompt-delete-button"
-          >
-            <Icon source={IconTrash} size={18} />
-          </button>
+          <div className="custom-prompt-row-actions">
+            <button
+              type="button"
+              aria-label="Edit prompt row"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleOpenEditPromptRow(row.original);
+              }}
+              className="custom-prompt-action-button"
+            >
+              <Icon source={IconPencil} size={18} />
+            </button>
+            <button
+              type="button"
+              aria-label="Delete prompt row"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleDeletePromptRow(row.original.id);
+              }}
+              className="custom-prompt-action-button custom-prompt-delete-button"
+            >
+              <Icon source={IconTrash} size={18} />
+            </button>
+          </div>
         ),
       },
     ],
-    [categoryLabelByValue, handleDeletePromptRow, riskTypeLabelByValue],
+    [handleDeletePromptRow, handleOpenEditPromptRow],
   );
+
+  const runsLine: string | null = (() => {
+    if (!selectedLibraryId) {
+      return selectedSubModuleCount === 0
+        ? "This limit adjusts based on how many sub-modules you've chosen."
+        : null;
+    }
+    if (selectedLibraryEntryCount <= maxInputPrompts) {
+      return "ParakhAI will run all input prompts from the selected library. This limit adjusts based on how many sub-modules you've chosen.";
+    }
+    return `ParakhAI will run the first ${maxInputPrompts} input prompts from the selected library. This limit adjusts based on how many sub-modules you've chosen.`;
+  })();
 
   const submoduleWarningBanner = (
     <div className="prompt-library-warning-banner">
@@ -557,11 +634,11 @@ const TestCases: React.FC<TestCasesProps> = ({
           Maximum test cases for your current selection: {maxInputPrompts}{" "}
           input prompts
         </Text>
-        <Text variant="bodySm" className="text-gray-800">
-          This is the number of input prompts ParakhAI will run from the
-          selected library. This limit adjusts based on how many sub-modules
-          you&apos;ve chosen.
-        </Text>
+        {runsLine && (
+          <Text variant="bodySm" className="text-gray-800">
+            {runsLine}
+          </Text>
+        )}
         <Text variant="bodySm" className="text-gray-800">
           The test case limit helps keep evaluations efficient and reliable.
         </Text>
@@ -663,11 +740,16 @@ const TestCases: React.FC<TestCasesProps> = ({
           />
         )}
         </div>
-        {showMisinformationSchemaWarning && (
-          <Text variant="bodySm" color="critical" className="mt-4">
-            Warning: The selected library cannot be used with sub-module
-            Misinformation because it does not have an expected output column.
-          </Text>
+        {missingColumnsByMetric.length > 0 && (
+          <div className="mt-4 space-y-1">
+            {missingColumnsByMetric.map(({ metricLabel, missingColumns }) => (
+              <Text key={metricLabel} variant="bodySm" color="critical">
+                Warning: <strong>{metricLabel}</strong> requires column(s){" "}
+                <strong>{missingColumns.join(", ")}</strong> which are missing
+                from the selected library.
+              </Text>
+            ))}
+          </div>
         )}
       </div>
 
@@ -713,6 +795,20 @@ const TestCases: React.FC<TestCasesProps> = ({
                 </Text>
               )}
             </div>
+
+            {missingCustomColumnsByMetric.length > 0 && (
+              <div className="mt-4 space-y-1">
+                {missingCustomColumnsByMetric.map(
+                  ({ metricLabel, missingColumns }) => (
+                    <Text key={metricLabel} variant="bodySm" color="critical">
+                      Warning: <strong>{metricLabel}</strong> requires column(s){" "}
+                      <strong>{missingColumns.join(", ")}</strong> which are
+                      missing from the added prompts.
+                    </Text>
+                  ),
+                )}
+              </div>
+            )}
           </div>
 
           {submoduleWarningBanner}
@@ -722,6 +818,14 @@ const TestCases: React.FC<TestCasesProps> = ({
             onOpenChange={setIsAddRowModalOpen}
             categoryOptions={categoryOptions}
             onSubmit={handleSubmitPromptRow}
+          />
+
+          <EditPromptRowSheet
+            row={editingPromptRow}
+            open={isEditRowSheetOpen}
+            onOpenChange={setIsEditRowSheetOpen}
+            categoryOptions={categoryOptions}
+            onSubmit={handleEditPromptRow}
           />
         </>
       )}

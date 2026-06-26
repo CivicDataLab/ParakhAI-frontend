@@ -15,6 +15,7 @@ interface ManualTestCasesProps {
   onRunAudit: () => void;
   isRequestingAudit: boolean;
   onTestCaseCountChange?: (count: number) => void;
+  onAuditStatusChange?: (status: string) => void;
 }
 
 const ManualTestCases: React.FC<ManualTestCasesProps> = ({
@@ -23,11 +24,12 @@ const ManualTestCases: React.FC<ManualTestCasesProps> = ({
   moduleMetrics,
   supportedLanguages,
   orgId,
-  modelType = "LLM",
+  modelType = "TEXT_GENERATION",
   auditScope,
   onRunAudit,
   isRequestingAudit,
   onTestCaseCountChange,
+  onAuditStatusChange,
 }) => {
   if (!auditId) {
     return (
@@ -52,6 +54,7 @@ const ManualTestCases: React.FC<ManualTestCasesProps> = ({
       onFinishAudit={onRunAudit}
       isRequestingAudit={isRequestingAudit}
       onTestCaseCountChange={onTestCaseCountChange}
+      onAuditStatusChange={onAuditStatusChange}
     />
   );
 };

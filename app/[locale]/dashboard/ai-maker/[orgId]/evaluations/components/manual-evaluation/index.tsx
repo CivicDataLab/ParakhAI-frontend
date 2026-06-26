@@ -60,6 +60,7 @@ interface ManualEvaluationFlowProps {
   onFinishAudit: () => void;
   isRequestingAudit: boolean;
   onTestCaseCountChange?: (count: number) => void;
+  onAuditStatusChange?: (status: string) => void;
 }
 
 const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
@@ -69,6 +70,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   supportedLanguages,
   orgId,
   onTestCaseCountChange,
+  onAuditStatusChange,
 }) => {
   const router = useRouter();
   const params = useParams();
@@ -126,17 +128,21 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           auditId: string;
           testCaseCount: number;
           canFinish: boolean;
+          auditStatus: string;
         };
       }>(GET_PLAYGROUND_STATUS_QUERY, { auditId }, { organization: orgId });
 
       if (result?.playgroundEvaluationStatus) {
         setTestCaseCount(result.playgroundEvaluationStatus.testCaseCount);
         setCanFinish(result.playgroundEvaluationStatus.canFinish);
+        if (result.playgroundEvaluationStatus.auditStatus) {
+          onAuditStatusChange?.(result.playgroundEvaluationStatus.auditStatus);
+        }
       }
     } catch (err) {
       console.error("Error fetching evaluation status:", err);
     }
-  }, [auditId, orgId, request]);
+  }, [auditId, orgId, request, onAuditStatusChange]);
 
   const fetchMetrics = useCallback(async () => {
     if (!modelType) return;
@@ -145,7 +151,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
         metricsByModelType: Array<{
           name: string;
           displayName: string;
-          metrics: Array<{ name: string; displayName: string }>;
+          metrics: Array<{ name: string; displayName: string; mandatoryInputs?: string[] }>;
         }>;
       }>(METRICS_BY_MODEL_TYPE_QUERY, { modelType, domain: domain ?? "" }, { organization: orgId });
 
@@ -155,6 +161,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
         allMetrics.map((m) => ({
           name: m.name,
           displayName: m.displayName || m.name,
+          mandatoryInputs: m.mandatoryInputs ?? [],
         }))
       );
     } catch (err) {
@@ -656,6 +663,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
               value={inputPrompt}
               onChange={setInputPrompt}
               placeholder="Type your prompt here"
+              disabled={isCallingModel}
             />
             {modelCallError && (
               <Text
@@ -691,7 +699,11 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
             </div>
             <div className="mb-4 min-h-[200px] max-h-[300px] overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 px-4 py-0">
               <div className="bulk-evaluation-sheet-prose -ml-4">
-                {hasCalledModel ? (
+                {isCallingModel ? (
+                  <Text variant="bodyMd" className="text-gray-500">
+                    Generating ....
+                  </Text>
+                ) : hasCalledModel ? (
                   modelOutput ? (
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {modelOutput || ""}

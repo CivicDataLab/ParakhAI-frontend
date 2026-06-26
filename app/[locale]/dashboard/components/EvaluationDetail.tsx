@@ -530,6 +530,7 @@ const EvaluationDetail = ({
   const [evaluationProgress, setEvaluationProgress] = useState<number | null>(
     null
   );
+  const [auditResults, setAuditResults] = useState<AuditResult[] | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [isSavingEvaluation, setIsSavingEvaluation] = useState(false);
@@ -556,6 +557,7 @@ const EvaluationDetail = ({
     setEvaluationProgress(null);
     setRiskDistribution({});
     setAuditReport(null);
+    setAuditResults(null);
   }, [evaluationId]);
 
   const submitBulkReview = async (recommendation: string) => {
@@ -604,6 +606,7 @@ const EvaluationDetail = ({
       toast.success("Review submitted successfully.");
       setIsEvaluationSaved(true);
       stopProgressPolling();
+      await fetchAuditSummary(audit.configuration);
     } catch (err: unknown) {
       toast.error(
         err instanceof Error
@@ -732,10 +735,10 @@ const EvaluationDetail = ({
         );
 
         if (canShowEvaluationResults(auditData.audit, isPlayground)) {
-          await fetchAuditSummary(
-            auditData.audit.configuration,
-            auditData.audit
-          );
+          await Promise.all([
+            fetchAuditSummary(auditData.audit.configuration),
+            fetchAuditResults(),
+          ]);
         } else if (isAuditInProgress(auditData.audit.status)) {
           setEvaluationProgress(
             typeof auditData.audit.progressPercentage === "number"
@@ -769,8 +772,7 @@ const EvaluationDetail = ({
   };
 
   const fetchAuditSummary = async (
-    configurationOverride?: unknown,
-    auditOverride?: Pick<Audit, "evaluationMode">
+    configurationOverride?: unknown
   ): Promise<{ hasReport: boolean }> => {
     const requestOptions = orgId ? { organization: orgId } : undefined;
     try {
@@ -807,29 +809,10 @@ const EvaluationDetail = ({
         summary?.metricSummary
       );
 
-      const evaluationMode =
-        auditOverride?.evaluationMode ?? audit?.evaluationMode;
-      const isBulkEvaluation = !isPlaygroundEvaluationMode(evaluationMode);
-
-      if (getRiskDistributionTotal(resolvedRisk) === 0 && isBulkEvaluation) {
-        try {
-          const resultsData = await request<{ auditResults: AuditResult[] }>(
-            GET_AUDIT_RESULTS_QUERY,
-            { auditId: evaluationId, metric: null },
-            requestOptions
-          );
-          resolvedRisk = aggregateRiskFromAuditResults(
-            resultsData?.auditResults ?? []
-          );
-        } catch (resultsError) {
-          console.error(
-            "Error fetching audit results for risk summary:",
-            resultsError
-          );
-        }
-      }
-
-      setRiskDistribution(resolvedRisk);
+      setRiskDistribution((prev) => {
+        if (getRiskDistributionTotal(resolvedRisk) > 0) return resolvedRisk;
+        return prev;
+      });
 
       const recommendationText = parseEvaluatorRecommendation(
         summary?.recommendations,
@@ -844,6 +827,26 @@ const EvaluationDetail = ({
     } catch (err) {
       console.error("Error fetching audit summary:", err);
       return { hasReport: false };
+    }
+  };
+
+  const fetchAuditResults = async () => {
+    const requestOptions = orgId ? { organization: orgId } : undefined;
+    try {
+      const resultsData = await request<{ auditResults: AuditResult[] }>(
+        GET_AUDIT_RESULTS_QUERY,
+        { auditId: evaluationId, metric: null },
+        requestOptions
+      );
+      const results = resultsData?.auditResults ?? [];
+      setAuditResults(results);
+      setRiskDistribution((prev) => {
+        if (getRiskDistributionTotal(prev) > 0) return prev;
+        return aggregateRiskFromAuditResults(results);
+      });
+    } catch (err) {
+      console.error("Error fetching audit results:", err);
+      setAuditResults([]);
     }
   };
 
@@ -917,7 +920,10 @@ const EvaluationDetail = ({
           if (shouldStopPolling(data.audit, isPlayground)) {
             stopProgressPolling();
             if (canShowEvaluationResults(data.audit, isPlayground)) {
-              await fetchAuditSummary(data.audit.configuration, data.audit);
+              await Promise.all([
+                fetchAuditSummary(data.audit.configuration),
+                fetchAuditResults(),
+              ]);
             }
             return;
           }
@@ -927,7 +933,10 @@ const EvaluationDetail = ({
             canShowEvaluationResults(data.audit, isPlayground)
           ) {
             stopProgressPolling();
-            await fetchAuditSummary(data.audit.configuration, data.audit);
+            await Promise.all([
+              fetchAuditSummary(data.audit.configuration),
+              fetchAuditResults(),
+            ]);
             return;
           }
         }
@@ -976,7 +985,7 @@ const EvaluationDetail = ({
 
   const statusColors = getEvaluationStatusColor(audit?.status);
   const evaluationMode = getEvaluationModeColor(audit?.evaluationMode);
-  const duration = getDuration();
+  // const duration = getDuration();
   const isRunning = isAuditInProgress(audit?.status);
   const isPlaygroundInProgress =
     isPlaygroundEvaluationMode(audit?.evaluationMode) &&
@@ -1232,7 +1241,7 @@ const EvaluationDetail = ({
         evalId={audit.id}
         createdAt={formatDate(audit.createdAt)}
         completedAt={formatDate(audit.completedAt)}
-        duration={duration || "--"}
+        // duration={duration || "--"}
         scope={evaluationScopeDisplay}
         mode={getModeLabel(audit.evaluationMode)}
         evaluator={getEvaluatorLabel(audit.auditType)}
@@ -1548,6 +1557,8 @@ const EvaluationDetail = ({
               : "pending"
           }
           metricSummary={metricSummary as Record<string, Record<string, unknown>>}
+          selectedMetricCount={audit?.metrics?.length ?? 0}
+          results={auditResults}
         />
       )}
 
