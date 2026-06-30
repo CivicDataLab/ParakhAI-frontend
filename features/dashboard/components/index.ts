@@ -8,3 +8,7 @@ export { default as AddIssueModal } from './AddIssueModal';
 export { default as SeverityBarChart } from './SeverityBarChart';
 export { default as StatusFilterTabs } from './StatusFilterTabs';
 export { default as SkippedTestsErrorsCard } from './SkippedTestsErrorsCard';
+// Reusable evaluation display components
+export { default as EvaluationSummaryCard } from './EvaluationSummaryCard';
+export { default as EvaluationProgressSection } from './EvaluationProgressSection';
+export { default as EvaluationFailedBanner } from './EvaluationFailedBanner';
