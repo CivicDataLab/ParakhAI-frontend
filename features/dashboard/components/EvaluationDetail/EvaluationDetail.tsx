@@ -22,7 +22,7 @@ import Link from "next/link";
 import { Button } from "opub-ui";
 import EvaluationActions from "./EvaluationActions";
 import EvaluationHeader from "./EvaluationHeader";
-import { useEvaluationDetail } from "./use-evaluation-detail";
+import { useEvaluationDetail } from "./hooks/use-evaluation-detail";
 
 const EvaluationDetail = ({
   evaluationId,
