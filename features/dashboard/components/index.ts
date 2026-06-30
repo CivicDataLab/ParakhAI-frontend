@@ -1,6 +1,6 @@
-export { DashboardGuard } from './DashboardGuard';
+﻿export { DashboardGuard } from './DashboardGuard';
 export { default as WelcomeSection } from './WelcomeSection';
-export { default as EvaluationDetail } from './EvaluationDetail/index';
+export { default as EvaluationDetail } from './EvaluationDetail';
 export { default as ModelDetailView } from './ModelDetailView';
 export { default as BulkTestCaseDetailSheet } from './BulkTestCaseDetailSheet';
 export { default as AuditResultsList } from './AuditResultsList';
@@ -8,7 +8,3 @@ export { default as AddIssueModal } from './AddIssueModal';
 export { default as SeverityBarChart } from './SeverityBarChart';
 export { default as StatusFilterTabs } from './StatusFilterTabs';
 export { default as SkippedTestsErrorsCard } from './SkippedTestsErrorsCard';
-// Reusable evaluation display components
-export { default as EvaluationSummaryCard } from './EvaluationSummaryCard';
-export { default as EvaluationProgressSection } from './EvaluationProgressSection';
-export { default as EvaluationFailedBanner } from './EvaluationFailedBanner';

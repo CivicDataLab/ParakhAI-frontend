@@ -8,10 +8,6 @@ import type {
   BulkTestCaseRisk,
   ModuleIssueCount,
 } from "@/features/ai-maker/types/bulk-evaluation";
-import {
-  formatModuleName as formatModuleDisplayName,
-  getSeverityTagColors,
-} from "@/features/dashboard/utils/evaluation";
 import { IconArrowsDiagonal, IconSparkles } from "@tabler/icons-react";
 import { Select, Spinner, Tag, Text } from "opub-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -28,8 +24,38 @@ const SORT_OPTIONS = [
 
 type SortOption = (typeof SORT_OPTIONS)[number]["value"];
 
+const getRiskTagColors = (
+  severity: "LOW" | "MEDIUM" | "HIGH"
+): { fillColor: string; textColor: string } => {
+  switch (severity) {
+    case "HIGH":
+      return { fillColor: "#FCE7F3", textColor: "#E11D48" };
+    case "MEDIUM":
+      return { fillColor: "#FFFBEB", textColor: "#92400E" };
+    case "LOW":
+      return { fillColor: "#EFF6FF", textColor: "#2563EB" };
+    default:
+      return { fillColor: "#F3F4F6", textColor: "#374151" };
+  }
+};
+
 const formatRiskLabel = (severity: "LOW" | "MEDIUM" | "HIGH", label: string) =>
   `${severity.charAt(0) + severity.slice(1).toLowerCase()} risk - ${label}`;
+
+const formatModuleDisplayName = (moduleId: string): string => {
+  const moduleMap: Record<string, string> = {
+    BIAS_FAIRNESS: "Bias and Fairness",
+    HALLUCINATION_MISINFORMATION: "Hallucination and Misinformation",
+    PRIVACY_SAFETY: "Privacy and Safety",
+  };
+  return (
+    moduleMap[moduleId] ||
+    moduleId
+      .split("_")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ")
+  );
+};
 
 type AuditResultsListProps = {
   auditId: string;
@@ -286,7 +312,7 @@ const AuditResultsList = ({
 
                 <div className="flex flex-wrap gap-2">
                   {testCase.risks.map((risk, riskIndex) => {
-                    const colors = getSeverityTagColors(risk.severity);
+                    const colors = getRiskTagColors(risk.severity);
                     return (
                       <Tag
                         key={`${testCase.id}-risk-${riskIndex}`}
