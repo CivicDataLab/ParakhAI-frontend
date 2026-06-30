@@ -3,7 +3,7 @@
 import { logout } from '@/lib/auth-helpers';
 import { useAppSession } from '@/lib/session';
 import { useSession } from 'next-auth/react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 
 interface SessionGuardProps {
   children: React.ReactNode;
@@ -13,23 +13,16 @@ interface SessionGuardProps {
 /**
  * SessionGuard Component
  * 
- * Provides tight integration with Keycloak session management:
- * 1. Validates that user has an active session
- * 2. Checks for session errors (RefreshAccessTokenError, RefreshTokenExpired)
- * 3. Validates token expiry client-side
- * 4. Provides a mechanism to validate token with backend
- * 5. Auto-logs out user when Keycloak session is invalid
- * 
- * Wrap protected pages/layouts with this component to ensure
- * only authenticated users with valid Keycloak sessions can access them.
+ * Simplified SessionGuard:
+ * 1. Checks initial loading status.
+ * 2. Checks if user is authenticated or has a session error.
+ * 3. Logs out if unauthenticated or on error (exactly once via a ref).
+ * 4. Renders children immediately once authenticated with no error.
  */
 export function SessionGuard({ children, fallback }: SessionGuardProps) {
-  const { data: session, status, update } = useSession();
-  const { accessToken, error: appSessionError } = useAppSession();
-  const [isValidating, setIsValidating] = useState(true);
-  const [isValid, setIsValid] = useState(false);
+  const { data: session, status } = useSession();
+  const { error: appSessionError } = useAppSession();
   const hasLoggedOut = useRef(false);
-  const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Logout handler - ensures we only logout once
   const handleLogout = useCallback(async (reason: string) => {
@@ -37,185 +30,31 @@ export function SessionGuard({ children, fallback }: SessionGuardProps) {
     hasLoggedOut.current = true;
     
     console.warn(`🔒 SessionGuard: Logging out - ${reason}`);
-    
-    // Clear any pending validation
-    if (validationTimeoutRef.current) {
-      clearTimeout(validationTimeoutRef.current);
-    }
-    
     await logout('/');
   }, []);
 
-  // Check if token is expired client-side
-  const isTokenExpired = useCallback((token: string): boolean => {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const exp = payload.exp;
-      if (!exp) return false;
-      
-      // Add 30 second buffer
-      const now = Math.floor(Date.now() / 1000);
-      return now >= (exp - 30);
-    } catch {
-      return true; // If we can't parse, assume expired
-    }
-  }, []);
+  const sessionError = (session as { error?: string })?.error;
+  const hasError = 
+    sessionError === 'RefreshAccessTokenError' ||
+    sessionError === 'RefreshTokenExpired' ||
+    appSessionError === 'RefreshAccessTokenError' ||
+    appSessionError === 'RefreshTokenExpired';
 
-  // Validate session with backend
-  const validateWithBackend = useCallback(async (token: string): Promise<boolean> => {
-    try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      if (!backendUrl) {
-        console.warn('SessionGuard: NEXT_PUBLIC_BACKEND_URL not configured, skipping backend validation');
-        return true; // Skip backend validation if not configured
-      }
-
-      // Make a lightweight GraphQL query to validate the token
-      const response = await fetch(backendUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          query: `query ValidateSession { __typename }`,
-        }),
-      });
-
-      if (!response.ok) {
-        // 401 or 403 means token is invalid
-        if (response.status === 401 || response.status === 403) {
-          return false;
-        }
-      }
-
-      const data = await response.json();
-      
-      // Check for authentication errors in GraphQL response
-      if (data.errors) {
-        const authErrors = data.errors.filter((e: any) => 
-          e.message?.toLowerCase().includes('authentication') ||
-          e.message?.toLowerCase().includes('unauthorized') ||
-          e.message?.toLowerCase().includes('token') ||
-          e.extensions?.code === 'UNAUTHENTICATED'
-        );
-        if (authErrors.length > 0) {
-          return false;
-        }
-      }
-
-      return true;
-    } catch (error) {
-      console.error('SessionGuard: Backend validation error:', error);
-      // On network errors, don't logout - might be temporary
-      return true;
-    }
-  }, []);
-
-  // Main validation effect
   useEffect(() => {
-    const validateSession = async () => {
-      // Reset logout flag on new validation cycle
-      if (status === 'loading') {
-        setIsValidating(true);
-        return;
-      }
+    if (status === 'loading') return;
 
-      // Not authenticated - redirect to login
-      if (status === 'unauthenticated') {
-        setIsValidating(false);
-        setIsValid(false);
-        handleLogout('User is not authenticated');
-        return;
-      }
+    if (status === 'unauthenticated') {
+      handleLogout('User is not authenticated');
+      return;
+    }
 
-      // Check for session errors from NextAuth
-      const sessionError = (session as any)?.error;
-      if (sessionError === 'RefreshAccessTokenError' || sessionError === 'RefreshTokenExpired') {
-        setIsValidating(false);
-        setIsValid(false);
-        handleLogout(`Session error: ${sessionError}`);
-        return;
-      }
-
-      // Check for app session errors
-      if (appSessionError === 'RefreshAccessTokenError' || appSessionError === 'RefreshTokenExpired') {
-        setIsValidating(false);
-        setIsValid(false);
-        handleLogout(`App session error: ${appSessionError}`);
-        return;
-      }
-
-      // No access token
-      if (!accessToken) {
-        setIsValidating(false);
-        setIsValid(false);
-        handleLogout('No access token available');
-        return;
-      }
-
-      // Check token expiry client-side
-      if (isTokenExpired(accessToken)) {
-        console.log('SessionGuard: Token appears expired, attempting refresh...');
-        // Try to refresh the session
-        const updatedSession = await update();
-        if (!updatedSession || (updatedSession as any)?.error) {
-          setIsValidating(false);
-          setIsValid(false);
-          handleLogout('Token expired and refresh failed');
-          return;
-        }
-      }
-
-      // Validate with backend (debounced)
-      if (validationTimeoutRef.current) {
-        clearTimeout(validationTimeoutRef.current);
-      }
-
-      validationTimeoutRef.current = setTimeout(async () => {
-        const backendValid = await validateWithBackend(accessToken);
-        if (!backendValid) {
-          setIsValidating(false);
-          setIsValid(false);
-          handleLogout('Backend token validation failed');
-          return;
-        }
-
-        // All checks passed
-        setIsValidating(false);
-        setIsValid(true);
-        hasLoggedOut.current = false; // Reset for future validations
-      }, 100);
-    };
-
-    validateSession();
-
-    return () => {
-      if (validationTimeoutRef.current) {
-        clearTimeout(validationTimeoutRef.current);
-      }
-    };
-  }, [status, session, accessToken, appSessionError, isTokenExpired, validateWithBackend, handleLogout, update]);
-
-  // Periodic validation (every 2 minutes)
-  useEffect(() => {
-    if (!isValid || !accessToken) return;
-
-    const interval = setInterval(async () => {
-      // Check token expiry
-      if (isTokenExpired(accessToken)) {
-        const updatedSession = await update();
-        if (!updatedSession || (updatedSession as any)?.error) {
-          handleLogout('Periodic check: Token expired and refresh failed');
-        }
-      }
-    }, 2 * 60 * 1000); // Every 2 minutes
-
-    return () => clearInterval(interval);
-  }, [isValid, accessToken, isTokenExpired, update, handleLogout]);
+    if (hasError) {
+      handleLogout(`Session error: ${sessionError || appSessionError}`);
+    }
+  }, [status, hasError, sessionError, appSessionError, handleLogout]);
 
   // Show loading state
-  if (isValidating || status === 'loading') {
+  if (status === 'loading') {
     return fallback || (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-4">
@@ -227,7 +66,7 @@ export function SessionGuard({ children, fallback }: SessionGuardProps) {
   }
 
   // Not valid - will be redirected
-  if (!isValid) {
+  if (status === 'unauthenticated' || hasError) {
     return fallback || (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-4">
@@ -248,21 +87,22 @@ export function SessionGuard({ children, fallback }: SessionGuardProps) {
 export function useAuthErrorHandler() {
   const hasLoggedOut = useRef(false);
 
-  const handleAuthError = useCallback(async (error: any) => {
+  const handleAuthError = useCallback(async (error: unknown) => {
     if (hasLoggedOut.current) return;
 
-    const errorMessage = error?.message?.toLowerCase() || '';
+    const err = error as { message?: string; response?: { status?: number } } | null;
+    const errorMessage = err?.message?.toLowerCase() || '';
     const isAuthError = 
       errorMessage.includes('authentication') ||
       errorMessage.includes('unauthorized') ||
       errorMessage.includes('token') ||
       errorMessage.includes('not authenticated') ||
-      error?.response?.status === 401 ||
-      error?.response?.status === 403;
+      err?.response?.status === 401 ||
+      err?.response?.status === 403;
 
     if (isAuthError) {
       hasLoggedOut.current = true;
-      console.warn('🔒 Auth error detected, logging out:', error?.message);
+      console.warn('🔒 Auth error detected, logging out:', err?.message);
       await logout('/');
     }
   }, []);
