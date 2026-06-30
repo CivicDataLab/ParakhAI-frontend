@@ -96,8 +96,8 @@ const CompletedTestCases = ({
               </Text>
             ) : (
               displayedItems.map((testCase, index) => {
-                const failedIssues = testCase.issues.filter(
-                  (issue) => issue.status === "FAILED"
+                const failedIssues = getFailedManualTestCaseIssues(
+                  testCase.issues
                 );
                 const isPassed = failedIssues.length === 0;
 

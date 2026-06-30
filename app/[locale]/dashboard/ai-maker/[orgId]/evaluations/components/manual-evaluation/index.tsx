@@ -17,6 +17,7 @@ import EvaluateOutputSection, {
 } from "./EvaluateOutputSection";
 import {
   clearManualEvalWorkspaceDraft,
+  mapManualTestCases,
   MIN_PLAYGROUND_TEST_CASES,
   readManualEvalWorkspaceDraft,
   writeManualEvalWorkspaceDraft,
@@ -34,6 +35,7 @@ import {
 import {
   LANGUAGE_OPTIONS,
   type ManualTestCase,
+  type ManualTestCaseRaw,
   type SubModuleInfo,
 } from "./types";
 import remarkGfm from "remark-gfm";
@@ -156,12 +158,15 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
       }>(METRICS_BY_MODEL_TYPE_QUERY, { modelType, domain: domain ?? "" }, { organization: orgId });
 
       const modules = result?.metricsByModelType ?? [];
-      const allMetrics = modules.flatMap((m) => m.metrics ?? []);
+      const allMetrics = modules.flatMap((mod) =>
+        (mod.metrics ?? []).map((metric) => ({ ...metric, module: mod.name }))
+      );
       setIssueTypeOptions(
         allMetrics.map((m) => ({
           name: m.name,
           displayName: m.displayName || m.name,
           mandatoryInputs: m.mandatoryInputs ?? [],
+          module: m.module,
         }))
       );
     } catch (err) {
@@ -172,11 +177,11 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   const fetchTestCases = useCallback(async () => {
     try {
       const result = await request<{
-        manualTestCases: ManualTestCase[];
+        manualTestCases: ManualTestCaseRaw[];
       }>(GET_TEST_CASES_QUERY, { auditId, module: null }, { organization: orgId });
 
       if (result?.manualTestCases) {
-        setTestCases(result.manualTestCases);
+        setTestCases(mapManualTestCases(result.manualTestCases));
       }
     } catch (err) {
       console.error("Error fetching test cases:", err);
@@ -409,6 +414,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           auditId,
           status: "FAILED",
           issueType: savedRow.issueType,
+          module: issueTypeOptions.find((opt) => opt.name === savedRow.issueType)?.module ?? null,
           severity: savedRow.severity,
           comments: savedRow.observations || null,
           idealOutput: savedRow.idealOutput || null,
@@ -427,13 +433,13 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           const result = await request<{
             submitManualTestCase: {
               success: boolean;
-              testCase?: { id: string };
+              testCase?: { test: { id: string } };
             };
           }>(SUBMIT_TEST_CASE_MUTATION, { input }, { organization: orgId });
 
           if (result?.submitManualTestCase?.success) {
             // Preserve the first testCase.id for all subsequent issues
-            return existingTestId ?? result.submitManualTestCase.testCase?.id ?? null;
+            return existingTestId ?? result.submitManualTestCase.testCase?.test?.id ?? null;
           }
         } catch (err) {
           console.error("Background issue save failed:", err);
@@ -489,6 +495,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           auditId,
           status: "FAILED",
           issueType: lastRow.issueType,
+          module: issueTypeOptions.find((opt) => opt.name === lastRow.issueType)?.module ?? null,
           severity: lastRow.severity,
           comments: lastRow.observations || null,
           idealOutput: lastRow.idealOutput || null,

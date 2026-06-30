@@ -3,6 +3,7 @@ export interface SubModuleInfo {
   displayName: string;
   description?: string;
   mandatoryInputs?: string[];
+  module?: string;
 }
 
 export interface ModuleProgress {
@@ -54,7 +55,7 @@ export type IssueSeverity = "LOW" | "MEDIUM" | "HIGH";
 
 export interface ManualTestCaseIssue {
   metricName: string;
-  status: string;
+  status: boolean;
   severity?: IssueSeverity | string | null;
   comments?: string;
   idealOutput?: string;
@@ -66,6 +67,27 @@ export interface ManualTestCase {
   actualOutput: string;
   issues: ManualTestCaseIssue[];
   createdAt?: string;
+}
+
+export interface ManualTestCaseResultRaw {
+  name: string;
+  success: boolean;
+  riskLevel?: string | null;
+  reason?: string | null;
+  idealOutput?: string | null;
+  evaluatorSuccess?: boolean | null;
+  evaluatorRiskLevel?: string | null;
+  evaluatorReason?: string | null;
+}
+
+export interface ManualTestCaseRaw {
+  test: {
+    id: string;
+    testInput: string;
+    actualOutput: string;
+    createdAt: string;
+  };
+  result: ManualTestCaseResultRaw;
 }
 
 export interface LanguageOption {

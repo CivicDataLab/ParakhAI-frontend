@@ -28,16 +28,21 @@ export const GET_PLAYGROUND_STATUS_QUERY = `
 export const GET_TEST_CASES_QUERY = `
   query ManualTestCases($auditId: ID!, $module: String) {
     manualTestCases(auditId: $auditId, module: $module) {
-      id
-      testInput
-      actualOutput
-      createdAt
-      issues {
-        metricName
-        status
-        severity
-        comments
+      test {
+        id
+        testInput
+        actualOutput
+        createdAt
+      }
+      result {
+        name
+        success
+        riskLevel
+        reason
         idealOutput
+        evaluatorSuccess
+        evaluatorRiskLevel
+        evaluatorReason
       }
     }
   }
@@ -49,7 +54,9 @@ export const SUBMIT_TEST_CASE_MUTATION = `
       success
       message
       testCase {
-        id
+        test {
+          id
+        }
       }
       testCaseCount
     }
