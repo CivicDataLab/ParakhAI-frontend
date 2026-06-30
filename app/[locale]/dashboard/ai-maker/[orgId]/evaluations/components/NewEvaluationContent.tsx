@@ -378,7 +378,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     request,
     isAuthenticated,
     isLoading: isSessionLoading,
-    accessToken,
   } = useGraphQL();
 
   // Get user session for expert name
