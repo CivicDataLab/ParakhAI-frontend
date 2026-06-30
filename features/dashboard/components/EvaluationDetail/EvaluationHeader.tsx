@@ -31,13 +31,10 @@ const EvaluationHeader = ({
   const evaluationMode = getEvaluationModeColor(audit.evaluationMode);
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 mt-10">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 text-left">
-          <Text
-            variant="bodyMd"
-            className="text-gray-500 whitespace-nowrap mr-2"
-          >
+    <div className="flex flex-row items-center justify-between gap-4 mb-8 mt-10 flex-wrap">
+      <div className="flex flex-row items-center gap-3 flex-wrap">
+        <div className="flex flex-row items-center gap-1">
+          <Text variant="bodyMd" className="text-gray-500 whitespace-nowrap mr-2">
             Evaluation Name :{" "}
           </Text>
           <div
@@ -61,41 +58,31 @@ const EvaluationHeader = ({
           </div>
         </div>
 
-        <span className="self-start sm:self-auto">
-          <Tag
-            variation="filled"
-            fillColor={statusColors.fillColor}
-            textColor={statusColors.textColor}
-          >
-            {formatStatusLabel(audit.status)}
-          </Tag>
-        </span>
-
-        <span className="self-start sm:self-auto">
-          <Tag
-            variation="filled"
-            fillColor={evaluationMode.fillColor}
-            textColor={evaluationMode.textColor}
-          >
-            {getModeLabel(audit.evaluationMode)}
-          </Tag>
-        </span>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <Link
-          href={backLink}
-          className="w-full sm:w-auto"
-          onClick={() => toast.dismiss()}
+        <Tag
+          variation="filled"
+          fillColor={statusColors.fillColor}
+          textColor={statusColors.textColor}
         >
-          <Button
-            kind="secondary"
-            className="px-8 py-3 rounded-[8px] font-bold text-base w-full sm:w-auto"
-          >
-            {backLinkText}
-          </Button>
-        </Link>
+          {formatStatusLabel(audit.status)}
+        </Tag>
+
+        <Tag
+          variation="filled"
+          fillColor={evaluationMode.fillColor}
+          textColor={evaluationMode.textColor}
+        >
+          {getModeLabel(audit.evaluationMode)}
+        </Tag>
       </div>
+
+      <Link href={backLink} onClick={() => toast.dismiss()}>
+        <Button
+          kind="secondary"
+          className="px-8 py-3 rounded-[8px] font-bold text-base"
+        >
+          {backLinkText}
+        </Button>
+      </Link>
     </div>
   );
 };

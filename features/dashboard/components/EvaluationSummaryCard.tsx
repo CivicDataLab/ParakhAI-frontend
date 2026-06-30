@@ -37,8 +37,9 @@ const EvaluationSummaryCard = ({
         </Text>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 md:gap-8">
-        <div className="result-summary-evaluation-section flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 justify-center">
+      {/* Stat cards — flex row so they always stay on one line */}
+      <div className="flex flex-row gap-4 sm:gap-6 md:gap-8">
+        <div className="result-summary-evaluation-section flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 justify-center flex-1">
           <Text
             variant="headingSm"
             fontWeight="semibold"
@@ -51,13 +52,13 @@ const EvaluationSummaryCard = ({
             variant="headingLg"
             fontWeight="bold"
             color={passRateColor}
-            className="text-green-600 text-xl sm:text-2xl"
+            className="text-xl sm:text-2xl"
           >
             {passRate || 0}%
           </Text>
         </div>
 
-        <div className="result-summary-evaluation-section flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 justify-center">
+        <div className="result-summary-evaluation-section flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 justify-center flex-1">
           <Text
             variant="headingSm"
             fontWeight="semibold"
@@ -69,13 +70,13 @@ const EvaluationSummaryCard = ({
           <Text
             variant="headingLg"
             fontWeight="bold"
-            className="text-green-600 text-xl sm:text-2xl"
+            className="text-xl sm:text-2xl"
           >
             {totalTests || 0}
           </Text>
         </div>
 
-        <div className="result-summary-evaluation-section flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 justify-center">
+        <div className="result-summary-evaluation-section flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 justify-center flex-1">
           <Text
             variant="headingSm"
             fontWeight="semibold"
@@ -87,13 +88,13 @@ const EvaluationSummaryCard = ({
           <Text
             variant="headingLg"
             fontWeight="bold"
-            className="text-green-600 text-xl sm:text-2xl"
+            className="text-xl sm:text-2xl"
           >
             {passedTests || 0}
           </Text>
         </div>
 
-        <div className="result-summary-evaluation-section flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 justify-center">
+        <div className="result-summary-evaluation-section flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 justify-center flex-1">
           <Text
             variant="headingSm"
             fontWeight="semibold"
@@ -105,13 +106,13 @@ const EvaluationSummaryCard = ({
           <Text
             variant="headingLg"
             fontWeight="bold"
-            className="text-green-600 text-xl sm:text-2xl"
+            className="text-xl sm:text-2xl"
           >
             {failedTests || 0}
           </Text>
         </div>
 
-        <div className="result-summary-evaluation-section flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 justify-center sm:col-span-2 md:col-span-1 lg:col-span-1">
+        <div className="result-summary-evaluation-section flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 justify-center flex-1">
           <Text
             variant="headingSm"
             fontWeight="semibold"
@@ -123,74 +124,59 @@ const EvaluationSummaryCard = ({
           <Text
             variant="headingLg"
             fontWeight="bold"
-            className="text-green-600 text-xl sm:text-2xl"
+            className="text-xl sm:text-2xl"
           >
             {skippedTests || 0}
           </Text>
         </div>
       </div>
 
-      {/* Risk Severity Summary */}
+      {/* Risk Severity Summary — flex row so they always stay on one line */}
       <div className="mt-6 manual-eval-input-panel p-4 sm:p-6 bg-white">
         <div className="mb-4 flex items-baseline gap-2">
           <Text variant="bodyMd" className="text-gray-900">
             Total Issues Identified:
           </Text>
-          <Text variant="bodyMd" className="text-[#E11D48] font-semibold">
+          <span style={{ color: "#E11D48", fontWeight: 600 }}>
             {totalIssues} {totalIssues === 1 ? "Issue" : "Issues"}
-          </Text>
+          </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="rounded-[16px] bg-[#EFF6FF] px-6 py-4 flex flex-col justify-center">
-            <Text
-              variant="bodySm"
-              fontWeight="semibold"
-              className="text-xs text-gray-500 mb-2"
-            >
+        <div className="flex flex-row gap-4">
+          <div
+            className="flex flex-col justify-center flex-1 px-6 py-4"
+            style={{ backgroundColor: "#EFF6FF", borderRadius: 16 }}
+          >
+            <Text variant="bodySm" fontWeight="semibold" className="text-xs text-gray-500 mb-2">
               LOW RISK
             </Text>
-            <Text
-              variant="headingLg"
-              fontWeight="bold"
-              className="text-[#2563EB] text-2xl"
-            >
+            <p style={{ color: "#2563EB", fontSize: "1.5rem", fontWeight: 700, margin: 0 }}>
               {riskSummary.low}
-            </Text>
+            </p>
           </div>
 
-          <div className="rounded-[16px] bg-[#FFFBEB] px-6 py-4 flex flex-col justify-center">
-            <Text
-              variant="bodySm"
-              fontWeight="semibold"
-              className="text-xs text-gray-500 mb-2"
-            >
+          <div
+            className="flex flex-col justify-center flex-1 px-6 py-4"
+            style={{ backgroundColor: "#FFFBEB", borderRadius: 16 }}
+          >
+            <Text variant="bodySm" fontWeight="semibold" className="text-xs text-gray-500 mb-2">
               MEDIUM RISK
             </Text>
-            <Text
-              variant="headingLg"
-              fontWeight="bold"
-              className="text-[#92400E] text-2xl"
-            >
+            <p style={{ color: "#92400E", fontSize: "1.5rem", fontWeight: 700, margin: 0 }}>
               {riskSummary.medium}
-            </Text>
+            </p>
           </div>
 
-          <div className="rounded-[16px] bg-[#FEF2F2] px-6 py-4 flex flex-col justify-center">
-            <Text
-              variant="bodySm"
-              fontWeight="semibold"
-              className="text-xs text-gray-500 mb-2"
-            >
+          <div
+            className="flex flex-col justify-center flex-1 px-6 py-4"
+            style={{ backgroundColor: "#FEF2F2", borderRadius: 16 }}
+          >
+            <Text variant="bodySm" fontWeight="semibold" className="text-xs text-gray-500 mb-2">
               HIGH RISK
             </Text>
-            <Text
-              variant="headingLg"
-              fontWeight="bold"
-              className="text-[#E11D48] text-2xl"
-            >
+            <p style={{ color: "#E11D48", fontSize: "1.5rem", fontWeight: 700, margin: 0 }}>
               {riskSummary.high}
-            </Text>
+            </p>
           </div>
         </div>
       </div>
