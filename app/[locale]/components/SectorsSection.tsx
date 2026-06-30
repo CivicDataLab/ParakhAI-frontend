@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { graphqlRequest } from "@/lib/api";
+import { graphqlRequest } from "@/lib/graphql-client";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import Image from "next/image";

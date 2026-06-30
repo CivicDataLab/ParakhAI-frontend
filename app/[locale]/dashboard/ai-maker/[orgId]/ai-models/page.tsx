@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import { Icons } from "@/components/icons";
-import { Pagination } from "@/components/Pagination/Pagination";
-import { useGraphQL } from "@/lib/api";
-import { stripMarkdown } from "@/lib/utils";
+import { Pagination } from "@/components/common/Pagination/Pagination";
+import { useGraphQL } from "@/lib/graphql-client";
+import { stripMarkdown } from "@/utils";
 import { IconChevronDown, IconMinus, IconX } from "@tabler/icons-react";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -18,7 +18,7 @@ import {
   Text,
 } from "opub-ui";
 import React from "react";
-import { useOrganization } from "../OrganizationContext";
+import { useOrganization } from "@/features/ai-maker/context/OrganizationContext";
 
 type AIModel = {
   id: string;

@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
 import { Icons } from "@/components/icons";
-import { logout } from "@/lib/auth-helpers";
+import { logout } from "@/lib/auth";
 import { Session } from "next-auth";
 import { signIn } from "next-auth/react";
 import Link from "next/link";

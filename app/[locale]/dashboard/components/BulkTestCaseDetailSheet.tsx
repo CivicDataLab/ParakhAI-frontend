@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import AddIssueModal, { type AddIssueFormData } from "./AddIssueModal";
 import { Icons } from "@/components/icons";
-import { useGraphQL } from "@/lib/api";
-import { UPDATE_AUDIT_RESULT_MUTATION } from "@/lib/bulkEvaluation/queries";
-import type { BulkTestCase, BulkTestCaseRisk } from "@/lib/bulkEvaluation/types";
+import { useGraphQL } from "@/lib/graphql-client";
+import { UPDATE_AUDIT_RESULT_MUTATION } from "@/features/ai-maker/api/bulk-evaluation-queries";
+import type { BulkTestCase, BulkTestCaseRisk } from "@/features/ai-maker/types/bulk-evaluation";
 import { IconTrash } from "@tabler/icons-react";
 import { Button, Divider, Icon, Select, Sheet, Text, TextField, toast } from "opub-ui";
 import { useCallback, useEffect, useRef, useState } from "react";

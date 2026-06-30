@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useGraphQL } from "@/lib/api";
+import { useGraphQL } from "@/lib/graphql-client";
 import ReactMarkdown from "react-markdown";
 import { useParams, useRouter } from "next/navigation";
 import { Button, Select, Spinner, Text, TextField } from "opub-ui";

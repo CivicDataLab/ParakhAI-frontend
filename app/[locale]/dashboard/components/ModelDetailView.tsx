@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import RichTextRenderer from "@/components/RichTextRenderer";
+import RichTextRenderer from "@/components/common/RichTextRenderer";
 import {
     Accordion,
     AccordionContent,

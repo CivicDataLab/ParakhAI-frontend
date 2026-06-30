@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useAppSession } from "@/lib/session";
+import { useAppSession } from "@/hooks/use-app-session";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";

@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import { Icons } from "@/components/icons";
-import { Pagination } from "@/components/Pagination/Pagination";
-import { useGraphQL } from "@/lib/api";
+import { Pagination } from "@/components/common/Pagination/Pagination";
+import { useGraphQL } from "@/lib/graphql-client";
 import { useParams } from "next/navigation";
-import { stripMarkdown, toTitleCase } from "@/lib/utils";
+import { stripMarkdown, toTitleCase } from "@/utils";
 import {
   Button,
   Card,
@@ -14,7 +14,7 @@ import {
   Text,
 } from "opub-ui";
 import React from "react";
-import { useOrganization } from "../OrganizationContext";
+import { useOrganization } from "@/features/ai-maker/context/OrganizationContext";
 
 type PromptLibrary = {
   id: string;
@@ -279,8 +279,19 @@ const PromptLibrariesPage = () => {
   }, [totalPages, currentPage]);
 
   const handleCardClick = (library: PromptLibrary) => {
-    const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_URL?.replace(/\/$/, "");
-    window.open(`${dataspaceUrl}/datasets/${library.id}`, "_blank", "noopener,noreferrer");
+    const dataspaceHost =
+      process.env.NEXT_PUBLIC_DATASPACE_HOST ||
+      process.env.NEXT_PUBLIC_AI_MAKER_URL ||
+      "";
+
+    if (!dataspaceHost.trim()) {
+      console.warn("No CivicDataSpace host configured (NEXT_PUBLIC_DATASPACE_HOST).");
+      return;
+    }
+
+    const host = dataspaceHost.replace(/\/$/, "");
+    const url = `${host}/datasets/${library.id}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   return (

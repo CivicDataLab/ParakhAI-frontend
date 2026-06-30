@@ -1,6 +1,6 @@
 "use client";
 
-import { logout } from "@/lib/auth-helpers";
+import { logout } from "@/lib/auth";
 import Link from "next/link";
 import { Avatar, Button, Divider, Popover, Text } from "opub-ui";
 import React from "react";

@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
-import { useGraphQL } from "@/lib/api";
-import { useAppSession } from "@/lib/session";
-import { statusColors } from "@/lib/statusColors";
-import { formatAssignmentStatusLabel, formatStatusLabel, isPendingAssignmentStatus } from "@/lib/utils";
+import { useGraphQL } from "@/lib/graphql-client";
+import { useAppSession } from "@/hooks/use-app-session";
+import { statusColors } from "@/utils/status-colors";
+import { formatAssignmentStatusLabel, formatStatusLabel, isPendingAssignmentStatus } from "@/utils";
 import {
   IconCheck,
   IconClock,

@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import { SessionGuard } from '@/components/SessionGuard';
+import { SessionGuard } from '@/components/common/SessionGuard';
 import React from 'react';
 
 interface DashboardGuardProps {

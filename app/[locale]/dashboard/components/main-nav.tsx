@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import Image from "next/image";
@@ -8,7 +8,7 @@ import { signIn, useSession } from "next-auth/react";
 import { Spinner, Icon, IconButton } from "opub-ui";
 
 import { Icons } from "@/components/icons";
-import { ProfileMenu } from "@/components/ProfileMenu";
+import { ProfileMenu } from "@/components/common/ProfileMenu";
 import MobileNav from "./mobile-nav";
 
 type NavLink = {

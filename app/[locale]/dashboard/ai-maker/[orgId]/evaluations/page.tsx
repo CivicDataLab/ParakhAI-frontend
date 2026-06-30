@@ -3,17 +3,17 @@
 import {
   EVALUATION_STATUS_FILTER_OPTIONS,
   StatusFilterTabs,
-} from "@/app/[locale]/dashboard/components/StatusFilterTabs";
-import { useGraphQL } from "@/lib/api";
-import { getEvaluationStatusColor } from "@/lib/statusColors";
-import { formatStatusLabel } from "@/lib/utils";
+} from "@/features/dashboard/components/StatusFilterTabs";
+import { useGraphQL } from "@/lib/graphql-client";
+import { getEvaluationStatusColor } from "@/utils/status-colors";
+import { formatStatusLabel } from "@/utils";
 import { createColumnHelper } from "@tanstack/react-table";
 import { IconReportAnalytics } from "@tabler/icons-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Badge, Button, DataTable, Spinner, Text } from "opub-ui";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useOrganization } from "../OrganizationContext";
+import { useOrganization } from "@/features/ai-maker/context/OrganizationContext";
 import ModelSelectionModal from "./components/ModelSelectionModal";
 import "./evaluations-page.css";
 

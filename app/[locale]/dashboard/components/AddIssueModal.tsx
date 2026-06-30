@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import type { BulkTestCaseRisk } from "@/lib/bulkEvaluation/types";
+import type { BulkTestCaseRisk } from "@/features/ai-maker/types/bulk-evaluation";
 import { useEffect, useState } from "react";
 import { Button, Dialog, Select, TextField } from "opub-ui";
 

@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
-import RichTextRenderer from "@/components/RichTextRenderer";
-import { useGraphQL } from "@/lib/api";
-import { isDeprecatedLifecycle } from "@/lib/lifecycle";
-import { getEvaluationStatusColor } from "@/lib/statusColors";
-import { formatStatusLabel } from "@/lib/utils";
+import RichTextRenderer from "@/components/common/RichTextRenderer";
+import { useGraphQL } from "@/lib/graphql-client";
+import { isDeprecatedLifecycle } from "@/utils/lifecycle";
+import { getEvaluationStatusColor } from "@/utils/status-colors";
+import { formatStatusLabel } from "@/utils";
 import { createColumnHelper } from "@tanstack/react-table";
 import Image from "next/image";
 import Link from "next/link";

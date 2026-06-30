@@ -1,12 +1,12 @@
-"use client";
+﻿"use client";
 
-import { useGraphQL } from "@/lib/api";
-import { apiFetch } from "@/lib/api-client";
+import { useGraphQL } from "@/lib/graphql-client";
+import { apiFetch } from "@/lib/rest-client";
 import {
   getEvaluationModeColor,
   getEvaluationStatusColor,
-} from "@/lib/statusColors";
-import { formatStatusLabel } from "@/lib/utils";
+} from "@/utils/status-colors";
+import { formatStatusLabel } from "@/utils";
 import { IconDownload } from "@tabler/icons-react";
 import Link from "next/link";
 import {
@@ -18,7 +18,7 @@ import {
   TextField,
   toast,
 } from "opub-ui";
-import ProgressBar from "@/components/ProgressBar";
+import ProgressBar from "@/components/common/ProgressBar";
 import { useEffect, useRef, useState } from "react";
 import EvaluationFormOverview from "../ai-maker/[orgId]/evaluations/components/EvaluationFormOverview";
 import ManualEvaluationFlow from "../ai-maker/[orgId]/evaluations/components/manual-evaluation";
@@ -29,12 +29,12 @@ import SkippedTestsErrorsCard from "./SkippedTestsErrorsCard";
 import {
   GET_AUDIT_RESULTS_QUERY,
   SUBMIT_AUDIT_REVIEW_MUTATION,
-} from "@/lib/bulkEvaluation/queries";
-import type { AuditResult } from "@/lib/bulkEvaluation/mapAuditResults";
+} from "@/features/ai-maker/api/bulk-evaluation-queries";
+import type { AuditResult } from "@/features/ai-maker/utils/map-audit-results";
 import {
   isIssueResult,
   mapRiskLevel,
-} from "@/lib/bulkEvaluation/mapAuditResults";
+} from "@/features/ai-maker/utils/map-audit-results";
 
 const EVALUATION_NAME_TOAST_ID = "evaluation-detail-name-save";
 

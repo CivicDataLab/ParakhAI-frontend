@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
-import { useGraphQL } from "@/lib/api";
-import { toTitleCase, stripMarkdown } from "@/lib/utils";
+import { useGraphQL } from "@/lib/graphql-client";
+import { toTitleCase, stripMarkdown } from "@/utils";
 import type { ColumnDef } from "@tanstack/react-table";
 import { IconAlertCircleFilled, IconPencil, IconTrash } from "@tabler/icons-react";
 import { Button, DataTable, Icon, Spinner, Text, Tooltip } from "opub-ui";

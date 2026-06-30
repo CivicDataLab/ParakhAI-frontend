@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
-import { useGraphQL } from "@/lib/api";
-import { isDeprecatedLifecycle } from "@/lib/lifecycle";
+import { useGraphQL } from "@/lib/graphql-client";
+import { isDeprecatedLifecycle } from "@/utils/lifecycle";
 import { useParams, useRouter } from "next/navigation";
 import { Button, Dialog, Label, Select, Spinner, Text, TextField } from "opub-ui";
 import { useEffect, useState } from "react";

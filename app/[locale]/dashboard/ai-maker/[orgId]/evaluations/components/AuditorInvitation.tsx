@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
-import { useGraphQL } from "@/lib/api";
-import { formatStatusLabel } from "@/lib/utils";
+import { useGraphQL } from "@/lib/graphql-client";
+import { formatStatusLabel } from "@/utils";
 import {
   IconPlus,
   IconSearch,
