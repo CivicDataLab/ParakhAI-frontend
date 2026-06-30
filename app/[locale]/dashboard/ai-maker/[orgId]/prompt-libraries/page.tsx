@@ -279,17 +279,22 @@ const PromptLibrariesPage = () => {
   }, [totalPages, currentPage]);
 
   const handleCardClick = (library: PromptLibrary) => {
-    const dataspaceHost =
-      process.env.NEXT_PUBLIC_DATASPACE_HOST ||
-      process.env.NEXT_PUBLIC_AI_MAKER_URL ||
-      "";
+    let host = process.env.NEXT_PUBLIC_DATASPACE_HOST?.replace(/\/$/, "");
 
-    if (!dataspaceHost.trim()) {
+    if (!host && process.env.NEXT_PUBLIC_AI_MAKER_URL) {
+      try {
+        // NEXT_PUBLIC_AI_MAKER_URL may include a path (e.g. /dashboard) — use only the origin
+        host = new URL(process.env.NEXT_PUBLIC_AI_MAKER_URL).origin;
+      } catch {
+        host = process.env.NEXT_PUBLIC_AI_MAKER_URL.replace(/\/$/, "");
+      }
+    }
+
+    if (!host) {
       console.warn("No CivicDataSpace host configured (NEXT_PUBLIC_DATASPACE_HOST).");
       return;
     }
 
-    const host = dataspaceHost.replace(/\/$/, "");
     const url = `${host}/datasets/${library.id}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
