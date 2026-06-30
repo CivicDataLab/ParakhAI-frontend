@@ -73,6 +73,8 @@ export type UseEvaluationDetailReturn = {
     progressPercent: number;
     auditModelType: string;
     evaluationScopeDisplay: string;
+    passRate: number | string;
+    passRateColor: "success" | "warning" | "default" | undefined;
   };
 };
 
@@ -693,6 +695,6 @@ export function useEvaluationDetail(
       evaluationScopeDisplay,
       passRate: getPassRate(),
       passRateColor: getPassRateColor(),
-    } as any,
+    },
   };
 }
