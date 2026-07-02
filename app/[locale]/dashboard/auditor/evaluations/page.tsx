@@ -1,9 +1,9 @@
 "use client";
 
-import { useGraphQL } from "@/lib/api";
-import { getEvaluationStatusColor } from "@/lib/statusColors";
-import { formatStatusLabel } from "@/lib/utils";
-import { useAppSession } from "@/lib/session";
+import { useGraphQL } from "@/lib/graphql-client";
+import { getEvaluationStatusColor } from "@/utils/status-colors";
+import { formatStatusLabel } from "@/utils";
+import { useAppSession } from "@/hooks/use-app-session";
 import { IconReportAnalytics } from "@tabler/icons-react";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
@@ -11,7 +11,7 @@ import { useParams } from "next/navigation";
 import {
   EVALUATION_STATUS_FILTER_OPTIONS,
   StatusFilterTabs,
-} from "@/app/[locale]/dashboard/components/StatusFilterTabs";
+} from "@/features/dashboard/components/StatusFilterTabs";
 import { Badge, Button, DataTable, Spinner, Text } from "opub-ui";
 import { useEffect, useState } from "react";
 import "./auditor-evaluations-page.css";

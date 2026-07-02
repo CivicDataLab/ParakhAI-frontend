@@ -1,14 +1,14 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { AlertDialog, Text } from "opub-ui";
 import { useEffect, useMemo, useState } from "react";
 
-import BreadCrumbs from "@/components/Breadcrumbs";
-import { useDashboardStore } from "@/config/store";
-import { Loading } from "@/components/loading";
-import { useGraphQL } from "@/lib/api";
+import BreadCrumbs from "@/components/common/Breadcrumbs";
+import { useDashboardStore } from "@/stores";
+import { Loading } from "@/components/common/loading";
+import { useGraphQL } from "@/lib/graphql-client";
 
 const GET_MY_ORGANIZATIONS = `
   query GetMyOrganizations {

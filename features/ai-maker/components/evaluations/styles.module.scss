@@ -1,0 +1,1388 @@
+/* Main content wrapper - full-width responsive layout */
+.Main {
+  min-height: calc(100vh - 60px);
+  flex-grow: 1;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-inline: 0.5rem;
+  padding-bottom: 1.5rem;
+  padding-top: 1.25rem;
+
+  @media screen and (min-width: 768px) {
+    padding-left: 0;
+    padding-inline: 1.5rem;
+    padding-top: 0;
+  }
+
+  @media screen and (min-width: 1024px) {
+    padding-inline: 2.5rem;
+  }
+}
+
+/* Audit Content - inherits Main behavior */
+.auditContent {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Model Name Styles */
+.modelNameText {
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 26px;
+  letter-spacing: 0%;
+  color: #0a0704;
+  height: 26px;
+}
+
+.modelNameContainer {
+  width: 100%;
+}
+
+.cdlLogo {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #f2f2f5;
+  border-radius: 4px;
+}
+
+.tagWrapper {
+  flex-shrink: 0;
+}
+
+/* Audit Tag styling */
+.auditTag {
+  background-color: #e2f5c4;
+  border: 1px solid #e2f5c4;
+  border-radius: 4px;
+  padding: 4px 8px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+
+  /* Target all possible Tag component classes */
+  span,
+  [class*="Tag"],
+  [class*="Tag-module"],
+  [class*="Tag-module"] > *,
+  [class*="Tag-module"] > div,
+  [class*="Tag"] > *,
+  [class*="Tag"] > div,
+  [class*="Tag"] span {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    border-radius: 4px;
+  }
+
+  /* Ensure the Tag component itself has rounded borders */
+  > *,
+  > * > *,
+  > * > * > * {
+    border-radius: 4px;
+  }
+
+  /* Override any border-radius from opub-ui Tag */
+  [class*="Tag"] {
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  /* Apply border-radius to the wrapper itself */
+  & * {
+    border-radius: 4px;
+  }
+}
+
+/* Audit auto-saved text styling */
+.auditAutoSaved {
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0px;
+  color: #60646c;
+  height: 20px;
+  display: inline-block;
+}
+
+.auditAutoSavedWrapper img {
+  margin-left: -4px;
+}
+
+/* Cancel Audit button styling */
+.cancelAuditButton {
+  width: auto;
+  min-width: 48px;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0;
+  padding: 4px 6px;
+  margin: 0;
+  white-space: nowrap;
+  border-radius: 8px;
+  color: #59682c;
+
+  > * {
+    margin: 0;
+    color: #59682c;
+  }
+
+  [class*="Button"] {
+    gap: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-width: 88px;
+    min-height: 32px;
+    padding: 4px 6px;
+    border-radius: 8px;
+    color: #59682c;
+  }
+
+  span,
+  [class*="Button"] > *,
+  [class*="Button"] span,
+  [class*="Button"] button {
+    margin: 0;
+    gap: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0;
+    white-space: nowrap;
+    color: #59682c;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  [class*="Icon"] {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    min-height: 18px;
+    flex-shrink: 0;
+    margin-left: 0;
+  }
+}
+
+.backToListIcon {
+  color: #59682c !important;
+
+  svg,
+  path {
+    color: #59682c !important;
+    fill: #59682c !important;
+    stroke: #59682c !important;
+  }
+}
+
+.cancelIconOutline {
+  color: #59682c !important;
+
+  svg,
+  path,
+  rect,
+  line,
+  polyline,
+  polygon {
+    stroke: #59682c !important;
+    fill: none !important;
+  }
+}
+
+/* Tabs Container */
+.tabsContainer {
+  display: flex;
+  gap: 0;
+  width: 100%;
+  max-width: 100%;
+  border-top: 2px solid #f2f2f5;
+  border-left: 2px solid #f2f2f5;
+  border-right: 2px solid #f2f2f5;
+  border-radius: 16px 16px 0 0;
+  box-sizing: border-box;
+  position: relative;
+  overflow: visible;
+
+  @media (max-width: 1023px) {
+    flex-wrap: nowrap;
+    overflow-x: visible;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  @media (max-width: 640px) {
+    border-radius: 12px 12px 0 0;
+  }
+
+  @media (max-width: 480px) {
+    border-radius: 8px 8px 0 0;
+  }
+}
+
+/* Audit Configuration Tab */
+.auditConfigTab {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 52px;
+  min-height: 52px;
+  max-height: 52px;
+  border-radius: 0;
+  padding: 16px;
+  margin: 0;
+  border: none;
+  border-bottom: 2px solid #f2f2f5;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  position: relative;
+  box-sizing: border-box;
+  overflow: visible;
+  background-color: transparent;
+
+  @media (max-width: 1023px) {
+    flex: 1 1 50%;
+    min-width: 0;
+    max-width: 50%;
+    width: 50%;
+    flex-shrink: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 52px;
+    min-height: 52px;
+    max-height: 52px;
+    text-align: center;
+    padding: 12px 8px;
+  }
+
+  @media (max-width: 640px) {
+    padding: 12px 4px;
+    font-size: 12px;
+
+    [class*="Text"] {
+      font-size: 12px !important;
+      line-height: 16px !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 2px;
+
+    [class*="Text"] {
+      font-size: 11px !important;
+      line-height: 14px !important;
+    }
+  }
+}
+
+/* First tab - left border radius when not active */
+.tabsContainer > .auditConfigTab:first-child:not(.auditConfigTabActive) {
+  border-top-left-radius: 16px;
+
+  @media (max-width: 640px) {
+    border-top-left-radius: 12px;
+  }
+
+  @media (max-width: 480px) {
+    border-top-left-radius: 8px;
+  }
+}
+
+/* First tab - both sides rounded when active */
+.tabsContainer > .auditConfigTab:first-child.auditConfigTabActive {
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+
+  @media (max-width: 640px) {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+  }
+
+  @media (max-width: 480px) {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+}
+
+/* Middle tabs - both sides rounded when active */
+.tabsContainer
+  > .auditConfigTab:not(:first-child):not(:last-child).auditConfigTabActive {
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+
+  @media (max-width: 640px) {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+  }
+
+  @media (max-width: 480px) {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+}
+
+/* Last tab - right border radius */
+.tabsContainer > .auditConfigTab:last-child {
+  border-top-right-radius: 16px;
+
+  @media (max-width: 640px) {
+    border-top-right-radius: 12px;
+  }
+
+  @media (max-width: 480px) {
+    border-top-right-radius: 8px;
+  }
+}
+
+/* Last tab - both sides rounded when active */
+.tabsContainer > .auditConfigTab:last-child.auditConfigTabActive {
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+
+  @media (max-width: 640px) {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+  }
+
+  @media (max-width: 480px) {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+}
+
+.auditConfigTab.bgTransparent {
+  background-color: transparent;
+}
+
+/* Unselected tab styling */
+.auditConfigTab:not(.auditConfigTabActive) {
+  padding: 16px;
+  border-radius: 0;
+  background-color: transparent;
+  border: none;
+  border-bottom: 2px solid #f2f2f5;
+
+  span,
+  [class*="Text"],
+  [class*="Text"] span,
+  [class*="Text"] > * {
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0px;
+    color: #60646c;
+    text-align: center;
+  }
+}
+
+/* Active tab styling */
+.auditConfigTabActive {
+  background-color: #e2f5c4;
+  position: relative;
+  overflow: visible;
+  border: none;
+  border-bottom: 2px solid #f2f2f5;
+  border-radius: 0;
+
+  &::after {
+    content: "";
+    display: block;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 3px;
+    background-color: #644fc1;
+    border-radius: 4px 4px 0 0;
+    box-sizing: border-box;
+    z-index: 10;
+    pointer-events: none;
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* Audit Name Section */
+.auditNameSection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: nowrap;
+  width: 100%;
+  overflow: visible;
+  position: relative;
+
+  @media (max-width: 1024px) {
+    flex-wrap: wrap;
+    max-width: 100%;
+    align-items: flex-start;
+    gap: 12px;
+
+    > div:first-child {
+      width: 100%;
+      flex-wrap: wrap;
+      row-gap: 8px;
+    }
+
+    .auditStatusContainer {
+      width: 100%;
+      justify-content: flex-start;
+      margin-left: 0;
+      margin-right: 0;
+      flex-wrap: wrap;
+      row-gap: 8px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    gap: 8px;
+    flex-direction: column;
+    align-items: stretch;
+
+    > div:first-child {
+      width: 100%;
+      flex-direction: row;
+      align-items: center;
+      flex-wrap: nowrap;
+      gap: 8px;
+    }
+
+    .auditStatusContainer {
+      width: 100%;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+  }
+}
+
+.auditNameSection > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: visible;
+
+  @media (max-width: 640px) {
+    flex-wrap: wrap;
+    width: 100%;
+    align-items: flex-start;
+  }
+}
+
+/* Audit Name Label */
+.auditNameLabel {
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0px;
+  color: #0a0704;
+  min-width: fit-content;
+  height: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+  flex-shrink: 0;
+  overflow: visible;
+  margin: 0;
+  padding: 0;
+
+  [class*="Label"],
+  [class*="Text"],
+  label,
+  span {
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+    display: inline-block;
+    text-align: left;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Override any centering from opub-ui Label component */
+  &,
+  * {
+    text-align: left;
+    justify-content: flex-start;
+  }
+}
+
+/* Audit Name Input Wrapper */
+.auditNameInputWrapper {
+  width: 100%;
+  min-width: 0;
+  display: inline-flex;
+  flex-direction: column;
+  overflow: visible;
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  flex-shrink: 1;
+  margin-top: 2px;
+
+  [class*="TextField"],
+  [class*="TextField"] > div,
+  [class*="Input"] {
+    border: none;
+    border-bottom: none;
+    box-shadow: none;
+    background: transparent;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow: visible;
+    flex-shrink: 1;
+    text-overflow: clip;
+  }
+
+  input {
+    width: 100%;
+    min-width: 0;
+    height: 20px;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 16px;
+    letter-spacing: 0%;
+    color: #0a0704;
+    border: none;
+    border-bottom: 1px solid #999999;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    outline: none;
+    box-shadow: none;
+    vertical-align: bottom;
+    box-sizing: content-box;
+    overflow: visible;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: inline-block;
+
+    &:focus {
+      border: none;
+      border-bottom: 2px solid #644fc1;
+      outline: none;
+      box-shadow: none;
+    }
+
+    &:hover {
+      border: none;
+      border-bottom: 1px solid #999999;
+      outline: none;
+    }
+
+    &:not(:focus) {
+      border-bottom: 1px solid #999999;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    max-width: 100%;
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  @media (max-width: 768px) {
+    [class*="TextField"],
+    [class*="TextField"] > div,
+    [class*="Input"] {
+      max-width: 100%;
+    }
+
+    input {
+      max-width: 100%;
+      width: 100%;
+      font-size: 15px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    max-width: 100%;
+    width: 100%;
+    margin-top: 4px;
+
+    input {
+      font-size: 14px;
+      white-space: normal;
+      word-wrap: break-word;
+    }
+  }
+
+  @media (max-width: 480px) {
+    input {
+      font-size: 13px;
+    }
+  }
+}
+
+/* Audit Status Container */
+.auditStatusContainer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  position: relative;
+  left: auto;
+
+  @media (max-width: 640px) {
+    gap: 8px;
+    flex-wrap: wrap;
+    white-space: normal;
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+.auditNameSection .auditStatusContainer {
+  margin-left: auto;
+
+  @media (max-width: 640px) {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/* Add Test Cases Button */
+.addTestCasesButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: center;
+  border: none;
+  white-space: nowrap;
+
+  [class*="Button"] {
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    column-gap: 16px;
+    white-space: nowrap;
+  }
+}
+
+.addTestCasesIcon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  object-fit: contain;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 1px;
+}
+
+.addTestCasesText {
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0px;
+  color: #0a0704;
+  white-space: nowrap;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Run Audit Button */
+.runAuditButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: center;
+  border: none;
+  white-space: nowrap;
+
+  [class*="Button"] {
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    column-gap: 16px;
+    white-space: nowrap;
+  }
+}
+
+.runAuditIcon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  object-fit: contain;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 1px;
+}
+
+.runAuditText {
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0px;
+  color: inherit;
+  white-space: nowrap;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 0;
+}
+
+/* Mobile spacing optimizations */
+@media (max-width: 1023px) {
+  .auditContent {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .auditNameSection {
+    margin-bottom: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .auditStatusContainer {
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+  }
+
+  .auditTag {
+    margin-left: 0;
+  }
+
+  .cancelAuditButton {
+    margin-left: 0.5rem;
+  }
+
+  .tagWrapper {
+    display: inline-flex;
+    visibility: visible;
+    opacity: 1;
+    overflow: visible;
+    margin-bottom: 1.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .auditContent {
+    padding: 0.5rem;
+  }
+
+  .auditNameSection {
+    margin-bottom: 0.25rem;
+    gap: 0.5rem;
+  }
+
+  .auditStatusContainer {
+    gap: 0.5rem;
+    margin-top: 0.125rem;
+  }
+
+  .tagWrapper {
+    margin-bottom: 1.5rem;
+  }
+}
+
+/* Audit Type Label */
+.auditTypeLabel {
+  width: 100%;
+  height: 20px;
+  margin-bottom: 0;
+  padding: 0;
+  display: block;
+  box-sizing: border-box;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0px;
+  color: #0a0704;
+
+  [class*="Label"],
+  > * {
+    margin-bottom: 0;
+  }
+
+  [class*="Text"],
+  [class*="Text"] *,
+  > * {
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0px;
+    color: #0a0704;
+    margin: 0;
+    padding: 0;
+  }
+
+  span {
+    margin-left: 4px;
+    color: inherit;
+  }
+}
+
+/* Audit Options Container */
+.auditOptionsContainer {
+  margin-top: 15px;
+  padding-top: 0;
+  flex-wrap: wrap;
+
+  @media (max-width: 1023px) {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  @media (max-width: 640px) {
+    gap: 8px;
+    margin-top: 12px;
+  }
+}
+
+/* Audit Type Cards */
+.technicalAuditCard,
+.domainAuditCard,
+.culturalAuditCard {
+  flex: 1 1 0;
+  min-width: 240px;
+  height: 90px;
+  min-height: 80px;
+  border-radius: 8px;
+  padding: 12px 16px;
+  background-color: #ffffff;
+  border: 1px solid #c4c4c4;
+  gap: 12px;
+  box-sizing: border-box;
+
+  @media (max-width: 1023px) {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  @media (max-width: 640px) {
+    height: auto;
+    min-height: 70px;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    gap: 6px;
+    min-height: 65px;
+  }
+
+  /* Text content inside cards */
+  [class*="Text"] {
+    @media (max-width: 640px) {
+      font-size: 13px !important;
+      line-height: 18px !important;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 12px !important;
+      line-height: 16px !important;
+    }
+  }
+
+  /* Remove whitespace-nowrap on small screens to allow wrapping */
+  .whitespace-nowrap {
+    @media (max-width: 640px) {
+      white-space: normal !important;
+    }
+  }
+}
+
+/* Audit Configuration Form */
+.auditConfigForm {
+  width: 100%;
+  max-width: 100%;
+}
+
+.auditFormLabel {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  color: #0a0704;
+
+  span {
+    margin-left: 4px;
+  }
+}
+
+.auditorNameLabel,
+.organisationNameLabel,
+.auditObjectiveLabel,
+.scopeOfAuditLabel,
+.evaluationModulesLabel {
+  display: block;
+  width: 100%;
+  margin: 0 0 8px 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0px;
+  color: #0a0704;
+  text-align: left;
+
+  [class*="Label"],
+  [class*="Text"],
+  label,
+  span {
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0px;
+    color: #0a0704;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+  }
+
+  [class*="Text"] *:not(span) {
+    margin: 0;
+    padding: 0;
+  }
+
+  span {
+    margin-left: 4px;
+    color: inherit;
+  }
+
+  :global(.required-asterisk) {
+    color: var(--text-critical, #cd2b31);
+  }
+
+  &,
+  * {
+    text-align: left;
+    justify-content: flex-start;
+  }
+}
+
+.evaluationWorkspaceSection {
+  margin-bottom: 2rem;
+  padding: 0;
+}
+
+.evaluationWorkspaceTitle {
+  display: block;
+  width: 100%;
+  margin: 0 0 1.5rem 0;
+  padding: 0;
+  text-align: left;
+
+  &,
+  [class*="Text"],
+  * {
+    margin-left: 0;
+    padding-left: 0;
+    text-align: left;
+  }
+}
+
+.auditObjectiveLabel {
+  margin-bottom: 8px;
+}
+
+.auditorNameWrapper,
+.organisationNameWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+
+  @media (max-width: 1024px) {
+    margin-left: 0;
+  }
+}
+
+.auditorNameWrapper .auditorNameLabel,
+.organisationNameWrapper .organisationNameLabel {
+  width: auto;
+  max-width: none;
+  justify-content: flex-start;
+  text-align: left;
+  margin: 0 0 6px 0;
+}
+
+/* Form Text Fields */
+.auditFormTextfield {
+  width: 100%;
+
+  input,
+  [class*="TextField"] input,
+  [class*="TextField"] input[type="text"],
+  input[type="text"] {
+    width: 100%;
+    height: 36px;
+    padding: 8px 12px;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 20px;
+    color: #0a0704;
+    background-color: #ffffff;
+    border: 1px solid #c4c4c4;
+    border-radius: 8px;
+    outline: none;
+    box-sizing: border-box;
+  }
+
+  &.hasValue input,
+  &.hasValue [class*="TextField"] input,
+  &.hasValue [class*="TextField"] input[type="text"],
+  &.hasValue input[type="text"],
+  &.hasValue [class*="TextField"] > input,
+  &.hasValue input[value]:not([value=""]),
+  &.hasValue input:not(:placeholder-shown),
+  &.hasValue [class*="TextField"] input:not(:placeholder-shown) {
+    border: 1px solid #c4c4c4;
+    background-color: #f2f2f5;
+  }
+
+  &.hasValue * input {
+    background-color: #f2f2f5;
+    border: 1px solid #c4c4c4;
+  }
+
+  input:focus,
+  [class*="TextField"] input:focus {
+    border: 1px solid #644fc1;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 2px rgba(100, 79, 193, 0.1);
+  }
+
+  &.hasValue input:focus,
+  &.hasValue [class*="TextField"] input:focus,
+  &.hasValue [class*="TextField"] input[type="text"]:focus,
+  &.hasValue input[type="text"]:focus {
+    border: 1px solid #644fc1;
+    background-color: #f2f2f5;
+    box-shadow: 0 0 0 2px rgba(100, 79, 193, 0.1);
+  }
+}
+
+.auditorNameTextfield,
+.auditorNameTextfield [class*="TextField"],
+.auditorNameTextfield [class*="TextField"] > div {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 6px 0 0 0;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+.auditorNameTextfield input,
+.auditorNameTextfield [class*="TextField"] input,
+.auditorNameTextfield [class*="TextField"] input[type="text"],
+.auditorNameTextfield input[type="text"],
+.auditorNameTextfield [class*="TextField"] > input {
+  width: 100%;
+  max-width: 100%;
+  min-height: 36px;
+  padding: 8px 12px;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0px;
+  color: #0a0704;
+  background-color: #f2f2f5;
+  border: 1px solid #c4c4c4;
+  border-radius: 8px;
+  outline: none;
+  box-sizing: border-box;
+  vertical-align: middle;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+.auditorNameTextfield [class*="TextField"]:focus,
+.auditorNameTextfield [class*="TextField"]:focus-within,
+.auditorNameTextfield input:focus,
+.auditorNameTextfield [class*="TextField"] input:focus {
+  border-color: #c4c4c4;
+  box-shadow: none;
+  outline: none;
+}
+
+.organisationNameTextfield,
+.organisationNameTextfield [class*="TextField"],
+.organisationNameTextfield [class*="TextField"] > div {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  box-sizing: border-box;
+  margin: 6px 0 0 0;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+.organisationNameTextfield input,
+.organisationNameTextfield [class*="TextField"] input,
+.organisationNameTextfield [class*="TextField"] input[type="text"],
+.organisationNameTextfield input[type="text"] {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 8px 12px;
+  min-height: 36px;
+  background-color: #f2f2f5;
+  border: 1px solid #c4c4c4;
+  border-radius: 8px;
+  outline: none;
+  box-sizing: border-box;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0px;
+  color: #0a0704;
+  vertical-align: middle;
+  margin: 0;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+.organisationNameTextfield [class*="TextField"]:focus,
+.organisationNameTextfield [class*="TextField"]:focus-within,
+.organisationNameTextfield input:focus,
+.organisationNameTextfield [class*="TextField"] input:focus {
+  border-color: #c4c4c4;
+  box-shadow: none;
+  outline: none;
+}
+
+/* Form Textarea */
+.auditFormTextarea {
+  width: 100%;
+  margin-top: 16px;
+  background-color: #ffffff;
+  border: 1px solid #c4c4c4;
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-sizing: border-box;
+
+  [class*="TextField"],
+  [class*="TextField"] > div {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  textarea,
+  [class*="TextField"] textarea {
+    width: 100%;
+    min-height: 116px;
+    padding: 0;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0;
+    color: #0a0704;
+    background-color: transparent;
+    border: none;
+    outline: none;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+
+  textarea:focus,
+  [class*="TextField"] textarea:focus {
+    outline: none;
+    box-shadow: none;
+  }
+}
+
+.auditObjectiveTextarea,
+.scopeOfAuditTextarea {
+  width: 100%;
+
+  textarea,
+  [class*="TextField"] textarea {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* Evaluation Module Cards */
+.evaluationModuleCard {
+  display: block;
+  flex: 1 1 0;
+  min-width: 240px;
+  height: 90px;
+  min-height: 80px;
+  padding: 12px 16px;
+  background-color: #ffffff;
+  border: 1px solid #c4c4c4;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  box-sizing: border-box;
+
+  &:hover {
+    border-color: #999999;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  @media (max-width: 1023px) {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+.moduleselectioncard {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  min-height: 120px;
+  padding: 12px 16px;
+  background-color: #ffffff;
+  border: 1px solid #c4c4c4;
+  border-radius: 16px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  box-sizing: border-box;
+
+  &:hover {
+    border-color: #999999;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+}
+
+/* Module selector status tags - enforce specific colors, prevent truncation */
+.moduleStatusTags [class*="Tag"] {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.moduleStatusTags [class*="Tag"]:nth-child(1),
+.moduleStatusTags [class*="Tag"]:nth-child(1) * {
+  background-color: #e5e7eb !important;
+  color: #374151 !important;
+  border-color: #e5e7eb !important;
+}
+
+.moduleStatusTags [class*="Tag"]:nth-child(2),
+.moduleStatusTags [class*="Tag"]:nth-child(2) * {
+  background-color: #ec4899 !important;
+  color: #ffffff !important;
+  border-color: #ec4899 !important;
+}
+
+.moduleStatusTags [class*="Tag"]:nth-child(3),
+.moduleStatusTags [class*="Tag"]:nth-child(3) * {
+  background-color: #d9f99d !important;
+  color: #15803d !important;
+  border-color: #d9f99d !important;
+}
+
+.evaluationModuleCheckbox {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  margin-top: 2px;
+  cursor: pointer;
+  accent-color: #644fc1;
+  flex-shrink: 0;
+}
+
+.evaluationModuleWrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-width: 240px;
+  max-width: 100%;
+
+  @media (max-width: 1023px) {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+.evaluationModuleDropdown {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.modeOfEvaluationDropdown {
+  width: 100%;
+  max-width: 100%;
+}
+
+.evaluationModulesRow {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: 1rem;
+
+  @media (max-width: 1023px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+}

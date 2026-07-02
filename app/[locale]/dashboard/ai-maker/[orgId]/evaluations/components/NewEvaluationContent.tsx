@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
-import { useGraphQL } from "@/lib/api";
-import { useAppSession } from "@/lib/session";
-import { getEvaluationStatusColor } from "@/lib/statusColors";
-import { formatGraphQLError, toTitleCase } from "@/lib/utils";
+import { useGraphQL } from "@/lib/graphql-client";
+import { useAppSession } from "@/hooks/use-app-session";
+import { getEvaluationStatusColor } from "@/utils/status-colors";
+import { formatGraphQLError, toTitleCase } from "@/utils";
 import { IconArrowLeft, IconTrash } from "@tabler/icons-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -378,7 +378,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     request,
     isAuthenticated,
     isLoading: isSessionLoading,
-    accessToken,
   } = useGraphQL();
 
   // Get user session for expert name

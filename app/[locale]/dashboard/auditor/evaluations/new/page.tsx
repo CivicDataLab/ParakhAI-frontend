@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
-import { useGraphQL } from "@/lib/api";
-import { useAppSession } from "@/lib/session";
+import { useGraphQL } from "@/lib/graphql-client";
+import { useAppSession } from "@/hooks/use-app-session";
 import { IconArrowLeft } from "@tabler/icons-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";

@@ -1,6 +1,6 @@
 'use client';
 
-import { logout } from '@/lib/auth-helpers';
+import { logout } from '@/lib/auth';
 import { useSession } from 'next-auth/react';
 import { useEffect } from 'react';
 

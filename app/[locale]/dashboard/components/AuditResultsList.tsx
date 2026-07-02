@@ -1,13 +1,13 @@
-"use client";
+﻿"use client";
 
-import type { AuditResult } from "@/lib/bulkEvaluation/mapAuditResults";
-import { mapAuditResultsToBulkTestCases } from "@/lib/bulkEvaluation/mapAuditResults";
+import type { AuditResult } from "@/features/ai-maker/utils/map-audit-results";
+import { mapAuditResultsToBulkTestCases } from "@/features/ai-maker/utils/map-audit-results";
 
 import type {
   BulkTestCase,
   BulkTestCaseRisk,
   ModuleIssueCount,
-} from "@/lib/bulkEvaluation/types";
+} from "@/features/ai-maker/types/bulk-evaluation";
 import { IconArrowsDiagonal, IconSparkles } from "@tabler/icons-react";
 import { Select, Spinner, Tag, Text } from "opub-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";

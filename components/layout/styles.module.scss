@@ -1,0 +1,8 @@
+.FooterIcons {
+  color: var(--base-gray-slate-solid-1);
+  transition: color 0.2s ease;
+  
+  &:hover {
+    color: var(--base-violet-solid-9);
+  }
+}

@@ -1,4 +1,4 @@
-import {
+﻿import {
   Inter,
   Noto_Sans_Devanagari,
   Noto_Sans_Tamil,
@@ -23,7 +23,7 @@ import {
   Noto_Sans_Saurashtra,
   Noto_Sans_Myanmar,
 } from "next/font/google";
-import { Providers } from "./providers";
+import { Providers } from "@/providers";
 import "../styles/globals.css";
 
 const inter = Inter({

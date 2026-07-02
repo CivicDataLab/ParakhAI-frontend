@@ -1,13 +1,45 @@
-import { toTitleCase } from "@/lib/utils";
+﻿import { toTitleCase } from "@/utils";
 import type { Module } from "../types";
 import type {
   IssueSeverity,
   ManualEvalWorkspaceDraft,
   ManualTestCase,
   ManualTestCaseIssue,
+  ManualTestCaseRaw,
   ModuleProgress,
   SubModuleInfo,
 } from "./types";
+
+export function mapManualTestCases(
+  rows: ManualTestCaseRaw[]
+): ManualTestCase[] {
+  const byTestId = new Map<string, ManualTestCase>();
+
+  for (const row of rows) {
+    const { test, result } = row;
+    let testCase = byTestId.get(test.id);
+    if (!testCase) {
+      testCase = {
+        id: test.id,
+        testInput: test.testInput,
+        actualOutput: test.actualOutput,
+        createdAt: test.createdAt,
+        issues: [],
+      };
+      byTestId.set(test.id, testCase);
+    }
+
+    testCase.issues.push({
+      metricName: result.name,
+      status: result.evaluatorSuccess ?? result.success,
+      severity: result.evaluatorRiskLevel ?? result.riskLevel,
+      comments: result.evaluatorReason ?? result.reason ?? undefined,
+      idealOutput: result.idealOutput ?? undefined,
+    });
+  }
+
+  return Array.from(byTestId.values());
+}
 
 export function normalizeIssueSeverity(
   severity?: string | null
@@ -48,18 +80,7 @@ export function formatRiskLabel(
 export function getFailedManualTestCaseIssues(
   issues: ManualTestCaseIssue[]
 ): ManualTestCaseIssue[] {
-  return issues.filter((issue) => {
-    const status = (issue.status || "").toUpperCase();
-    if (status === "PASSED") return false;
-    if (status === "FAILED") return true;
-
-    return Boolean(
-      issue.metricName?.trim() ||
-        issue.severity ||
-        issue.comments?.trim() ||
-        issue.idealOutput?.trim()
-    );
-  });
+  return issues.filter((issue) => issue.status === false);
 }
 
 export function isManualTestCasePassed(testCase: ManualTestCase): boolean {
