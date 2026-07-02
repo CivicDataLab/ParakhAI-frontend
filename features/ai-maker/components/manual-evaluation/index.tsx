@@ -1,42 +1,33 @@
-﻿"use client";
+﻿'use client';
 
-import { useGraphQL } from "@/lib/graphql-client";
-import ReactMarkdown from "react-markdown";
-import { useParams, useRouter } from "next/navigation";
-import { Button, Select, Spinner, Text, TextField } from "opub-ui";
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import type { SelectOption } from "../types";
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import { useParams, useRouter } from 'next/navigation';
+import { Button, Select, Spinner, Text, TextField } from 'opub-ui';
+import remarkGfm from 'remark-gfm';
+import { useGraphQL } from '@/lib/graphql-client';
+import type { SelectOption } from '../evaluations/types';
+import CompletedTestCases from './CompletedTestCases';
 import EvaluateOutputSection, {
   createEvaluationIssueRow,
   type EvaluationIssueRow,
-} from "./EvaluateOutputSection";
+} from './EvaluateOutputSection';
+import {
+  FINISH_EVALUATION_MUTATION,
+  GENERATE_PLAYGROUND_REASON_MUTATION,
+  GET_PLAYGROUND_STATUS_QUERY,
+  GET_TEST_CASES_QUERY,
+  METRICS_BY_MODEL_TYPE_QUERY,
+  SUBMIT_TEST_CASE_MUTATION,
+} from './queries';
+import RecommendationModal from './RecommendationModal';
+import { LANGUAGE_OPTIONS, type ManualTestCase, type SubModuleInfo } from './types';
 import {
   clearManualEvalWorkspaceDraft,
   MIN_PLAYGROUND_TEST_CASES,
   readManualEvalWorkspaceDraft,
   writeManualEvalWorkspaceDraft,
-} from "./utils";
-import CompletedTestCases from "./CompletedTestCases";
-import RecommendationModal from "./RecommendationModal";
-import {
-  FINISH_EVALUATION_MUTATION,
-  GET_PLAYGROUND_STATUS_QUERY,
-  GET_TEST_CASES_QUERY,
-  METRICS_BY_MODEL_TYPE_QUERY,
-  SUBMIT_TEST_CASE_MUTATION,
-  GENERATE_PLAYGROUND_REASON_MUTATION,
-} from "./queries";
-import {
-  LANGUAGE_OPTIONS,
-  type ManualTestCase,
-  type SubModuleInfo,
-} from "./types";
-import remarkGfm from "remark-gfm";
+} from './utils';
 
 const CALL_MODEL_MUTATION = `
   mutation CallModelForManualEval($input: CallModelInput!) {
@@ -74,7 +65,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
 }) => {
   const router = useRouter();
   const params = useParams();
-  const locale = params?.locale || "en";
+  const locale = params?.locale || 'en';
   const { request } = useGraphQL();
 
   // Issue type options fetched from metricsByModelType
@@ -87,17 +78,17 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   const [testCases, setTestCases] = useState<ManualTestCase[]>([]);
 
   // Test case input state
-  const [sourceLanguage, setSourceLanguage] = useState("en");
-  const [targetLanguage, setTargetLanguage] = useState("");
-  const [inputPrompt, setInputPrompt] = useState("");
+  const [sourceLanguage, setSourceLanguage] = useState('en');
+  const [targetLanguage, setTargetLanguage] = useState('');
+  const [inputPrompt, setInputPrompt] = useState('');
 
   // Model output state
-  const [modelOutput, setModelOutput] = useState("");
+  const [modelOutput, setModelOutput] = useState('');
   const [latencyMs, setLatencyMs] = useState<number | undefined>();
   const [hasCalledModel, setHasCalledModel] = useState(false);
 
   // Evaluation state
-  const [status, setStatus] = useState<"PASSED" | "FAILED" | null>(null);
+  const [status, setStatus] = useState<'PASSED' | 'FAILED' | null>(null);
   const [issueRows, setIssueRows] = useState<EvaluationIssueRow[]>([]);
 
   // Promise chain for background "Add Issue" saves. Each click appends to the chain
@@ -108,8 +99,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   const [isCallingModel, setIsCallingModel] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFinishingEvaluation, setIsFinishingEvaluation] = useState(false);
-  const [showFinishRecommendationModal, setShowFinishRecommendationModal] =
-    useState(false);
+  const [showFinishRecommendationModal, setShowFinishRecommendationModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modelCallError, setModelCallError] = useState<string | null>(null);
@@ -140,7 +130,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
         }
       }
     } catch (err) {
-      console.error("Error fetching evaluation status:", err);
+      console.error('Error fetching evaluation status:', err);
     }
   }, [auditId, orgId, request, onAuditStatusChange]);
 
@@ -153,7 +143,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           displayName: string;
           metrics: Array<{ name: string; displayName: string; mandatoryInputs?: string[] }>;
         }>;
-      }>(METRICS_BY_MODEL_TYPE_QUERY, { modelType, domain: domain ?? "" }, { organization: orgId });
+      }>(METRICS_BY_MODEL_TYPE_QUERY, { modelType, domain: domain ?? '' }, { organization: orgId });
 
       const modules = result?.metricsByModelType ?? [];
       const allMetrics = modules.flatMap((m) => m.metrics ?? []);
@@ -165,7 +155,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
         }))
       );
     } catch (err) {
-      console.error("Error fetching metrics:", err);
+      console.error('Error fetching metrics:', err);
     }
   }, [modelType, orgId, request]);
 
@@ -179,7 +169,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
         setTestCases(result.manualTestCases);
       }
     } catch (err) {
-      console.error("Error fetching test cases:", err);
+      console.error('Error fetching test cases:', err);
     }
   }, [auditId, orgId, request]);
 
@@ -221,14 +211,14 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
     const draft = readManualEvalWorkspaceDraft(orgId, auditId);
     if (!draft) return;
 
-    setSourceLanguage(draft.sourceLanguage || "en");
-    setTargetLanguage(draft.targetLanguage || "");
-    setInputPrompt(draft.inputPrompt || "");
-    setModelOutput(draft.modelOutput || "");
+    setSourceLanguage(draft.sourceLanguage || 'en');
+    setTargetLanguage(draft.targetLanguage || '');
+    setInputPrompt(draft.inputPrompt || '');
+    setModelOutput(draft.modelOutput || '');
     setLatencyMs(draft.latencyMs);
     setHasCalledModel(draft.hasCalledModel);
     setStatus(draft.status);
-    if (draft.status === "FAILED" && draft.issueRows.length > 0) {
+    if (draft.status === 'FAILED' && draft.issueRows.length > 0) {
       setIssueRows(draft.issueRows);
     }
   }, [auditId, isLoading, orgId]);
@@ -274,10 +264,10 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   ]);
 
   useEffect(() => {
-    if (status === "FAILED" && issueRows.length === 0) {
+    if (status === 'FAILED' && issueRows.length === 0) {
       setIssueRows([createEvaluationIssueRow()]);
     }
-    if (status !== "FAILED") {
+    if (status !== 'FAILED') {
       setIssueRows([]);
     }
   }, [status, issueRows.length]);
@@ -314,22 +304,21 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
 
       if (modelResponse?.success) {
         setModelCallError(null);
-        setModelOutput(modelResponse.output || "");
+        setModelOutput(modelResponse.output || '');
         setLatencyMs(modelResponse.latencyMs);
         setHasCalledModel(true);
       } else if (!modelResponse?.output?.trim()) {
-        const errorLog =
-          modelResponse?.message?.trim() || "Unknown error occurred.";
+        const errorLog = modelResponse?.message?.trim() || 'Unknown error occurred.';
         setModelCallError(
           `No output was returned by the model. This may be caused by a temporary connectivity issue, server outage, or model unavailability. See error details below:\n${errorLog}`
         );
-        setModelOutput("");
+        setModelOutput('');
         setLatencyMs(undefined);
         setHasCalledModel(false);
         setStatus(null);
       }
     } catch (err: any) {
-      setError(err.message || "Error calling model");
+      setError(err.message || 'Error calling model');
     } finally {
       setIsCallingModel(false);
     }
@@ -337,7 +326,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
 
   const handleGenerateReason = async (rowId: string, issueType: string, severity: string) => {
     if (!issueType || !severity) {
-      setError("Please select an Issue and Risk Severity first.");
+      setError('Please select an Issue and Risk Severity first.');
       return;
     }
 
@@ -373,10 +362,10 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           )
         );
       } else {
-        setError(result?.generatePlaygroundReason?.message || "Failed to generate reason");
+        setError(result?.generatePlaygroundReason?.message || 'Failed to generate reason');
       }
     } catch (err: any) {
-      setError(err.message || "Error generating reason");
+      setError(err.message || 'Error generating reason');
     }
   };
 
@@ -386,7 +375,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   const handleAddIssue = () => {
     const lastRow = issueRows[issueRows.length - 1];
     if (!lastRow?.issueType || !lastRow?.severity || !lastRow?.observations.trim()) {
-      setError("Please complete issue type, risk severity, and reasons");
+      setError('Please complete issue type, risk severity, and reasons');
       return;
     }
 
@@ -403,44 +392,42 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
     setIssueRows((prev) => [...prev, createEvaluationIssueRow()]);
 
     // Chain onto the ref so background saves are sequential
-    addIssueChainRef.current = addIssueChainRef.current.then(
-      async (existingTestId) => {
-        const input: Record<string, unknown> = {
-          auditId,
-          status: "FAILED",
-          issueType: savedRow.issueType,
-          severity: savedRow.severity,
-          comments: savedRow.observations || null,
-          idealOutput: savedRow.idealOutput || null,
-        };
+    addIssueChainRef.current = addIssueChainRef.current.then(async (existingTestId) => {
+      const input: Record<string, unknown> = {
+        auditId,
+        status: 'FAILED',
+        issueType: savedRow.issueType,
+        severity: savedRow.severity,
+        comments: savedRow.observations || null,
+        idealOutput: savedRow.idealOutput || null,
+      };
 
-        if (existingTestId) {
-          input.testId = parseInt(existingTestId, 10);
-        } else {
-          input.inputPrompt = savedInputPrompt;
-          input.modelOutput = savedModelOutput;
-          input.sourceLanguage = savedSourceLanguage;
-          input.targetLanguage = savedTargetLanguage;
-        }
-
-        try {
-          const result = await request<{
-            submitManualTestCase: {
-              success: boolean;
-              testCase?: { id: string };
-            };
-          }>(SUBMIT_TEST_CASE_MUTATION, { input }, { organization: orgId });
-
-          if (result?.submitManualTestCase?.success) {
-            // Preserve the first testCase.id for all subsequent issues
-            return existingTestId ?? result.submitManualTestCase.testCase?.id ?? null;
-          }
-        } catch (err) {
-          console.error("Background issue save failed:", err);
-        }
-        return existingTestId;
+      if (existingTestId) {
+        input.testId = parseInt(existingTestId, 10);
+      } else {
+        input.inputPrompt = savedInputPrompt;
+        input.modelOutput = savedModelOutput;
+        input.sourceLanguage = savedSourceLanguage;
+        input.targetLanguage = savedTargetLanguage;
       }
-    );
+
+      try {
+        const result = await request<{
+          submitManualTestCase: {
+            success: boolean;
+            testCase?: { id: string };
+          };
+        }>(SUBMIT_TEST_CASE_MUTATION, { input }, { organization: orgId });
+
+        if (result?.submitManualTestCase?.success) {
+          // Preserve the first testCase.id for all subsequent issues
+          return existingTestId ?? result.submitManualTestCase.testCase?.id ?? null;
+        }
+      } catch (err) {
+        console.error('Background issue save failed:', err);
+      }
+      return existingTestId;
+    });
   };
 
   // Saves the final (or only) issue and resets the form. Awaits the background
@@ -451,12 +438,10 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
     const lastRow = issueRows[issueRows.length - 1];
 
     if (
-      status === "FAILED" &&
+      status === 'FAILED' &&
       (!lastRow?.issueType || !lastRow?.severity || !lastRow?.observations.trim())
     ) {
-      setError(
-        "Please complete issue, risk severity, and reasons for failed test cases"
-      );
+      setError('Please complete issue, risk severity, and reasons for failed test cases');
       return;
     }
 
@@ -464,7 +449,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
     setError(null);
 
     try {
-      if (status === "PASSED") {
+      if (status === 'PASSED') {
         await request<{
           submitManualTestCase: { success: boolean; message: string };
         }>(
@@ -476,7 +461,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
               modelOutput,
               sourceLanguage: sourceLanguage || null,
               targetLanguage: targetLanguage || null,
-              status: "PASSED",
+              status: 'PASSED',
             },
           },
           { organization: orgId }
@@ -487,7 +472,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
 
         const input: Record<string, unknown> = {
           auditId,
-          status: "FAILED",
+          status: 'FAILED',
           issueType: lastRow.issueType,
           severity: lastRow.severity,
           comments: lastRow.observations || null,
@@ -508,9 +493,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
         }>(SUBMIT_TEST_CASE_MUTATION, { input }, { organization: orgId });
 
         if (!result?.submitManualTestCase?.success) {
-          setError(
-            result?.submitManualTestCase?.message || "Failed to submit test case"
-          );
+          setError(result?.submitManualTestCase?.message || 'Failed to submit test case');
           return;
         }
       }
@@ -518,7 +501,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
       await Promise.all([fetchEvaluationStatus(), fetchTestCases()]);
       resetTestCaseForm();
     } catch (err: any) {
-      setError(err.message || "Error submitting test case");
+      setError(err.message || 'Error submitting test case');
     } finally {
       setIsSubmitting(false);
     }
@@ -556,24 +539,20 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
       if (result?.finishManualEvaluation?.success) {
         clearManualEvalWorkspaceDraft(orgId, auditId);
         setShowFinishRecommendationModal(false);
-        router.push(
-          `/${locale}/dashboard/ai-maker/${orgId}/evaluations/${auditId}`
-        );
+        router.push(`/${locale}/dashboard/ai-maker/${orgId}/evaluations/${auditId}`);
       } else {
-        setError(
-          result?.finishManualEvaluation?.message || "Failed to finish evaluation"
-        );
+        setError(result?.finishManualEvaluation?.message || 'Failed to finish evaluation');
       }
     } catch (err: any) {
-      setError(err.message || "Error finishing evaluation");
+      setError(err.message || 'Error finishing evaluation');
     } finally {
       setIsFinishingEvaluation(false);
     }
   };
 
   const resetTestCaseForm = () => {
-    setInputPrompt("");
-    setModelOutput("");
+    setInputPrompt('');
+    setModelOutput('');
     setLatencyMs(undefined);
     setHasCalledModel(false);
     setStatus(null);
@@ -584,8 +563,8 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
       selectedModule: null,
       sourceLanguage,
       targetLanguage,
-      inputPrompt: "",
-      modelOutput: "",
+      inputPrompt: '',
+      modelOutput: '',
       hasCalledModel: false,
       status: null,
       issueRows: [],
@@ -606,7 +585,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
   return (
     <div className="space-y-8">
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <Text variant="bodySm" className="text-red-700">
             {error}
           </Text>
@@ -615,16 +594,14 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
 
       <div className="space-y-6">
         {supportedLanguages && supportedLanguages.length > 1 && (
-          <div className="flex items-center justify-between mb-0">
+          <div className="mb-0 flex items-center justify-between">
             <div className="flex gap-4">
               <div className="w-48">
                 <Select
                   name="sourceLanguage"
                   label="Source Language"
                   labelHidden
-                  options={LANGUAGE_OPTIONS.filter((opt) =>
-                    supportedLanguages.includes(opt.value)
-                  )}
+                  options={LANGUAGE_OPTIONS.filter((opt) => supportedLanguages.includes(opt.value))}
                   value={sourceLanguage}
                   onChange={setSourceLanguage}
                   placeholder="Select"
@@ -635,9 +612,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                   name="targetLanguage"
                   label="Target Language"
                   labelHidden
-                  options={LANGUAGE_OPTIONS.filter((opt) =>
-                    supportedLanguages.includes(opt.value)
-                  )}
+                  options={LANGUAGE_OPTIONS.filter((opt) => supportedLanguages.includes(opt.value))}
                   value={targetLanguage}
                   onChange={setTargetLanguage}
                   placeholder="Select"
@@ -648,7 +623,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
         )}
 
         {/* Input and Output Panels Side by Side */}
-        <div className="grid grid-cols-1 gap-6 !-mt-2 lg:grid-cols-2">
+        <div className="!-mt-2 grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="manual-eval-input-panel bg-white p-6">
             <div className="mb-4 flex items-center justify-between">
               <Text variant="bodyMd" fontWeight="medium">
@@ -666,11 +641,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
               disabled={isCallingModel}
             />
             {modelCallError && (
-              <Text
-                variant="bodySm"
-                color="critical"
-                className="mt-3 block whitespace-pre-wrap"
-              >
+              <Text variant="bodySm" color="critical" className="mt-3 block whitespace-pre-wrap">
                 {modelCallError}
               </Text>
             )}
@@ -679,9 +650,9 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                 kind="primary"
                 onClick={handleCallModel}
                 disabled={!inputPrompt.trim() || isCallingModel}
-                className="rounded-[6px] bg-primaryPurple2 px-6 py-2 text-base font-bold text-white hover:bg-[#6849EE] hover:!bg-[#6849EE] hover:text-white hover:!text-white disabled:text-gray-400"
+                className="text-base disabled:text-gray-400 rounded-[6px] bg-primaryPurple2 px-6 py-2 font-bold text-white hover:!bg-[#6849EE] hover:bg-[#6849EE] hover:!text-white hover:text-white"
               >
-                {isCallingModel ? "Please Wait..." : "Submit"}
+                {isCallingModel ? 'Please Wait...' : 'Submit'}
               </Button>
             </div>
           </div>
@@ -692,12 +663,12 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                 Output
               </Text>
               {latencyMs ? (
-                <span className="rounded-[3px] border bg-baseIndigoSolid4 px-2 text-[14px] text-gray-600">
+                <span className="border text-gray-600 rounded-[3px] bg-baseIndigoSolid4 px-2 text-[14px]">
                   {(latencyMs / 1000).toFixed(0)} sec
                 </span>
               ) : null}
             </div>
-            <div className="mb-4 min-h-[200px] max-h-[300px] overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 px-4 py-0">
+            <div className="rounded-lg border border-gray-200 bg-gray-50 mb-4 max-h-[300px] min-h-[200px] overflow-y-auto px-4 py-0">
               <div className="bulk-evaluation-sheet-prose -ml-4">
                 {isCallingModel ? (
                   <Text variant="bodyMd" className="text-gray-500">
@@ -705,9 +676,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
                   </Text>
                 ) : hasCalledModel ? (
                   modelOutput ? (
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {modelOutput || ""}
-                    </ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{modelOutput || ''}</ReactMarkdown>
                   ) : (
                     <Text variant="bodyMd">No output received</Text>
                   )
@@ -722,15 +691,15 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
               <div className="absolute bottom-6 right-6 flex justify-end gap-3">
                 <Button
                   kind="secondary"
-                  onClick={() => setStatus("PASSED")}
-                  className={`rounded-[6px] ${status === "PASSED" ? "bg-[#26007b] text-white hover:bg-[#4003c4] hover:text-white" : ""}`}
+                  onClick={() => setStatus('PASSED')}
+                  className={`rounded-[6px] ${status === 'PASSED' ? 'bg-[#26007b] text-white hover:bg-[#4003c4] hover:text-white' : ''}`}
                 >
                   ✓ Passed
                 </Button>
                 <Button
                   kind="secondary"
-                  onClick={() => setStatus("FAILED")}
-                  className={`rounded-[6px] ${status === "FAILED" ? "bg-[#26007b] text-white hover:bg-[#4003c4] hover:text-white" : ""}`}
+                  onClick={() => setStatus('FAILED')}
+                  className={`rounded-[6px] ${status === 'FAILED' ? 'bg-[#26007b] text-white hover:bg-[#4003c4] hover:text-white' : ''}`}
                 >
                   ✕ Failed
                 </Button>
@@ -739,7 +708,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           </div>
         </div>
 
-        {hasCalledModel && status === "FAILED" && (
+        {hasCalledModel && status === 'FAILED' && (
           <EvaluateOutputSection
             issueRows={issueRows}
             subModules={issueTypeOptions}
@@ -756,7 +725,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
           />
         )}
 
-        {hasCalledModel && status === "PASSED" && (
+        {hasCalledModel && status === 'PASSED' && (
           <div className="flex justify-center pt-2">
             <Button
               kind="secondary"
@@ -764,7 +733,7 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
               disabled={isSubmitting}
               className="rounded-[6px] bg-[#26007b] text-white hover:bg-[#4003c4] hover:text-white disabled:opacity-50"
             >
-              {isSubmitting ? "Saving..." : "Save and Test New Input"}
+              {isSubmitting ? 'Saving...' : 'Save and Test New Input'}
             </Button>
           </div>
         )}
@@ -778,24 +747,19 @@ const ManualEvaluationFlow: React.FC<ManualEvaluationFlowProps> = ({
       </div>
 
       {!canFinish && testCaseCount < MIN_PLAYGROUND_TEST_CASES && (
-        <Text
-          variant="bodyMd"
-          fontWeight="medium"
-          className="pt-4 text-center text-[#2d2c2a]"
-        >
-          Note: Evaluate at least {MIN_PLAYGROUND_TEST_CASES} test cases to
-          finish the evaluation.
+        <Text variant="bodyMd" fontWeight="medium" className="pt-4 text-center text-[#2d2c2a]">
+          Note: Evaluate at least {MIN_PLAYGROUND_TEST_CASES} test cases to finish the evaluation.
         </Text>
       )}
 
-      <div className="flex items-center justify-center gap-6 pt-8 border-t border-gray-200">
+      <div className="border-t border-gray-200 flex items-center justify-center gap-6 pt-8">
         <Button
           kind="primary"
           onClick={() => setShowFinishRecommendationModal(true)}
           disabled={isFinishingEvaluation || !canFinish}
-          className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
+          className="text-base rounded-[8px] bg-primaryPurple2 px-8 py-3 font-bold text-white hover:!bg-[#6849EE] hover:bg-[#6849EE] hover:!text-white hover:text-white"
         >
-          {isFinishingEvaluation ? "Finishing..." : "Finish Evaluation"}
+          {isFinishingEvaluation ? 'Finishing...' : 'Finish Evaluation'}
         </Button>
       </div>
 

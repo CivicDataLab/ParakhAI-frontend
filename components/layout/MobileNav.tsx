@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Session } from 'next-auth';
 import { Icon } from 'opub-ui';
 import { Icons } from '@/components/icons';
-import Sidebar from './sidebar';
+import Sidebar from './Sidebar';
 
 type NavItem = { label: string; href: string };
 
@@ -34,7 +34,7 @@ const MobileNav = ({ navigationLinks, session, status }: MobileNavProps) => {
       {/* Mobile Hamburger Button */}
       <button
         onClick={() => setIsMobileMenuOpen(true)}
-        className="mobile-hamburger-button text-white hover:opacity-80 transition-opacity mr-4 lg:hidden border-none bg-transparent p-0 m-0"
+        className="mobile-hamburger-button m-0 mr-4 border-none bg-transparent p-0 text-white transition-opacity hover:opacity-80 lg:hidden"
         aria-label="Open menu"
         style={{ border: 'none', background: 'transparent', padding: 0, margin: 0 }}
       >
@@ -56,4 +56,3 @@ const MobileNav = ({ navigationLinks, session, status }: MobileNavProps) => {
 };
 
 export default MobileNav;
-
