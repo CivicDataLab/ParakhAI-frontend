@@ -1,6 +1,6 @@
 import { jwtDecode } from 'jwt-decode';
 import { getSession } from 'next-auth/react';
-import { logout } from '@/lib/auth-helpers';
+import { logout } from '@/lib/auth';
 
 // ---------------------------------------------------------------------------
 // Module-level token cache

@@ -1,4 +1,4 @@
-import { toTitleCase } from "@/lib/utils";
+﻿import { toTitleCase } from "@/utils";
 import type { Module } from "../types";
 import type {
   IssueSeverity,

@@ -1,22 +1,15 @@
-"use client";
+﻿"use client";
 
-import BreadCrumbs from "@/components/Breadcrumbs";
-import { Loading } from "@/components/loading";
-import { useDashboardStore } from "@/config/store";
-import { useGraphQL } from "@/lib/api";
+import BreadCrumbs from "@/components/common/Breadcrumbs";
+import { Loading } from "@/components/common/loading";
+import { useDashboardStore } from "@/stores";
+import { useMyOrganizations } from "@/features/ai-maker/api/use-organizations";
+import type { Organization } from "@/features/ai-maker/api/use-organizations";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { AlertDialog, Button, Text } from "opub-ui";
 import { useEffect, useMemo, useState } from "react";
-
-type Organization = {
-  id: string;
-  name: string;
-  description: string;
-  logoUrl?: string;
-  slug?: string | null;
-};
 
 const EntityCard = ({ org, locale }: { org: Organization; locale: string }) => {
   const [isImageValid, setIsImageValid] = useState(!!org.logoUrl);
@@ -68,11 +61,8 @@ const OrganizationSelection = () => {
   const params = useParams();
   const locale = params?.locale || "en";
   const router = useRouter();
-  const { request } = useGraphQL();
   const { setAllEntityDetails } = useDashboardStore();
 
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showRedirectPrompt, setShowRedirectPrompt] = useState(false);
 
   const inAppPath = `/${locale}/dashboard/ai-maker`;
@@ -81,6 +71,8 @@ const OrganizationSelection = () => {
     process.env.NEXT_PUBLIC_AI_MAKER_URL ||
     "";
   const externalPath = "/dashboard/organization";
+
+  const { data: organizations = [], isLoading } = useMyOrganizations();
 
   const { addOrganizationUrl, externalUrl } = useMemo(() => {
     let builtExternalUrl = "";
@@ -98,40 +90,17 @@ const OrganizationSelection = () => {
     };
   }, [externalHost, inAppPath]);
 
-  const GET_MY_ORGANIZATIONS = `
-    query GetMyOrganizations {
-      myOrganizations {
-        id
-        name
-        slug
-        description
-        logoUrl
-      }
+  useEffect(() => {
+    if (organizations.length > 0) {
+      setAllEntityDetails({ organizations });
     }
-  `;
+  }, [organizations, setAllEntityDetails]);
 
   useEffect(() => {
-    const fetchOrgs = async () => {
-      try {
-        const response = await request(GET_MY_ORGANIZATIONS);
-        const orgs = response?.myOrganizations || [];
-        setOrganizations(orgs);
-        setAllEntityDetails({ organizations: orgs });
-      } catch (error) {
-        console.error("Failed to fetch organizations:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOrgs();
-  }, [request]);
-
-  useEffect(() => {
-    if (!loading && organizations.length === 0) {
+    if (!isLoading && organizations.length === 0) {
       setShowRedirectPrompt(true);
     }
-  }, [loading, organizations.length]);
+  }, [isLoading, organizations.length]);
 
   return (
     <div className="flex flex-col min-h-screen bg-[var(--page-background)]">
@@ -160,7 +129,7 @@ const OrganizationSelection = () => {
           </div>
         </div>
 
-        {loading ? (
+        {isLoading ? (
           <Loading />
         ) : (
           <div className="flex flex-wrap gap-6">

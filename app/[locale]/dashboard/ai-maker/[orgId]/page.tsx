@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import { Icons } from "@/components/icons";
-import { useGraphQL } from "@/lib/api";
-import { getEvaluationStatusColor } from "@/lib/statusColors";
-import { formatStatusLabel, stripMarkdown } from "@/lib/utils";
+import { useGraphQL } from "@/lib/graphql-client";
+import { getEvaluationStatusColor } from "@/utils/status-colors";
+import { formatStatusLabel, stripMarkdown } from "@/utils";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -17,7 +17,7 @@ import {
   Text,
 } from "opub-ui";
 import { useEffect, useMemo, useState } from "react";
-import { useOrganization } from "./OrganizationContext";
+import { useOrganization } from "@/features/ai-maker/context/OrganizationContext";
 import ModelSelectionModal from "./evaluations/components/ModelSelectionModal";
 import "./evaluations/evaluations-page.css";
 

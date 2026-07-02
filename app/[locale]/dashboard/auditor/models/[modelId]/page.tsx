@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
-import RichTextRenderer from "@/components/RichTextRenderer";
-import { useGraphQL } from "@/lib/api";
-import { isDeprecatedLifecycle } from "@/lib/lifecycle";
-import { useAppSession } from "@/lib/session";
-import { statusColors } from "@/lib/statusColors";
-import { formatAssignmentStatusLabel, formatStatusLabel, isPendingAssignmentStatus } from "@/lib/utils";
+import RichTextRenderer from "@/components/common/RichTextRenderer";
+import { useGraphQL } from "@/lib/graphql-client";
+import { isDeprecatedLifecycle } from "@/utils/lifecycle";
+import { useAppSession } from "@/hooks/use-app-session";
+import { statusColors } from "@/utils/status-colors";
+import { formatAssignmentStatusLabel, formatStatusLabel, isPendingAssignmentStatus } from "@/utils";
 import { createColumnHelper } from "@tanstack/react-table";
 import {
   IconArrowLeft,

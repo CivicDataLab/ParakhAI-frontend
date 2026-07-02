@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
-import BreadCrumbs from "@/components/Breadcrumbs";
-import { useGraphQL } from "@/lib/api";
+import BreadCrumbs from "@/components/common/Breadcrumbs";
+import { useGraphQL } from "@/lib/graphql-client";
 import {
   IconPlus,
   IconSearch,

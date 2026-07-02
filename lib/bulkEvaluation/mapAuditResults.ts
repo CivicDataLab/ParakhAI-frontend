@@ -1,5 +1,5 @@
 import type { BulkTestCase, BulkTestCaseResultRef, BulkTestCaseRisk, ModuleIssueCount } from "./types";
-import { toTitleCase } from "@/lib/utils";
+import { toTitleCase } from "@/utils";
 
 export type AuditResultTest = {
   id?: string | null;

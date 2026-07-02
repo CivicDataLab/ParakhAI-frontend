@@ -1,22 +1,10 @@
-"use client";
+﻿"use client";
 
-import BreadCrumbs from "@/components/Breadcrumbs";
-import { useGraphQL } from "@/lib/api";
+import BreadCrumbs from "@/components/common/Breadcrumbs";
+import { useOrganizationDetails } from "@/features/ai-maker/api/use-organizations";
+import { OrganizationContext } from "@/features/ai-maker/context/OrganizationContext";
 import { useParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import WelcomeSection from "../../components/WelcomeSection";
-import { OrganizationContext } from "./OrganizationContext";
-
-const GET_ORG_DETAILS = `
-  query GetOrgDetails($orgId: ID!) {
-    organization(id: $orgId) {
-      id
-      name
-      logoUrl
-      slug
-    }
-  }
-`;
+import WelcomeSection from "@/features/dashboard/components/WelcomeSection";
 
 export default function AIMakerLayout({
   children,
@@ -25,51 +13,12 @@ export default function AIMakerLayout({
 }) {
   const params = useParams();
   const orgId = params?.orgId as string;
-  const {
-    request,
-    isAuthenticated,
-    isLoading: isSessionLoading,
-  } = useGraphQL();
-
-  const [organization, setOrganization] = useState<{
-    name: string;
-    logoUrl: string | null;
-  } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const isFetchingRef = useRef(false);
-  const lastFetchedOrgIdRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!isAuthenticated || isSessionLoading || !orgId) return;
-    if (isFetchingRef.current || lastFetchedOrgIdRef.current === orgId) return;
-
-    isFetchingRef.current = true;
-
-    const fetchOrganization = async () => {
-      try {
-        setIsLoading(true);
-
-        const orgData = await request(GET_ORG_DETAILS, { orgId });
-
-        if (orgData?.organization) {
-          setOrganization(orgData.organization);
-          lastFetchedOrgIdRef.current = orgId;
-        }
-      } catch (err: any) {
-        console.error("Error fetching organization:", err);
-      } finally {
-        setIsLoading(false);
-        isFetchingRef.current = false;
-      }
-    };
-
-    fetchOrganization();
-  }, [isAuthenticated, isSessionLoading, orgId, request]);
-
   const locale = params?.locale || "en";
 
+  const { data: organization, isLoading } = useOrganizationDetails(orgId);
+
   return (
-    <OrganizationContext.Provider value={{ organization, isLoading }}>
+    <OrganizationContext.Provider value={{ organization: organization ?? null, isLoading }}>
       <div className="flex flex-col min-h-screen bg-[var(--page-background)] overflow-x-visible">
         <BreadCrumbs
           data={[

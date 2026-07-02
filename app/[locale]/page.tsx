@@ -1,38 +1,16 @@
-"use client";
+﻿"use client";
 
-import { Loading } from "@/components/loading";
+import { Loading } from "@/components/common/loading";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 
-// Dynamically import components that use opub-ui to avoid SSR issues
-const MainNav = dynamic(
-  () => import("@/app/[locale]/dashboard/components/main-nav"),
-  { ssr: false }
-);
-const MainFooter = dynamic(
-  () => import("@/app/[locale]/dashboard/components/main-footer"),
-  { ssr: false }
-);
-const HeroSection = dynamic(
-  () => import("@/app/[locale]/components/HeroSection"),
-  { ssr: false }
-);
-const SectorsSection = dynamic(
-  () => import("@/app/[locale]/components/SectorsSection"),
-  { ssr: false }
-);
-const GetStartedSection = dynamic(
-  () => import("@/app/[locale]/components/GetStartedSection"),
-  { ssr: false }
-);
-const HowItWorksSection = dynamic(
-  () => import("@/app/[locale]/components/HowItWorksSection"),
-  { ssr: false }
-);
-const TrendingSection = dynamic(
-  () => import("@/app/[locale]/components/TrendingSection"),
-  { ssr: false }
-);
+const MainNav = dynamic(() => import("@/components/layout/MainNav"), { ssr: false });
+const MainFooter = dynamic(() => import("@/components/layout/MainFooter"), { ssr: false });
+const HeroSection = dynamic(() => import("@/features/home/components/HeroSection"), { ssr: false });
+const SectorsSection = dynamic(() => import("@/features/home/components/SectorsSection"), { ssr: false });
+const GetStartedSection = dynamic(() => import("@/features/home/components/GetStartedSection"), { ssr: false });
+const HowItWorksSection = dynamic(() => import("@/features/home/components/HowItWorksSection"), { ssr: false });
+const TrendingSection = dynamic(() => import("@/features/home/components/TrendingSection"), { ssr: false });
 
 export default function Home() {
   const { status } = useSession();

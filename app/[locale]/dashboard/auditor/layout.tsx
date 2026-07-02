@@ -1,8 +1,8 @@
 "use client";
 
-import BreadCrumbs from "@/components/Breadcrumbs";
+import BreadCrumbs from "@/components/common/Breadcrumbs";
 import { useParams } from "next/navigation";
-import WelcomeSection from "../components/WelcomeSection";
+import WelcomeSection from "@/features/dashboard/components/WelcomeSection";
 
 export default function AuditorLayout({
   children,

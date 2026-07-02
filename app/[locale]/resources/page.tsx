@@ -1,17 +1,17 @@
 "use client";
 
-import { Loading } from "@/components/loading";
+import { Loading } from "@/components/common/loading";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 
 // Dynamically import components that use opub-ui to avoid SSR issues
 const MainNav = dynamic(
-  () => import("@/app/[locale]/dashboard/components/main-nav"),
+  () => import("@/features/dashboard/components/main-nav"),
   { ssr: false }
 );
 const MainFooter = dynamic(
-  () => import("@/app/[locale]/dashboard/components/main-footer"),
+  () => import("@/features/dashboard/components/main-footer"),
   { ssr: false }
 );
 
