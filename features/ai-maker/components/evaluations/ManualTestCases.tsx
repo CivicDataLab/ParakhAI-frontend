@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React from "react";
-import ManualEvaluationFlow from "./manual-evaluation";
-import type { SelectOption } from "./types";
+import React from 'react';
+import ManualEvaluationFlow from '../manual-evaluation';
+import type { SelectOption } from './types';
 
 interface ManualTestCasesProps {
   auditId?: string;
@@ -24,7 +24,7 @@ const ManualTestCases: React.FC<ManualTestCasesProps> = ({
   moduleMetrics,
   supportedLanguages,
   orgId,
-  modelType = "TEXT_GENERATION",
+  modelType = 'TEXT_GENERATION',
   auditScope,
   onRunAudit,
   isRequestingAudit,
@@ -35,8 +35,7 @@ const ManualTestCases: React.FC<ManualTestCasesProps> = ({
     return (
       <div className="p-8 text-center">
         <p className="text-gray-500">
-          Please complete the configuration and create the audit to begin manual
-          evaluation.
+          Please complete the configuration and create the audit to begin manual evaluation.
         </p>
       </div>
     );
