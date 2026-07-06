@@ -4754,14 +4754,16 @@ table th {
   background-color: #f5f2ff;
 }
 
-.test-cases-table table th:first-child,
-.test-cases-table table td:first-child {
-  width: 48px;
-  max-width: 48px;
-  padding-left: 1rem;
-  padding-right: 0.5rem;
+.select-prompt-library-section .test-cases-table table th:nth-child(4),
+.select-prompt-library-section .test-cases-table table td:nth-child(4) {
   text-align: center;
-  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.select-prompt-library-section .test-cases-table table th:nth-child(5),
+.select-prompt-library-section .test-cases-table table td:nth-child(5) {
+  text-align: center;
+  width: 140px;
 }
 
 .test-cases-table table th {
