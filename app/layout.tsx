@@ -177,7 +177,7 @@ const fontVariables = [
 
 export const metadata = {
   title: "ParakhAI",
-  description: "Paricipatory AI Evaluation",
+  description: "Participatory AI Evaluation",
   icons: {
     icon: "/images/icons/Favicon.svg",
   },
