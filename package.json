@@ -30,6 +30,8 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "autoprefixer": "^10.4.21",
+    "baseline-browser-mapping": "^2.10.42",
+    "caniuse-lite": "^1.0.30001802",
     "cryptr": "^6.3.0",
     "echarts": "^5.4.3",
     "echarts-for-react": "^3.0.2",
