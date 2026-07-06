@@ -6,9 +6,22 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { IconAlertCircleFilled, IconPencil, IconTrash } from "@tabler/icons-react";
 import { Button, DataTable, Icon, Spinner, Text, Tooltip } from "opub-ui";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import AddPromptRowModal from "./AddPromptRowModal";
 import EditPromptRowSheet from "./EditPromptRowSheet";
-import type { CustomPromptRow, SelectOption } from "./types";
+import {
+  countUsablePrompts,
+  MIN_USABLE_PROMPTS_PER_METRIC,
+  type PromptCoverageSource,
+} from "./promptCoverage";
+import PromptSelectionModal from "./PromptSelectionModal";
+import type {
+  CustomPromptRow,
+  PromptDataset,
+  PromptLibrarySelection,
+  PromptLibrarySelectionMap,
+  SelectOption,
+} from "./types";
 
 const MAX_TASKS_PER_EVALUATION = 250;
 
@@ -57,10 +70,15 @@ const serializeCustomPromptRows = (rows: CustomPromptRow[]) =>
     )
     .join("\n");
 
-type MissingColumnsByMetric = {
-  metricLabel: string;
-  missingColumns: string[];
-};
+/** Column names a custom prompt row can provide, in `mandatoryInputs` naming. */
+const CUSTOM_ROW_COLUMNS = [
+  "input",
+  "input_prompt",
+  "expected_output",
+  "reference_output",
+  "category",
+  "risk_type",
+];
 
 const getCustomPromptColumnValue = (
   row: CustomPromptRow,
@@ -85,12 +103,11 @@ const getCustomPromptColumnValue = (
   }
 };
 
-const collectMissingColumnsByMetric = (
+const collectSelectedMetrics = (
   selectedModules: Record<string, boolean>,
   selectedMetrics: Record<string, SelectOption[]>,
-  getMissingColumnsForMetric: (mandatoryInputs: string[]) => string[],
-): MissingColumnsByMetric[] => {
-  const result: MissingColumnsByMetric[] = [];
+): Array<{ metricLabel: string; mandatoryInputs: string[] }> => {
+  const result: Array<{ metricLabel: string; mandatoryInputs: string[] }> = [];
 
   Object.entries(selectedModules).forEach(([moduleName, isSelected]) => {
     if (!isSelected) return;
@@ -99,25 +116,14 @@ const collectMissingColumnsByMetric = (
     if (!Array.isArray(metrics)) return;
 
     metrics.forEach((metric) => {
-      const missing = getMissingColumnsForMetric(metric.mandatoryInputs || []);
-      if (missing.length > 0) {
-        result.push({ metricLabel: metric.label, missingColumns: missing });
-      }
+      result.push({
+        metricLabel: metric.label,
+        mandatoryInputs: metric.mandatoryInputs || [],
+      });
     });
   });
 
   return result;
-};
-
-type PromptDataset = {
-  id: string;
-  title: string;
-  description?: string;
-  taskType?: string;
-  domain?: string;
-  resourceCount: number;
-  schemaFieldNames: string[];
-  testCaseCount: number;
 };
 
 const getDatasetSchemaFieldNames = (
@@ -132,8 +138,8 @@ const getDatasetSchemaFieldNames = (
 interface TestCasesProps {
   /** Organization whose DataSpace prompt datasets to load (route org or assignment org). */
   orgId: string;
-  selectedPromptLibraries: any[];
-  setSelectedPromptLibraries: (selected: any[]) => void;
+  promptRowSelections: PromptLibrarySelectionMap;
+  setPromptRowSelections: Dispatch<SetStateAction<PromptLibrarySelectionMap>>;
   uploadedFiles: File[];
   setUploadedFiles: (files: File[]) => void;
   domain?: string | null;
@@ -147,6 +153,9 @@ interface TestCasesProps {
   selectedMetrics: Record<string, SelectOption[]>;
   onRunAudit: () => Promise<boolean>;
   isRequestingAudit: boolean;
+  /** Reports which columns the current prompt selection covers, so the metric
+   *  dropdowns can show per-metric usable prompt counts. */
+  onPromptCoverageChange?: (sources: PromptCoverageSource[]) => void;
 }
 
 const PROMPT_DATASETS_QUERY = `
@@ -176,8 +185,8 @@ const PROMPT_DATASETS_QUERY = `
 
 const TestCases: React.FC<TestCasesProps> = ({
   orgId,
-  selectedPromptLibraries,
-  setSelectedPromptLibraries,
+  promptRowSelections,
+  setPromptRowSelections,
   uploadedFiles,
   setUploadedFiles,
   domain,
@@ -191,12 +200,12 @@ const TestCases: React.FC<TestCasesProps> = ({
   selectedMetrics,
   onRunAudit,
   isRequestingAudit,
+  onPromptCoverageChange,
 }) => {
   const { request, isAuthenticated } = useGraphQL();
   const [promptDatasets, setPromptDatasets] = useState<PromptDataset[]>([]);
   const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
   const [datasetsError, setDatasetsError] = useState<string | null>(null);
-  const [tableRenderKey, setTableRenderKey] = useState(0);
   const [customPromptRows, setCustomPromptRows] = useState<CustomPromptRow[]>(
     () => parsePastedTestCases(pastedTestCases),
   );
@@ -206,6 +215,8 @@ const TestCases: React.FC<TestCasesProps> = ({
     null,
   );
   const [customPromptTableKey, setCustomPromptTableKey] = useState(0);
+  const [activePromptModalDataset, setActivePromptModalDataset] =
+    useState<PromptDataset | null>(null);
 
   const handleRunEvaluation = () => {
     void onRunAudit();
@@ -307,7 +318,9 @@ const TestCases: React.FC<TestCasesProps> = ({
   }, [testSourceMode, pastedTestCases, customPromptRows.length]);
 
   // Validation: Check if at least one test case source is provided
-  const hasPromptLibraries = selectedPromptLibraries.length > 0;
+  const hasPromptLibraries = Object.values(promptRowSelections).some(
+    (s) => s.rowIds.length > 0 || s.isLegacyPlaceholder,
+  );
   const hasCustomTestCases = customPromptRows.some(
     (row) => row.input.trim().length > 0,
   );
@@ -376,130 +389,120 @@ const TestCases: React.FC<TestCasesProps> = ({
     fetchPromptDatasets();
   }, [isAuthenticated, request, domain, orgId]);
 
-  useEffect(() => {
-    if (!promptDatasets.length || !selectedPromptLibraries.length) return;
+  const totalSelectedPromptCount = useMemo(
+    () =>
+      Object.values(promptRowSelections).reduce(
+        (sum, s) => sum + (s.isLegacyPlaceholder ? 0 : s.rowIds.length),
+        0,
+      ),
+    [promptRowSelections],
+  );
 
-    const selectedIds = selectedPromptLibraries
-      .map((item: any) => item?.id)
-      .filter(Boolean);
-    if (!selectedIds.length) return;
-    const selectedIdSet = new Set(
-      selectedIds.map((id: string | number) => String(id))
-    );
+  const selectedLibraryDatasets = useMemo(
+    () =>
+      promptDatasets.filter(
+        (ds) => (promptRowSelections[ds.id]?.rowIds.length ?? 0) > 0,
+      ),
+    [promptDatasets, promptRowSelections],
+  );
 
-    const resolved = promptDatasets.filter((dataset) =>
-      selectedIdSet.has(String(dataset.id))
-    );
-
-    const currentHasTitles = selectedPromptLibraries.every(
-      (item: any) => typeof item?.title === "string" && item.title.length > 0
-    );
-
-    // Restore whatever saved datasets are currently available in the loaded table.
-    // Saved IDs can include entries filtered out by domain, so don't require full-length match.
-    if (resolved.length > 0 && !currentHasTitles) {
-      setSelectedPromptLibraries([resolved[0]] as any[]);
-      setTableRenderKey((prev) => prev + 1);
+  const promptCoverageSources = useMemo<PromptCoverageSource[]>(() => {
+    if (testSourceMode === "library") {
+      return selectedLibraryDatasets.map((dataset) => {
+        const selection = promptRowSelections[dataset.id];
+        return {
+          // Prefer the prompts API's real column names (captured when rows were
+          // picked); the GraphQL schema fieldNames can be missing or misnamed.
+          fields: selection?.availableColumns ?? dataset.schemaFieldNames,
+          count: selection?.rowIds.length ?? 0,
+        };
+      });
     }
-  }, [promptDatasets, selectedPromptLibraries, setSelectedPromptLibraries]);
 
-  // Enforce single prompt library selection for drafts saved with multiple IDs.
-  useEffect(() => {
-    if (selectedPromptLibraries.length <= 1) return;
-    setSelectedPromptLibraries([selectedPromptLibraries[0]]);
-  }, [selectedPromptLibraries, setSelectedPromptLibraries]);
+    // Group custom rows by which columns they actually fill in.
+    const groups = new Map<string, PromptCoverageSource>();
+    customPromptRows
+      .filter((row) => row.input.trim())
+      .forEach((row) => {
+        const fields = CUSTOM_ROW_COLUMNS.filter((col) =>
+          getCustomPromptColumnValue(row, col).trim(),
+        );
+        const key = fields.join("|");
+        const group = groups.get(key);
+        if (group) {
+          group.count += 1;
+        } else {
+          groups.set(key, { fields, count: 1 });
+        }
+      });
+    return Array.from(groups.values());
+  }, [testSourceMode, selectedLibraryDatasets, promptRowSelections, customPromptRows]);
 
-  const selectedLibraryId =
-    selectedPromptLibraries[0]?.id != null
-      ? String(selectedPromptLibraries[0].id)
-      : null;
-
-  const selectedLibraryEntryCount = useMemo(() => {
-    if (!selectedLibraryId) return 0;
-    const dataset = promptDatasets.find((ds) => String(ds.id) === selectedLibraryId);
-    return dataset?.testCaseCount ?? 0;
-  }, [selectedLibraryId, promptDatasets]);
-
-  const missingColumnsByMetric = useMemo(() => {
-    if (!selectedLibraryId) return [];
-    const selectedDataset = promptDatasets.find(
-      (ds) => String(ds.id) === selectedLibraryId,
-    );
-    if (!selectedDataset) return [];
-
-    return collectMissingColumnsByMetric(
-      selectedModules,
-      selectedMetrics,
-      (mandatoryInputs) =>
-        mandatoryInputs.filter(
-          (col) => !selectedDataset.schemaFieldNames.includes(col),
-        ),
-    );
-  }, [selectedModules, selectedMetrics, selectedLibraryId, promptDatasets]);
-
-  const missingCustomColumnsByMetric = useMemo(() => {
-    const rowsWithInput = customPromptRows.filter((row) => row.input.trim());
-
-    return collectMissingColumnsByMetric(
-      selectedModules,
-      selectedMetrics,
-      (mandatoryInputs) =>
-        mandatoryInputs.filter((col) =>
-          rowsWithInput.some(
-            (row) => !getCustomPromptColumnValue(row, col).trim(),
+  // A metric only blocks the run when fewer than MIN_USABLE_PROMPTS_PER_METRIC
+  // of the selected prompts provide all its mandatory columns. Prompts missing
+  // them are fine as long as enough others have them — the backend runs each
+  // metric only on the prompts it can use.
+  const insufficientMetrics = useMemo(
+    () =>
+      collectSelectedMetrics(selectedModules, selectedMetrics)
+        .map((metric) => ({
+          ...metric,
+          usableCount: countUsablePrompts(
+            promptCoverageSources,
+            metric.mandatoryInputs,
           ),
-        ),
-    );
-  }, [customPromptRows, selectedModules, selectedMetrics]);
+        }))
+        .filter((metric) => metric.usableCount < MIN_USABLE_PROMPTS_PER_METRIC),
+    [selectedModules, selectedMetrics, promptCoverageSources],
+  );
 
-  const hasSchemaConflict =
-    (testSourceMode === "library" && missingColumnsByMetric.length > 0) ||
-    (testSourceMode === "custom" && missingCustomColumnsByMetric.length > 0);
+  const selectedPromptCountForMode =
+    testSourceMode === "library" ? totalSelectedPromptCount : selectedCustomPromptCount;
+  // With nothing selected yet, the "please select..." validation already covers
+  // both the disabled button and the explanation — no warnings on top of it.
+  const hasTooFewPrompts =
+    selectedPromptCountForMode > 0 &&
+    selectedPromptCountForMode < MIN_USABLE_PROMPTS_PER_METRIC;
+  const hasInsufficientMetricCoverage =
+    selectedPromptCountForMode >= MIN_USABLE_PROMPTS_PER_METRIC &&
+    insufficientMetrics.length > 0;
+  // The limit shrinks when more metrics are selected, so an existing selection
+  // can end up over it even though the checkboxes prevent adding past the cap.
+  const isOverPromptLimit = selectedPromptCountForMode > maxInputPrompts;
+  const overLimitError = isOverPromptLimit
+    ? `You've selected ${selectedPromptCountForMode} prompts, but your current metric selection allows ${maxInputPrompts}. Unselect prompts to run the evaluation.`
+    : undefined;
   const isRunEvaluationDisabled =
-    isRequestingAudit || !hasTestCases || hasSchemaConflict;
+    isRequestingAudit ||
+    !hasTestCases ||
+    hasTooFewPrompts ||
+    hasInsufficientMetricCoverage ||
+    isOverPromptLimit;
   const runEvaluationButtonClassName = isRunEvaluationDisabled
     ? "!rounded-[8px] !cursor-not-allowed !border-none !bg-[#8c949d] !text-white hover:!bg-[#8c949d] hover:!text-white px-8 py-3 text-base font-bold"
     : "!rounded-[8px] !border-none !bg-primaryPurple2 px-8 py-3 text-base font-bold !text-white hover:!bg-[#6849EE] hover:!text-white";
 
-  const handlePromptLibrarySelect = useCallback(
-    (dataset: PromptDataset) => {
-      const datasetId = String(dataset.id);
-      if (selectedLibraryId === datasetId) {
-        setSelectedPromptLibraries([]);
-        return;
-      }
-      setSelectedPromptLibraries([dataset]);
+  const handleOpenPromptSelectionModal = useCallback((dataset: PromptDataset) => {
+    setActivePromptModalDataset(dataset);
+  }, []);
+
+  const handleChangeLibrarySelection = useCallback(
+    (next: PromptLibrarySelection) => {
+      setPromptRowSelections((prev) => {
+        const nextMap = { ...prev };
+        if (next.rowIds.length === 0) {
+          delete nextMap[next.datasetId];
+        } else {
+          nextMap[next.datasetId] = next;
+        }
+        return nextMap;
+      });
     },
-    [selectedLibraryId, setSelectedPromptLibraries]
+    [setPromptRowSelections],
   );
 
   const promptDatasetColumns: ColumnDef<PromptDataset>[] = useMemo(
     () => [
-    {
-      id: "select",
-      header: "",
-      enableSorting: false,
-      cell: ({ row }) => {
-        const dataset = row.original;
-        const datasetId = String(dataset.id);
-        const isSelected = selectedLibraryId === datasetId;
-
-        return (
-          <input
-            type="radio"
-            name="promptLibrary"
-            checked={isSelected}
-            aria-label={`Select ${dataset.title}`}
-            onChange={() => {}}
-            onClick={(event) => {
-              event.stopPropagation();
-              handlePromptLibrarySelect(dataset);
-            }}
-            className="h-4 w-4 text-primary-purple focus:ring-primary-purple focus:ring-2 cursor-pointer"
-          />
-        );
-      },
-    },
     {
       accessorKey: "title",
       header: "Name",
@@ -533,6 +536,33 @@ const TestCases: React.FC<TestCasesProps> = ({
       cell: ({ getValue }) => getValue<number>() || 0,
     },
     {
+      id: "promptCount",
+      header: "Prompt Count",
+      enableSorting: false,
+      cell: ({ row }) => {
+        const selection = promptRowSelections[String(row.original.id)];
+        return selection && !selection.isLegacyPlaceholder ? selection.rowIds.length : 0;
+      },
+    },
+    {
+      id: "selectedPrompts",
+      header: "Selected Prompts",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <Button
+          kind="secondary"
+          size="slim"
+          className="!rounded-[8px]"
+          onClick={(event) => {
+            event.stopPropagation();
+            handleOpenPromptSelectionModal(row.original);
+          }}
+        >
+          View
+        </Button>
+      ),
+    },
+    {
       accessorKey: "description",
       header: "Description",
       enableSorting: false,
@@ -550,7 +580,7 @@ const TestCases: React.FC<TestCasesProps> = ({
       },
     },
   ],
-    [handlePromptLibrarySelect, selectedLibraryId]
+    [promptRowSelections, handleOpenPromptSelectionModal]
   );
 
   const customPromptColumns: ColumnDef<CustomPromptRow>[] = useMemo(
@@ -611,15 +641,47 @@ const TestCases: React.FC<TestCasesProps> = ({
   );
 
   const runsLine: string | null = (() => {
-    if (!selectedLibraryId) {
-      return selectedSubModuleCount === 0
-        ? "This limit adjusts based on how many sub-modules you've chosen."
-        : null;
+    if (selectedSubModuleCount === 0) {
+      return "This limit adjusts based on how many sub-modules you've chosen.";
     }
-    if (selectedLibraryEntryCount <= maxInputPrompts) {
-      return "ParakhAI will run all input prompts from the selected library. This limit adjusts based on how many sub-modules you've chosen.";
+    if (testSourceMode === "library" && totalSelectedPromptCount > 0) {
+      const plural = totalSelectedPromptCount === 1 ? "" : "s";
+      return `ParakhAI will run the ${totalSelectedPromptCount} prompt${plural} you've selected across your chosen libraries.`;
     }
-    return `ParakhAI will run the first ${maxInputPrompts} input prompts from the selected library. This limit adjusts based on how many sub-modules you've chosen.`;
+    return null;
+  })();
+
+  const promptWord = testSourceMode === "library" ? "selected" : "added";
+  const insufficientMetricsWarning = (() => {
+    // While libraries are still loading, coverage is unknown — stay quiet.
+    if (testSourceMode === "library" && isLoadingDatasets) return null;
+
+    if (hasTooFewPrompts) {
+      return (
+        <div className="mt-4 space-y-1">
+          <Text variant="bodySm" color="critical">
+            Select at least {MIN_USABLE_PROMPTS_PER_METRIC} prompts to run the
+            evaluation — only {selectedPromptCountForMode} {promptWord} so far.
+          </Text>
+        </div>
+      );
+    }
+
+    if (!hasInsufficientMetricCoverage) return null;
+
+    return (
+      <div className="mt-4 space-y-1">
+        {insufficientMetrics.map(({ metricLabel, mandatoryInputs, usableCount }) => (
+          <Text key={metricLabel} variant="bodySm" color="critical">
+            Warning: <strong>{metricLabel}</strong> requires column(s){" "}
+            <strong>{mandatoryInputs.join(", ")}</strong> —{" "}
+            {usableCount === 0 ? "none" : `only ${usableCount}`} of your{" "}
+            {promptWord} prompts {usableCount === 1 ? "provides" : "provide"}{" "}
+            them (minimum {MIN_USABLE_PROMPTS_PER_METRIC}).
+          </Text>
+        ))}
+      </div>
+    );
   })();
 
   const submoduleWarningBanner = (
@@ -710,6 +772,17 @@ const TestCases: React.FC<TestCasesProps> = ({
           Select from pre-made prompt libraries
         </Text>
         <div className="test-cases-table">
+        {!isLoadingDatasets && !datasetsError && promptDatasets.length > 0 && (
+          <div className="flex justify-end mt-2">
+            <Text
+              variant="bodySm"
+              fontWeight="medium"
+              color={totalSelectedPromptCount >= maxInputPrompts ? "critical" : "subdued"}
+            >
+              {totalSelectedPromptCount} / {maxInputPrompts} selected
+            </Text>
+          </div>
+        )}
         {isLoadingDatasets ? (
           <div className="flex flex-col items-center justify-center gap-4 py-8">
             <Spinner />
@@ -732,7 +805,6 @@ const TestCases: React.FC<TestCasesProps> = ({
           </div>
         ) : (
           <DataTable
-            key={tableRenderKey}
             rows={promptDatasets}
             columns={promptDatasetColumns}
             hideSelection
@@ -740,20 +812,25 @@ const TestCases: React.FC<TestCasesProps> = ({
           />
         )}
         </div>
-        {missingColumnsByMetric.length > 0 && (
-          <div className="mt-4 space-y-1">
-            {missingColumnsByMetric.map(({ metricLabel, missingColumns }) => (
-              <Text key={metricLabel} variant="bodySm" color="critical">
-                Warning: <strong>{metricLabel}</strong> requires column(s){" "}
-                <strong>{missingColumns.join(", ")}</strong> which are missing
-                from the selected library.
-              </Text>
-            ))}
-          </div>
-        )}
+        {insufficientMetricsWarning}
       </div>
 
       {submoduleWarningBanner}
+
+      {activePromptModalDataset && (
+        <PromptSelectionModal
+          open={!!activePromptModalDataset}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setActivePromptModalDataset(null);
+          }}
+          dataset={activePromptModalDataset}
+          orgId={orgId}
+          maxInputPrompts={maxInputPrompts}
+          globalSelectedCount={totalSelectedPromptCount}
+          librarySelection={promptRowSelections[activePromptModalDataset.id]}
+          onChangeLibrarySelection={handleChangeLibrarySelection}
+        />
+      )}
       </>
       )}
 
@@ -796,19 +873,7 @@ const TestCases: React.FC<TestCasesProps> = ({
               )}
             </div>
 
-            {missingCustomColumnsByMetric.length > 0 && (
-              <div className="mt-4 space-y-1">
-                {missingCustomColumnsByMetric.map(
-                  ({ metricLabel, missingColumns }) => (
-                    <Text key={metricLabel} variant="bodySm" color="critical">
-                      Warning: <strong>{metricLabel}</strong> requires column(s){" "}
-                      <strong>{missingColumns.join(", ")}</strong> which are
-                      missing from the added prompts.
-                    </Text>
-                  ),
-                )}
-              </div>
-            )}
+            {insufficientMetricsWarning}
           </div>
 
           {submoduleWarningBanner}
@@ -857,10 +922,10 @@ const TestCases: React.FC<TestCasesProps> = ({
           </span>
         </Button>
       </div>
-      {validationError && (
+      {(validationError ?? overLimitError) && (
         <div className="mt-4 text-center">
           <Text variant="bodySm" className="text-red-600" color="critical">
-            {validationError}
+            {validationError ?? overLimitError}
           </Text>
         </div>
       )}
