@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Text, TextField, Label, Select, Combobox, Spinner } from "opub-ui";
+import { countUsablePrompts, type PromptCoverageSource } from "./promptCoverage";
 import type { SelectOption } from "./types";
 import styles from "./styles.module.scss";
 
@@ -15,6 +16,7 @@ type Module = {
     name: string;
     displayName: string;
     description: string;
+    mandatoryInputs?: string[];
   }>;
 };
 
@@ -72,6 +74,9 @@ interface EvaluationConfigurationProps {
   >;
   isModeOfEvaluationLocked?: boolean;
   workspaceOnly?: boolean;
+  /** When provided, each metric option shows how many of the currently
+   *  selected prompts have the columns that metric needs. */
+  promptCoverageSources?: PromptCoverageSource[];
 }
 
 const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
@@ -104,6 +109,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
   setValidationErrors,
   isModeOfEvaluationLocked = false,
   workspaceOnly = false,
+  promptCoverageSources,
 }) => {
   const modeOfEvaluationOptions = [
     { value: "bulk", label: "Bulk" },
@@ -197,6 +203,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                             toTitleCase(
                               (metric?.name || "").replace(/_/g, " "),
                             ),
+                          mandatoryInputs: metric?.mandatoryInputs || [],
                         }))
                         .filter((opt) => opt.value)
                     : [];
@@ -296,7 +303,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                             ? value
                             : metricOptions.filter(
                                 (option) => option.value === value,
-                              );
+                          );
 
                           setSelectedMetrics((prev) => ({
                             ...prev,

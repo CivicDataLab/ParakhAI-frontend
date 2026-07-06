@@ -16,16 +16,22 @@ import {
   Text,
   TextField,
 } from "opub-ui";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOrganization } from "../../OrganizationContext";
 import EvaluationConfiguration from "./EvaluationConfiguration";
 import EvaluationFormOverview from "./EvaluationFormOverview";
 import { getFallbackEvaluationModules } from "./manual-evaluation/utils";
 import ManualTestCases from "./ManualTestCases";
 import ModelSelectionModal from "./ModelSelectionModal";
+import type { PromptCoverageSource } from "./promptCoverage";
 import styles from "./styles.module.scss";
 import TestCases from "./TestCases";
-import type { AuditType, Module, SelectOption } from "./types";
+import type {
+  AuditType,
+  Module,
+  PromptLibrarySelectionMap,
+  SelectOption,
+} from "./types";
 
 // GraphQL queries for dynamic modules and metrics
 const METRICS_BY_MODEL_TYPE_QUERY = `
@@ -545,6 +551,11 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   >({});
   const [isLoadingModules, setIsLoadingModules] = useState<boolean>(false);
   const [modulesError, setModulesError] = useState<string | null>(null);
+  // Column coverage of the current prompt selection, reported up by TestCases
+  // so the metric dropdowns can show per-metric usable prompt counts.
+  const [promptCoverageSources, setPromptCoverageSources] = useState<
+    PromptCoverageSource[]
+  >([]);
 
   // Validation state
   const [validationErrors, setValidationErrors] = useState<{
@@ -558,8 +569,27 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
   }>({});
 
   // Test Cases state
-  const [selectedPromptLibraries, setSelectedPromptLibraries] = useState<any[]>(
-    []
+  const [promptRowSelections, setPromptRowSelections] =
+    useState<PromptLibrarySelectionMap>({});
+  // Derived, kept only so existing logic below (draft snapshot/restore, validation,
+  // testDatasetIds) that only ever needs dataset ids keeps working unchanged.
+  const selectedPromptLibraries = useMemo(
+    () => Object.keys(promptRowSelections).map((id) => ({ id })),
+    [promptRowSelections],
+  );
+  const promptSelectionsPayload = useMemo(
+    () =>
+      Object.values(promptRowSelections)
+        .filter((s) => !s.isLegacyPlaceholder && s.rowIds.length > 0)
+        .map(({ datasetId, resourceId, rowIds, availableColumns }) => ({
+          datasetId,
+          resourceId,
+          rowIds,
+          // Persisted with the draft so metric coverage counts survive a reload
+          // without re-fetching each library's prompts.
+          ...(availableColumns ? { availableColumns } : {}),
+        })),
+    [promptRowSelections],
   );
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [pastedTestCases, setPastedTestCases] = useState("");
@@ -633,6 +663,9 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
         .map((item: any) => item?.id)
         .filter(Boolean)
         .sort(),
+      promptSelections: promptSelectionsPayload
+        .map((s) => ({ ...s, rowIds: [...s.rowIds].sort() }))
+        .sort((a, b) => a.datasetId.localeCompare(b.datasetId)),
       testInputMode,
       pastedTestCases: pastedTestCases.trim(),
       uploadedFiles: uploadedFiles.map((file) => file.name).sort(),
@@ -678,6 +711,11 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             modules: string[];
             metrics: string[];
             testDatasetIds: string[];
+            promptSelections?: Array<{
+              datasetId: string;
+              resourceId?: string;
+              rowIds: Array<string | number>;
+            }> | null;
             configuration: any;
             createdAt?: string | null;
             completedAt?: string | null;
@@ -955,7 +993,21 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             : Array.isArray(config.selectedPromptDatasetIds)
               ? config.selectedPromptDatasetIds
               : [];
-          if (!restoredDatasetIds.length && typeof window !== "undefined") {
+          let restoredPromptSelections: Array<{
+            datasetId: string;
+            resourceId?: string;
+            rowIds: Array<string | number>;
+            availableColumns?: string[];
+          }> = Array.isArray(audit.promptSelections)
+            ? audit.promptSelections
+            : Array.isArray(config.promptSelections)
+              ? config.promptSelections
+              : [];
+
+          if (
+            (!restoredDatasetIds.length || !restoredPromptSelections.length) &&
+            typeof window !== "undefined"
+          ) {
             const cached = window.localStorage.getItem(
               getPromptDatasetStorageKey(audit.id)
             );
@@ -963,25 +1015,64 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               try {
                 const parsed = JSON.parse(cached);
                 if (Array.isArray(parsed)) {
-                  restoredDatasetIds = parsed;
+                  // Pre-feature cache shape: a flat array of dataset ids.
+                  if (!restoredDatasetIds.length) restoredDatasetIds = parsed;
+                } else if (parsed && typeof parsed === "object") {
+                  if (!restoredDatasetIds.length && Array.isArray(parsed.datasetIds)) {
+                    restoredDatasetIds = parsed.datasetIds;
+                  }
+                  if (
+                    !restoredPromptSelections.length &&
+                    Array.isArray(parsed.promptSelections)
+                  ) {
+                    restoredPromptSelections = parsed.promptSelections;
+                  }
                 }
               } catch {
                 // Ignore invalid cache and continue.
               }
             }
           }
-          if (restoredDatasetIds.length) {
-            setSelectedPromptLibraries(
-              restoredDatasetIds
-                .map((item: any) => {
-                  if (item && typeof item === "object") {
-                    const possibleId = item.id ?? item.value;
-                    return possibleId ? { id: String(possibleId) } : null;
-                  }
-                  return { id: String(item) };
-                })
-                .filter(Boolean) as any[]
-            );
+
+          const normalizedDatasetIds = restoredDatasetIds
+            .map((item: any) => {
+              if (item && typeof item === "object") {
+                const possibleId = item.id ?? item.value;
+                return possibleId ? String(possibleId) : null;
+              }
+              return item ? String(item) : null;
+            })
+            .filter(Boolean) as string[];
+
+          if (restoredPromptSelections.length) {
+            const map: PromptLibrarySelectionMap = {};
+            restoredPromptSelections.forEach((s) => {
+              if (s?.datasetId && Array.isArray(s.rowIds) && s.rowIds.length) {
+                map[String(s.datasetId)] = {
+                  datasetId: String(s.datasetId),
+                  resourceId: String(s.resourceId ?? ""),
+                  rowIds: s.rowIds.map(String),
+                  ...(Array.isArray(s.availableColumns)
+                    ? { availableColumns: s.availableColumns.map(String) }
+                    : {}),
+                };
+              }
+            });
+            // Legacy dataset ids not covered by any real row-level entry become
+            // placeholders, so a pre-feature draft's testDatasetIds is never
+            // silently dropped on the next autosave. See updateAuditConfig.
+            normalizedDatasetIds.forEach((id) => {
+              if (!map[id]) {
+                map[id] = { datasetId: id, resourceId: "", rowIds: [], isLegacyPlaceholder: true };
+              }
+            });
+            setPromptRowSelections(map);
+          } else if (normalizedDatasetIds.length) {
+            const map: PromptLibrarySelectionMap = {};
+            normalizedDatasetIds.forEach((id) => {
+              map[id] = { datasetId: id, resourceId: "", rowIds: [], isLegacyPlaceholder: true };
+            });
+            setPromptRowSelections(map);
           }
 
           // Note: Modules and metrics are now loaded in the model fetch section above
@@ -1114,6 +1205,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                 .map((item: any) => item?.id)
                 .filter(Boolean)
                 .map((id: string | number) => String(id)),
+              promptSelections: promptSelectionsPayload,
               ...(recommendation?.trim()
                 ? { recommendation: recommendation.trim() }
                 : {}),
@@ -1136,12 +1228,13 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
       if (typeof window !== "undefined") {
         window.localStorage.setItem(
           getPromptDatasetStorageKey(auditId),
-          JSON.stringify(
-            selectedPromptLibraries
+          JSON.stringify({
+            datasetIds: selectedPromptLibraries
               .map((item: any) => item?.id)
               .filter(Boolean)
-              .map((id: string | number) => String(id))
-          )
+              .map((id: string | number) => String(id)),
+            promptSelections: promptSelectionsPayload,
+          })
         );
       }
       return true;
@@ -1789,6 +1882,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     selectedModules,
     selectedMetrics,
     selectedPromptLibraries,
+    promptRowSelections,
     testInputMode,
     pastedTestCases,
     uploadedFiles,
@@ -1821,6 +1915,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     selectedModules,
     selectedMetrics,
     selectedPromptLibraries,
+    promptRowSelections,
     testInputMode,
     pastedTestCases,
     uploadedFiles,
@@ -1856,6 +1951,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     selectedModules,
     selectedMetrics,
     selectedPromptLibraries,
+    promptRowSelections,
     testInputMode,
     uploadedFiles,
     pastedTestCases,
@@ -2400,6 +2496,11 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                 validationErrors={validationErrors}
                 setValidationErrors={setValidationErrors}
                 isModeOfEvaluationLocked={hasManualTestCases}
+                promptCoverageSources={
+                  modeOfEvaluation && modeOfEvaluation !== "playground"
+                    ? promptCoverageSources
+                    : undefined
+                }
               />}
 
               {modeOfEvaluation === "playground" ? (
@@ -2420,8 +2521,8 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
               ) : modeOfEvaluation ? (
                 <TestCases
                   orgId={orgId}
-                  selectedPromptLibraries={selectedPromptLibraries}
-                  setSelectedPromptLibraries={setSelectedPromptLibraries}
+                  promptRowSelections={promptRowSelections}
+                  setPromptRowSelections={setPromptRowSelections}
                   uploadedFiles={uploadedFiles}
                   setUploadedFiles={setUploadedFiles}
                   domain={auditScope || null}
@@ -2437,6 +2538,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                   }
                   onRunAudit={handleRunAudit}
                   isRequestingAudit={isRequestingAudit}
+                  onPromptCoverageChange={setPromptCoverageSources}
                 />
               ) : null}
             </div>
