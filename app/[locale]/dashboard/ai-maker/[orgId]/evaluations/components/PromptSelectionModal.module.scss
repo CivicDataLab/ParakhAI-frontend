@@ -1,0 +1,87 @@
+.summaryBanner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  background-color: #f5f2ff;
+}
+
+.summaryBannerCritical {
+  background-color: #fef2f2;
+}
+
+.filterBuilder {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.filterBuilderRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.filterBuilderRemove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2rem;
+  width: 2rem;
+  border: none;
+  background: transparent;
+  color: #b42318;
+  cursor: pointer;
+  border-radius: 6px;
+
+  &:hover:not(:disabled) {
+    background-color: #fef2f2;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.filterBuilderActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.countControls {
+  // Flex + wrap rather than a fixed grid: Select/TextField's own intrinsic widths
+  // aren't known ahead of time, so a grid with explicit column tracks either
+  // overlapped (no min-width:0) or crushed the button to nothing (with it, once
+  // the first two tracks claimed more than their nominal share). Flex only ever
+  // gives an item its natural size or wraps it to a new line — it can't collapse
+  // an item's content the way a too-narrow grid track can.
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.countControlItem {
+  flex: 0 1 160px;
+  min-width: 120px;
+
+  // opub-ui's TextField nests the input in a Connected item with flex: 1 1 auto
+  // and the default min-width: auto, so it can't shrink below the native number
+  // input's intrinsic width (~183px) + 22px spinner. That made the count field
+  // overflow this 160px item and paint over the apply button (the input is
+  // z-indexed above it). Letting the wrapper shrink keeps the field at 160px.
+  [class*="Connected-module_Item"] {
+    min-width: 0;
+  }
+}
+
+.tableWrapper {
+  margin-top: 0.5rem;
+}
