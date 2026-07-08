@@ -573,6 +573,8 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     useState<PromptLibrarySelectionMap>({});
   // Derived, kept only so existing logic below (draft snapshot/restore, validation,
   // testDatasetIds) that only ever needs dataset ids keeps working unchanged.
+
+  console.log
   const selectedPromptLibraries = useMemo(
     () => Object.keys(promptRowSelections).map((id) => ({ id })),
     [promptRowSelections],
@@ -1011,6 +1013,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
             const cached = window.localStorage.getItem(
               getPromptDatasetStorageKey(audit.id)
             );
+            console.log("chacked", cached);
             if (cached) {
               try {
                 const parsed = JSON.parse(cached);

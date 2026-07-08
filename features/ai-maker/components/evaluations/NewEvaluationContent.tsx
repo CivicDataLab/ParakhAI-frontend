@@ -508,8 +508,11 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     metrics?: string;
   }>({});
 
+  
   // Test Cases state
   const [selectedPromptLibraries, setSelectedPromptLibraries] = useState<any[]>([]);
+  console.log('selectedModules', selectedModules);
+  console.log('selectedPromptLibraries', selectedPromptLibraries);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [pastedTestCases, setPastedTestCases] = useState('');
   const [testInputMode, setTestInputMode] = useState<'paste' | 'upload'>('paste');

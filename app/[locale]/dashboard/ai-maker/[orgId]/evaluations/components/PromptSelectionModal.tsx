@@ -160,6 +160,10 @@ const PromptSelectionModal = ({
     [dataset.id, onChangeLibrarySelection],
   );
 
+  const handleClearLibrarySelection = useCallback(() => {
+    commitSelection([]);
+  }, [commitSelection]);
+
   const toggleRow = useCallback(
     (rowId: string) => {
       const next = new Set(selectedIds);
@@ -333,6 +337,7 @@ const PromptSelectionModal = ({
         <div
           className={`${styles.summaryBanner} ${isAtGlobalCap ? styles.summaryBannerCritical : ""}`}
         >
+          <div className="flex items-center justify-between gap-4">
             <Text
               variant="bodyMd"
               fontWeight="semibold"
@@ -340,6 +345,17 @@ const PromptSelectionModal = ({
             >
               {selectionSummary}
             </Text>
+            {currentLibraryCount > 0 && (
+              <Button
+                kind="secondary"
+                size="slim"
+                className="!rounded-[8px] shrink-0"
+                onClick={handleClearLibrarySelection}
+              >
+                Clear selection for this library
+              </Button>
+            )}
+          </div>
           {isAtGlobalCap && (
             <Text variant="bodySm" className="text-gray-600">
               Global limit reached — unselect prompts elsewhere (in this or other libraries) to

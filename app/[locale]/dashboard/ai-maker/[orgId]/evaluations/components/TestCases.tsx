@@ -486,6 +486,10 @@ const TestCases: React.FC<TestCasesProps> = ({
     setActivePromptModalDataset(dataset);
   }, []);
 
+  const handleClearAllSelections = useCallback(() => {
+    setPromptRowSelections({});
+  }, [setPromptRowSelections]);
+
   const handleChangeLibrarySelection = useCallback(
     (next: PromptLibrarySelection) => {
       setPromptRowSelections((prev) => {
@@ -773,7 +777,19 @@ const TestCases: React.FC<TestCasesProps> = ({
         </Text>
         <div className="test-cases-table">
         {!isLoadingDatasets && !datasetsError && promptDatasets.length > 0 && (
-          <div className="flex justify-end mt-2">
+          <div className="flex items-center justify-between mt-2 mb-3">
+            <div>
+              {totalSelectedPromptCount > 0 && (
+                <Button
+                  kind="secondary"
+                  size="slim"
+                  className="!rounded-[8px] !my-1"
+                  onClick={handleClearAllSelections}
+                >
+                  Clear all selections
+                </Button>
+              )}
+            </div>
             <Text
               variant="bodySm"
               fontWeight="medium"
