@@ -18,6 +18,9 @@
     "prepare": "husky",
     "postinstall": "npm run generate:ci",
     "test": "vitest",
+    "test:run": "vitest run",
+    "test:bulk": "vitest run features/ai-maker/utils/map-audit-results.test.ts features/dashboard/components/AddIssueModal.test.tsx features/dashboard/components/AuditResultsList.test.tsx features/dashboard/components/BulkTestCaseDetailSheet.test.tsx features/dashboard/components/EvaluationDetail/hooks/use-audit-actions.test.ts",
+    "test:playground": "vitest run features/ai-maker/components/manual-evaluation features/dashboard/components/EvaluationDetail/hooks/use-audit-data.test.ts",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
