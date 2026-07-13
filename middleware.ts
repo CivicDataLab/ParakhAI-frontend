@@ -1,12 +1,11 @@
-import { NextRequest } from 'next/server';
 import { withAuth } from 'next-auth/middleware';
 import createIntlMiddleware from 'next-intl/middleware';
-
+import { NextRequest } from 'next/server';
 import locales from './config/locales';
 
 // Public pages that don't require authentication (without locale prefix)
 // The regex will automatically handle locale prefixes like /en, /hi, etc.
-const publicPages = ['/'];
+const publicPages = ['/', '/resources'];
 
 // Create internationalization middleware
 const intlMiddleware = createIntlMiddleware({
@@ -52,4 +51,3 @@ export default function middleware(req: NextRequest) {
 export const config = {
   matcher: ['/((?!_next|api|.*\\..*).*)'],
 };
-

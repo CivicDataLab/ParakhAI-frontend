@@ -8,21 +8,13 @@ import { usePathname } from 'next/navigation';
 import { Icon, IconButton, Spinner } from 'opub-ui';
 import { ProfileMenu } from '@/components/common/ProfileMenu';
 import { Icons } from '@/components/icons';
+import { mainNavigationLinks } from '@/config/navigation';
 import MobileNav from './MobileNav';
-
-type NavLink = {
-  label: string;
-  href: string;
-};
-
-const buildNavigationLinks = (): NavLink[] => {
-  return [];
-};
 
 const MainNav = () => {
   const { data: session, status } = useSession();
   const pathname = usePathname();
-  const navigationLinks = React.useMemo(buildNavigationLinks, []);
+  const navigationLinks = React.useMemo(() => mainNavigationLinks, []);
 
   return (
     <header className="sticky top-0 z-[99999]">
