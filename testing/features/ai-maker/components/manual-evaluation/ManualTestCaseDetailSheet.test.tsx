@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import ManualTestCaseDetailSheet from '@/features/ai-maker/components/manual-evaluation/ManualTestCaseDetailSheet';
 import {
   makeManualTestCase,
   makePassingManualTestCase,
 } from '@/testing/fixtures/playground-evaluation';
 import { render, screen } from '@/testing/utils';
-import ManualTestCaseDetailSheet from './ManualTestCaseDetailSheet';
 
 vi.mock('opub-ui', async () => {
   const { getOpubUiMockModule } = await import('@/testing/mocks/opub-ui');

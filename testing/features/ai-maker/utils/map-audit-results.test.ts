@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  isIssueResult,
+  mapAuditResultsToBulkTestCases,
+  mapRiskLevel,
+} from '@/features/ai-maker/utils/map-audit-results';
+import {
   makeAuditResult,
   makeGroupedAuditResults,
   makePassingResult,
@@ -7,7 +12,6 @@ import {
   makeReviewedResult,
   resetFixtureCounter,
 } from '@/testing/fixtures/bulk-evaluation';
-import { isIssueResult, mapAuditResultsToBulkTestCases, mapRiskLevel } from './map-audit-results';
 
 describe('mapRiskLevel', () => {
   it('maps HIGH, MEDIUM, and LOW risk levels', () => {

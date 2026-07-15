@@ -1,0 +1,70 @@
+name: Build Status
+
+on:
+  push:
+    branches: ['dev']
+  pull_request:
+    branches: ['dev']
+
+env:
+  KEYCLOAK_CLIENT_ID: ${{ secrets.KEYCLOAK_CLIENT_ID }}
+  KEYCLOAK_CLIENT_SECRET: ${{ secrets.KEYCLOAK_CLIENT_SECRET }}
+  AUTH_ISSUER: ${{ secrets.AUTH_ISSUER }}
+  NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+  NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+  END_SESSION_URL: ${{ secrets.END_SESSION_URL }}
+  REFRESH_TOKEN_URL: ${{ secrets.REFRESH_TOKEN_URL }}
+  BACKEND_URL: ${{ secrets.BACKEND_URL }}
+  NEXT_PUBLIC_BACKEND_URL: ${{ secrets.NEXT_PUBLIC_BACKEND_URL }}
+  NEXT_PUBLIC_BACKEND_BASE_URL: ${{ secrets.NEXT_PUBLIC_BACKEND_BASE_URL }}
+  NEXT_PUBLIC_DATASPACE_API_URL: ${{ secrets.NEXT_PUBLIC_DATASPACE_API_URL }}
+  NEXT_PUBLIC_DATASPACE_HOST: ${{ secrets.NEXT_PUBLIC_DATASPACE_HOST }}
+  NEXT_PUBLIC_AI_MAKER_URL: ${{ secrets.NEXT_PUBLIC_AI_MAKER_URL }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'npm'
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+
+      - id: npm_ci
+        run: npm ci --force
+        continue-on-error: true
+
+      - if: steps.npm_ci.outcome == 'failure'
+        run: npm install --force
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Test with coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false
+
+      - name: Build
+        run: npm run build
+
+      - if: steps.npm_ci.outcome == 'failure'
+        run: |
+          echo "::error::npm ci failed: Run \`npm install --force\` locally and commit the updated package-lock.json"
+          exit 1

@@ -1,19 +1,19 @@
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import AuditResultsList from '@/features/dashboard/components/AuditResultsList';
 import {
   makeAuditResult,
   makeGroupedAuditResults,
   resetFixtureCounter,
 } from '@/testing/fixtures/bulk-evaluation';
 import { render, screen } from '@/testing/utils';
-import AuditResultsList from './AuditResultsList';
 
 vi.mock('opub-ui', async () => {
   const { getOpubUiMockModule } = await import('@/testing/mocks/opub-ui');
   return getOpubUiMockModule();
 });
 
-vi.mock('./BulkTestCaseDetailSheet', () => ({
+vi.mock('@/features/dashboard/components/BulkTestCaseDetailSheet', () => ({
   default: ({ open, testCase }: { open: boolean; testCase: { index: number } | null }) =>
     open && testCase ? (
       <div data-testid="detail-sheet">Detail for Input {testCase.index}</div>

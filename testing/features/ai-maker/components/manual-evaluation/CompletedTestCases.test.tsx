@@ -1,18 +1,18 @@
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import CompletedTestCases from '@/features/ai-maker/components/manual-evaluation/CompletedTestCases';
 import {
   makeManualTestCase,
   makePassingManualTestCase,
 } from '@/testing/fixtures/playground-evaluation';
 import { render, screen } from '@/testing/utils';
-import CompletedTestCases from './CompletedTestCases';
 
 vi.mock('opub-ui', async () => {
   const { getOpubUiMockModule } = await import('@/testing/mocks/opub-ui');
   return getOpubUiMockModule();
 });
 
-vi.mock('./ManualTestCaseDetailSheet', () => ({
+vi.mock('@/features/ai-maker/components/manual-evaluation/ManualTestCaseDetailSheet', () => ({
   default: ({ open, testCase }: { open: boolean; testCase: { displayIndex: number } | null }) =>
     open && testCase ? (
       <div data-testid="manual-detail-sheet">Detail for Input {testCase.displayIndex}</div>

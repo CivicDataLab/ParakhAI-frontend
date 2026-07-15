@@ -1,8 +1,8 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET_AUDIT_QUERY } from '@/features/dashboard/api/evaluation-queries';
+import { useAuditPolling } from '@/features/dashboard/components/EvaluationDetail/hooks/use-audit-polling';
 import { makePlaygroundAudit } from '@/testing/fixtures/playground-evaluation';
-import { useAuditPolling } from './use-audit-polling';
 
 const mockRequest = vi.fn();
 const mockSetAudit = vi.fn();

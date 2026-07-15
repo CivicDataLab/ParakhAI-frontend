@@ -8,7 +8,7 @@ import {
   isPendingAssignmentStatus,
   stripMarkdown,
   toTitleCase,
-} from './index';
+} from '@/utils';
 
 describe('cn', () => {
   it('merges class names', () => {

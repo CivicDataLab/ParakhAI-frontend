@@ -1,7 +1,7 @@
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import AddIssueModal from '@/features/dashboard/components/AddIssueModal';
 import { render, screen } from '@/testing/utils';
-import AddIssueModal from './AddIssueModal';
 
 vi.mock('opub-ui', async () => {
   const { getOpubUiMockModule } = await import('@/testing/mocks/opub-ui');

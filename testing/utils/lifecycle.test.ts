@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isDeprecatedLifecycle } from './lifecycle';
+import { isDeprecatedLifecycle } from '@/utils/lifecycle';
 
 describe('isDeprecatedLifecycle', () => {
   it('returns true for DEPRECATED', () => {

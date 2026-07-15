@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  makeManualTestCase,
-  makeModuleProgress,
-  makeWorkspaceDraft,
-} from '@/testing/fixtures/playground-evaluation';
-import type { ManualTestCaseIssue } from './types';
+import type { ManualTestCaseIssue } from '@/features/ai-maker/components/manual-evaluation/types';
 import {
   clearManualEvalWorkspaceDraft,
   formatRiskLabel,
@@ -21,7 +16,12 @@ import {
   readManualEvalWorkspaceDraft,
   resolveIssueDisplayName,
   writeManualEvalWorkspaceDraft,
-} from './utils';
+} from '@/features/ai-maker/components/manual-evaluation/utils';
+import {
+  makeManualTestCase,
+  makeModuleProgress,
+  makeWorkspaceDraft,
+} from '@/testing/fixtures/playground-evaluation';
 
 describe('normalizeIssueSeverity', () => {
   it('maps HIGH, MEDIUM, and LOW', () => {

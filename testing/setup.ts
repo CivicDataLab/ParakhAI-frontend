@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
-import { afterEach, vi } from 'vitest';
+import { afterEach, beforeAll, vi } from 'vitest';
 
 class ResizeObserverMock {
   observe() {}
@@ -31,6 +31,20 @@ Element.prototype.getBoundingClientRect = vi.fn(() => ({
   y: 0,
   toJSON: () => ({}),
 }));
+
+// Unit tests click <a href> / download anchors; jsdom can't navigate — suppress the noise
+beforeAll(() => {
+  window.addEventListener(
+    'click',
+    (event) => {
+      const target = event.target as Element | null;
+      if (target?.closest?.('a[href]')) {
+        event.preventDefault();
+      }
+    },
+    true
+  );
+});
 
 afterEach(() => {
   cleanup();

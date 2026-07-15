@@ -5,8 +5,8 @@ import {
   GET_AUDIT_RESULTS_QUERY,
   GET_AUDIT_SUMMARY,
 } from '@/features/dashboard/api/evaluation-queries';
+import { useAuditData } from '@/features/dashboard/components/EvaluationDetail/hooks/use-audit-data';
 import { makePlaygroundAudit } from '@/testing/fixtures/playground-evaluation';
-import { useAuditData } from './use-audit-data';
 
 const mockRequest = vi.fn();
 

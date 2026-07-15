@@ -1,7 +1,7 @@
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import RecommendationModal from '@/features/ai-maker/components/manual-evaluation/RecommendationModal';
 import { render, screen } from '@/testing/utils';
-import RecommendationModal from './RecommendationModal';
 
 vi.mock('opub-ui', async () => {
   const { getOpubUiMockModule } = await import('@/testing/mocks/opub-ui');
@@ -69,5 +69,30 @@ describe('RecommendationModal', () => {
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('forwards dialog open changes to parent', async () => {
+    const user = userEvent.setup();
+    renderModal();
+
+    await user.click(screen.getByTestId('dialog-open-change'));
+
+    expect(onOpenChange).toHaveBeenCalledWith(true);
+  });
+
+  it('shows submitting label and disables actions while submitting', () => {
+    render(
+      <RecommendationModal
+        open
+        onOpenChange={onOpenChange}
+        title="Submit Recommendation"
+        onSubmit={onSubmit}
+        isSubmitting
+        submitButtonText="Send Review"
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Submitting...' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
   });
 });
