@@ -6,26 +6,28 @@ on:
   pull_request:
     branches: ['dev']
 
-env:
-  KEYCLOAK_CLIENT_ID: ${{ secrets.KEYCLOAK_CLIENT_ID }}
-  KEYCLOAK_CLIENT_SECRET: ${{ secrets.KEYCLOAK_CLIENT_SECRET }}
-  AUTH_ISSUER: ${{ secrets.AUTH_ISSUER }}
-  NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
-  NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-  END_SESSION_URL: ${{ secrets.END_SESSION_URL }}
-  REFRESH_TOKEN_URL: ${{ secrets.REFRESH_TOKEN_URL }}
-  BACKEND_URL: ${{ secrets.BACKEND_URL }}
-  NEXT_PUBLIC_BACKEND_URL: ${{ secrets.NEXT_PUBLIC_BACKEND_URL }}
-  NEXT_PUBLIC_BACKEND_BASE_URL: ${{ secrets.NEXT_PUBLIC_BACKEND_BASE_URL }}
-  NEXT_PUBLIC_DATASPACE_API_URL: ${{ secrets.NEXT_PUBLIC_DATASPACE_API_URL }}
-  NEXT_PUBLIC_DATASPACE_HOST: ${{ secrets.NEXT_PUBLIC_DATASPACE_HOST }}
-  NEXT_PUBLIC_AI_MAKER_URL: ${{ secrets.NEXT_PUBLIC_AI_MAKER_URL }}
-
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Unlock Environment Variables / Secrets from the "development" GitHub Environment
+    environment: development
     env:
       NEXT_TELEMETRY_DISABLED: 1
+      # Secrets (sensitive)
+      KEYCLOAK_CLIENT_ID: ${{ secrets.KEYCLOAK_CLIENT_ID }}
+      KEYCLOAK_CLIENT_SECRET: ${{ secrets.KEYCLOAK_CLIENT_SECRET }}
+      AUTH_ISSUER: ${{ secrets.AUTH_ISSUER }}
+      NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL || secrets.NEXTAUTH_URL }}
+      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+      END_SESSION_URL: ${{ secrets.END_SESSION_URL }}
+      REFRESH_TOKEN_URL: ${{ secrets.REFRESH_TOKEN_URL }}
+      BACKEND_URL: ${{ vars.BACKEND_URL || secrets.BACKEND_URL }}
+      # Environment Variables (public URLs — from GitHub Environment "development")
+      NEXT_PUBLIC_BACKEND_URL: ${{ vars.NEXT_PUBLIC_BACKEND_URL }}
+      NEXT_PUBLIC_BACKEND_BASE_URL: ${{ vars.NEXT_PUBLIC_BACKEND_BASE_URL }}
+      NEXT_PUBLIC_DATASPACE_API_URL: ${{ vars.NEXT_PUBLIC_DATASPACE_API_URL || secrets.NEXT_PUBLIC_DATASPACE_API_URL }}
+      NEXT_PUBLIC_DATASPACE_HOST: ${{ vars.NEXT_PUBLIC_DATASPACE_HOST || secrets.NEXT_PUBLIC_DATASPACE_HOST }}
+      NEXT_PUBLIC_AI_MAKER_URL: ${{ vars.NEXT_PUBLIC_AI_MAKER_URL || secrets.NEXT_PUBLIC_AI_MAKER_URL }}
     steps:
       - uses: actions/checkout@v4
 
@@ -63,6 +65,11 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          # Required at build time — resolve from the development environment
+          NEXT_PUBLIC_BACKEND_BASE_URL: ${{ vars.NEXT_PUBLIC_BACKEND_BASE_URL }}
+          NEXT_PUBLIC_BACKEND_URL: ${{ vars.NEXT_PUBLIC_BACKEND_URL }}
+          NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL || secrets.NEXTAUTH_URL }}
 
       - if: steps.npm_ci.outcome == 'failure'
         run: |
