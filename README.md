@@ -4,6 +4,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-14.2+-black.svg)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-18.2+-blue.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+[![codecov](https://codecov.io/gh/CivicDataLab/ParakhAI-frontend/graph/badge.svg)](https://app.codecov.io/gh/CivicDataLab/ParakhAI-frontend)
 
 ParakhAI is a platform for evaluating AI models, creating prompt datasets, and running expert-led evaluations against those models.
 
@@ -17,7 +18,7 @@ ParakhAI is a platform for evaluating AI models, creating prompt datasets, and r
 
 ## Tech Stack
 
-- **Framework:** Next.js 
+- **Framework:** Next.js
 - **UI:** React + TypeScript + Tailwind CSS
 - **Data:** GraphQL
 - **Auth:** NextAuth + Keycloak

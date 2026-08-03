@@ -1,0 +1,73 @@
+name: Build Status
+
+on:
+  push:
+    branches: ['dev']
+  pull_request:
+    branches: ['dev']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # Only attach the "development" environment on push/merge — not on PRs.
+    # PRs still build & test without unlocking deployment env / triggering env status.
+    environment: ${{ github.event_name == 'push' && 'development' || '' }}
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+      # On push: vars/secrets come from the development environment.
+      # On PR: fall back to CI placeholders so next build / env.ts URL checks pass.
+      KEYCLOAK_CLIENT_ID: ${{ secrets.KEYCLOAK_CLIENT_ID || 'ci-client' }}
+      KEYCLOAK_CLIENT_SECRET: ${{ secrets.KEYCLOAK_CLIENT_SECRET || 'ci-secret-placeholder' }}
+      AUTH_ISSUER: ${{ secrets.AUTH_ISSUER || 'https://example.com/auth/realms/ci' }}
+      NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL || secrets.NEXTAUTH_URL || 'http://localhost:3000' }}
+      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-nextauth-secret-min-8' }}
+      END_SESSION_URL: ${{ secrets.END_SESSION_URL || 'https://example.com/logout' }}
+      REFRESH_TOKEN_URL: ${{ secrets.REFRESH_TOKEN_URL || 'https://example.com/token' }}
+      BACKEND_URL: ${{ vars.BACKEND_URL || secrets.BACKEND_URL || 'http://localhost:9001' }}
+      NEXT_PUBLIC_BACKEND_URL: ${{ vars.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:9001/graphql' }}
+      NEXT_PUBLIC_BACKEND_BASE_URL: ${{ vars.NEXT_PUBLIC_BACKEND_BASE_URL || 'http://localhost:9001/' }}
+      NEXT_PUBLIC_DATASPACE_API_URL: ${{ vars.NEXT_PUBLIC_DATASPACE_API_URL || secrets.NEXT_PUBLIC_DATASPACE_API_URL || 'http://localhost:9001' }}
+      NEXT_PUBLIC_DATASPACE_HOST: ${{ vars.NEXT_PUBLIC_DATASPACE_HOST || secrets.NEXT_PUBLIC_DATASPACE_HOST || 'localhost' }}
+      NEXT_PUBLIC_AI_MAKER_URL: ${{ vars.NEXT_PUBLIC_AI_MAKER_URL || secrets.NEXT_PUBLIC_AI_MAKER_URL || 'http://localhost:3000' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'npm'
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+
+      - id: npm_ci
+        run: npm ci --force
+        continue-on-error: true
+
+      - if: steps.npm_ci.outcome == 'failure'
+        run: npm install --force
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Test with coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false
+
+      - name: Build
+        run: npm run build
+
+      - if: steps.npm_ci.outcome == 'failure'
+        run: |
+          echo "::error::npm ci failed: Run \`npm install --force\` locally and commit the updated package-lock.json"
+          exit 1

@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { Tag, Text, Tooltip } from "opub-ui";
-import React from "react";
-import type { ModuleProgress } from "./types";
-import styles from "../styles.module.scss";
+import React from 'react';
+import { Tag, Text, Tooltip } from 'opub-ui';
+import styles from '../evaluations/styles.module.scss';
+import type { ModuleProgress } from './types';
 
 interface ModuleSelectorProps {
   modules: string[];
@@ -14,9 +14,9 @@ interface ModuleSelectorProps {
 }
 
 const MODULE_DESCRIPTIONS: Record<string, string> = {
-  BIAS_FAIRNESS: "Checks whether model perpetuates stereotypes",
-  HALLUCINATION_MISINFORMATION: "Detects false or unsafe outputs",
-  PRIVACY_SAFETY: "Ensures personal data is not exposed",
+  BIAS_FAIRNESS: 'Checks whether model perpetuates stereotypes',
+  HALLUCINATION_MISINFORMATION: 'Detects false or unsafe outputs',
+  PRIVACY_SAFETY: 'Ensures personal data is not exposed',
 };
 
 const ModuleSelector: React.FC<ModuleSelectorProps> = ({
@@ -26,14 +26,12 @@ const ModuleSelector: React.FC<ModuleSelectorProps> = ({
   onSelectModule,
   getModuleDisplayName,
 }) => {
-  const getProgressForModule = (
-    moduleName: string
-  ): ModuleProgress | undefined => {
+  const getProgressForModule = (moduleName: string): ModuleProgress | undefined => {
     return moduleProgress.find((p) => p.module === moduleName);
   };
 
   const getModuleDescription = (moduleName: string): string => {
-    return MODULE_DESCRIPTIONS[moduleName] || "";
+    return MODULE_DESCRIPTIONS[moduleName] || '';
   };
 
   return (
@@ -42,11 +40,10 @@ const ModuleSelector: React.FC<ModuleSelectorProps> = ({
         Select Module to Test
       </Text>
       <Text variant="bodySm" className="text-gray-500 mb-4 block">
-        Choose a module to begin testing. The evaluation requires at least 3
-        test cases in total.
+        Choose a module to begin testing. The evaluation requires at least 3 test cases in total.
       </Text>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {modules.map((module) => {
           const progress = getProgressForModule(module);
           const testCount = progress?.testCaseCount || 0;
@@ -61,17 +58,13 @@ const ModuleSelector: React.FC<ModuleSelectorProps> = ({
               onClick={() => onSelectModule(module)}
               className={`${styles.moduleselectioncard} text-left transition-all ${
                 isSelected
-                  ? "border-2 border-purple-600 bg-purple-50"
+                  ? 'border-purple-600 bg-purple-50 border-2'
                   : isComplete
-                    ? "border border-green-300 bg-green-50"
-                    : ""
+                    ? 'border border-green-300 bg-green-50'
+                    : ''
               }`}
             >
-              <Text
-                variant="bodyMd"
-                fontWeight="semibold"
-                className="mb-2 text-[#0A0704] block"
-              >
+              <Text variant="bodyMd" fontWeight="semibold" className="mb-2 block text-[#0A0704]">
                 {getModuleDisplayName(module)}
               </Text>
 
@@ -79,33 +72,19 @@ const ModuleSelector: React.FC<ModuleSelectorProps> = ({
                 {getModuleDescription(module)}
               </Text>
 
-              <div
-                className={`${styles.moduleStatusTags} flex flex-wrap gap-2`}
-              >
+              <div className={`${styles.moduleStatusTags} flex flex-wrap gap-2`}>
                 <Tooltip content={`${testCount} Test Cases`}>
-                  <Tag
-                    variation="filled"
-                    fillColor="#E5E7EB"
-                    textColor="#374151"
-                  >
+                  <Tag variation="filled" fillColor="#E5E7EB" textColor="#374151">
                     {testCount} Test Cases
                   </Tag>
                 </Tooltip>
                 <Tooltip content={`${failedCount} Failed`}>
-                  <Tag
-                    variation="filled"
-                    fillColor="#EC4899"
-                    textColor="#FFFFFF"
-                  >
+                  <Tag variation="filled" fillColor="#EC4899" textColor="#FFFFFF">
                     {failedCount} Failed
                   </Tag>
                 </Tooltip>
                 <Tooltip content={`${passedCount} Passed`}>
-                  <Tag
-                    variation="filled"
-                    fillColor="#D9F99D"
-                    textColor="#15803D"
-                  >
+                  <Tag variation="filled" fillColor="#D9F99D" textColor="#15803D">
                     {passedCount} Passed
                   </Tag>
                 </Tooltip>
