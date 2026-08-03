@@ -23,15 +23,15 @@ export type OrgMembership = {
 };
 
 /** AI Model lifecycle stages. */
-export type LifecycleStage =
-  | 'DEVELOPMENT'
-  | 'STAGING'
-  | 'PRODUCTION'
-  | 'DEPRECATED'
-  | 'ARCHIVED';
+export type LifecycleStage = 'DEVELOPMENT' | 'STAGING' | 'PRODUCTION' | 'DEPRECATED' | 'ARCHIVED';
 
-/** Evaluation modes. */
-export type EvaluationMode = 'MANUAL' | 'BULK' | 'AUTOMATED';
+/**
+ * Evaluation modes. Re-exported from `@/constants` so there's a single
+ * source of truth. Canonical values are `PLAYGROUND` and `BULK`; the
+ * legacy `MANUAL` / `AUTOMATED` aliases are normalized on read by
+ * `normalizeEvaluationMode`.
+ */
+export type { EvaluationMode } from '@/constants';
 
 /** Risk severity levels. */
 export type RiskSeverity = 'LOW' | 'MEDIUM' | 'HIGH';

@@ -1,25 +1,18 @@
-﻿"use client";
+﻿'use client';
 
-import { Icons } from "@/components/icons";
-import { useGraphQL } from "@/lib/graphql-client";
-import { getEvaluationStatusColor } from "@/utils/status-colors";
-import { formatStatusLabel, stripMarkdown } from "@/utils";
-import { createColumnHelper } from "@tanstack/react-table";
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import {
-  AlertDialog,
-  Badge,
-  Button,
-  Card,
-  DataTable,
-  Spinner,
-  Text,
-} from "opub-ui";
-import { useEffect, useMemo, useState } from "react";
-import { useOrganization } from "@/features/ai-maker/context/OrganizationContext";
-import ModelSelectionModal from "./evaluations/components/ModelSelectionModal";
-import "./evaluations/evaluations-page.css";
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { createColumnHelper } from '@tanstack/react-table';
+import { AlertDialog, Badge, Button, Card, DataTable, Spinner, Text } from 'opub-ui';
+import { useOrganization } from '@/features/ai-maker/context/OrganizationContext';
+import { Icons } from '@/components/icons';
+import { useGraphQL } from '@/lib/graphql-client';
+import { getEvaluationStatusColor } from '@/utils/status-colors';
+import { EVALUATION_STATUS, getAuditTypeLabel, getEvaluationModeLabel } from '@/constants';
+import { formatStatusLabel, stripMarkdown } from '@/utils';
+import ModelSelectionModal from './evaluations/components/ModelSelectionModal';
+import './evaluations/evaluations-page.css';
 
 // Define evaluation data type
 type Evaluation = {
@@ -38,12 +31,6 @@ type Evaluation = {
   auditType: string;
   evaluationMode: string;
   successRate: number;
-};
-
-const auditTypeLabels: Record<string, string> = {
-  TECHNICAL_AUDIT: "Technical",
-  DOMAIN_AUDIT: "Domain",
-  CULTURAL_AUDIT: "Cultural",
 };
 
 type AIModel = {
@@ -80,32 +67,25 @@ type AuditMetrics = {
 const AIMakerDashboard = () => {
   const params = useParams();
   const router = useRouter();
-  const locale = params?.locale || "en";
+  const locale = params?.locale || 'en';
   const orgId = params?.orgId as string;
 
   // Build URL to organization's AI models tab.
   const { organization } = useOrganization();
-  const orgSlug = encodeURIComponent(
-    String(organization?.slug ?? orgId ?? "").trim()
-  );
+  const orgSlug = encodeURIComponent(String(organization?.slug ?? orgId ?? '').trim());
 
   const inAppPath = `/${locale}/dashboard/ai-maker/${orgId}/ai-models`;
 
   // External (CivicDataSpace): /dashboard/organization/{orgSlug}/aimodels?tab=registered
   // e.g. https://dev.civicdataspace.in/dashboard/organization/civicdatalab/aimodels?tab=registered
   const externalHost =
-    process.env.NEXT_PUBLIC_DATASPACE_HOST ||
-    process.env.NEXT_PUBLIC_AI_MAKER_URL ||
-    "";
-  const externalPath =
-    orgSlug
-      ? `/dashboard/organization/${orgSlug}/aimodels?tab=registered`
-      : "";
-  let externalUrl = "";
-  if (externalHost.trim() !== "" && externalPath) {
-    const host = externalHost.replace(/\/$/, "");
+    process.env.NEXT_PUBLIC_DATASPACE_HOST || process.env.NEXT_PUBLIC_AI_MAKER_URL || '';
+  const externalPath = orgSlug ? `/dashboard/organization/${orgSlug}/aimodels?tab=registered` : '';
+  let externalUrl = '';
+  if (externalHost.trim() !== '' && externalPath) {
+    const host = externalHost.replace(/\/$/, '');
     if (/\/dashboard$/.test(host)) {
-      externalUrl = `${host}${externalPath.replace(/^\/dashboard/, "")}`;
+      externalUrl = `${host}${externalPath.replace(/^\/dashboard/, '')}`;
     } else {
       externalUrl = `${host}${externalPath}`;
     }
@@ -158,16 +138,16 @@ const AIMakerDashboard = () => {
   `;
 
   const modelTypeLabels: Record<string, string> = {
-    TRANSLATION: "Translation",
-    TEXT_GENERATION: "Text Generation",
-    SUMMARIZATION: "Summarisation",
-    QUESTION_ANSWERING: "Question Answering",
-    SENTIMENT_ANALYSIS: "Sentiment Analysis",
-    TEXT_CLASSIFICATION: "Text Classification",
-    NAMED_ENTITY_RECOGNITION: "Named Entity Recognition",
-    TEXT_TO_SPEECH: "Text to Speech",
-    SPEECH_TO_TEXT: "Speech to Text",
-    OTHER: "Other",
+    TRANSLATION: 'Translation',
+    TEXT_GENERATION: 'Text Generation',
+    SUMMARIZATION: 'Summarisation',
+    QUESTION_ANSWERING: 'Question Answering',
+    SENTIMENT_ANALYSIS: 'Sentiment Analysis',
+    TEXT_CLASSIFICATION: 'Text Classification',
+    NAMED_ENTITY_RECOGNITION: 'Named Entity Recognition',
+    TEXT_TO_SPEECH: 'Text to Speech',
+    SPEECH_TO_TEXT: 'Speech to Text',
+    OTHER: 'Other',
   };
 
   // GraphQL hook
@@ -181,14 +161,14 @@ const AIMakerDashboard = () => {
   const [showRedirectPrompt, setShowRedirectPrompt] = useState(false);
 
   const formatEvaluationDate = (dateString: string | null) => {
-    if (!dateString) return "--";
+    if (!dateString) return '--';
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+    return date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
@@ -198,7 +178,7 @@ const AIMakerDashboard = () => {
       try {
         const [modelsResponse, evaluationsResponse] = await Promise.all([
           request(GET_AI_MODELS, { limit: 100 }, { organization: orgId }),
-          request(GET_EVALUATIONS, { limit: 100,offset: 0 }, { organization: orgId }),
+          request(GET_EVALUATIONS, { limit: 100, offset: 0 }, { organization: orgId }),
         ]);
         const auditMetricsResponse = await request(
           AUDIT_METRICS_QUERY,
@@ -214,7 +194,7 @@ const AIMakerDashboard = () => {
         setModels(modelsData);
         setEvaluations(evaluationsData);
       } catch (error) {
-        console.error("Failed to fetch data:", error);
+        console.error('Failed to fetch data:', error);
       } finally {
         setLoading(false);
       }
@@ -228,40 +208,34 @@ const AIMakerDashboard = () => {
   const recentModels = useMemo(
     () =>
       [...models]
-        .sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        )
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .slice(0, 6),
-    [models],
+    [models]
   );
 
   const recentEvaluations = useMemo(
     () =>
       [...evaluations]
-        .sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        )
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .slice(0, 5),
-    [evaluations],
+    [evaluations]
   );
 
   const hasEvaluations = recentEvaluations.length > 0;
 
   const metrics = [
     {
-      label: "Evaluations\nCompleted",
-      value: auditMetrics?.evaluationRuns.toString() || "--",
+      label: 'Evaluations\nCompleted',
+      value: auditMetrics?.evaluationRuns.toString() || '--',
     },
     {
-      label: "Test Cases Evaluated",
-      value: auditMetrics?.testCasesCount.toString() || "--",
+      label: 'Test Cases Evaluated',
+      value: auditMetrics?.testCasesCount.toString() || '--',
     },
-    { label: "Models Added", value: auditMetrics?.models.toString() || "--" },
+    { label: 'Models Added', value: auditMetrics?.models.toString() || '--' },
     {
-      label: "Issues\nFlagged",
-      value: auditMetrics?.issuesFlagged.toString() || "--",
+      label: 'Issues\nFlagged',
+      value: auditMetrics?.issuesFlagged.toString() || '--',
     },
   ];
 
@@ -270,7 +244,7 @@ const AIMakerDashboard = () => {
   };
 
   const getAuditLink = (evaluation: Evaluation) => {
-    if (evaluation.status?.toUpperCase() === "DRAFT") {
+    if (evaluation.status?.toUpperCase() === EVALUATION_STATUS.DRAFT) {
       return `/${locale}/dashboard/ai-maker/${orgId}/evaluations/new?auditId=${evaluation.id}`;
     }
     return `/${locale}/dashboard/ai-maker/${orgId}/evaluations/${evaluation.id}`;
@@ -280,38 +254,31 @@ const AIMakerDashboard = () => {
 
   const columns = useMemo(
     () => [
-      columnHelper.accessor("name", {
-        header: "Evaluation Name",
+      columnHelper.accessor('name', {
+        header: 'Evaluation Name',
         cell: (info) => (
           <Link
             href={getAuditLink(info.row.original)}
-            className="text-primary-purple hover:underline font-medium"
+            className="text-primary-purple font-medium hover:underline"
           >
             {info.getValue() || `Evaluation #${info.row.original.id.slice(0, 8)}`}
           </Link>
         ),
       }),
-      columnHelper.accessor("modelName", {
-        header: "Model",
+      columnHelper.accessor('modelName', {
+        header: 'Model',
         cell: (info) => (
           <Text variant="bodySm">
-            {info.getValue() ||
-              `Model ${info.row.original.modelId?.slice(0, 8) || "-"}`}
+            {info.getValue() || `Model ${info.row.original.modelId?.slice(0, 8) || '-'}`}
           </Text>
         ),
       }),
-      columnHelper.accessor("auditType", {
-        header: "Evaluation Type",
-        cell: (info) => {
-          const typeValue = info.getValue();
-          const label = typeValue
-            ? auditTypeLabels[typeValue] || typeValue
-            : "--";
-          return <Badge>{label}</Badge>;
-        },
+      columnHelper.accessor('auditType', {
+        header: 'Evaluation Type',
+        cell: (info) => <Badge>{getAuditTypeLabel(info.getValue())}</Badge>,
       }),
-      columnHelper.accessor("status", {
-        header: "Status",
+      columnHelper.accessor('status', {
+        header: 'Status',
         cell: (info) => {
           const status = info.getValue();
           const colors = getEvaluationStatusColor(status);
@@ -319,7 +286,7 @@ const AIMakerDashboard = () => {
             <Text
               variant="bodySm"
               as="span"
-              className="inline-block rounded px-2 py-0.5"
+              className="rounded inline-block px-2 py-0.5"
               style={{
                 backgroundColor: colors.fillColor,
                 color: colors.textColor,
@@ -330,21 +297,12 @@ const AIMakerDashboard = () => {
           );
         },
       }),
-      columnHelper.accessor("evaluationMode", {
-        header: "Evaluation Mode",
-        cell: (info) => {
-          const mode = info.getValue()?.toLowerCase();
-          const label =
-            mode === "manual" || mode === "playground"
-              ? "Playground Evaluation"
-              : mode === "bulk" || mode === "automated"
-                ? "Bulk Evaluation"
-                : info.getValue() || "--";
-          return <Text variant="bodySm">{label}</Text>;
-        },
+      columnHelper.accessor('evaluationMode', {
+        header: 'Evaluation Mode',
+        cell: (info) => <Text variant="bodySm">{getEvaluationModeLabel(info.getValue())}</Text>,
       }),
-      columnHelper.accessor("totalTests", {
-        header: "Tests",
+      columnHelper.accessor('totalTests', {
+        header: 'Tests',
         cell: (info) => {
           const total = info.getValue() || 0;
           const passed = info.row.original.passedTests || 0;
@@ -357,14 +315,8 @@ const AIMakerDashboard = () => {
           return (
             <div className="flex items-center gap-2">
               <div className="test-result-bar">
-                <div
-                  className="test-result-pass"
-                  style={{ width: `${(passed / total) * 100}%` }}
-                />
-                <div
-                  className="test-result-fail"
-                  style={{ width: `${(failed / total) * 100}%` }}
-                />
+                <div className="test-result-pass" style={{ width: `${(passed / total) * 100}%` }} />
+                <div className="test-result-fail" style={{ width: `${(failed / total) * 100}%` }} />
               </div>
               <Text variant="bodySm">
                 {passed}/{total} passed
@@ -373,19 +325,17 @@ const AIMakerDashboard = () => {
           );
         },
       }),
-      columnHelper.accessor("completedAt", {
-        header: "Completed on",
-        cell: (info) => (
-          <Text variant="bodySm">{formatEvaluationDate(info.getValue())}</Text>
-        ),
+      columnHelper.accessor('completedAt', {
+        header: 'Completed on',
+        cell: (info) => <Text variant="bodySm">{formatEvaluationDate(info.getValue())}</Text>,
       }),
     ],
-    [locale, orgId],
+    [locale, orgId]
   );
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 min-h-screen">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4">
         <Spinner />
         <Text variant="bodyMd" className="text-gray-600">
           Loading overview...
@@ -397,18 +347,17 @@ const AIMakerDashboard = () => {
   return (
     <>
       {/* Header with Title */}
-      <div className="flex items-center justify-between mb-6 mt-10 w-full">
+      <div className="mb-6 mt-10 flex w-full items-center justify-between">
         <div>
           <h1 className="text-gray-900 overview-heading">Overview</h1>
           <Text variant="bodySm" className="text-gray-600 mt-1">
-            Monitor evaluation activity, models, and key metrics for your
-            organization
+            Monitor evaluation activity, models, and key metrics for your organization
           </Text>
         </div>
       </div>
 
       {/* Metrics */}
-      <div className="overview-metrics-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8 sm:mb-10 lg:mb-12 w-full min-w-0">
+      <div className="overview-metrics-grid mb-8 grid w-full min-w-0 grid-cols-1 gap-4 sm:mb-10 sm:grid-cols-2 md:grid-cols-4 lg:mb-12">
         {metrics.map((m) => (
           <div key={m.label} className="metric-card">
             <p className="metric-card-label">{m.label}</p>
@@ -418,7 +367,7 @@ const AIMakerDashboard = () => {
       </div>
       {/* Models Section */}
       <div className="section-margin-bottom">
-        <div className="flex items-center justify-between section-title-margin">
+        <div className="section-title-margin flex items-center justify-between">
           <Text variant="headingLg" as="h2" fontWeight="bold">
             Recently Added Models
           </Text>
@@ -426,7 +375,7 @@ const AIMakerDashboard = () => {
             <div className="add-model-button-wrapper">
               <Button
                 onClick={() => setShowRedirectPrompt(true)}
-                className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-medium text-base"
+                className="text-base rounded-[8px] bg-primaryPurple2 px-8 py-3 font-medium text-white hover:!bg-[#6849EE] hover:bg-[#6849EE] hover:!text-white hover:text-white"
               >
                 Add A New Model
               </Button>
@@ -434,19 +383,19 @@ const AIMakerDashboard = () => {
           )}
         </div>
         {hasModels ? (
-          <div className="grid grid-cols-1 w-full gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {recentModels.map((model) => {
               // Card metadata (top row inside card)
               const metadataContent = [
                 {
                   icon: Icons.testPipe,
-                  label: "Test Cases",
+                  label: 'Test Cases',
                   value: `${model.testCasesCount || 0} test cases`,
                   tooltip: `${model.testCasesCount || 0} test cases`,
                 },
                 {
                   icon: Icons.discountCheck,
-                  label: "Audits",
+                  label: 'Audits',
                   value: `${model.auditsCount || 0} evaluations`,
                   tooltip: `${model.auditsCount || 0} evaluations`,
                 },
@@ -455,25 +404,25 @@ const AIMakerDashboard = () => {
               // Card footer info (bottom row inside card)
               const footerContent = [
                 {
-                  icon: "/images/icons/Ellipse 4.png",
-                  label: "Owner",
-                  tooltip: "Owner",
+                  icon: '/images/icons/Ellipse 4.png',
+                  label: 'Owner',
+                  tooltip: 'Owner',
                 },
               ];
 
-              const type = [
-                modelTypeLabels[model.modelType] || model.modelType,
-              ].map((tag: string) => ({
-                label: tag,
-                fillColor: "#E2F5C4",
-                borderColor: "#E2F5C4",
-              }));
+              const type = [modelTypeLabels[model.modelType] || model.modelType].map(
+                (tag: string) => ({
+                  label: tag,
+                  fillColor: '#E2F5C4',
+                  borderColor: '#E2F5C4',
+                })
+              );
 
               const commonProps = {
                 title: model.displayName,
-                description: stripMarkdown(model.description || ""),
-                variation: "collapsed" as const,
-                iconColor: "highlight" as const,
+                description: stripMarkdown(model.description || ''),
+                variation: 'collapsed' as const,
+                iconColor: 'highlight' as const,
                 metadataContent,
 
                 // footerContent,
@@ -494,12 +443,7 @@ const AIMakerDashboard = () => {
         ) : (
           <div className="ai-maker-empty-state">
             <div className="ai-maker-empty-icon">
-              <img
-                src="/images/icons/mood-empty.png"
-                alt="No models"
-                width={70}
-                height={70}
-              />
+              <img src="/images/icons/mood-empty.png" alt="No models" width={70} height={70} />
             </div>
             <Text as="p" className="ai-maker-empty-title">
               You have no registered AI models.
@@ -508,7 +452,7 @@ const AIMakerDashboard = () => {
             </Text>
             <Button
               onClick={() => setShowRedirectPrompt(true)}
-              className="bg-primaryPurple2 hover:!bg-[#6849EE] text-white hover:text-white px-8 py-3 rounded-[8px] font-bold text-base"
+              className="text-base rounded-[8px] bg-primaryPurple2 px-8 py-3 font-bold text-white hover:!bg-[#6849EE] hover:text-white"
             >
               Add A New Model
             </Button>
@@ -518,13 +462,13 @@ const AIMakerDashboard = () => {
 
       {/* Audits Table Section */}
       <div className="audits-section">
-        <div className="flex justify-between items-center mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <Text variant="headingLg" as="h2">
             Recent Evaluations
           </Text>
           <Link
             href={`/${locale}/dashboard/ai-maker/${orgId}/evaluations`}
-            className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+            className="text-blue-600 inline-flex items-center gap-1 hover:underline"
           >
             See all
             <Icons.arrowRight size={16} className="text-blue-600" stroke={2} />
@@ -542,14 +486,14 @@ const AIMakerDashboard = () => {
             />
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-8 bg-gray-50 rounded-lg">
+          <div className="bg-gray-50 rounded-lg flex flex-col items-center justify-center py-8">
             <Text variant="bodySm" className="text-gray-600 mb-4">
               No evaluations yet. Start by running your first evaluation.
             </Text>
             <Button
               kind="primary"
               onClick={() => setIsModalOpen(true)}
-              className="bg-primaryPurple2 hover:!bg-[#6849EE] text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
+              className="text-base rounded-[8px] bg-primaryPurple2 px-8 py-3 font-bold text-white hover:!bg-[#6849EE] hover:!text-white"
             >
               Start New Evaluation
             </Button>
@@ -561,39 +505,34 @@ const AIMakerDashboard = () => {
       <AlertDialog open={showRedirectPrompt} onOpenChange={setShowRedirectPrompt}>
         <AlertDialog.Content
           title="Redirect to CivicDataSpace"
-          primaryAction={{
-            content: "Yes, continue",
-            onAction: () => {
-              setShowRedirectPrompt(false);
-              if (externalUrl) {
-                window.open(addModelUrl, "_blank", "noopener,noreferrer");
-              } else {
-                router.push(addModelUrl);
-              }
-            },
-            className:
-              "bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white",
-          } as any}
+          primaryAction={
+            {
+              content: 'Yes, continue',
+              onAction: () => {
+                setShowRedirectPrompt(false);
+                if (externalUrl) {
+                  window.open(addModelUrl, '_blank', 'noopener,noreferrer');
+                } else {
+                  router.push(addModelUrl);
+                }
+              },
+              className: 'bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white',
+            } as any
+          }
           secondaryActions={[
             {
-              content: "No",
+              content: 'No',
               onAction: () => setShowRedirectPrompt(false),
-              className:
-                "bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white",
+              className: 'bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white',
             } as any,
           ]}
         >
-          You are being redirected to CivicDataSpace to add a model. Do you want
-          to continue?
+          You are being redirected to CivicDataSpace to add a model. Do you want to continue?
         </AlertDialog.Content>
       </AlertDialog>
 
       {/* Model Selection Modal */}
-      <ModelSelectionModal
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        orgId={orgId}
-      />
+      <ModelSelectionModal open={isModalOpen} onOpenChange={setIsModalOpen} orgId={orgId} />
     </>
   );
 };

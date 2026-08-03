@@ -1,17 +1,18 @@
-"use client";
+'use client';
 
-import { useGraphQL } from "@/lib/graphql-client";
-import { apiFetch } from "@/lib/rest-client";
-import type { Audit } from "@/features/dashboard/types/audit";
+import { useState, type Dispatch, type SetStateAction } from 'react';
+import { toast } from 'opub-ui';
 import {
-  UPDATE_AUDIT_MUTATION,
-  SUBMIT_AUDIT_REVIEW_MUTATION,
   GENERATE_AUDIT_REPORT_QUERY,
-} from "@/features/dashboard/api/evaluation-queries";
-import { useState, type Dispatch, type SetStateAction } from "react";
-import { toast } from "opub-ui";
+  SUBMIT_AUDIT_REVIEW_MUTATION,
+  UPDATE_AUDIT_MUTATION,
+} from '@/features/dashboard/api/evaluation-queries';
+import type { Audit } from '@/features/dashboard/types/audit';
+import { useGraphQL } from '@/lib/graphql-client';
+import { apiFetch } from '@/lib/rest-client';
+import { EVALUATION_STATUS } from '@/constants';
 
-const EVALUATION_NAME_TOAST_ID = "evaluation-detail-name-save";
+const EVALUATION_NAME_TOAST_ID = 'evaluation-detail-name-save';
 
 type UseAuditActionsParams = {
   evaluationId: string;
@@ -54,15 +55,14 @@ export function useAuditActions({
   const [isSavingEvaluation, setIsSavingEvaluation] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [showSubmitRecommendationModal, setShowSubmitRecommendationModal] =
-    useState(false);
+  const [showSubmitRecommendationModal, setShowSubmitRecommendationModal] = useState(false);
 
   const saveEvaluationName = async (editableName: string) => {
     if (!audit || isSavingName) return;
     const trimmedName = editableName?.trim();
 
     if (!trimmedName) {
-      toast.error("Evaluation name is required.", {
+      toast.error('Evaluation name is required.', {
         id: EVALUATION_NAME_TOAST_ID,
       });
       return;
@@ -86,23 +86,18 @@ export function useAuditActions({
 
       if (!result?.updateAudit?.success) {
         toast.error(
-          result?.updateAudit?.message ||
-            "Failed to save evaluation name on the server.",
+          result?.updateAudit?.message || 'Failed to save evaluation name on the server.',
           { id: EVALUATION_NAME_TOAST_ID }
         );
       } else if (result.updateAudit.audit?.name) {
-        setAudit((prev) =>
-          prev ? { ...prev, name: result.updateAudit.audit!.name } : prev
-        );
-        toast.success("Evaluation name saved successfully.", {
+        setAudit((prev) => (prev ? { ...prev, name: result.updateAudit.audit!.name } : prev));
+        toast.success('Evaluation name saved successfully.', {
           id: EVALUATION_NAME_TOAST_ID,
         });
       }
     } catch (err) {
       toast.error(
-        err instanceof Error
-          ? err.message
-          : "Failed to save evaluation name. Please try again.",
+        err instanceof Error ? err.message : 'Failed to save evaluation name. Please try again.',
         { id: EVALUATION_NAME_TOAST_ID }
       );
     } finally {
@@ -111,7 +106,7 @@ export function useAuditActions({
   };
 
   const submitBulkReview = async (recommendation: string) => {
-    if (!audit || isSavingEvaluation || audit.status !== "PENDING_REVIEW") return;
+    if (!audit || isSavingEvaluation || audit.status !== EVALUATION_STATUS.PENDING_REVIEW) return;
 
     setIsSavingEvaluation(true);
     try {
@@ -133,9 +128,7 @@ export function useAuditActions({
       );
 
       if (!reviewResult?.submitAuditReview?.success) {
-        toast.error(
-          reviewResult?.submitAuditReview?.message || "Failed to submit audit review."
-        );
+        toast.error(reviewResult?.submitAuditReview?.message || 'Failed to submit audit review.');
         return;
       }
 
@@ -152,15 +145,13 @@ export function useAuditActions({
         );
       }
 
-      toast.success("Review submitted successfully.");
+      toast.success('Review submitted successfully.');
       setIsEvaluationSaved(true);
       stopProgressPolling();
       await fetchAuditSummary(audit.configuration);
     } catch (err: unknown) {
       toast.error(
-        err instanceof Error
-          ? err.message
-          : "Failed to submit review. Please try again."
+        err instanceof Error ? err.message : 'Failed to submit review. Please try again.'
       );
     } finally {
       setIsSavingEvaluation(false);
@@ -173,21 +164,17 @@ export function useAuditActions({
     try {
       const reportResult = await request<{
         generateAuditReport: { success: boolean; message?: string | null };
-      }>(
-        GENERATE_AUDIT_REPORT_QUERY,
-        { auditId: evaluationId },
-        requestOptions
-      );
+      }>(GENERATE_AUDIT_REPORT_QUERY, { auditId: evaluationId }, requestOptions);
 
       if (!reportResult?.generateAuditReport?.success) {
-        toast.error("Failed to generate report.");
+        toast.error('Failed to generate report.');
         return;
       }
 
-      toast.success("Report generated successfully!");
+      toast.success('Report generated successfully!');
       await fetchAuditSummary(audit?.configuration);
     } catch {
-      toast.error("Failed to generate report.");
+      toast.error('Failed to generate report.');
     } finally {
       setIsGeneratingReport(false);
     }
@@ -197,14 +184,14 @@ export function useAuditActions({
     if (!evaluationId || isDownloading) return;
     setIsDownloading(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_BASE_URL?.replace(/\/$/, "");
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (orgId) headers["organization"] = orgId;
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_BASE_URL?.replace(/\/$/, '');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (orgId) headers['organization'] = orgId;
 
-      const res = await apiFetch(
-        `${backendUrl}/api/audits/${evaluationId}/report/download/`,
-        { method: "GET", headers }
-      );
+      const res = await apiFetch(`${backendUrl}/api/audits/${evaluationId}/report/download/`, {
+        method: 'GET',
+        headers,
+      });
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -212,17 +199,17 @@ export function useAuditActions({
       }
 
       const { url, name } = await res.json();
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
-      a.download = name || "audit_report.pdf";
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
+      a.download = name || 'audit_report.pdf';
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
     } catch (err: any) {
-      console.error("Report download failed:", err);
-      alert(err?.message || "Failed to download report. Please try again.");
+      console.error('Report download failed:', err);
+      alert(err?.message || 'Failed to download report. Please try again.');
     } finally {
       setIsDownloading(false);
     }

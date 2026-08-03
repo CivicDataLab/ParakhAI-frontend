@@ -1,3 +1,5 @@
+import type { TestCaseStatus } from '@/constants';
+
 export interface SubModuleInfo {
   name: string;
   displayName: string;
@@ -47,11 +49,11 @@ export interface ManualEvalWorkspaceDraft {
   modelOutput: string;
   latencyMs?: number;
   hasCalledModel: boolean;
-  status: "PASSED" | "FAILED" | null;
+  status: TestCaseStatus | null;
   issueRows: ManualEvalIssueRowDraft[];
 }
 
-export type IssueSeverity = "LOW" | "MEDIUM" | "HIGH";
+export type IssueSeverity = 'LOW' | 'MEDIUM' | 'HIGH';
 
 export interface ManualTestCaseIssue {
   metricName: string;
@@ -96,22 +98,22 @@ export interface LanguageOption {
 }
 
 export const LANGUAGE_OPTIONS: LanguageOption[] = [
-  { value: "en", label: "English" },
-  { value: "hi", label: "Hindi" },
-  { value: "bn", label: "Bengali" },
-  { value: "ta", label: "Tamil" },
-  { value: "te", label: "Telugu" },
-  { value: "mr", label: "Marathi" },
-  { value: "gu", label: "Gujarati" },
-  { value: "kn", label: "Kannada" },
-  { value: "ml", label: "Malayalam" },
-  { value: "pa", label: "Punjabi" },
-  { value: "or", label: "Odia" },
-  { value: "as", label: "Assamese" },
+  { value: 'en', label: 'English' },
+  { value: 'hi', label: 'Hindi' },
+  { value: 'bn', label: 'Bengali' },
+  { value: 'ta', label: 'Tamil' },
+  { value: 'te', label: 'Telugu' },
+  { value: 'mr', label: 'Marathi' },
+  { value: 'gu', label: 'Gujarati' },
+  { value: 'kn', label: 'Kannada' },
+  { value: 'ml', label: 'Malayalam' },
+  { value: 'pa', label: 'Punjabi' },
+  { value: 'or', label: 'Odia' },
+  { value: 'as', label: 'Assamese' },
 ];
 
 export const SEVERITY_OPTIONS = [
-  { value: "LOW", label: "Low" },
-  { value: "MEDIUM", label: "Medium" },
-  { value: "HIGH", label: "High" },
+  { value: 'LOW', label: 'Low' },
+  { value: 'MEDIUM', label: 'Medium' },
+  { value: 'HIGH', label: 'High' },
 ];

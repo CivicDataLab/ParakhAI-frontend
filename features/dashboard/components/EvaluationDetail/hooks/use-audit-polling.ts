@@ -1,16 +1,17 @@
-"use client";
+'use client';
 
-import { useGraphQL } from "@/lib/graphql-client";
-import type { Audit } from "@/features/dashboard/types/audit";
+import { useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
+import { GET_AUDIT_QUERY } from '@/features/dashboard/api/evaluation-queries';
+import type { Audit } from '@/features/dashboard/types/audit';
 import {
   canShowEvaluationResults,
+  isAuditFailed,
   isAuditInProgress,
   isPlaygroundEvaluationMode,
   isProgressComplete,
   shouldStopPolling,
-} from "@/features/dashboard/utils/evaluation";
-import { GET_AUDIT_QUERY } from "@/features/dashboard/api/evaluation-queries";
-import { useEffect, useRef, type Dispatch, type SetStateAction } from "react";
+} from '@/features/dashboard/utils/evaluation';
+import { useGraphQL } from '@/lib/graphql-client';
 
 type UseAuditPollingParams = {
   evaluationId: string;
@@ -74,7 +75,7 @@ export function useAuditPolling({
         );
 
         if (data?.audit) {
-          if (typeof data.audit.progressPercentage === "number") {
+          if (typeof data.audit.progressPercentage === 'number') {
             setEvaluationProgress(data.audit.progressPercentage);
           }
 
@@ -85,7 +86,7 @@ export function useAuditPolling({
 
           const isPlayground = isPlaygroundEvaluationMode(data.audit.evaluationMode);
 
-          if (data.audit.status === "FAILED" || data.audit.status === "ERROR") {
+          if (isAuditFailed(data.audit.status)) {
             stopProgressPolling();
             return;
           }
@@ -93,10 +94,7 @@ export function useAuditPolling({
           if (shouldStopPolling(data.audit, isPlayground)) {
             stopProgressPolling();
             if (canShowEvaluationResults(data.audit, isPlayground)) {
-              await Promise.all([
-                fetchAuditSummary(data.audit.configuration),
-                fetchAuditResults(),
-              ]);
+              await Promise.all([fetchAuditSummary(data.audit.configuration), fetchAuditResults()]);
             }
             return;
           }
@@ -106,17 +104,14 @@ export function useAuditPolling({
             canShowEvaluationResults(data.audit, isPlayground)
           ) {
             stopProgressPolling();
-            await Promise.all([
-              fetchAuditSummary(data.audit.configuration),
-              fetchAuditResults(),
-            ]);
+            await Promise.all([fetchAuditSummary(data.audit.configuration), fetchAuditResults()]);
             return;
           }
         }
 
         scheduleNextPoll(poll);
       } catch (err) {
-        console.error("Polling error:", err);
+        console.error('Polling error:', err);
         scheduleNextPoll(poll);
       }
     };

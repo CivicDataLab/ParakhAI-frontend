@@ -1,15 +1,16 @@
 'use client';
 
-import { Button, Tag, Text } from 'opub-ui';
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
+import { Button, Tag, Text } from 'opub-ui';
 import remarkGfm from 'remark-gfm';
+import { TEST_CASE_STATUS, type TestCaseStatus } from '@/constants';
 
 interface ModelOutputDisplayProps {
   output: string;
   latencyMs?: number;
-  status: 'PASSED' | 'FAILED' | null;
-  onStatusChange: (status: 'PASSED' | 'FAILED') => void;
+  status: TestCaseStatus | null;
+  onStatusChange: (status: TestCaseStatus) => void;
 }
 
 const ModelOutputDisplay: React.FC<ModelOutputDisplayProps> = ({
@@ -31,13 +32,15 @@ const ModelOutputDisplay: React.FC<ModelOutputDisplayProps> = ({
         )}
       </div>
 
-      <div className="border border-gray-200 rounded-lg p-4 bg-white min-h-[120px] max-h-[300px] overflow-y-auto">
+      <div className="border border-gray-200 rounded-lg max-h-[300px] min-h-[120px] overflow-y-auto bg-white p-4">
         {output ? (
-          <div className="bulk-evaluation-sheet-prose prose prose-sm max-w-none break-words text-gray-900">
+          <div className="bulk-evaluation-sheet-prose text-gray-900 prose prose-sm max-w-none break-words">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{output}</ReactMarkdown>
           </div>
         ) : (
-          <Text variant="bodySm" className="text-gray-400">No output received</Text>
+          <Text variant="bodySm" className="text-gray-400">
+            No output received
+          </Text>
         )}
       </div>
 
@@ -48,10 +51,10 @@ const ModelOutputDisplay: React.FC<ModelOutputDisplayProps> = ({
         <div className="flex gap-3">
           <Button
             kind="secondary"
-            onClick={() => onStatusChange('PASSED')}
+            onClick={() => onStatusChange(TEST_CASE_STATUS.PASSED)}
             className={
-              status === 'PASSED'
-                ? 'border-2 border-green-600 bg-green-50 text-green-700'
+              status === TEST_CASE_STATUS.PASSED
+                ? 'border-green-600 bg-green-50 text-green-700 border-2'
                 : ''
             }
           >
@@ -59,10 +62,10 @@ const ModelOutputDisplay: React.FC<ModelOutputDisplayProps> = ({
           </Button>
           <Button
             kind="secondary"
-            onClick={() => onStatusChange('FAILED')}
+            onClick={() => onStatusChange(TEST_CASE_STATUS.FAILED)}
             className={
-              status === 'FAILED'
-                ? 'border-2 border-red-600 bg-red-50 text-red-700'
+              status === TEST_CASE_STATUS.FAILED
+                ? 'border-red-600 bg-red-50 text-red-700 border-2'
                 : ''
             }
           >

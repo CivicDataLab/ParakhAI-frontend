@@ -1,24 +1,29 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
+import type { RiskDistribution } from '@/features/dashboard/types/audit';
 import {
-  isPlaygroundEvaluationMode,
   isAuditInProgress,
+  isPlaygroundEvaluationMode,
   parseEvaluatorRecommendation,
   readRiskCount,
-} from "@/features/dashboard/utils/evaluation";
-import type { RiskDistribution } from "@/features/dashboard/types/audit";
-import { useAuditData } from "./use-audit-data";
-import { useAuditPolling } from "./use-audit-polling";
-import { useAuditActions } from "./use-audit-actions";
+} from '@/features/dashboard/utils/evaluation';
+import {
+  EVALUATION_STATUS,
+  isCompletedEvaluationStatus,
+  isPendingReviewEvaluationStatus,
+} from '@/constants';
+import { useAuditActions } from './use-audit-actions';
+import { useAuditData } from './use-audit-data';
+import { useAuditPolling } from './use-audit-polling';
 
 export type UseEvaluationDetailReturn = {
   // data
-  audit: ReturnType<typeof useAuditData>["audit"];
-  auditResults: ReturnType<typeof useAuditData>["auditResults"];
-  auditReport: ReturnType<typeof useAuditData>["auditReport"];
+  audit: ReturnType<typeof useAuditData>['audit'];
+  auditResults: ReturnType<typeof useAuditData>['auditResults'];
+  auditReport: ReturnType<typeof useAuditData>['auditReport'];
   riskDistribution: RiskDistribution;
-  metricSummary: ReturnType<typeof useAuditData>["metricSummary"];
+  metricSummary: ReturnType<typeof useAuditData>['metricSummary'];
   evaluatorRecommendation: string;
   modelVersion: string;
   editableName: string;
@@ -57,7 +62,7 @@ export type UseEvaluationDetailReturn = {
     auditModelType: string;
     evaluationScopeDisplay: string;
     passRate: number | string;
-    passRateColor: "success" | "warning" | "default" | undefined;
+    passRateColor: 'success' | 'warning' | 'default' | undefined;
   };
 };
 
@@ -81,8 +86,8 @@ export function useEvaluationDetail(
   });
 
   // ── Orchestrator-owned state ───────────────────────────────────────────────
-  const [editableName, setEditableName] = useState("");
-  const [modelVersion, setModelVersion] = useState("");
+  const [editableName, setEditableName] = useState('');
+  const [modelVersion, setModelVersion] = useState('');
   const [isEvaluationSaved, setIsEvaluationSaved] = useState(false);
 
   const actions = useAuditActions({
@@ -104,15 +109,10 @@ export function useEvaluationDetail(
   // ── Sync editableName from audit ───────────────────────────────────────────
   useEffect(() => {
     if (!data.audit) return;
-    const fallbackName = data.audit.id
-      ? `Evaluation #${data.audit.id.slice(0, 8)}`
-      : "";
+    const fallbackName = data.audit.id ? `Evaluation #${data.audit.id.slice(0, 8)}` : '';
     setEditableName(data.audit.name || fallbackName);
 
-    const recommendationFromConfig = parseEvaluatorRecommendation(
-      null,
-      data.audit.configuration
-    );
+    const recommendationFromConfig = parseEvaluatorRecommendation(null, data.audit.configuration);
     if (recommendationFromConfig) {
       data.setEvaluatorRecommendation(recommendationFromConfig);
       setIsEvaluationSaved(true);
@@ -123,31 +123,26 @@ export function useEvaluationDetail(
   // ── Sync modelVersion from audit ───────────────────────────────────────────
   useEffect(() => {
     if (!data.audit?.modelVersionId) {
-      setModelVersion("");
+      setModelVersion('');
       return;
     }
     const snapshot = data.audit.modelSnapshot || {};
     const singleVersion = snapshot.version;
     if (singleVersion && singleVersion.id === data.audit.modelVersionId) {
-      setModelVersion(singleVersion.version || "");
+      setModelVersion(singleVersion.version || '');
     } else {
-      const versions: Array<{ id: number; version: string }> =
-        snapshot.versions || [];
+      const versions: Array<{ id: number; version: string }> = snapshot.versions || [];
       const matched = versions.find((v) => v.id === data.audit!.modelVersionId);
-      setModelVersion(matched?.version || "");
+      setModelVersion(matched?.version || '');
     }
   }, [data.audit?.modelVersionId, data.audit?.modelSnapshot]);
 
   // ── Computed values ────────────────────────────────────────────────────────
-  const isPlaygroundEvaluation = isPlaygroundEvaluationMode(
-    data.audit?.evaluationMode
-  );
-  const isBulkPendingReview = data.audit?.status === "PENDING_REVIEW";
+  const isPlaygroundEvaluation = isPlaygroundEvaluationMode(data.audit?.evaluationMode);
+  const isBulkPendingReview = isPendingReviewEvaluationStatus(data.audit?.status);
   const isEvaluationComplete =
-    data.audit?.status === "COMPLETED" || Boolean(data.audit?.completedAt);
-  const isBulkCompleted =
-    !isPlaygroundEvaluation &&
-    (data.audit?.status === "COMPLETED" || Boolean(data.audit?.completedAt));
+    isCompletedEvaluationStatus(data.audit?.status) || Boolean(data.audit?.completedAt);
+  const isBulkCompleted = !isPlaygroundEvaluation && isEvaluationComplete;
   const isReportReady = Boolean(data.auditReport?.url);
   const showDownloadActions = isPlaygroundEvaluation
     ? isEvaluationComplete
@@ -156,12 +151,12 @@ export function useEvaluationDetail(
   const isRunning = isAuditInProgress(data.audit?.status);
   const isPlaygroundInProgress =
     isPlaygroundEvaluationMode(data.audit?.evaluationMode) &&
-    data.audit?.status?.toUpperCase() === "IN_PROGRESS";
+    data.audit?.status?.toUpperCase() === EVALUATION_STATUS.IN_PROGRESS;
 
   const riskSummary = {
-    low: readRiskCount(data.riskDistribution, "low"),
-    medium: readRiskCount(data.riskDistribution, "medium"),
-    high: readRiskCount(data.riskDistribution, "high"),
+    low: readRiskCount(data.riskDistribution, 'low'),
+    medium: readRiskCount(data.riskDistribution, 'medium'),
+    high: readRiskCount(data.riskDistribution, 'high'),
   };
 
   const progressPercent = Math.round(data.evaluationProgress ?? 0);
@@ -169,7 +164,7 @@ export function useEvaluationDetail(
   const auditModelType =
     data.audit?.modelSnapshot?.modelType ||
     data.audit?.modelSnapshot?.model_type ||
-    "TEXT_GENERATION";
+    'TEXT_GENERATION';
 
   const evaluationScopeSource =
     data.audit?.auditScope ||
@@ -182,34 +177,28 @@ export function useEvaluationDetail(
         .filter(Boolean)
         .map((scope) =>
           String(scope)
-            .split("_")
-            .map(
-              (word: string) =>
-                word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-            )
-            .join(" ")
+            .split('_')
+            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ')
         )
-        .join(", ")
+        .join(', ')
     : evaluationScopeSource
       ? String(evaluationScopeSource)
-          .split("_")
-          .map(
-            (word: string) =>
-              word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-          )
-          .join(" ")
-      : "--";
+          .split('_')
+          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ')
+      : '--';
 
   const getPassRate = (): number | string => {
     if (!data.audit?.totalTests || !data.audit?.passedTests) return 0;
     return ((data.audit.passedTests / data.audit.totalTests) * 100).toFixed(2);
   };
 
-  const getPassRateColor = (): "success" | "warning" | "default" | undefined => {
+  const getPassRateColor = (): 'success' | 'warning' | 'default' | undefined => {
     if (!data.audit?.totalTests || !data.audit?.passedTests) return undefined;
     const rate = parseFloat(getPassRate().toString());
-    if (rate >= 85) return "success";
-    if (rate >= 70) return "warning";
+    if (rate >= 85) return 'success';
+    if (rate >= 70) return 'warning';
     return undefined;
   };
 
