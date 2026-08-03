@@ -1,0 +1,30 @@
+/* Evaluator evaluations list – column header alignment */
+
+.auditor-evaluations-table th,
+.auditor-evaluations-table td {
+  text-align: left;
+}
+
+/* Evaluation Mode (4), Status (5), Evaluated On (7) */
+.auditor-evaluations-table th:nth-child(4),
+.auditor-evaluations-table th:nth-child(5),
+.auditor-evaluations-table th:nth-child(7) {
+  padding-left: 1.15rem !important;
+}
+
+/* Evaluation Type (3) – nudge header slightly right to align with Badge cells */
+.auditor-evaluations-table th:nth-child(3) {
+  padding-left: 1.45rem !important;
+}
+
+/* Sortable headers: keep icon after label so label aligns with cell text */
+.auditor-evaluations-table th:nth-child(3) > *,
+.auditor-evaluations-table th:nth-child(4) > *,
+.auditor-evaluations-table th:nth-child(5) > *,
+.auditor-evaluations-table th:nth-child(7) > * {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.35rem;
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+}

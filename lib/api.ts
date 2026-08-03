@@ -2,6 +2,7 @@
 
 import { GraphQLClient } from 'graphql-request';
 import React from 'react';
+import { getFreshToken } from './api-client';
 import { logout } from './auth-helpers';
 import { useAppSession } from './session';
 
@@ -34,30 +35,62 @@ export function getGraphQLEndpoint(): string {
   return url;
 }
 
+// ---------------------------------------------------------------------------
+// Singleton GraphQL client
+// The client itself is stateless – auth is injected per-request via
+// requestMiddleware, so there is no reason to recreate it on every call.
+// ---------------------------------------------------------------------------
+let _graphqlClient: GraphQLClient | null = null;
+
 /**
- * Create an authenticated GraphQL client with access token
- * 
- * @param accessToken - The Keycloak access token (from useAppSession)
- * @returns Configured GraphQLClient instance
+ * createGraphQLClient
+ *
+ * Returns a singleton GraphQL client. The requestMiddleware fetches a fresh
+ * (cached) token before every request so the client never needs to be
+ * recreated when the access token changes.
+ *
+ * additionalHeaders (e.g. `organization`) are merged in on each call via a
+ * fresh GraphQLClient wrapper that delegates to the singleton's middleware.
  */
 export function createGraphQLClient(
-  accessToken: string | null,
+  _accessToken: string | null,
   additionalHeaders: Record<string, string> = {}
 ): GraphQLClient {
   const endpoint = getGraphQLEndpoint();
-  
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...additionalHeaders,
-  };
+  const hasExtra = Object.keys(additionalHeaders).length > 0;
 
-  // Add Authorization header if access token is available
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
+  // Return the singleton when no extra headers are needed
+  if (!hasExtra) {
+    if (!_graphqlClient) {
+      _graphqlClient = buildClient(endpoint, {});
+    }
+    return _graphqlClient;
   }
 
+  // For requests with per-call headers (e.g. `organization`) create a
+  // short-lived client – still cheap because it reuses the same middleware.
+  return buildClient(endpoint, additionalHeaders);
+}
+
+function buildClient(
+  endpoint: string,
+  additionalHeaders: Record<string, string>
+): GraphQLClient {
   return new GraphQLClient(endpoint, {
-    headers,
+    headers: {
+      'Content-Type': 'application/json',
+      ...additionalHeaders,
+    },
+    // requestMiddleware runs before every request – correct interception point
+    // for graphql-request v5 (the 'fetch' option is not in PatchedRequestInit).
+    requestMiddleware: async (request) => {
+      const token = await getFreshToken();
+      if (!token) return request; // getFreshToken already triggered logout
+      return {
+        ...request,
+        headers: { ...request.headers, Authorization: `Bearer ${token}` },
+      };
+    },
   });
 }
 
@@ -167,13 +200,13 @@ function isAuthenticationError(error: any): boolean {
  * ```
  */
 export function useGraphQL() {
-  const { accessToken, status, error: sessionError } = useAppSession();
+  const { status, error: sessionError } = useAppSession();
   const hasLoggedOut = React.useRef(false);
 
-  // Handle session errors
+  // Handle top-level session errors (refresh token expired, etc.)
   React.useEffect(() => {
     if (hasLoggedOut.current) return;
-    
+
     if (sessionError === 'RefreshAccessTokenError' || sessionError === 'RefreshTokenExpired') {
       hasLoggedOut.current = true;
       console.warn('🔒 useGraphQL: Session error detected, logging out:', sessionError);
@@ -181,9 +214,13 @@ export function useGraphQL() {
     }
   }, [sessionError]);
 
-  // Memoize request function to prevent unnecessary re-renders
+  // `request` does not depend on `accessToken` – the requestMiddleware in
+  // createGraphQLClient fetches the token on-demand before each request.
+  // Only `status` is needed so we can gate unauthenticated/loading states.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const request = React.useCallback(async <T = any>(
     query: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     variables: Record<string, any> = {},
     headers: Record<string, string> = {}
   ): Promise<T> => {
@@ -201,30 +238,36 @@ export function useGraphQL() {
     }
 
     try {
-      const result = await graphqlRequest<T>(query, variables, accessToken, headers);
+      // Pass null for accessToken – the middleware owns auth
+      const result = await graphqlRequest<T>(query, variables, null, headers);
       return result;
-    } catch (error: any) {
-      // Check for authentication errors and logout if needed
+    } catch (error) {
       if (isAuthenticationError(error) && !hasLoggedOut.current) {
         hasLoggedOut.current = true;
-        console.warn('🔒 useGraphQL: Authentication error from backend, logging out:', error?.message);
+        const msg = error instanceof Error ? error.message : 'Unknown error';
+        console.warn('🔒 useGraphQL: Auth error from backend, logging out:', msg);
         logout('/');
         throw new Error('Session expired. Please log in again.');
       }
-      
-      // More specific error handling
-      const errorMessage = error?.message || 'Unknown error';
-      // Check for CORS errors (shouldn't happen with proxy, but just in case)
-      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('ERR_CONNECTION_REFUSED') || errorMessage.includes('NetworkError') || errorMessage.includes('CORS')) {
-        throw new Error('Backend server is not available. Please check if the GraphQL server is running and accessible.');
+
+      const err = error as { message?: string } | null;
+      const errorMessage = err?.message || 'Unknown error';
+      if (
+        errorMessage.includes('Failed to fetch') ||
+        errorMessage.includes('ERR_CONNECTION_REFUSED') ||
+        errorMessage.includes('NetworkError') ||
+        errorMessage.includes('CORS')
+      ) {
+        throw new Error(
+          'Backend server is not available. Please check if the GraphQL server is running and accessible.'
+        );
       }
       throw error;
     }
-  }, [accessToken, status]); // Only recreate when accessToken or status changes
+  }, [status]); // ← `accessToken` removed: middleware fetches it on-demand
 
   return {
     request,
-    accessToken,
     isAuthenticated: status === 'authenticated',
     isLoading: status === 'loading',
   };

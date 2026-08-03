@@ -7,7 +7,7 @@ const config: CodegenConfig = {
   schema: 'https://dev.api.parakh.civicdataspace.in/graphql/',
 
   // Where to look for GraphQL operations (queries/mutations) in your code
-  documents: ['app/**/*.{ts,tsx}'],
+  documents: ['app/**/*.{ts,tsx}', 'features/**/*.{ts,tsx}'],
 
   // Where to put generated types & helpers
   generates: {

@@ -1,11 +1,9 @@
-/**
- * Types for manual evaluation flow
- */
-
 export interface SubModuleInfo {
   name: string;
   displayName: string;
   description?: string;
+  mandatoryInputs?: string[];
+  module?: string;
 }
 
 export interface ModuleProgress {
@@ -27,38 +25,69 @@ export interface ManualEvaluationStatus {
   moduleProgress: ModuleProgress[];
 }
 
-export interface ManualTestCase {
+export interface PlaygroundEvaluationStatus {
+  auditId: string;
+  testCaseCount: number;
+  canFinish: boolean;
+}
+
+export interface ManualEvalIssueRowDraft {
   id: string;
-  module: string;
-  subModule?: string;
-  sourceLanguage?: string;
-  targetLanguage?: string;
+  issueType: string;
+  severity: string;
+  observations: string;
+  idealOutput: string;
+}
+
+export interface ManualEvalWorkspaceDraft {
+  selectedModule?: string | null;
+  sourceLanguage: string;
+  targetLanguage: string;
   inputPrompt: string;
   modelOutput: string;
-  status: 'PASSED' | 'FAILED';
-  issueType?: string;
-  severity?: 'LOW' | 'MEDIUM' | 'HIGH';
+  latencyMs?: number;
+  hasCalledModel: boolean;
+  status: "PASSED" | "FAILED" | null;
+  issueRows: ManualEvalIssueRowDraft[];
+}
+
+export type IssueSeverity = "LOW" | "MEDIUM" | "HIGH";
+
+export interface ManualTestCaseIssue {
+  metricName: string;
+  status: boolean;
+  severity?: IssueSeverity | string | null;
   comments?: string;
   idealOutput?: string;
-  createdAt: string;
 }
 
-export interface CallModelResponse {
-  success: boolean;
-  message: string;
-  output?: string;
-  latencyMs?: number;
+export interface ManualTestCase {
+  id: string;
+  testInput: string;
+  actualOutput: string;
+  issues: ManualTestCaseIssue[];
+  createdAt?: string;
 }
 
-export interface SubmitTestCaseResponse {
+export interface ManualTestCaseResultRaw {
+  name: string;
   success: boolean;
-  message: string;
-  testCase?: ManualTestCase;
-  moduleProgress?: {
-    testCaseCount: number;
-    isComplete: boolean;
-    canComplete: boolean;
+  riskLevel?: string | null;
+  reason?: string | null;
+  idealOutput?: string | null;
+  evaluatorSuccess?: boolean | null;
+  evaluatorRiskLevel?: string | null;
+  evaluatorReason?: string | null;
+}
+
+export interface ManualTestCaseRaw {
+  test: {
+    id: string;
+    testInput: string;
+    actualOutput: string;
+    createdAt: string;
   };
+  result: ManualTestCaseResultRaw;
 }
 
 export interface LanguageOption {
@@ -67,22 +96,22 @@ export interface LanguageOption {
 }
 
 export const LANGUAGE_OPTIONS: LanguageOption[] = [
-  { value: 'en', label: 'English' },
-  { value: 'hi', label: 'Hindi' },
-  { value: 'bn', label: 'Bengali' },
-  { value: 'ta', label: 'Tamil' },
-  { value: 'te', label: 'Telugu' },
-  { value: 'mr', label: 'Marathi' },
-  { value: 'gu', label: 'Gujarati' },
-  { value: 'kn', label: 'Kannada' },
-  { value: 'ml', label: 'Malayalam' },
-  { value: 'pa', label: 'Punjabi' },
-  { value: 'or', label: 'Odia' },
-  { value: 'as', label: 'Assamese' },
+  { value: "en", label: "English" },
+  { value: "hi", label: "Hindi" },
+  { value: "bn", label: "Bengali" },
+  { value: "ta", label: "Tamil" },
+  { value: "te", label: "Telugu" },
+  { value: "mr", label: "Marathi" },
+  { value: "gu", label: "Gujarati" },
+  { value: "kn", label: "Kannada" },
+  { value: "ml", label: "Malayalam" },
+  { value: "pa", label: "Punjabi" },
+  { value: "or", label: "Odia" },
+  { value: "as", label: "Assamese" },
 ];
 
 export const SEVERITY_OPTIONS = [
-  { value: 'LOW', label: 'Low' },
-  { value: 'MEDIUM', label: 'Medium' },
-  { value: 'HIGH', label: 'High' },
+  { value: "LOW", label: "Low" },
+  { value: "MEDIUM", label: "Medium" },
+  { value: "HIGH", label: "High" },
 ];

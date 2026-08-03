@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import EvaluationDetail from "../../../components/EvaluationDetail";
+import EvaluationDetail from "@/features/dashboard/components/EvaluationDetail";
 
 const AuditorEvaluationDetailPage = () => {
   const params = useParams();

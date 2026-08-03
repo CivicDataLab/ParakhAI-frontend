@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import EvaluationDetail from "../../../../components/EvaluationDetail";
+import EvaluationDetail from "@/features/dashboard/components/EvaluationDetail";
 
 
 
@@ -16,7 +16,6 @@ const EvaluationDetailPage = () => {
       evaluationId={evaluationId}
       backLink={`/${locale}/dashboard/ai-maker/${orgId}/evaluations`}
       backLinkText="Back to List"
-      newEvaluationLink={`/${locale}/dashboard/ai-maker/${orgId}/evaluations/new`}
       orgId={orgId}
     />
   );

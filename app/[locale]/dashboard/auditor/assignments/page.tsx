@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
-import { useGraphQL } from "@/lib/api";
-import { useAppSession } from "@/lib/session";
-import { statusColors } from "@/lib/statusColors";
+import { useGraphQL } from "@/lib/graphql-client";
+import { useAppSession } from "@/hooks/use-app-session";
+import { statusColors } from "@/utils/status-colors";
+import { formatAssignmentStatusLabel, formatStatusLabel, isPendingAssignmentStatus } from "@/utils";
 import {
   IconCheck,
-  IconEye,
   IconFilter,
   IconPlayerPlay,
   IconX,
@@ -13,7 +13,7 @@ import {
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Badge, Button, DataTable, Spinner, Text } from "opub-ui";
+import { Badge, Button, DataTable, Spinner, Text, toast } from "opub-ui";
 import React, { useEffect, useState } from "react";
 
 // Types
@@ -39,6 +39,7 @@ const GET_MY_ASSIGNMENTS = `
     myAssignments(modelId: $modelId, status: $status) {
       id
       organizationId
+      organizationName
       modelId
       modelName
       modelVersionId
@@ -70,10 +71,10 @@ const UPDATE_ASSIGNMENT_STATUS = `
 
 const statusOptions = [
   { label: "All", value: "ALL" },
-  { label: "Pending", value: "PENDING" },
+  // { label: "Queued", value: "QUEUED" },
   { label: "Accepted", value: "ACCEPTED" },
-  { label: "In Progress", value: "IN_PROGRESS" },
-  { label: "Completed", value: "COMPLETED" },
+  // { label: "In Progress", value: "IN_PROGRESS" },
+  // { label: "Completed", value: "COMPLETED" },
   { label: "Declined", value: "DECLINED" },
 ];
 
@@ -102,11 +103,6 @@ const AssignmentsPage = () => {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
-  const [toast, setToast] = useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error";
-  }>({ show: false, message: "", type: "success" });
 
   useEffect(() => {
     if (!isAuthenticated || isSessionLoading) return;
@@ -159,26 +155,15 @@ const AssignmentsPage = () => {
           ),
         );
 
-        setToast({
-          show: true,
-          message: `Assignment ${newStatus.toLowerCase()} successfully`,
-          type: "success",
-        });
+        toast.success(`Assignment ${newStatus.toLowerCase()} successfully`);
       } else {
-        setToast({
-          show: true,
-          message:
-            response?.updateAuditorAssignmentStatus?.message ||
+        toast.error(
+          response?.updateAuditorAssignmentStatus?.message ||
             "Failed to update status",
-          type: "error",
-        });
+        );
       }
     } catch (err: any) {
-      setToast({
-        show: true,
-        message: err?.message || "Error updating status",
-        type: "error",
-      });
+      toast.error(err?.message || "Error updating status");
     } finally {
       setUpdatingId(null);
     }
@@ -214,7 +199,7 @@ const AssignmentsPage = () => {
         // </button>
         <Link
           href={`/${locale}/dashboard/auditor/models/${info.row.original.modelId}`}
-          className="text-purple-600 hover:underline font-medium text-baseVioletSolid11"
+          className="text-baseGraySlateSolid12 hover:underline font-medium"
         >
           {info.getValue() || `Model ${info.row.original.modelId.slice(0, 8)}`}
         </Link>
@@ -232,7 +217,7 @@ const AssignmentsPage = () => {
       header: "Organization",
       cell: (info) => (
         <Text variant="bodySm">
-          ID #{info.getValue() || info.row.original.organizationId.slice(0, 8)}
+          {info.getValue() || `ID #${info.row.original.organizationId.slice(0, 8)}`}
         </Text>
       ),
     }),
@@ -241,12 +226,11 @@ const AssignmentsPage = () => {
       cell: (info) => {
         const status = info.getValue();
         const colors = statusColors[status] || statusColors.PENDING;
-        console.log("info", info.row.original);
         return (
           <span
             className={`px-2 py-1 text-xs rounded-full ${colors.bg} ${colors.text}`}
           >
-            {status.replace(/_/g, " ")}
+            {formatAssignmentStatusLabel(status)}
           </span>
         );
       },
@@ -271,29 +255,31 @@ const AssignmentsPage = () => {
       cell: ({ row }) => {
         const status = row.original.status;
 
-        if (status === "PENDING") {
+        if (isPendingAssignmentStatus(status)) {
           return (
             <div className="flex items-center gap-2">
               <Button
                 kind="tertiary"
                 size="slim"
+                className="!text-baseGraySlateSolid12"
                 onClick={() => handleUpdateStatus(row.original.id, "ACCEPTED")}
                 disabled={updatingId === row.original.id}
               >
                 <div className="flex items-end gap-1">
-                  <IconCheck color="#5746AF" size={16} className="mr-1" />
-                  <span className="text-baseVioletSolid11 pt-0.4">Accept</span>
+                  <IconCheck color="#11181C" size={16} className="mr-1" />
+                  <span className="text-baseGraySlateSolid12 pt-0.4">Accept</span>
                 </div>
               </Button>
               <Button
                 kind="tertiary"
                 size="slim"
+                className="!text-baseGraySlateSolid12"
                 onClick={() => handleUpdateStatus(row.original.id, "DECLINED")}
                 disabled={updatingId === row.original.id}
               >
                 <div className="flex items-start justify-center gap-1">
-                  <IconX color="#5746AF" size={16} className="mr-1" />
-                  <span className="text-baseVioletSolid11 pt-0.4">Decline</span>
+                  <IconX color="#11181C" size={16} className="mr-1" />
+                  <span className="text-baseGraySlateSolid12 pt-0.4">Decline</span>
                 </div>
               </Button>
             </div>
@@ -306,18 +292,22 @@ const AssignmentsPage = () => {
               <Button
                 kind="tertiary"
                 size="slim"
+                className="!text-baseGraySlateSolid12"
                 onClick={() => handleStartEvaluation(row.original)}
               >
-                <div className="flex items-center justify-center gap-1 ">
-                  <IconPlayerPlay size={16} className="mr-1" />
-                  <span className="pt-0.5">
+                <div className="flex items-center justify-center gap-1 text-baseGraySlateSolid12">
+                  <IconPlayerPlay
+                    size={16}
+                    className="mr-1 text-baseGraySlateSolid12"
+                  />
+                  <span className="pt-0.5 text-baseGraySlateSolid12">
                     {row.original.status === "IN_PROGRESS"
                       ? "Continue"
-                      : "Start"}
+                      : "Start Evaluation"}
                   </span>
                 </div>
               </Button>
-              <Button
+              {/* <Button
                 kind="tertiary"
                 size="slim"
                 onClick={() => handleViewModel(row.original)}
@@ -326,21 +316,22 @@ const AssignmentsPage = () => {
                   <IconEye size={16} className="mr-1" />
                   <span className="pt-0.5">View</span>
                 </div>
-              </Button>
+              </Button> */}
             </div>
           );
         }
 
-        return (
-          <Button
-            kind="tertiary"
-            size="slim"
-            onClick={() => handleViewModel(row.original)}
-          >
-            <IconEye size={16} className="mr-1" />
-            View
-          </Button>
-        );
+        return null;
+        // return (
+        //   <Button
+        //     kind="tertiary"
+        //     size="slim"
+        //     onClick={() => handleViewModel(row.original)}
+        //   >
+        //     <IconEye size={16} className="mr-1" />
+        //     View
+        //   </Button>
+        // );
       },
     }),
   ];
@@ -374,10 +365,10 @@ const AssignmentsPage = () => {
       <div className="flex items-center justify-between mb-8 mt-10 pl-1">
         <div>
           <Text variant="headingLg" as="h1" fontWeight="bold">
-            My Assignments
+            Assigned Models
           </Text>
           <Text variant="bodySm" className="text-gray-600 mt-1">
-            All your evaluation assignments across organizations
+            All your evaluation invitations across organisations
           </Text>
         </div>
       </div>
@@ -422,7 +413,7 @@ const AssignmentsPage = () => {
           <Text variant="bodyMd" className="text-gray-600">
             {statusFilter === "ALL"
               ? "No assignments found"
-              : `No ${statusFilter.toLowerCase().replace(/_/g, " ")} assignments`}
+              : `No ${formatStatusLabel(statusFilter, { lowercase: true })} assignments`}
           </Text>
           <Text variant="bodySm" className="text-gray-500 mt-1">
             {statusFilter === "ALL"
@@ -442,24 +433,6 @@ const AssignmentsPage = () => {
         </div>
       )}
 
-      {/* Toast Notification */}
-      {toast.show && (
-        <div
-          className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 ${
-            toast.type === "success"
-              ? "bg-green-600 text-white"
-              : "bg-red-600 text-white"
-          }`}
-        >
-          <span>{toast.message}</span>
-          <button
-            onClick={() => setToast({ ...toast, show: false })}
-            className="ml-2 hover:opacity-80"
-          >
-            <IconX size={16} />
-          </button>
-        </div>
-      )}
     </>
   );
 };

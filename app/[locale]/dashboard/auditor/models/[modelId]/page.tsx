@@ -1,9 +1,11 @@
-"use client";
+﻿"use client";
 
-import RichTextRenderer from "@/components/RichTextRenderer";
-import { useGraphQL } from "@/lib/api";
-import { useAppSession } from "@/lib/session";
-import { statusColors } from "@/lib/statusColors";
+import RichTextRenderer from "@/components/common/RichTextRenderer";
+import { useGraphQL } from "@/lib/graphql-client";
+import { isDeprecatedLifecycle } from "@/utils/lifecycle";
+import { useAppSession } from "@/hooks/use-app-session";
+import { statusColors } from "@/utils/status-colors";
+import { formatAssignmentStatusLabel, formatStatusLabel, isPendingAssignmentStatus } from "@/utils";
 import { createColumnHelper } from "@tanstack/react-table";
 import {
   IconArrowLeft,
@@ -23,8 +25,10 @@ import {
   Tag,
   Text,
   Tooltip,
+  toast,
 } from "opub-ui";
 import React from "react";
+import ModelSelectionModal from "../../../ai-maker/[orgId]/evaluations/components/ModelSelectionModal";
 
 const GET_AI_MODEL = `
   query GetAIModel($modelId: ID!) {
@@ -241,12 +245,9 @@ const AuditorModelDetailPage = () => {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [updatingId, setUpdatingId] = React.useState<string | null>(null);
-
-  const [toast, setToast] = React.useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error";
-  }>({ show: false, message: "", type: "success" });
+  const [evaluationModalVersionId, setEvaluationModalVersionId] = React.useState<
+    number | null
+  >(null);
 
   React.useEffect(() => {
     if (!isAuthenticated) return;
@@ -300,26 +301,15 @@ const AuditorModelDetailPage = () => {
           ),
         );
 
-        setToast({
-          show: true,
-          message: `Assignment ${newStatus.toLowerCase()} successfully`,
-          type: "success",
-        });
+        toast.success(`Assignment ${newStatus.toLowerCase()} successfully`);
       } else {
-        setToast({
-          show: true,
-          message:
-            response?.updateAuditorAssignmentStatus?.message ||
+        toast.error(
+          response?.updateAuditorAssignmentStatus?.message ||
             "Failed to update status",
-          type: "error",
-        });
+        );
       }
     } catch (err: any) {
-      setToast({
-        show: true,
-        message: err?.message || "Error updating status",
-        type: "error",
-      });
+      toast.error(err?.message || "Error updating status");
     } finally {
       setUpdatingId(null);
     }
@@ -330,11 +320,35 @@ const AuditorModelDetailPage = () => {
   };
 
   const handleStartEvaluation = (versionId: number) => {
-    // Navigate to auditor's evaluation creation page
-    router.push(
-      `/${locale}/dashboard/auditor/evaluations/new?modelId=${modelId}&versionId=${versionId}`,
-    );
+    setEvaluationModalVersionId(versionId);
   };
+
+  const evaluationModalAssignment = React.useMemo(() => {
+    if (evaluationModalVersionId == null) return null;
+    return getAssignmentForVersion(evaluationModalVersionId);
+  }, [evaluationModalVersionId, assignments]);
+
+  const preselectedModelForModal = React.useMemo(() => {
+    if (!model || evaluationModalVersionId == null) return null;
+
+    return {
+      id: model.id,
+      name: model.name,
+      displayName: model.displayName,
+      modelType: model.modelType,
+      domain: model.sectors?.[0] ?? null,
+      isPublic: model.isPublic,
+      versions: model.versions
+        .filter((version) => !isDeprecatedLifecycle(version.lifecycleStage))
+        .map((version) => ({
+          id: Number(version.id),
+          version: version.version,
+          isLatest: version.isLatest,
+          status: version.status,
+          lifecycleStage: version.lifecycleStage,
+        })),
+    };
+  }, [model, evaluationModalVersionId]);
 
   const assignedVersionIds = new Set(assignments.map((a) => a.modelVersionId));
   const assignedVersions =
@@ -364,8 +378,14 @@ const AuditorModelDetailPage = () => {
     columnHelper.accessor("evaluationMode", {
       header: "Evaluation Mode",
       cell: (info) => {
-        const evaluationMode = info.getValue();
-        return <Text variant="bodySm">{evaluationMode}</Text>;
+        const mode = info.getValue()?.toLowerCase();
+        const label =
+          mode === "manual" || mode === "playground"
+            ? "Playground Evaluation"
+            : mode === "bulk" || mode === "automated"
+              ? "Bulk Evaluation"
+              : info.getValue() || "--";
+        return <Text variant="bodySm">{label}</Text>;
       },
     }),
     columnHelper.accessor("status", {
@@ -377,13 +397,13 @@ const AuditorModelDetailPage = () => {
           <span
             className={`px-2 py-1 text-xs rounded-full ${colors.bg} ${colors.text}`}
           >
-            {status}
+            {formatStatusLabel(status)}
           </span>
         );
       },
     }),
     columnHelper.accessor("totalTests", {
-      header: "Test Result",
+      header: "Tests",
       cell: (info) => {
         const total = info.getValue();
         const row = info.row.original;
@@ -413,10 +433,12 @@ const AuditorModelDetailPage = () => {
         );
       },
     }),
-    columnHelper.accessor("createdAt", {
-      header: "Evaluated On",
+    columnHelper.accessor("completedAt", {
+      header: "Completed on",
       cell: (info) => (
-        <Text variant="bodySm">{formatDate(info.getValue())}</Text>
+        <Text variant="bodySm">
+          {info.getValue() ? formatDate(info.getValue() as string) : "--"}
+        </Text>
       ),
     }),
     columnHelper.accessor("id", {
@@ -474,7 +496,7 @@ const AuditorModelDetailPage = () => {
                   {model.displayName}
                 </Text>
 
-                <div className="flex flex-wrap gap-2">
+                {/* <div className="flex flex-wrap gap-2">
                   {model.sectors?.slice(0, 1).map((sector, index) => (
                     <span key={index} className="self-start sm:self-auto">
                       <Tag
@@ -497,7 +519,7 @@ const AuditorModelDetailPage = () => {
                       </Tag>
                     </span>
                   ))}
-                </div>
+                </div> */}
               </div>
 
               <div className="overflow-hidden flex flex-col gap-2 mt-8">
@@ -588,13 +610,14 @@ const AuditorModelDetailPage = () => {
                                   fillColor={colors.bgHex}
                                   textColor={colors.textHex}
                                 >
-                                  {assignment.status.replace(/_/g, " ")}
+                                  {formatAssignmentStatusLabel(assignment.status)}
                                 </Tag>
                               )}
                             </div>
 
                             <div className="flex items-center gap-4">
-                              {assignment?.status === "PENDING" && (
+                              {assignment &&
+                                isPendingAssignmentStatus(assignment.status) && (
                                 <>
                                   <Button
                                     size="slim"
@@ -738,7 +761,7 @@ const AuditorModelDetailPage = () => {
                                 <Text variant="bodyMd" className="capitalize">
                                   {v.isLatest
                                     ? v.lifecycleStage.replace(/_/g, " ")
-                                    : v.status.replace(/_/g, " ")}
+                                    : formatStatusLabel(v.status)}
                                 </Text>
                               </div>
                             </div>
@@ -953,23 +976,21 @@ const AuditorModelDetailPage = () => {
         </div>
       </div>
 
-      {/* Toast Notification */}
-      {toast.show && (
-        <div
-          className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 ${
-            toast.type === "success"
-              ? "bg-green-600 text-white"
-              : "bg-red-600 text-white"
-          }`}
-        >
-          <span>{toast.message}</span>
-          <button
-            onClick={() => setToast({ ...toast, show: false })}
-            className="ml-2 hover:opacity-80"
-          >
-            <IconX size={16} />
-          </button>
-        </div>
+      {evaluationModalAssignment && evaluationModalVersionId != null && (
+        <ModelSelectionModal
+          open={evaluationModalVersionId != null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEvaluationModalVersionId(null);
+            }
+          }}
+          orgId={evaluationModalAssignment.organizationId}
+          preselectedModelId={modelId}
+          preselectedVersionId={evaluationModalVersionId}
+          preselectedModel={preselectedModelForModal}
+          lockModelSelection
+          variant="auditor"
+        />
       )}
     </>
   );

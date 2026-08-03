@@ -1,22 +1,10 @@
-"use client";
+﻿"use client";
 
-import BreadCrumbs from "@/components/Breadcrumbs";
-import { useGraphQL } from "@/lib/api";
+import BreadCrumbs from "@/components/common/Breadcrumbs";
+import { useOrganizationDetails } from "@/features/ai-maker/api/use-organizations";
+import { OrganizationContext } from "@/features/ai-maker/context/OrganizationContext";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import WelcomeSection from "../../components/WelcomeSection";
-import { OrganizationContext } from "./OrganizationContext";
-
-const GET_ORG_DETAILS = `
-  query GetOrgDetails($orgId: ID!) {
-    organization(id: $orgId) {
-      id
-      name
-      logoUrl
-      slug
-    }
-  }
-`;
+import WelcomeSection from "@/features/dashboard/components/WelcomeSection";
 
 export default function AIMakerLayout({
   children,
@@ -25,45 +13,12 @@ export default function AIMakerLayout({
 }) {
   const params = useParams();
   const orgId = params?.orgId as string;
-  const {
-    request,
-    isAuthenticated,
-    isLoading: isSessionLoading,
-  } = useGraphQL();
-
-  const [organization, setOrganization] = useState<{
-    name: string;
-    logoUrl: string | null;
-  } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Fetch organization details
-  useEffect(() => {
-    if (!isAuthenticated || isSessionLoading || !orgId) return;
-
-    const fetchOrganization = async () => {
-      try {
-        setIsLoading(true);
-
-        const orgData = await request(GET_ORG_DETAILS, { orgId: orgId });
-
-        if (orgData?.organization) {
-          setOrganization(orgData.organization);
-        }
-      } catch (err: any) {
-        console.error("Error fetching organization:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchOrganization();
-  }, [isAuthenticated, isSessionLoading, orgId, request]);
-
   const locale = params?.locale || "en";
 
+  const { data: organization, isLoading } = useOrganizationDetails(orgId);
+
   return (
-    <OrganizationContext.Provider value={{ organization, isLoading }}>
+    <OrganizationContext.Provider value={{ organization: organization ?? null, isLoading }}>
       <div className="flex flex-col min-h-screen bg-[var(--page-background)] overflow-x-visible">
         <BreadCrumbs
           data={[
@@ -78,7 +33,7 @@ export default function AIMakerLayout({
         />
         <div className="flex-1 w-full px-4 sm:px-6 lg:px-10 overflow-x-visible flex pt-0 md:pt-5 lg:pt-0">
           <div className="flex w-full flex-col md:flex-row md:items-stretch gap-6 md:gap-8 h-full">
-            <div className="flex-shrink-0 self-start max-md:self-center md:sticky md:top-4 w-full md:w-auto">
+            <div className="flex-shrink-0 self-start max-md:self-center md:sticky md:top-4 w-full md:w-auto lg:[&>.welcome-section]:min-h-[calc(100vh-120px)]">
               <WelcomeSection
                 orgName={organization?.name}
                 orgLogo={organization?.logoUrl}

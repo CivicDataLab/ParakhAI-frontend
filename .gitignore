@@ -40,4 +40,7 @@ next-env.d.ts
 # generated graphql files
 /gql/generated/gql.ts
 /gql/generated/graphql.ts
-/gql/generated/.claude/
+/gql/generated/
+
+# graphql-codegen output (auto-generated on npm install via postinstall)
+/generated/

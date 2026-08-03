@@ -1,6 +1,6 @@
 'use client';
 
-import { useDashboardStore } from '@/config/store';
+import { useDashboardStore } from '@/stores';
 import { jwtDecode } from 'jwt-decode';
 import { useSession } from 'next-auth/react';
 import React from 'react';

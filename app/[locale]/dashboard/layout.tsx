@@ -1,7 +1,7 @@
-import { Metadata } from 'next';
-import { DashboardGuard } from './components/DashboardGuard';
-import MainFooter from './components/main-footer';
-import MainNav from './components/main-nav';
+﻿import { Metadata } from 'next';
+import { DashboardGuard } from '@/features/dashboard/components/DashboardGuard';
+import MainFooter from '@/components/layout/MainFooter';
+import MainNav from '@/components/layout/MainNav';
 
 export const metadata: Metadata = {
   title: 'Dashboard | ParakhAI',

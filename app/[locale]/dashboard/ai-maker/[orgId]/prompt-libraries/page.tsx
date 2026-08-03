@@ -1,23 +1,20 @@
-"use client";
+﻿"use client";
 
 import { Icons } from "@/components/icons";
-import { Pagination } from "@/components/Pagination/Pagination";
-import { useGraphQL } from "@/lib/api";
-import { IconChevronDown, IconMinus, IconX } from "@tabler/icons-react";
+import { Pagination } from "@/components/common/Pagination/Pagination";
+import { useGraphQL } from "@/lib/graphql-client";
 import { useParams } from "next/navigation";
-import { stripMarkdown, toTitleCase } from "@/lib/utils";
+import { stripMarkdown, toTitleCase } from "@/utils";
 import {
   Button,
   Card,
-  DataTable,
-  Dialog,
   Popover,
   Spinner,
   Tag,
   Text,
 } from "opub-ui";
 import React from "react";
-import { useOrganization } from "../OrganizationContext";
+import { useOrganization } from "@/features/ai-maker/context/OrganizationContext";
 
 type PromptLibrary = {
   id: string;
@@ -26,7 +23,6 @@ type PromptLibrary = {
   taskType?: string;
   domain?: string;
   resourceCount: number;
-  promptFormat?: string;
   createdAt?: string;
   promptsCount?: number;
   auditsCount?: number;
@@ -50,8 +46,11 @@ const PROMPT_DATASETS_QUERY = `
       resources {
         id
         name
-        promptFormat
-        promptCount
+        noOfEntries
+        schema {
+          fieldName
+          format
+        }
       }
     }
   }
@@ -141,10 +140,6 @@ const PromptLibrariesPage = () => {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [sectorsExpanded, setSectorsExpanded] = React.useState(true);
   const [tagsExpanded, setTagsExpanded] = React.useState(true);
-  const [selectedLibrary, setSelectedLibrary] =
-    React.useState<PromptLibrary | null>(null);
-  const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [showNotice, setShowNotice] = React.useState(true);
   const [promptLibraries, setPromptLibraries] = React.useState<PromptLibrary[]>(
     []
   );
@@ -198,8 +193,8 @@ const PromptLibrariesPage = () => {
             resources: Array<{
               id: string;
               name: string;
-              promptFormat?: string;
-              promptCount?: number;
+              noOfEntries?: number;
+              schema?: Array<{ fieldName: string; format: string }>;
             }>;
           }>;
         }>(
@@ -219,8 +214,7 @@ const PromptLibrariesPage = () => {
           taskType: ds.promptMetadata?.taskType,
           domain: ds.promptMetadata?.domain,
           resourceCount: ds.resources?.length || 0,
-          promptFormat: ds.resources?.[0]?.promptFormat,
-          promptsCount: ds.resources?.[0]?.promptCount || 0,
+          promptsCount: ds.resources?.[0]?.noOfEntries || 0,
           auditsCount: Math.floor(Math.random() * 300), // Placeholder since API doesn't provide audits
           sectors: ds.promptMetadata?.domain
             ? [ds.promptMetadata.domain]
@@ -284,65 +278,39 @@ const PromptLibrariesPage = () => {
     }
   }, [totalPages, currentPage]);
 
-  // Handle card click to open dialog
   const handleCardClick = (library: PromptLibrary) => {
-    setSelectedLibrary(library);
-    // setDialogOpen(true);
+    let host = process.env.NEXT_PUBLIC_DATASPACE_HOST?.replace(/\/$/, "");
+
+    if (!host && process.env.NEXT_PUBLIC_AI_MAKER_URL) {
+      try {
+        // NEXT_PUBLIC_AI_MAKER_URL may include a path (e.g. /dashboard) — use only the origin
+        host = new URL(process.env.NEXT_PUBLIC_AI_MAKER_URL).origin;
+      } catch {
+        host = process.env.NEXT_PUBLIC_AI_MAKER_URL.replace(/\/$/, "");
+      }
+    }
+
+    if (!host) {
+      console.warn("No CivicDataSpace host configured (NEXT_PUBLIC_DATASPACE_HOST).");
+      return;
+    }
+
+    const url = `${host}/datasets/${library.id}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
-
-  // Sample table data - replace with actual API call based on selectedLibrary
-  const tableData = React.useMemo(() => {
-    if (!selectedLibrary) return [];
-
-    // Generate sample data based on selected library
-    return Array.from({ length: 13 }, (_, index) => ({
-      input: "Content",
-      idealOutput: "Content",
-      columnName1: "Content",
-      columnName2: "Content",
-    }));
-  }, [selectedLibrary]);
-
-  // Define table columns
-  const columns = React.useMemo(
-    () => [
-      {
-        accessorKey: "input",
-        header: (
-          <span className="dt-header-with-icon">
-            <img
-              src="/images/icons/arrows-sort.png"
-              alt=""
-              width={12}
-              height={12}
-            />
-            <span>Input</span>
-          </span>
-        ),
-      },
-      {
-        accessorKey: "idealOutput",
-        header: "Ideal Output",
-      },
-      {
-        accessorKey: "columnName1",
-        header: "Column name",
-      },
-      {
-        accessorKey: "columnName2",
-        header: "Column name",
-      },
-    ],
-    []
-  );
 
   return (
     <>
       <div className="prompt-libraries-content">
         <div className="prompt-page-header mt-10">
-          <Text as="h1" className="prompt-page-title" fontWeight="bold">
-            Prompt Libraries
-          </Text>
+          <div>
+            <Text as="h1" className="prompt-page-title" fontWeight="bold">
+              Prompt Libraries
+            </Text>
+            <Text variant="bodySm" className="text-gray-600 mt-1">
+              View available prompt datasets
+            </Text>
+          </div>
         </div>
 
         <div className="prompt-search-row">
@@ -377,6 +345,7 @@ const PromptLibrariesPage = () => {
             </div>
           </div>
           <div className="prompt-search-actions">
+            {/* Temporarily hidden for now. Keep this Add Filters block for future use.
             <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
               <Popover.Trigger asChild>
                 <button type="button" className="prompt-add-filters-link">
@@ -481,6 +450,7 @@ const PromptLibrariesPage = () => {
                 </div>
               </Popover.Content>
             </Popover>
+            */}
           </div>
         </div>
         <div className="prompt-active-filters">
@@ -585,6 +555,7 @@ const PromptLibrariesPage = () => {
                   >
                     <Card
                       title={library.title}
+                      withViewButton={false}
                       description={
                         stripMarkdown(library.description || "") || ""
                       }
@@ -618,86 +589,6 @@ const PromptLibrariesPage = () => {
         />
       </div>
 
-      {/* Dialog for showing library details */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <Dialog.Content
-          title=""
-          headerHidden
-          large
-          // limitHeight
-          className="PromptDlg h-full p-2"
-          // style={{ maxHeight: "60vh" }}
-          primaryAction={{
-            content: "",
-            onAction: () => {},
-          }}
-          secondaryActions={[
-            {
-              content: "",
-              onAction: () => setDialogOpen(false),
-            },
-          ]}
-        >
-          <div className="PromptDlg__hdr">
-            <div className="PromptDlg__actions">
-              <button
-                className="PromptDlg__flag"
-                aria-label="Flag this library"
-                onClick={() => {}}
-              >
-                <img
-                  src="/images/icons/flag-2-filled.png"
-                  alt="Flag"
-                  width={18}
-                  height={18}
-                />
-              </button>
-
-              <button
-                className="PromptDlg__close"
-                aria-label="Close"
-                // onClick={() => setDialogOpen(false)}
-              >
-                <IconX size={18} />
-              </button>
-            </div>
-          </div>
-
-          {selectedLibrary && (
-            <Text as="h2" className="prompt-dialog-title" fontWeight="bold">
-              {selectedLibrary.title}
-            </Text>
-          )}
-
-          {showNotice && (
-            <div className="PromptDlg__note">
-              <span>
-                Notice something wrong with this prompt library? Flag the issue
-                by clicking the red flag above.
-              </span>
-              <button
-                type="button"
-                className="PromptDlg__noteClose"
-                aria-label="Dismiss notice"
-                onClick={() => setShowNotice(false)}
-              >
-                <IconX size={12} stroke={2} color="#000000" />
-              </button>
-            </div>
-          )}
-
-          <div className="PromptDlg__body">
-            {selectedLibrary && (
-              <DataTable
-                rows={tableData}
-                columns={columns}
-                hideSelection={true}
-                hideFooter={true}
-              />
-            )}
-          </div>
-        </Dialog.Content>
-      </Dialog>
     </>
   );
 };

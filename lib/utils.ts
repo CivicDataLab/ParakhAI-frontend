@@ -72,6 +72,41 @@ export function toTitleCase(str: string) {
   return str.toLowerCase().replace(/\b\p{L}/gu, (char) => char.toUpperCase());
 }
 
+/** User-facing status label. */
+export function formatStatusLabel(
+  status?: string | null,
+  options?: { lowercase?: boolean }
+): string {
+  if (!status) return "Unknown";
+
+  const normalized = status.toUpperCase();
+  const label =
+    normalized === "PENDING"
+      ? "QUEUED"
+      : normalized.replace(/_/g, " ");
+
+  return options?.lowercase ? label.toLowerCase() : label;
+}
+
+/** Assignment status label — shows PENDING for pending invitations (API may send PENDING or QUEUED). */
+export function formatAssignmentStatusLabel(
+  status?: string | null,
+  options?: { lowercase?: boolean },
+): string {
+  if (!status) return "Unknown";
+
+  const normalized = status.toUpperCase();
+  const displayStatus = normalized === "QUEUED" ? "PENDING" : normalized;
+  const label = displayStatus.replace(/_/g, " ");
+  return options?.lowercase ? label.toLowerCase() : label;
+}
+
+/** Pending invitation — API may return PENDING or QUEUED. */
+export function isPendingAssignmentStatus(status?: string | null): boolean {
+  const normalized = status?.toUpperCase();
+  return normalized === "PENDING" || normalized === "QUEUED";
+}
+
 const convertMap: any = {
   border: (value: { width: any; style: any; color: any }) => {
     return `${value.width} ${value.style} ${value.color}`;
@@ -318,3 +353,26 @@ export const stripMarkdown = (markdown: string): string => {
 
   return cleaned;
 };
+
+export function formatGraphQLError(
+  error: unknown,
+  fallback = "Something went wrong"
+): string {
+  const raw =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : fallback;
+
+  const cleaned = raw
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!cleaned) return fallback;
+  if (cleaned.length > 180) {
+    return `${cleaned.slice(0, 177)}...`;
+  }
+  return cleaned;
+}

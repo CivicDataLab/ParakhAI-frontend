@@ -1,41 +1,81 @@
 "use client";
 
-import { useGraphQL } from "@/lib/api";
+import {
+  EVALUATION_STATUS_FILTER_OPTIONS,
+  StatusFilterTabs,
+} from "@/features/dashboard/components/StatusFilterTabs";
+import { useGraphQL } from "@/lib/graphql-client";
+import { getEvaluationStatusColor } from "@/utils/status-colors";
+import { formatStatusLabel } from "@/utils";
 import { createColumnHelper } from "@tanstack/react-table";
+import { IconReportAnalytics } from "@tabler/icons-react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { Badge, Button, DataTable, Spinner, Tag, Text } from "opub-ui";
-import { useEffect, useState } from "react";
-import { useOrganization } from "../OrganizationContext";
+import { useParams } from "next/navigation";
+import { Badge, Button, DataTable, Spinner, Text } from "opub-ui";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useOrganization } from "@/features/ai-maker/context/OrganizationContext";
 import ModelSelectionModal from "./components/ModelSelectionModal";
 import "./evaluations-page.css";
 
-// GraphQL query to fetch user's audits
+// Full fetch — used on initial load
 const AUDITS_QUERY = `
-  query GetAudits($status: String, $limit: Int) {
-    audits(status: $status, limit: $limit) {
-      id
-      name
-      modelId
-      status
-      modules
-      metrics
-      evaluationMode
-      auditType
-      totalTests
-      passedTests
-      failedTests
-      createdAt
-      startedAt
-      completedAt
+  query GetAudits($limit: Int, $offset: Int, $filters: [FilterSpec!]) {
+    audits(limit: $limit, offset: $offset, filters: $filters, sortOptions: null) {
+      data {
+        id
+        name
+        modelId
+        modelName
+        status
+        modules
+        metrics
+        evaluationMode
+        auditType
+        totalTests
+        passedTests
+        failedTests
+        createdAt
+        startedAt
+        completedAt
+      }
+      totalItemsCount
     }
   }
 `;
+
+// Lightweight poll — only id, name, status, and completedAt for non-terminal evaluations
+const AUDITS_STATUS_POLL_QUERY = `
+  query GetAudits($limit: Int, $offset: Int, $filters: [FilterSpec!]) {
+    audits(limit: $limit, offset: $offset, filters: $filters, sortOptions: null) {
+      data {
+        id
+        name
+        status
+        completedAt
+      }
+    }
+  }
+`;
+
+const ACTIVE_AUDIT_STATUSES = [
+  "QUEUED",
+  "IN_PROGRESS",
+  "PENDING_REVIEW",
+  "DRAFT",
+  "RUNNING",
+] as const;
+
+const ACTIVE_STATUS_FILTER = {
+  field: "status",
+  condition: "in",
+  value: ACTIVE_AUDIT_STATUSES.join(","),
+};
 
 type Audit = {
   id: string;
   name: string;
   modelId: string;
+  modelName: string | null;
   status: string;
   modules: string[];
   metrics: string[];
@@ -49,51 +89,205 @@ type Audit = {
   completedAt: string | null;
 };
 
+type AuditStatusUpdate = {
+  id: string;
+  name: string;
+  status: string;
+  completedAt: string | null;
+};
+
+const isActiveAuditStatus = (status?: string | null) =>
+  ACTIVE_AUDIT_STATUSES.includes(
+    (status?.toUpperCase() ?? "") as (typeof ACTIVE_AUDIT_STATUSES)[number],
+  );
+
+const hasActiveAudits = (items: Array<{ status?: string | null }>) =>
+  items.some((audit) => isActiveAuditStatus(audit.status));
+
+const mergeAuditStatusUpdates = (
+  current: Audit[],
+  updates: AuditStatusUpdate[],
+): Audit[] => {
+  if (updates.length === 0) return current;
+
+  const updateById = new Map(updates.map((update) => [update.id, update]));
+  const next = [...current];
+
+  for (let i = 0; i < next.length; i++) {
+    const update = updateById.get(next[i].id);
+    if (update) {
+      next[i] = {
+        ...next[i],
+        id: update.id,
+        name: update.name,
+        status: update.status,
+        completedAt: update.completedAt,
+      };
+    }
+  }
+
+  return next;
+};
+
+const auditTypeLabels: Record<string, string> = {
+  TECHNICAL_AUDIT: "Technical",
+  DOMAIN_AUDIT: "Domain",
+  CULTURAL_AUDIT: "Cultural",
+};
+
 const AuditsListPage = () => {
-  const router = useRouter();
   const params = useParams();
   const locale = params.locale || "en";
+  const orgId = params.orgId as string;
   const {
     request,
     isAuthenticated,
     isLoading: isSessionLoading,
   } = useGraphQL();
-  const { organization } = useOrganization();
+  useOrganization();
 
   const [audits, setAudits] = useState<Audit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [shouldPoll, setShouldPoll] = useState(false);
 
-  // Fetch audits on mount
+  const requestRef = useRef(request);
+  const orgIdRef = useRef(orgId);
+  const auditsRef = useRef(audits);
+  const hasFetchedRef = useRef(false);
+  const isFetchingRef = useRef(false);
+
+  useEffect(() => {
+    requestRef.current = request;
+  }, [request]);
+
+  useEffect(() => {
+    orgIdRef.current = orgId;
+  }, [orgId]);
+
+  useEffect(() => {
+    auditsRef.current = audits;
+  }, [audits]);
+
+  const fetchAudits = useCallback(async (showLoader = false) => {
+    try {
+      if (showLoader) {
+        setIsLoading(true);
+      }
+      setError(null);
+
+      const auditsData = await requestRef.current<{
+        audits: { data: Audit[]; totalItemsCount: number };
+      }>(
+        AUDITS_QUERY,
+        {
+          limit: 100,
+          offset: 0,
+          filters: null,
+        },
+        { organization: orgIdRef.current },
+      );
+
+      const nextAudits = auditsData?.audits?.data ?? [];
+      setAudits(nextAudits);
+      return hasActiveAudits(nextAudits);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to load audits";
+      console.error("Error fetching audits:", err);
+      setError(message);
+      return hasActiveAudits(auditsRef.current);
+    } finally {
+      if (showLoader) {
+        setIsLoading(false);
+      }
+    }
+  }, []);
+
+  const pollAuditStatuses = useCallback(async () => {
+    try {
+      const auditsData = await requestRef.current<{
+        audits: { data: AuditStatusUpdate[] };
+      }>(
+        AUDITS_STATUS_POLL_QUERY,
+        {
+          limit: 100,
+          offset: 0,
+          filters: ACTIVE_STATUS_FILTER,
+        },
+        { organization: orgIdRef.current },
+      );
+
+      const statusUpdates = auditsData?.audits?.data ?? [];
+      const polledIds = new Set(statusUpdates.map((update) => update.id));
+      const missingActiveIds = auditsRef.current
+        .filter((audit) => isActiveAuditStatus(audit.status))
+        .filter((audit) => !polledIds.has(audit.id));
+
+      if (missingActiveIds.length > 0) {
+        return fetchAudits(false);
+      }
+
+      if (statusUpdates.length === 0) {
+        return hasActiveAudits(auditsRef.current);
+      }
+
+      const nextAudits = mergeAuditStatusUpdates(
+        auditsRef.current,
+        statusUpdates,
+      );
+      setAudits(nextAudits);
+      return hasActiveAudits(nextAudits);
+    } catch (err) {
+      console.error("Polling error:", err);
+      return hasActiveAudits(auditsRef.current);
+    }
+  }, [fetchAudits]);
+
+  // Initial full fetch
   useEffect(() => {
     if (!isAuthenticated || isSessionLoading) return;
+    if (isFetchingRef.current) return;
 
-    const fetchAudits = async () => {
+    isFetchingRef.current = true;
+    const isInitialLoad = !hasFetchedRef.current;
+
+    const loadAudits = async () => {
       try {
-        setIsLoading(true);
-        setError(null);
-
-        const auditsData = await request<{ audits: Audit[] }>(
-          AUDITS_QUERY,
-          {
-            status: null,
-            limit: 100,
-          },
-          { organization: params.orgId as string }
-        );
-
-        setAudits(auditsData?.audits || []);
-      } catch (err: any) {
-        console.error("Error fetching audits:", err);
-        setError(err?.message || "Failed to load audits");
+        const hasActive = await fetchAudits(isInitialLoad);
+        hasFetchedRef.current = true;
+        setShouldPoll(hasActive);
       } finally {
-        setIsLoading(false);
+        isFetchingRef.current = false;
       }
     };
 
-    fetchAudits();
-  }, [isAuthenticated, isSessionLoading, request, params.orgId]);
+    void loadAudits();
+  }, [isAuthenticated, isSessionLoading, orgId, fetchAudits]);
+
+  // Poll only id/name/status for non-terminal evaluations
+  useEffect(() => {
+    if (!shouldPoll || !isAuthenticated) return;
+
+    const pollInterval = window.setInterval(() => {
+      void pollAuditStatuses().then((hasActive) => {
+        if (!hasActive) {
+          setShouldPoll(false);
+        }
+      });
+    }, 15000);
+
+    const pollTimeout = window.setTimeout(() => {
+      setShouldPoll(false);
+    }, 300000);
+
+    return () => {
+      window.clearInterval(pollInterval);
+      window.clearTimeout(pollTimeout);
+    };
+  }, [shouldPoll, isAuthenticated, pollAuditStatuses]);
 
   // Column helper for DataTable
   const columnHelper = createColumnHelper<Audit>();
@@ -111,30 +305,16 @@ const AuditsListPage = () => {
     });
   };
 
-  // Get status tag color
-  const getStatusColor = (status: string) => {
-    switch (status?.toUpperCase()) {
-      case "COMPLETED":
-        return { fillColor: "#E2F5C4", textColor: "#166534" };
-      case "RUNNING":
-        return { fillColor: "#FEF3C7", textColor: "#92400E" };
-      case "PENDING":
-        return { fillColor: "#E0E7FF", textColor: "#3730A3" };
-      case "DRAFT":
-        return { fillColor: "#FEF9C3", textColor: "#854D0E" };
-      case "FAILED":
-      case "ERROR":
-        return { fillColor: "#FEE2E2", textColor: "#DC2626" };
-      case "CANCELLED":
-        return { fillColor: "#F3F4F6", textColor: "#6B7280" };
-      default:
-        return { fillColor: "#F3F4F6", textColor: "#374151" };
-    }
-  };
-
   // Get the appropriate link for an audit based on its status
   const getAuditLink = (audit: Audit) => {
     if (audit.status?.toUpperCase() === "DRAFT") {
+      return `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/new?auditId=${audit.id}`;
+    }
+    if (
+      audit.status?.toUpperCase() === "IN_PROGRESS" &&
+      (audit.evaluationMode?.toLowerCase() === "manual" ||
+        audit.evaluationMode?.toLowerCase() === "playground")
+    ) {
       return `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/new?auditId=${audit.id}`;
     }
     return `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/${audit.id}`;
@@ -153,19 +333,42 @@ const AuditsListPage = () => {
         </Link>
       ),
     }),
+    columnHelper.accessor("modelName", {
+      header: "Model",
+      cell: (info) => (
+        <Text variant="bodySm">
+          {info.getValue() ||
+            `Model ${info.row.original.modelId?.slice(0, 8) || "-"}`}
+        </Text>
+      ),
+    }),
+    columnHelper.accessor("auditType", {
+      header: "Evaluation Type",
+      cell: (info) => {
+        const typeValue = info.getValue();
+        const label = typeValue
+          ? auditTypeLabels[typeValue] || typeValue
+          : "--";
+        return <Badge>{label}</Badge>;
+      },
+    }),
     columnHelper.accessor("status", {
       header: "Status",
       cell: (info) => {
         const status = info.getValue();
-        const colors = getStatusColor(status);
+        const colors = getEvaluationStatusColor(status);
         return (
-          <Tag
-            variation="filled"
-            fillColor={colors.fillColor}
-            textColor={colors.textColor}
+          <Text
+            variant="bodySm"
+            as="span"
+            className="inline-block rounded px-2 py-0.5"
+            style={{
+              backgroundColor: colors.fillColor,
+              color: colors.textColor,
+            }}
           >
-            {status || "Unknown"}
-          </Tag>
+            {formatStatusLabel(status)}
+          </Text>
         );
       },
     }),
@@ -183,17 +386,16 @@ const AuditsListPage = () => {
     columnHelper.accessor("evaluationMode", {
       header: "Evaluation Mode",
       cell: (info) => {
-        const evaluationMode = info.getValue();
-        return <Text variant="bodySm">{evaluationMode}</Text>;
+        const mode = info.getValue()?.toLowerCase();
+        const label =
+          mode === "manual" || mode === "playground"
+            ? "Playground Evaluation"
+            : mode === "bulk" || mode === "automated"
+              ? "Bulk Evaluation"
+              : info.getValue() || "--";
+        return <Text variant="bodySm">{label}</Text>;
       },
     }),
-    // columnHelper.accessor("auditType", {
-    //   header: "Audit Type",
-    //   cell: (info) => {
-    //     const auditType = info.getValue();
-    //     return <Badge>{auditType}</Badge>;
-    //   },
-    // }),
     columnHelper.accessor("totalTests", {
       header: "Tests",
       cell: (info) => {
@@ -245,12 +447,19 @@ const AuditsListPage = () => {
     //   ),
     // }),
     columnHelper.accessor("completedAt", {
-      header: "Completed",
+      header: "Completed on",
       cell: (info) => (
         <Text variant="bodySm">{formatDate(info.getValue())}</Text>
       ),
     }),
   ];
+
+  const filteredAudits =
+    statusFilter === "ALL"
+      ? audits
+      : audits.filter(
+          (audit) => audit.status?.toUpperCase() === statusFilter
+        );
 
   // Handle new audit button click - open modal
   const handleNewAudit = () => {
@@ -261,9 +470,14 @@ const AuditsListPage = () => {
     <>
       {/* Header */}
       <div className="flex items-center justify-between mb-6 mt-10">
-        <Text variant="headingLg" as="h1" fontWeight="bold">
-          Evaluations
-        </Text>
+        <div>
+          <Text variant="headingLg" as="h1" fontWeight="bold">
+            Evaluations
+          </Text>
+          <Text variant="bodySm" className="text-gray-600 mt-1">
+            Create and manage evaluation runs to assess your AI models
+          </Text>
+        </div>
         <Button
           kind="secondary"
           onClick={handleNewAudit}
@@ -313,25 +527,46 @@ const AuditsListPage = () => {
           </Button>
         </div>
       ) : (
-        <div className="evaluations-table-evaluation-mode-col">
-          <DataTable
-            rows={audits}
-            columns={columns}
-            hoverable
-            sortColumns={[
-              "name",
-              "status",
-              "evaluationMode",
-              "auditType",
-              "completedAt",
-              // "createdAt",
-            ]}
-            initialSortColumnIndex={5}
-            defaultSortDirection="desc"
-            hideSelection
-            truncate
+        <>
+          <StatusFilterTabs
+            options={EVALUATION_STATUS_FILTER_OPTIONS}
+            value={statusFilter}
+            onChange={setStatusFilter}
+            items={audits}
           />
-        </div>
+
+          {filteredAudits.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 bg-white rounded-lg border border-gray-200">
+              <IconReportAnalytics size={32} className="text-gray-400 mb-3" />
+              <Text variant="bodyMd" className="text-gray-600">
+                {`No ${formatStatusLabel(statusFilter, { lowercase: true })} evaluations`}
+              </Text>
+              <Text variant="bodySm" className="text-gray-500 mt-1">
+                Try selecting a different filter
+              </Text>
+            </div>
+          ) : (
+            <div className="evaluations-table-evaluation-mode-col">
+              <DataTable
+                rows={filteredAudits}
+                columns={columns}
+                hoverable
+                sortColumns={[
+                  "name",
+                  "modelName",
+                  "auditType",
+                  "status",
+                  "evaluationMode",
+                  "completedAt",
+                ]}
+                initialSortColumnIndex={7}
+                defaultSortDirection="desc"
+                hideSelection
+                truncate
+              />
+            </div>
+          )}
+        </>
       )}
 
       {/* Model Selection Modal */}

@@ -1,20 +1,16 @@
-"use client";
+﻿'use client';
 
-import { useGraphQL } from "@/lib/api";
-import { useAppSession } from "@/lib/session";
-import { statusColors } from "@/lib/statusColors";
-import {
-  IconCheck,
-  IconClock,
-  IconEye,
-  IconPlayerPlay,
-  IconX,
-} from "@tabler/icons-react";
-import { createColumnHelper } from "@tanstack/react-table";
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { Badge, Button, DataTable, Spinner, Text } from "opub-ui";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { IconCheck, IconClock, IconPlayerPlay, IconX } from '@tabler/icons-react';
+import { createColumnHelper } from '@tanstack/react-table';
+import { Badge, Button, DataTable, Dialog, Spinner, Text, toast } from 'opub-ui';
+import { useAppSession } from '@/hooks/use-app-session';
+import { useGraphQL } from '@/lib/graphql-client';
+import { statusColors } from '@/utils/status-colors';
+import { formatAssignmentStatusLabel, formatStatusLabel, isPendingAssignmentStatus } from '@/utils';
+import ModelSelectionModal from '../ai-maker/[orgId]/evaluations/components/ModelSelectionModal';
 
 // Types
 type AuditorAssignment = {
@@ -34,11 +30,27 @@ type AuditorAssignment = {
   updatedAt?: string;
 };
 
+const GET_AUDITOR_METRICS = `
+  query AuditorMetrics {
+    auditorMetrics {
+      assignmentsCount
+      assignmentsAccepted
+      assignmentsDeclined
+      assignmentsPending
+      assignmentsCompleted
+      auditsDone
+      testCasesCount
+      failedTestCasesCount
+    }
+  }
+`;
+
 const GET_MY_ASSIGNMENTS = `
   query GetMyAssignments($modelId: String, $status: String) {
     myAssignments(modelId: $modelId, status: $status) {
       id
       organizationId
+      organizationName
       modelId
       modelName
       modelVersionId
@@ -69,64 +81,66 @@ const UPDATE_ASSIGNMENT_STATUS = `
 `;
 
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
+  return new Date(dateString).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
   });
 };
 
 const AuditorDashboard = () => {
   const params = useParams();
   const router = useRouter();
-  const locale = params?.locale || "en";
-  const {
-    request,
-    isAuthenticated,
-    isLoading: isSessionLoading,
-  } = useGraphQL();
+  const locale = params?.locale || 'en';
+  const { request, isAuthenticated, isLoading: isSessionLoading } = useGraphQL();
   const { user } = useAppSession();
 
   const [assignments, setAssignments] = useState<AuditorAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-
-  const [toast, setToast] = useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error";
-  }>({ show: false, message: "", type: "success" });
+  const [auditorMetrics, setAuditorMetrics] = useState<{
+    assignmentsCount: number;
+    auditsDone: number;
+    testCasesCount: number;
+    failedTestCasesCount: number;
+  } | null>(null);
+  const [evaluationModalAssignment, setEvaluationModalAssignment] =
+    useState<AuditorAssignment | null>(null);
+  const [showKnowMoreModal, setShowKnowMoreModal] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated || isSessionLoading) return;
 
-    const fetchAssignments = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // No need to pass userId - backend uses logged-in user context
-        const response = await request(GET_MY_ASSIGNMENTS, {});
+        const [assignmentsResponse, metricsResponse] = await Promise.all([
+          request(GET_MY_ASSIGNMENTS, {}),
+          request(GET_AUDITOR_METRICS, {}),
+        ]);
 
-        if (response?.myAssignments) {
-          setAssignments(response.myAssignments);
+        if (assignmentsResponse?.myAssignments) {
+          setAssignments(assignmentsResponse.myAssignments);
+        }
+
+        if (metricsResponse?.auditorMetrics) {
+          setAuditorMetrics(metricsResponse.auditorMetrics);
         }
       } catch (err: any) {
-        console.error("Error fetching assignments:", err);
-        setError(err?.message || "Failed to load assignments");
+        console.error('Error fetching dashboard data:', err);
+        setError(err?.message || 'Failed to load dashboard data');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAssignments();
+    fetchData();
   }, [isAuthenticated, isSessionLoading, request]);
 
-  const handleUpdateStatus = async (
-    assignmentId: string,
-    newStatus: string,
-  ) => {
+  const handleUpdateStatus = async (assignmentId: string, newStatus: string) => {
     try {
       setUpdatingId(assignmentId);
 
@@ -142,148 +156,159 @@ const AuditorDashboard = () => {
               ? {
                   ...a,
                   status: newStatus,
-                  updatedAt:
-                    response.updateAuditorAssignmentStatus.assignment.updatedAt,
+                  updatedAt: response.updateAuditorAssignmentStatus.assignment.updatedAt,
                 }
-              : a,
-          ),
+              : a
+          )
         );
 
-        setToast({
-          show: true,
-          message: `Assignment ${newStatus.toLowerCase()} successfully`,
-          type: "success",
-        });
+        toast.success(`Assignment ${newStatus.toLowerCase()} successfully`);
       } else {
-        setToast({
-          show: true,
-          message:
-            response?.updateAuditorAssignmentStatus?.message ||
-            "Failed to update status",
-          type: "error",
-        });
+        toast.error(response?.updateAuditorAssignmentStatus?.message || 'Failed to update status');
       }
     } catch (err: any) {
-      setToast({
-        show: true,
-        message: err?.message || "Error updating status",
-        type: "error",
-      });
+      toast.error(err?.message || 'Error updating status');
     } finally {
       setUpdatingId(null);
     }
   };
 
   const handleStartEvaluation = (assignment: AuditorAssignment) => {
-    router.push(
-      `/${locale}/dashboard/auditor/evaluations/new?modelId=${assignment.modelId}&versionId=${assignment.modelVersionId}`,
-    );
+    setEvaluationModalAssignment(assignment);
   };
+
+  const preselectedModelForModal = useMemo(() => {
+    if (!evaluationModalAssignment) return null;
+
+    const assignment = evaluationModalAssignment;
+    const versionLabel =
+      assignment.versionLabel?.replace(/^v/i, '') || String(assignment.modelVersionId);
+
+    return {
+      id: assignment.modelId,
+      name: assignment.modelName || assignment.modelId,
+      displayName: assignment.modelName || assignment.modelId,
+      modelType: '',
+      isPublic: true,
+      versions: [
+        {
+          id: assignment.modelVersionId,
+          version: versionLabel,
+          isLatest: true,
+          status: 'ACTIVE',
+        },
+      ],
+    };
+  }, [evaluationModalAssignment]);
 
   const handleViewModel = (assignment: AuditorAssignment) => {
     router.push(`/${locale}/dashboard/auditor/models/${assignment.modelId}`);
   };
 
   // Filter assignments by status
-  const pendingAssignments = assignments.filter((a) => a.status === "PENDING");
+  const pendingAssignments = assignments.filter((a) => isPendingAssignmentStatus(a.status));
   const activeAssignments = assignments.filter(
-    (a) => a.status === "ACCEPTED" || a.status === "IN_PROGRESS",
+    (a) => a.status === 'ACCEPTED' || a.status === 'IN_PROGRESS'
   );
-  const completedAssignments = assignments.filter(
-    (a) => a.status === "COMPLETED",
-  );
+  const completedAssignments = assignments.filter((a) => a.status === 'COMPLETED');
 
   // Calculate metrics for Overview section
   const metrics = [
-    { label: "Invitations Received", value: assignments.length.toString() },
-    { label: "Evaluation Runs", value: completedAssignments.length.toString() },
-    { label: "Test Cases", value: "0" }, // TODO: Fetch from evaluations when available
-    { label: "Issues Flagged", value: "0" }, // TODO: Fetch from evaluations when available
+    {
+      label: 'Invitations Received',
+      value: (auditorMetrics?.assignmentsCount ?? assignments.length).toString(),
+    },
+    {
+      label: 'Evaluations Completed',
+      value: (auditorMetrics?.auditsDone ?? completedAssignments.length).toString(),
+    },
+    {
+      label: 'Test Cases Evaluated',
+      value: (auditorMetrics?.testCasesCount ?? 0).toString(),
+    },
+    {
+      label: 'Issues Flagged',
+      value: (auditorMetrics?.failedTestCasesCount ?? 0).toString(),
+    },
   ];
 
   const columnHelper = createColumnHelper<AuditorAssignment>();
 
   const pendingColumns = [
-    columnHelper.accessor("modelName", {
-      header: "Model",
+    columnHelper.accessor('modelName', {
+      header: 'Model',
       cell: (info) => (
         <Link
           href={`/${locale}/dashboard/auditor/models/${info.row.original.modelId}`}
-          className="text-purple-600 hover:underline font-medium text-baseVioletSolid11"
+          className="font-medium text-baseGraySlateSolid12 hover:underline"
         >
           {info.getValue() || `Model ${info.row.original.modelId.slice(0, 8)}`}
         </Link>
       ),
     }),
-    columnHelper.accessor("versionLabel", {
-      header: "Version",
-      cell: (info) => (
-        <Badge>
-          {info.getValue() || `v${info.row.original.modelVersionId}`}
-        </Badge>
-      ),
+    columnHelper.accessor('versionLabel', {
+      header: 'Version',
+      cell: (info) => <Badge>{info.getValue() || `v${info.row.original.modelVersionId}`}</Badge>,
     }),
-    columnHelper.accessor("organizationName", {
-      header: "Organization",
+    columnHelper.accessor('organizationName', {
+      header: 'Organization',
       cell: (info) => (
         <Text variant="bodySm">
-          ID #{info.getValue() || info.row.original.organizationId.slice(0, 8)}
+          {info.getValue() || `ID #${info.row.original.organizationId.slice(0, 8)}`}
         </Text>
       ),
     }),
-    columnHelper.accessor("status", {
-      header: "Status",
+    columnHelper.accessor('status', {
+      header: 'Status',
       cell: (info) => {
         const status = info.getValue();
         const colors = statusColors[status] || statusColors.PENDING;
         return (
-          <span
-            className={`px-2 py-1 text-xs rounded-full ${colors.bg} ${colors.text}`}
-          >
-            {status.replace(/_/g, " ")}
+          <span className={`text-xs rounded-full px-2 py-1 ${colors.bg} ${colors.text}`}>
+            {formatAssignmentStatusLabel(status)}
           </span>
         );
       },
     }),
-    columnHelper.accessor("notes", {
-      header: "Notes",
+    columnHelper.accessor('notes', {
+      header: 'Notes',
       cell: (info) => (
         <Text variant="bodySm" className="text-gray-600 max-w-xs truncate">
-          {info.getValue() || "-"}
+          {info.getValue() || '-'}
         </Text>
       ),
     }),
-    columnHelper.accessor("createdAt", {
-      header: "Invited On",
-      cell: (info) => (
-        <Text variant="bodySm">{formatDate(info.getValue())}</Text>
-      ),
+    columnHelper.accessor('createdAt', {
+      header: 'Invited On',
+      cell: (info) => <Text variant="bodySm">{formatDate(info.getValue())}</Text>,
     }),
     columnHelper.display({
-      id: "actions",
-      header: "Actions",
+      id: 'actions',
+      header: 'Actions',
       cell: ({ row }) => (
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-[170px] items-center gap-2 whitespace-nowrap">
           <Button
             kind="tertiary"
             size="slim"
-            onClick={() => handleUpdateStatus(row.original.id, "ACCEPTED")}
+            className="!text-baseGraySlateSolid12"
+            onClick={() => handleUpdateStatus(row.original.id, 'ACCEPTED')}
             disabled={updatingId === row.original.id}
           >
-            <div className="flex items-end gap-1">
-              <IconCheck color="#5746AF" size={16} className="mr-1" />
-              <span className="text-baseVioletSolid11 pt-0.4">Accept</span>
+            <div className="inline-flex items-center gap-1.5 whitespace-nowrap">
+              <IconCheck color="#11181C" size={16} />
+              <span className="text-baseGraySlateSolid12">Accept</span>
             </div>
           </Button>
           <Button
             kind="tertiary"
             size="slim"
-            onClick={() => handleUpdateStatus(row.original.id, "DECLINED")}
+            className="!text-baseGraySlateSolid12"
+            onClick={() => handleUpdateStatus(row.original.id, 'DECLINED')}
             disabled={updatingId === row.original.id}
           >
-            <div className="flex items-start justify-center gap-1">
-              <IconX color="#5746AF" size={16} className="mr-1" />
-              <span className="text-baseVioletSolid11 pt-0.4">Decline</span>
+            <div className="inline-flex items-center gap-1.5 whitespace-nowrap">
+              <IconX color="#11181C" size={16} />
+              <span className="text-baseGraySlateSolid12">Decline</span>
             </div>
           </Button>
         </div>
@@ -292,82 +317,74 @@ const AuditorDashboard = () => {
   ];
 
   const activeColumns = [
-    columnHelper.accessor("modelName", {
-      header: "Model",
+    columnHelper.accessor('modelName', {
+      header: 'Model',
       cell: (info) => (
         <Link
           href={`/${locale}/dashboard/auditor/models/${info.row.original.modelId}`}
-          className="text-baseVioletSolid11 hover:underline font-medium"
+          className="font-medium text-baseGraySlateSolid12 hover:underline"
         >
           {info.getValue() || info.row.original.modelName}
         </Link>
       ),
     }),
-    columnHelper.accessor("versionLabel", {
-      header: "Version",
-      cell: (info) => (
-        <Badge>
-          {info.getValue() || `v${info.row.original.modelVersionId}`}
-        </Badge>
-      ),
+    columnHelper.accessor('versionLabel', {
+      header: 'Version',
+      cell: (info) => <Badge>{info.getValue() || `v${info.row.original.modelVersionId}`}</Badge>,
     }),
-    columnHelper.accessor("organizationName", {
-      header: "Organization",
+    columnHelper.accessor('organizationName', {
+      header: 'Organization',
       cell: (info) => (
         <Text variant="bodySm">
-          ID #{info.getValue() || info.row.original.organizationId.slice(0, 8)}
+          {info.getValue() || `ID #${info.row.original.organizationId.slice(0, 8)}`}
         </Text>
       ),
     }),
-    columnHelper.accessor("status", {
-      header: "Status",
+    columnHelper.accessor('status', {
+      header: 'Status',
       cell: (info) => {
         const status = info.getValue();
         const colors = statusColors[status] || statusColors.PENDING;
         return (
-          <span
-            className={`px-2 py-1 text-xs rounded-full ${colors.bg} ${colors.text}`}
-          >
-            {status.replace(/_/g, " ")}
+          <span className={`text-xs rounded-full px-2 py-1 ${colors.bg} ${colors.text}`}>
+            {formatStatusLabel(status)}
           </span>
         );
       },
     }),
-    columnHelper.accessor("createdAt", {
-      header: "Assigned On",
-      cell: (info) => (
-        <Text variant="bodySm">{formatDate(info.getValue())}</Text>
-      ),
+    columnHelper.accessor('createdAt', {
+      header: 'Assigned On',
+      cell: (info) => <Text variant="bodySm">{formatDate(info.getValue())}</Text>,
     }),
     columnHelper.display({
-      id: "actions",
-      header: "Actions",
+      id: 'actions',
+      header: 'Actions',
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Button
             kind="tertiary"
             size="slim"
+            className="!text-baseGraySlateSolid12"
             onClick={() => handleStartEvaluation(row.original)}
           >
-            <div className="flex items-center justify-center gap-1">
-              <IconPlayerPlay size={16} className="mr-1" />
-              <span className="pt-0.5">
-                {row.original.status === "IN_PROGRESS"
-                  ? "Continue"
-                  : "Start Evaluation"}
+            <div className="flex items-center justify-center gap-1 text-baseGraySlateSolid12">
+              <IconPlayerPlay size={16} className="mr-1 text-baseGraySlateSolid12" />
+              <span className="pt-0.5 text-baseGraySlateSolid12">
+                {row.original.status === 'IN_PROGRESS' ? 'Continue' : 'Start Evaluation'}
               </span>
             </div>
           </Button>
-          <Button
+          {/* <Button
             kind="tertiary"
             size="slim"
+            className="!text-baseGraySlateSolid12"
             onClick={() => handleViewModel(row.original)}
           >
-            <div className="flex items-center justify-center gap-1">
-              <IconEye size={16} className="mr-1" />
-              <span className="pt-0.5">View</span>
+            <div className="flex items-center justify-center gap-1 text-baseGraySlateSolid12">
+              <IconEye size={16} className="mr-1 text-baseGraySlateSolid12" />
+              <span className="pt-0.5 text-baseGraySlateSolid12">View</span>
             </div>
-          </Button>
+          </Button> */}
         </div>
       ),
     }),
@@ -400,12 +417,17 @@ const AuditorDashboard = () => {
   return (
     <>
       {/* Header with Title */}
-      <div className="flex items-center justify-between mb-6 mt-10">
-        <h1 className="text-gray-900 overview-heading">Overview</h1>
+      <div className="mb-6 mt-10 flex items-center justify-between">
+        <div>
+          <h1 className="text-gray-900 overview-heading">Overview</h1>
+          <Text variant="bodySm" className="text-gray-600 mt-1">
+            Track your evaluation invitations, assignments, and activity
+          </Text>
+        </div>
       </div>
 
       {/* Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 sm:mb-10 lg:mb-12">
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:mb-10 sm:grid-cols-2 lg:mb-12 lg:grid-cols-4">
         {metrics.map((m) => (
           <div key={m.label} className="metric-card">
             <p className="metric-card-label">{m.label}</p>
@@ -428,7 +450,7 @@ const AuditorDashboard = () => {
 
       {/* Pending Invitations Section */}
       <div className="mb-10">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="mb-4 flex items-center gap-3">
           {/* <IconClock size={24} className="text-yellow-600" /> */}
           <Text
             variant="headingMd"
@@ -445,24 +467,27 @@ const AuditorDashboard = () => {
         </div>
 
         {pendingAssignments.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 rounded-lg border border-gray-200">
-            <IconClock size={32} className="text-gray-400 mb-3" />
-            <Text variant="bodyMd" className="text-gray-600">
-              No pending invitations
+          <div className="rounded-lg border border-gray-200 flex flex-col items-center justify-start pb-12 pt-6">
+            {/* <IconClock size={32} className="text-gray-400 mb-1" /> */}
+            <Text variant="bodyMd" className="h-6 text-center text-[20px] leading-6 text-[#7E868C]">
+              You have no pending invitations
             </Text>
-            <Text variant="bodySm" className="text-gray-500 mt-1">
-              You&apos;ll see new evaluation invitations here when organizations
-              invite you
-            </Text>
+            <button
+              type="button"
+              onClick={() => setShowKnowMoreModal(true)}
+              className="mt-4 cursor-pointer border-none bg-transparent p-0 text-[#644FC1] hover:underline"
+            >
+              Know More
+            </button>
           </div>
         ) : (
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="rounded-lg border border-gray-200 overflow-x-auto bg-white">
             <DataTable
               rows={pendingAssignments}
               columns={pendingColumns}
               hoverable={true}
               hideSelection={true}
-              truncate={true}
+              truncate={false}
               hideFooter={pendingAssignments.length <= 10}
             />
           </div>
@@ -471,14 +496,14 @@ const AuditorDashboard = () => {
 
       {/* Active Assignments Section */}
       <div>
-        <div className="flex items-center gap-3 mb-4">
+        <div className="mb-4 flex items-center gap-3">
           {/* <IconPlayerPlay size={24} className="text-green-600" /> */}
           <Text
             variant="headingMd"
             fontWeight="bold"
             className="text-[20px] leading-[26px] text-[#1C2024]"
           >
-            Active Assignments (Most Recent)
+            Active Assignments
           </Text>
           {/* {activeAssignments.length > 0 && (
             <Badge status="success">{String(activeAssignments.length)}</Badge>
@@ -486,17 +511,14 @@ const AuditorDashboard = () => {
         </div>
 
         {activeAssignments.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 rounded-lg border border-gray-200">
-            <IconPlayerPlay size={32} className="text-gray-400 mb-3" />
-            <Text variant="bodyMd" className="text-gray-600">
-              No active assignments
-            </Text>
-            <Text variant="bodySm" className="text-gray-500 mt-1">
-              Accept pending invitations to start evaluating AI models
+          <div className="rounded-lg border border-gray-200 flex flex-col items-center justify-start pb-12 pt-6">
+            {/* <IconPlayerPlay size={32} className="text-gray-400 mb-1" /> */}
+            <Text variant="bodyMd" className="h-6 text-center text-[20px] leading-6 text-[#7E868C]">
+              Accept a pending invitation to make it active.
             </Text>
           </div>
         ) : (
-          <div className="rounded-lg border border-gray-200 overflow-hidden">
+          <div className="rounded-lg border border-gray-200 overflow-x-auto">
             <DataTable
               rows={activeAssignments}
               columns={activeColumns}
@@ -508,24 +530,62 @@ const AuditorDashboard = () => {
         )}
       </div>
 
-      {/* Toast Notification */}
-      {toast.show && (
-        <div
-          className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 ${
-            toast.type === "success"
-              ? "bg-green-600 text-white"
-              : "bg-red-600 text-white"
-          }`}
-        >
-          <span>{toast.message}</span>
-          <button
-            onClick={() => setToast({ ...toast, show: false })}
-            className="ml-2 hover:opacity-80"
-          >
-            <IconX size={16} />
-          </button>
-        </div>
+      {evaluationModalAssignment && (
+        <ModelSelectionModal
+          open={!!evaluationModalAssignment}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEvaluationModalAssignment(null);
+            }
+          }}
+          orgId={evaluationModalAssignment.organizationId}
+          preselectedModelId={evaluationModalAssignment.modelId}
+          preselectedVersionId={evaluationModalAssignment.modelVersionId}
+          preselectedModel={preselectedModelForModal}
+          lockModelSelection
+          variant="auditor"
+        />
       )}
+
+      <Dialog open={showKnowMoreModal} onOpenChange={setShowKnowMoreModal}>
+        <Dialog.Content
+          title="How the Evaluator Dashboard works"
+          footer={
+            <div className="know-more-modal-footer flex !w-[100%] w-full items-center justify-center">
+              <Button
+                kind="primary"
+                onClick={() => setShowKnowMoreModal(false)}
+                className="!w-full !flex-1 !justify-center !rounded-[8px] !border-none !bg-primaryPurple2 !text-white hover:!bg-[#6849EE] hover:!text-white"
+              >
+                Got it
+              </Button>
+            </div>
+          }
+        >
+          <div className="flex flex-col gap-4 py-2 text-[#1C2024]">
+            <Text variant="bodyMd">
+              The Evaluator Dashboard is for experts who review AI models.
+            </Text>
+            <Text variant="bodyMd">
+              You can access when an AI Maker invites you to evaluate their model. Once invited,
+              you&apos;ll see your{' '}
+              <Text as="span" fontWeight="bold">
+                Pending Invitations
+              </Text>{' '}
+              in this dashboard.
+            </Text>
+            <div className="italic">
+              <Text variant="bodyMd" className="italic">
+                Note:
+              </Text>
+              <Text variant="bodyMd" className="italic">
+                If you&apos;re an organisation admin, you cannot invite yourself as an expert
+                evaluator. Another AI Maker organisation must invite you.
+              </Text>
+            </div>
+          </div>
+        </Dialog.Content>
+      </Dialog>
     </>
   );
 };
