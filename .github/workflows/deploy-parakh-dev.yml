@@ -41,12 +41,6 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Generate
-        run: npm run generate:ci
-        env:
-          NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT: ${{ vars.NEXT_PUBLIC_USI_GRAPHQL_ENDPOINT }}
-          NODE_ENV: production
-
       - name: Build
         run: npm run build
 
