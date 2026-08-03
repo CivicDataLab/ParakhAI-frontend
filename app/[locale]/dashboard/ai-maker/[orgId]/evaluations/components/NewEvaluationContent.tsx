@@ -8,7 +8,9 @@ import { useAppSession } from '@/hooks/use-app-session';
 import { useGraphQL } from '@/lib/graphql-client';
 import { getEvaluationStatusColor } from '@/utils/status-colors';
 import {
+  AUDIT_TYPE,
   AUDIT_TYPE_LABELS,
+  AuditType,
   EVALUATION_MODE,
   EVALUATION_STATUS,
   getEvaluationModeLabel,
@@ -24,7 +26,7 @@ import ManualTestCases from './ManualTestCases';
 import ModelSelectionModal from './ModelSelectionModal';
 import styles from './styles.module.scss';
 import TestCases from './TestCases';
-import type { AuditType, Module, SelectOption } from './types';
+import type { Module, SelectOption } from './types';
 
 // GraphQL queries for dynamic modules and metrics
 const METRICS_BY_MODEL_TYPE_QUERY = `
@@ -232,7 +234,7 @@ const generateDefaultAuditName = () => {
 /** Map any API/config auditType string to the UI display form ("Technical"). */
 function parseAuditTypeFromBackend(raw: string | null | undefined): AuditType | null {
   const canonical = parseAuditType(raw);
-  return canonical ? AUDIT_TYPE_LABELS[canonical] : null;
+  return canonical ?? null;
 }
 
 interface NewEvaluationContentProps {
@@ -267,7 +269,7 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
 
   const [auditType, setAuditType] = useState<AuditType>(() => {
     const parsed = parseAuditTypeFromBackend(urlAuditType);
-    return parsed ?? AUDIT_TYPE_LABELS.TECHNICAL_AUDIT;
+    return parsed ?? AUDIT_TYPE.TECHNICAL_AUDIT;
   });
   const [activeTab, setActiveTab] = useState<'config' | 'test'>('config');
   const [auditName, setAuditName] = useState(() => urlEvaluationName || generateDefaultAuditName());

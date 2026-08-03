@@ -2,9 +2,9 @@
 
 import React from 'react';
 import { Combobox, Label, Select, Spinner, Text, TextField } from 'opub-ui';
-import { AUDIT_TYPE_LABELS } from '@/constants';
+import { AUDIT_TYPE_LABELS, AuditType } from '@/constants';
 import styles from './styles.module.scss';
-import type { AuditType, SelectOption } from './types';
+import type { SelectOption } from './types';
 
 type Module = {
   name: string;
