@@ -15,7 +15,7 @@
     "clean": "rm -rf node_modules package-lock.json .next",
     "release": "release-it",
     "style": "opub-tokens; echo \"\\033[33mRunning Prettier\"; prettier --write **/tailwind/*.js **/_variables.css",
-    "prepare": "husky",
+    "prepare": "husky || true",
     "postinstall": "npm run generate:ci",
     "test": "vitest",
     "test:coverage": "vitest run --coverage"
