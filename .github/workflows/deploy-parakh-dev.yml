@@ -2,7 +2,7 @@ name: Update ParakhAI Dev
 
 on:
   push:
-    branches: ['CD']
+    branches: ['dev']
   workflow_dispatch: {}
 
 concurrency:
