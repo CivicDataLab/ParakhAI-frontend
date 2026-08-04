@@ -104,5 +104,84 @@ jobs:
               sleep 3
             done
 
-            echo "Deploy verified healthy"
+            echo "Deploy verified healthy - keeping backup until smoke tests confirm"
+
+  smoke-tests:
+    name: Smoke Tests
+    needs: deploy
+    uses: CivicDataLab/ParakhAI_test/.github/workflows/run-smoke.yml@main
+    secrets:
+      TEST_EMAIL_1: ${{ secrets.TEST_EMAIL_1 }}
+      TEST_PASSWORD_1: ${{ secrets.TEST_PASSWORD_1 }}
+      TEST_EMAIL_2: ${{ secrets.TEST_EMAIL_2 }}
+      TEST_PASSWORD_2: ${{ secrets.TEST_PASSWORD_2 }}
+      SANDBOX_ORG_SLUG: ${{ secrets.SANDBOX_ORG_SLUG }}
+
+  rollback-on-smoke-failure:
+    name: Rollback (smoke tests failed)
+    needs: smoke-tests
+    if: failure() && needs.deploy.result == 'success'
+    runs-on: ubuntu-latest
+    environment: development
+    timeout-minutes: 10
+    steps:
+      - name: Restore previous build and restart
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          HEALTH_CHECK_URL: ${{ vars.HEALTH_CHECK_URL || 'http://localhost:3000' }}
+        with:
+          host: ${{ vars.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          envs: HEALTH_CHECK_URL
+          script: |
+            set -e
+            export PATH="/home/ubuntu/.nvm/versions/node/v24.11.1/bin:$PATH"
+            cd platform/ParakhAI-frontend
+
+            if [ ! -d .next.bak ] || [ ! -d public.bak ]; then
+              echo "No backup found to roll back to - leaving current deploy in place"
+              exit 1
+            fi
+
+            rm -rf .next public
+            mv .next.bak .next
+            mv public.bak public
+            pm2 restart parakh
+
+            attempts=0
+            until curl -sf -o /dev/null "$HEALTH_CHECK_URL"; do
+              attempts=$((attempts + 1))
+              if [ "$attempts" -ge 10 ]; then
+                echo "Rollback restart did not become healthy after $attempts attempts"
+                exit 1
+              fi
+              sleep 3
+            done
+
+            echo "Rolled back to previous build after failed smoke tests"
+
+      - name: Mark this run as failed
+        run: |
+          echo "::error::Smoke tests failed after deploy - rolled back to the previous build."
+          exit 1
+
+  finalize-deploy:
+    name: Finalize Deploy
+    needs: smoke-tests
+    if: success()
+    runs-on: ubuntu-latest
+    environment: development
+    timeout-minutes: 5
+    steps:
+      - name: Clean up backup build
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ vars.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd platform/ParakhAI-frontend
             rm -rf .next.bak public.bak
+            echo "Deploy confirmed healthy by smoke tests - backup cleared"
