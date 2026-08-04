@@ -110,7 +110,6 @@ jobs:
     name: Smoke Tests
     needs: deploy
     uses: CivicDataLab/ParakhAI_test/.github/workflows/run-smoke.yml@main
-    environment: development
     secrets:
       TEST_EMAIL_1: ${{ secrets.TEST_EMAIL_1 }}
       TEST_PASSWORD_1: ${{ secrets.TEST_PASSWORD_1 }}
