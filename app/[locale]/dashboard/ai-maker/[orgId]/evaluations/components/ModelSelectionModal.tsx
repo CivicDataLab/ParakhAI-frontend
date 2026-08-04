@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Button, Dialog, Label, Select, Spinner, Text, TextField } from 'opub-ui';
 import { useGraphQL } from '@/lib/graphql-client';
 import { isDeprecatedLifecycle } from '@/utils/lifecycle';
-import { AUDIT_TYPE, AuditType, EVALUATION_MODE } from '@/constants';
+import { AUDIT_TYPE, AuditType, EVALUATION_MODE, EvaluationMode } from '@/constants';
 import type { SelectOption } from './types';
 
 const AI_MODELS_QUERY = `
@@ -87,7 +87,6 @@ type AIModel = {
   }>;
 };
 
-type EvaluationMethod = 'bulk' | 'manual';
 type ModalStep = 1 | 2;
 
 const generateDefaultEvaluationName = () => {
@@ -217,7 +216,7 @@ const ModelSelectionModal = ({
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [selectedVersionId, setSelectedVersionId] = useState<number | null>(null);
   const [evaluationName, setEvaluationName] = useState(generateDefaultEvaluationName);
-  const [evaluationMethod, setEvaluationMethod] = useState<EvaluationMethod>('bulk');
+  const [evaluationMethod, setEvaluationMethod] = useState<EvaluationMode>(EVALUATION_MODE.BULK);
   const [auditType, setAuditType] = useState<AuditType>(AUDIT_TYPE.TECHNICAL_AUDIT);
   const [evaluationDomain, setEvaluationDomain] = useState('');
   const [evaluationDomainOptions, setEvaluationDomainOptions] = useState<SelectOption[]>([]);
@@ -233,7 +232,7 @@ const ModelSelectionModal = ({
   const resetFormState = () => {
     setStep(1);
     setEvaluationName(generateDefaultEvaluationName());
-    setEvaluationMethod('bulk');
+    setEvaluationMethod(EVALUATION_MODE.BULK);
     setAuditType(AUDIT_TYPE.TECHNICAL_AUDIT);
     setEvaluationDomain('');
     setEvaluationDomainOptions([]);
@@ -438,16 +437,14 @@ const ModelSelectionModal = ({
               auditId,
               name: evaluationName.trim(),
               auditType,
-              evaluationMode:
-                evaluationMethod === 'bulk' ? EVALUATION_MODE.BULK : EVALUATION_MODE.PLAYGROUND,
+              evaluationMode: evaluationMethod,
               auditScope: evaluationDomain.trim() || null,
               auditObjective: auditObjective.trim(),
               configuration: {
                 auditType,
                 auditObjective: auditObjective.trim(),
                 auditScope: evaluationDomain.trim() || null,
-                evaluationMode:
-                  evaluationMethod === 'bulk' ? EVALUATION_MODE.BULK : EVALUATION_MODE.PLAYGROUND,
+                evaluationMode: evaluationMethod,
               },
             },
           },
@@ -626,8 +623,8 @@ const ModelSelectionModal = ({
                           type="radio"
                           name="evaluationMethod"
                           value="bulk"
-                          checked={evaluationMethod === 'bulk'}
-                          onChange={() => setEvaluationMethod('bulk')}
+                          checked={evaluationMethod === EVALUATION_MODE.BULK}
+                          onChange={() => setEvaluationMethod(EVALUATION_MODE.BULK)}
                           className="text-primary-purple focus:ring-primary-purple mt-1 h-4 w-4 focus:ring-2"
                         />
                         <div className="flex-1">
@@ -648,9 +645,9 @@ const ModelSelectionModal = ({
                           id="evaluationMethod-playground"
                           type="radio"
                           name="evaluationMethod"
-                          value="manual"
-                          checked={evaluationMethod === 'manual'}
-                          onChange={() => setEvaluationMethod('manual')}
+                          value="playground"
+                          checked={evaluationMethod === EVALUATION_MODE.PLAYGROUND}
+                          onChange={() => setEvaluationMethod(EVALUATION_MODE.PLAYGROUND)}
                           className="text-primary-purple focus:ring-primary-purple mt-1 h-4 w-4 focus:ring-2"
                         />
                         <div className="flex-1">
