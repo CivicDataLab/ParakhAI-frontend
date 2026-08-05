@@ -1,14 +1,15 @@
-﻿"use client";
+﻿'use client';
 
-import { useGraphQL } from "@/lib/graphql-client";
-import { useAppSession } from "@/hooks/use-app-session";
-import { IconArrowLeft } from "@tabler/icons-react";
-import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Button, Spinner, Text } from "opub-ui";
-import { useEffect, useState } from "react";
-import { OrganizationContext } from "../../../ai-maker/[orgId]/OrganizationContext";
-import NewEvaluationContent from "../../../ai-maker/[orgId]/evaluations/components/NewEvaluationContent";
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { IconArrowLeft } from '@tabler/icons-react';
+import { Button, Spinner, Text } from 'opub-ui';
+import { useAppSession } from '@/hooks/use-app-session';
+import { useGraphQL } from '@/lib/graphql-client';
+import { isActiveAssignmentStatus } from '@/constants';
+import NewEvaluationContent from '../../../ai-maker/[orgId]/evaluations/components/NewEvaluationContent';
+import { OrganizationContext } from '../../../ai-maker/[orgId]/OrganizationContext';
 
 const GET_MY_ASSIGNMENTS_FOR_MODEL = `
   query GetMyAssignmentsForModel($modelId: String) {
@@ -46,22 +47,16 @@ const AuditorNewEvaluationPage = () => {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const locale = params?.locale || "en";
-  const {
-    request,
-    isAuthenticated,
-    isLoading: isSessionLoading,
-  } = useGraphQL();
+  const locale = params?.locale || 'en';
+  const { request, isAuthenticated, isLoading: isSessionLoading } = useGraphQL();
   const { user } = useAppSession();
 
-  const modelId = searchParams.get("modelId");
-  const versionId = searchParams.get("versionId");
+  const modelId = searchParams.get('modelId');
+  const versionId = searchParams.get('versionId');
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [validAssignment, setValidAssignment] = useState<Assignment | null>(
-    null,
-  );
+  const [validAssignment, setValidAssignment] = useState<Assignment | null>(null);
   const [organization, setOrganization] = useState<{
     name: string;
     logoUrl: string | null;
@@ -72,9 +67,7 @@ const AuditorNewEvaluationPage = () => {
 
     const checkAssignment = async () => {
       if (!modelId) {
-        setError(
-          "No model specified. Please select a model from your assignments.",
-        );
+        setError('No model specified. Please select a model from your assignments.');
         setLoading(false);
         return;
       }
@@ -88,8 +81,7 @@ const AuditorNewEvaluationPage = () => {
         const assignments = response?.myAssignments || [];
 
         const assignment = assignments.find((a: any) => {
-          const statusValid =
-            a.status === "ACCEPTED" || a.status === "IN_PROGRESS";
+          const statusValid = isActiveAssignmentStatus(a.status);
           if (versionId) {
             return statusValid && a.modelVersionId === parseInt(versionId);
           }
@@ -111,16 +103,16 @@ const AuditorNewEvaluationPage = () => {
               });
             }
           } catch (orgErr) {
-            console.warn("Could not fetch organization details:", orgErr);
+            console.warn('Could not fetch organization details:', orgErr);
           }
         } else {
           setError(
-            "You don't have an accepted assignment for this model. Please accept the invitation first.",
+            "You don't have an accepted assignment for this model. Please accept the invitation first."
           );
         }
       } catch (err: any) {
-        console.error("Error checking assignment:", err);
-        setError(err?.message || "Failed to verify assignment");
+        console.error('Error checking assignment:', err);
+        setError(err?.message || 'Failed to verify assignment');
       } finally {
         setLoading(false);
       }
@@ -146,30 +138,25 @@ const AuditorNewEvaluationPage = () => {
         <div className="mb-6">
           <Link
             href={`/${locale}/dashboard/auditor`}
-            className="inline-flex items-center text-purple-600 hover:text-purple-800"
+            className="text-purple-600 hover:text-purple-800 inline-flex items-center"
           >
             <IconArrowLeft size={18} className="mr-2" />
             Back to Dashboard
           </Link>
         </div>
 
-        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border border-gray-200">
+        <div className="rounded-lg border border-gray-200 flex flex-col items-center justify-center bg-white py-20">
           <Text variant="bodyMd" className="text-red-600 mb-4">
             {error}
           </Text>
           <div className="flex gap-4">
-            <Button
-              kind="primary"
-              onClick={() => router.push(`/${locale}/dashboard/auditor`)}
-            >
+            <Button kind="primary" onClick={() => router.push(`/${locale}/dashboard/auditor`)}>
               View My Assignments
             </Button>
             {modelId && (
               <Button
                 kind="secondary"
-                onClick={() =>
-                  router.push(`/${locale}/dashboard/auditor/models/${modelId}`)
-                }
+                onClick={() => router.push(`/${locale}/dashboard/auditor/models/${modelId}`)}
               >
                 View Model Details
               </Button>
@@ -184,10 +171,7 @@ const AuditorNewEvaluationPage = () => {
     // Render the evaluation form inline with organization context
     return (
       <OrganizationContext.Provider value={{ organization, isLoading: false }}>
-        <NewEvaluationContent
-          orgId={validAssignment.organizationId}
-          fromAuditor={true}
-        />
+        <NewEvaluationContent orgId={validAssignment.organizationId} fromAuditor={true} />
       </OrganizationContext.Provider>
     );
   }

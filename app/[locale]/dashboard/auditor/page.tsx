@@ -9,6 +9,7 @@ import { Badge, Button, DataTable, Dialog, Spinner, Text, toast } from 'opub-ui'
 import { useAppSession } from '@/hooks/use-app-session';
 import { useGraphQL } from '@/lib/graphql-client';
 import { statusColors } from '@/utils/status-colors';
+import { ASSIGNMENT_STATUS, isActiveAssignmentStatus } from '@/constants';
 import { formatAssignmentStatusLabel, formatStatusLabel, isPendingAssignmentStatus } from '@/utils';
 import ModelSelectionModal from '../ai-maker/[orgId]/evaluations/components/ModelSelectionModal';
 
@@ -207,10 +208,8 @@ const AuditorDashboard = () => {
 
   // Filter assignments by status
   const pendingAssignments = assignments.filter((a) => isPendingAssignmentStatus(a.status));
-  const activeAssignments = assignments.filter(
-    (a) => a.status === 'ACCEPTED' || a.status === 'IN_PROGRESS'
-  );
-  const completedAssignments = assignments.filter((a) => a.status === 'COMPLETED');
+  const activeAssignments = assignments.filter((a) => isActiveAssignmentStatus(a.status));
+  const completedAssignments = assignments.filter((a) => a.status === ASSIGNMENT_STATUS.COMPLETED);
 
   // Calculate metrics for Overview section
   const metrics = [
@@ -291,7 +290,7 @@ const AuditorDashboard = () => {
             kind="tertiary"
             size="slim"
             className="!text-baseGraySlateSolid12"
-            onClick={() => handleUpdateStatus(row.original.id, 'ACCEPTED')}
+            onClick={() => handleUpdateStatus(row.original.id, ASSIGNMENT_STATUS.ACCEPTED)}
             disabled={updatingId === row.original.id}
           >
             <div className="inline-flex items-center gap-1.5 whitespace-nowrap">
@@ -303,7 +302,7 @@ const AuditorDashboard = () => {
             kind="tertiary"
             size="slim"
             className="!text-baseGraySlateSolid12"
-            onClick={() => handleUpdateStatus(row.original.id, 'DECLINED')}
+            onClick={() => handleUpdateStatus(row.original.id, ASSIGNMENT_STATUS.DECLINED)}
             disabled={updatingId === row.original.id}
           >
             <div className="inline-flex items-center gap-1.5 whitespace-nowrap">
@@ -370,7 +369,9 @@ const AuditorDashboard = () => {
             <div className="flex items-center justify-center gap-1 text-baseGraySlateSolid12">
               <IconPlayerPlay size={16} className="mr-1 text-baseGraySlateSolid12" />
               <span className="pt-0.5 text-baseGraySlateSolid12">
-                {row.original.status === 'IN_PROGRESS' ? 'Continue' : 'Start Evaluation'}
+                {row.original.status === ASSIGNMENT_STATUS.IN_PROGRESS
+                  ? 'Continue'
+                  : 'Start Evaluation'}
               </span>
             </div>
           </Button>

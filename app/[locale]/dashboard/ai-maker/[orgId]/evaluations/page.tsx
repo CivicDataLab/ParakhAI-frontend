@@ -1,475 +1,219 @@
-"use client";
+'use client';
 
+import { useMemo, useState, type ReactNode } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { createColumnHelper } from '@tanstack/react-table';
+import { Badge, Button, DataTable, Spinner, Text, type ColumnFilterConfig } from 'opub-ui';
+import { useOrganization } from '@/features/ai-maker/context/OrganizationContext';
+import { useGraphQL } from '@/lib/graphql-client';
+import { getEvaluationStatusColor } from '@/utils/status-colors';
 import {
+  AUDIT_TYPE_OPTIONS,
+  EVALUATION_MODE_OPTIONS,
+  EVALUATION_STATUS,
   EVALUATION_STATUS_FILTER_OPTIONS,
-  StatusFilterTabs,
-} from "@/features/dashboard/components/StatusFilterTabs";
-import { useGraphQL } from "@/lib/graphql-client";
-import { getEvaluationStatusColor } from "@/utils/status-colors";
-import { formatStatusLabel } from "@/utils";
-import { createColumnHelper } from "@tanstack/react-table";
-import { IconReportAnalytics } from "@tabler/icons-react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import { Badge, Button, DataTable, Spinner, Text } from "opub-ui";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useOrganization } from "@/features/ai-maker/context/OrganizationContext";
-import ModelSelectionModal from "./components/ModelSelectionModal";
-import "./evaluations-page.css";
+  getAuditTypeLabel,
+  getEvaluationModeLabel,
+  isPlaygroundEvaluationMode,
+} from '@/constants';
+import { formatStatusLabel } from '@/utils';
+import ModelSelectionModal from './components/ModelSelectionModal';
+import { useAuditsQuery, type Audit } from './hooks/use-audits-query';
+import './evaluations-page.css';
 
-// Full fetch — used on initial load
-const AUDITS_QUERY = `
-  query GetAudits($limit: Int, $offset: Int, $filters: [FilterSpec!]) {
-    audits(limit: $limit, offset: $offset, filters: $filters, sortOptions: null) {
-      data {
-        id
-        name
-        modelId
-        modelName
-        status
-        modules
-        metrics
-        evaluationMode
-        auditType
-        totalTests
-        passedTests
-        failedTests
-        createdAt
-        startedAt
-        completedAt
-      }
-      totalItemsCount
-    }
-  }
-`;
+// ---------------------------------------------------------------------------
+// Presentational helpers
+// ---------------------------------------------------------------------------
 
-// Lightweight poll — only id, name, status, and completedAt for non-terminal evaluations
-const AUDITS_STATUS_POLL_QUERY = `
-  query GetAudits($limit: Int, $offset: Int, $filters: [FilterSpec!]) {
-    audits(limit: $limit, offset: $offset, filters: $filters, sortOptions: null) {
-      data {
-        id
-        name
-        status
-        completedAt
-      }
-    }
-  }
-`;
-
-const ACTIVE_AUDIT_STATUSES = [
-  "QUEUED",
-  "IN_PROGRESS",
-  "PENDING_REVIEW",
-  "DRAFT",
-  "RUNNING",
-] as const;
-
-const ACTIVE_STATUS_FILTER = {
-  field: "status",
-  condition: "in",
-  value: ACTIVE_AUDIT_STATUSES.join(","),
+const formatDate = (input: string | null): string => {
+  if (!input) return '--';
+  return new Date(input).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 };
 
-type Audit = {
-  id: string;
-  name: string;
-  modelId: string;
-  modelName: string | null;
-  status: string;
-  modules: string[];
-  metrics: string[];
-  totalTests: number;
-  passedTests: number;
-  failedTests: number;
-  evaluationMode: string;
-  auditType: string;
-  createdAt: string;
-  startedAt: string | null;
-  completedAt: string | null;
-};
-
-type AuditStatusUpdate = {
-  id: string;
-  name: string;
-  status: string;
-  completedAt: string | null;
-};
-
-const isActiveAuditStatus = (status?: string | null) =>
-  ACTIVE_AUDIT_STATUSES.includes(
-    (status?.toUpperCase() ?? "") as (typeof ACTIVE_AUDIT_STATUSES)[number],
+const StatusPill = ({ status }: { status: string }) => {
+  const colors = getEvaluationStatusColor(status);
+  return (
+    <Text
+      variant="bodySm"
+      as="span"
+      className="rounded inline-block px-2 py-0.5"
+      style={{ backgroundColor: colors.fillColor, color: colors.textColor }}
+    >
+      {formatStatusLabel(status)}
+    </Text>
   );
-
-const hasActiveAudits = (items: Array<{ status?: string | null }>) =>
-  items.some((audit) => isActiveAuditStatus(audit.status));
-
-const mergeAuditStatusUpdates = (
-  current: Audit[],
-  updates: AuditStatusUpdate[],
-): Audit[] => {
-  if (updates.length === 0) return current;
-
-  const updateById = new Map(updates.map((update) => [update.id, update]));
-  const next = [...current];
-
-  for (let i = 0; i < next.length; i++) {
-    const update = updateById.get(next[i].id);
-    if (update) {
-      next[i] = {
-        ...next[i],
-        id: update.id,
-        name: update.name,
-        status: update.status,
-        completedAt: update.completedAt,
-      };
-    }
-  }
-
-  return next;
 };
 
-const auditTypeLabels: Record<string, string> = {
-  TECHNICAL_AUDIT: "Technical",
-  DOMAIN_AUDIT: "Domain",
-  CULTURAL_AUDIT: "Cultural",
+const TestsBar = ({ passed, failed, total }: { passed: number; failed: number; total: number }) => {
+  if (!total) return <Text variant="bodySm">--</Text>;
+  return (
+    <div className="flex items-center gap-2">
+      <div className="test-result-bar">
+        <div className="test-result-pass" style={{ width: `${(passed / total) * 100}%` }} />
+        <div className="test-result-fail" style={{ width: `${(failed / total) * 100}%` }} />
+      </div>
+      <Text variant="bodySm">
+        {passed}/{total} passed
+      </Text>
+    </div>
+  );
+};
+
+type AuditColumnConfig = {
+  id: keyof Audit;
+  header: string;
+  cell: (audit: Audit) => ReactNode;
+  sortable?: boolean;
+  filter?: Omit<ColumnFilterConfig, 'columnId'>;
 };
 
 const AuditsListPage = () => {
   const params = useParams();
-  const locale = params.locale || "en";
+  const locale = (params.locale as string) || 'en';
   const orgId = params.orgId as string;
-  const {
-    request,
-    isAuthenticated,
-    isLoading: isSessionLoading,
-  } = useGraphQL();
+  const { isAuthenticated, isLoading: isSessionLoading } = useGraphQL();
   useOrganization();
 
-  const [audits, setAudits] = useState<Audit[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState("ALL");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [shouldPoll, setShouldPoll] = useState(false);
 
-  const requestRef = useRef(request);
-  const orgIdRef = useRef(orgId);
-  const auditsRef = useRef(audits);
-  const hasFetchedRef = useRef(false);
-  const isFetchingRef = useRef(false);
+  const {
+    audits,
+    totalRows,
+    isLoading,
+    hasEverLoaded,
+    error,
+    filters,
+    sorting,
+    pagination,
+    setFilters,
+    setSorting,
+    setPagination,
+  } = useAuditsQuery({
+    orgId,
+    isReady: isAuthenticated && !isSessionLoading,
+  });
 
-  useEffect(() => {
-    requestRef.current = request;
-  }, [request]);
-
-  useEffect(() => {
-    orgIdRef.current = orgId;
-  }, [orgId]);
-
-  useEffect(() => {
-    auditsRef.current = audits;
-  }, [audits]);
-
-  const fetchAudits = useCallback(async (showLoader = false) => {
-    try {
-      if (showLoader) {
-        setIsLoading(true);
-      }
-      setError(null);
-
-      const auditsData = await requestRef.current<{
-        audits: { data: Audit[]; totalItemsCount: number };
-      }>(
-        AUDITS_QUERY,
-        {
-          limit: 100,
-          offset: 0,
-          filters: null,
-        },
-        { organization: orgIdRef.current },
-      );
-
-      const nextAudits = auditsData?.audits?.data ?? [];
-      setAudits(nextAudits);
-      return hasActiveAudits(nextAudits);
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Failed to load audits";
-      console.error("Error fetching audits:", err);
-      setError(message);
-      return hasActiveAudits(auditsRef.current);
-    } finally {
-      if (showLoader) {
-        setIsLoading(false);
-      }
-    }
-  }, []);
-
-  const pollAuditStatuses = useCallback(async () => {
-    try {
-      const auditsData = await requestRef.current<{
-        audits: { data: AuditStatusUpdate[] };
-      }>(
-        AUDITS_STATUS_POLL_QUERY,
-        {
-          limit: 100,
-          offset: 0,
-          filters: ACTIVE_STATUS_FILTER,
-        },
-        { organization: orgIdRef.current },
-      );
-
-      const statusUpdates = auditsData?.audits?.data ?? [];
-      const polledIds = new Set(statusUpdates.map((update) => update.id));
-      const missingActiveIds = auditsRef.current
-        .filter((audit) => isActiveAuditStatus(audit.status))
-        .filter((audit) => !polledIds.has(audit.id));
-
-      if (missingActiveIds.length > 0) {
-        return fetchAudits(false);
-      }
-
-      if (statusUpdates.length === 0) {
-        return hasActiveAudits(auditsRef.current);
-      }
-
-      const nextAudits = mergeAuditStatusUpdates(
-        auditsRef.current,
-        statusUpdates,
-      );
-      setAudits(nextAudits);
-      return hasActiveAudits(nextAudits);
-    } catch (err) {
-      console.error("Polling error:", err);
-      return hasActiveAudits(auditsRef.current);
-    }
-  }, [fetchAudits]);
-
-  // Initial full fetch
-  useEffect(() => {
-    if (!isAuthenticated || isSessionLoading) return;
-    if (isFetchingRef.current) return;
-
-    isFetchingRef.current = true;
-    const isInitialLoad = !hasFetchedRef.current;
-
-    const loadAudits = async () => {
-      try {
-        const hasActive = await fetchAudits(isInitialLoad);
-        hasFetchedRef.current = true;
-        setShouldPoll(hasActive);
-      } finally {
-        isFetchingRef.current = false;
-      }
+  const getAuditLink = useMemo(() => {
+    const base = `/${locale}/dashboard/ai-maker/${orgId}/evaluations`;
+    return (audit: Audit) => {
+      const status = audit.status?.toUpperCase();
+      const isResumable =
+        status === EVALUATION_STATUS.DRAFT ||
+        (status === EVALUATION_STATUS.IN_PROGRESS &&
+          isPlaygroundEvaluationMode(audit.evaluationMode));
+      return isResumable ? `${base}/new?auditId=${audit.id}` : `${base}/${audit.id}`;
     };
+  }, [locale, orgId]);
 
-    void loadAudits();
-  }, [isAuthenticated, isSessionLoading, orgId, fetchAudits]);
-
-  // Poll only id/name/status for non-terminal evaluations
-  useEffect(() => {
-    if (!shouldPoll || !isAuthenticated) return;
-
-    const pollInterval = window.setInterval(() => {
-      void pollAuditStatuses().then((hasActive) => {
-        if (!hasActive) {
-          setShouldPoll(false);
-        }
-      });
-    }, 15000);
-
-    const pollTimeout = window.setTimeout(() => {
-      setShouldPoll(false);
-    }, 300000);
-
-    return () => {
-      window.clearInterval(pollInterval);
-      window.clearTimeout(pollTimeout);
-    };
-  }, [shouldPoll, isAuthenticated, pollAuditStatuses]);
-
-  // Column helper for DataTable
-  const columnHelper = createColumnHelper<Audit>();
-
-  // Format date for display
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "--";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  // Get the appropriate link for an audit based on its status
-  const getAuditLink = (audit: Audit) => {
-    if (audit.status?.toUpperCase() === "DRAFT") {
-      return `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/new?auditId=${audit.id}`;
-    }
-    if (
-      audit.status?.toUpperCase() === "IN_PROGRESS" &&
-      (audit.evaluationMode?.toLowerCase() === "manual" ||
-        audit.evaluationMode?.toLowerCase() === "playground")
-    ) {
-      return `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/new?auditId=${audit.id}`;
-    }
-    return `/${locale}/dashboard/ai-maker/${params.orgId}/evaluations/${audit.id}`;
-  };
-
-  // Define columns
-  const columns = [
-    columnHelper.accessor("name", {
-      header: "Evaluation Name",
-      cell: (info) => (
-        <Link
-          href={getAuditLink(info.row.original)}
-          className="text-primary-purple hover:underline font-medium"
-        >
-          {info.getValue() || `Evaluation #${info.row.original.id.slice(0, 8)}`}
-        </Link>
-      ),
-    }),
-    columnHelper.accessor("modelName", {
-      header: "Model",
-      cell: (info) => (
-        <Text variant="bodySm">
-          {info.getValue() ||
-            `Model ${info.row.original.modelId?.slice(0, 8) || "-"}`}
-        </Text>
-      ),
-    }),
-    columnHelper.accessor("auditType", {
-      header: "Evaluation Type",
-      cell: (info) => {
-        const typeValue = info.getValue();
-        const label = typeValue
-          ? auditTypeLabels[typeValue] || typeValue
-          : "--";
-        return <Badge>{label}</Badge>;
-      },
-    }),
-    columnHelper.accessor("status", {
-      header: "Status",
-      cell: (info) => {
-        const status = info.getValue();
-        const colors = getEvaluationStatusColor(status);
-        return (
-          <Text
-            variant="bodySm"
-            as="span"
-            className="inline-block rounded px-2 py-0.5"
-            style={{
-              backgroundColor: colors.fillColor,
-              color: colors.textColor,
-            }}
+  const columnConfig = useMemo<AuditColumnConfig[]>(
+    () => [
+      {
+        id: 'name',
+        header: 'Evaluation Name',
+        sortable: true,
+        filter: { type: 'text' },
+        cell: (audit) => (
+          <Link
+            href={getAuditLink(audit)}
+            className="text-primary-purple font-medium hover:underline"
           >
-            {formatStatusLabel(status)}
+            {audit.name || `Evaluation #${audit.id.slice(0, 8)}`}
+          </Link>
+        ),
+      },
+      {
+        id: 'modelName',
+        header: 'Model',
+        sortable: true,
+        filter: { type: 'text' },
+        cell: (audit) => (
+          <Text variant="bodySm">
+            {audit.modelName || `Model ${audit.modelId?.slice(0, 8) || '-'}`}
           </Text>
-        );
+        ),
       },
-    }),
-    // columnHelper.accessor("modules", {
-    //   header: "Modules",
-    //   cell: (info) => {
-    //     const modules = info.getValue() || [];
-    //     return (
-    //       <Text variant="bodySm">
-    //         {modules.length > 0 ? modules.join(", ") : "--"}
-    //       </Text>
-    //     );
-    //   },
-    // }),
-    columnHelper.accessor("evaluationMode", {
-      header: "Evaluation Mode",
-      cell: (info) => {
-        const mode = info.getValue()?.toLowerCase();
-        const label =
-          mode === "manual" || mode === "playground"
-            ? "Playground Evaluation"
-            : mode === "bulk" || mode === "automated"
-              ? "Bulk Evaluation"
-              : info.getValue() || "--";
-        return <Text variant="bodySm">{label}</Text>;
+      {
+        id: 'auditType',
+        header: 'Evaluation Type',
+        sortable: true,
+        filter: { type: 'select', options: AUDIT_TYPE_OPTIONS },
+        cell: (audit) => <Badge>{getAuditTypeLabel(audit.auditType)}</Badge>,
       },
-    }),
-    columnHelper.accessor("totalTests", {
-      header: "Tests",
-      cell: (info) => {
-        const total = info.getValue() || 0;
-        const passed = info.row.original.passedTests || 0;
-        const failed = info.row.original.failedTests || 0;
-
-        // if (total === 0) return <Text variant="bodySm">--</Text>;
-        if (!total || passed == null || failed == null) {
-          return <Text variant="bodySm">--</Text>;
-        }
-
-        return (
-          <div className="flex items-center gap-2">
-            <div className="test-result-bar">
-              <div
-                className="test-result-pass"
-                style={{ width: `${(passed / total) * 100}%` }}
-              />
-              <div
-                className="test-result-fail"
-                style={{ width: `${(failed / total) * 100}%` }}
-              />
-            </div>
-            <Text variant="bodySm">
-              {passed}/{total} passed
-            </Text>
-          </div>
-        );
+      {
+        id: 'status',
+        header: 'Status',
+        sortable: true,
+        filter: {
+          type: 'multiSelect',
+          options: EVALUATION_STATUS_FILTER_OPTIONS,
+        },
+        cell: (audit) => <StatusPill status={audit.status} />,
       },
-    }),
-    // columnHelper.accessor("overallScore", {
-    //   header: "Score",
-    //   cell: (info) => {
-    //     const score = info.getValue();
-    //     if (score === null || score === undefined)
-    //       return <Text variant="bodySm">--</Text>;
-    //     return (
-    //       <Text variant="bodySm" fontWeight="semibold">
-    //         {score.toFixed(1)}%
-    //       </Text>
-    //     );
-    //   },
-    // }),
-    // columnHelper.accessor("createdAt", {
-    //   header: "Created",
-    //   cell: (info) => (
-    //     <Text variant="bodySm">{formatDate(info.getValue())}</Text>
-    //   ),
-    // }),
-    columnHelper.accessor("completedAt", {
-      header: "Completed on",
-      cell: (info) => (
-        <Text variant="bodySm">{formatDate(info.getValue())}</Text>
-      ),
-    }),
-  ];
+      {
+        id: 'evaluationMode',
+        header: 'Evaluation Mode',
+        sortable: true,
+        filter: { type: 'select', options: EVALUATION_MODE_OPTIONS },
+        cell: (audit) => (
+          <Text variant="bodySm">{getEvaluationModeLabel(audit.evaluationMode)}</Text>
+        ),
+      },
+      {
+        id: 'passedTests',
+        header: 'Tests',
+        sortable: true,
+        cell: (audit) => (
+          <TestsBar
+            passed={audit.passedTests ?? 0}
+            failed={audit.failedTests ?? 0}
+            total={audit.totalTests ?? 0}
+          />
+        ),
+      },
+      {
+        id: 'completedAt',
+        header: 'Completed on',
+        sortable: true,
+        cell: (audit) => <Text variant="bodySm">{formatDate(audit.completedAt)}</Text>,
+      },
+    ],
+    [getAuditLink]
+  );
 
-  const filteredAudits =
-    statusFilter === "ALL"
-      ? audits
-      : audits.filter(
-          (audit) => audit.status?.toUpperCase() === statusFilter
-        );
+  const columns = useMemo(() => {
+    const helper = createColumnHelper<Audit>();
+    return columnConfig.map((c) =>
+      helper.accessor(c.id, {
+        header: c.header,
+        cell: (info) => c.cell(info.row.original),
+      })
+    );
+  }, [columnConfig]);
 
-  // Handle new audit button click - open modal
-  const handleNewAudit = () => {
-    setIsModalOpen(true);
-  };
+  const tableFilters = useMemo<ColumnFilterConfig[]>(
+    () => columnConfig.filter((c) => c.filter).map((c) => ({ columnId: c.id, ...c.filter! })),
+    [columnConfig]
+  );
+
+  const sortColumns = useMemo<string[]>(
+    () => columnConfig.filter((c) => c.sortable).map((c) => c.id),
+    [columnConfig]
+  );
+
+  const openNewAuditModal = () => setIsModalOpen(true);
+  const isInitialLoad = (isSessionLoading || isLoading) && !hasEverLoaded;
+  const isEmptyAndUnfiltered = !isLoading && !error && totalRows === 0 && filters.length === 0;
 
   return (
     <>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6 mt-10">
+      <div className="mb-6 mt-10 flex items-center justify-between">
         <div>
           <Text variant="headingLg" as="h1" fontWeight="bold">
             Evaluations
@@ -480,15 +224,14 @@ const AuditsListPage = () => {
         </div>
         <Button
           kind="secondary"
-          onClick={handleNewAudit}
-          className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold text-base"
+          onClick={openNewAuditModal}
+          className="text-base rounded-[8px] bg-primaryPurple2 px-8 py-3 font-bold text-white hover:!bg-[#6849EE] hover:bg-[#6849EE] hover:!text-white hover:text-white"
         >
           New Evaluation
         </Button>
       </div>
 
-      {/* Content */}
-      {isSessionLoading || isLoading ? (
+      {isInitialLoad ? (
         <div className="flex flex-col items-center justify-center gap-4 py-16">
           <Spinner />
           <Text variant="bodySm" className="text-gray-600">
@@ -504,7 +247,7 @@ const AuditsListPage = () => {
             Retry
           </Button>
         </div>
-      ) : audits.length === 0 ? (
+      ) : isEmptyAndUnfiltered ? (
         <div className="flex flex-col items-center justify-center py-16">
           <img
             src="/images/icons/mood-empty.png"
@@ -520,61 +263,43 @@ const AuditsListPage = () => {
           </Text>
           <Button
             kind="primary"
-            onClick={handleNewAudit}
-            className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base"
+            onClick={openNewAuditModal}
+            className="text-base !text-base rounded-[8px] bg-primaryPurple2 px-8 py-3 !font-bold font-bold text-white hover:!bg-[#6849EE] hover:bg-[#6849EE] hover:!text-white hover:text-white"
           >
             Start New Evaluation
           </Button>
         </div>
       ) : (
-        <>
-          <StatusFilterTabs
-            options={EVALUATION_STATUS_FILTER_OPTIONS}
-            value={statusFilter}
-            onChange={setStatusFilter}
-            items={audits}
+        <div className="evaluations-table-evaluation-mode-col">
+          <DataTable
+            rows={audits}
+            columns={columns}
+            hoverable
+            truncate
+            hideSelection
+            withServer
+            filters={tableFilters}
+            showFilterChips
+            sortColumns={sortColumns}
+            filterState={filters}
+            sortingState={sorting}
+            paginationState={pagination}
+            totalRows={totalRows}
+            onFiltersChange={setFilters}
+            onSortingChange={setSorting}
+            onPaginationChange={setPagination}
+            emptyState={
+              <div className="w-full py-8 text-center">
+                <Text variant="bodySm" className="text-gray-600">
+                  No evaluations match the current filters.
+                </Text>
+              </div>
+            }
           />
-
-          {filteredAudits.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 bg-white rounded-lg border border-gray-200">
-              <IconReportAnalytics size={32} className="text-gray-400 mb-3" />
-              <Text variant="bodyMd" className="text-gray-600">
-                {`No ${formatStatusLabel(statusFilter, { lowercase: true })} evaluations`}
-              </Text>
-              <Text variant="bodySm" className="text-gray-500 mt-1">
-                Try selecting a different filter
-              </Text>
-            </div>
-          ) : (
-            <div className="evaluations-table-evaluation-mode-col">
-              <DataTable
-                rows={filteredAudits}
-                columns={columns}
-                hoverable
-                sortColumns={[
-                  "name",
-                  "modelName",
-                  "auditType",
-                  "status",
-                  "evaluationMode",
-                  "completedAt",
-                ]}
-                initialSortColumnIndex={7}
-                defaultSortDirection="desc"
-                hideSelection
-                truncate
-              />
-            </div>
-          )}
-        </>
+        </div>
       )}
 
-      {/* Model Selection Modal */}
-      <ModelSelectionModal
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        orgId={params.orgId as string}
-      />
+      <ModelSelectionModal open={isModalOpen} onOpenChange={setIsModalOpen} orgId={orgId} />
     </>
   );
 };

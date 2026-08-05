@@ -1,22 +1,18 @@
-"use client";
+'use client';
 
-import { Button } from "opub-ui";
+import { Button } from 'opub-ui';
+import { EVALUATION_STATUS_FILTER_OPTIONS as EVALUATION_STATUS_FILTER_OPTIONS_BASE } from '@/constants';
 
 export type StatusFilterOption = {
   label: string;
   value: string;
 };
 
+/** Tab-style filter options for evaluation status — includes an "All" entry
+ *  that isn't part of the canonical enum. Derived from the SoT in `@/constants`. */
 export const EVALUATION_STATUS_FILTER_OPTIONS: StatusFilterOption[] = [
-  { label: "All", value: "ALL" },
-  { label: "Draft", value: "DRAFT" },
-  { label: "Queued", value: "QUEUED" },
-  // { label: "Running", value: "RUNNING" },
-  { label: "In Progress", value: "IN_PROGRESS" },
-  { label: "Pending Review", value: "PENDING_REVIEW" },
-  { label: "Completed", value: "COMPLETED" },
-  { label: "Failed", value: "FAILED" },
-  { label: "Cancelled", value: "CANCELLED" },
+  { label: 'All', value: 'ALL' },
+  ...EVALUATION_STATUS_FILTER_OPTIONS_BASE,
 ];
 
 type StatusFilterTabsProps = {
@@ -33,13 +29,11 @@ export function StatusFilterTabs({
   value,
   onChange,
   items,
-  className = "mb-6 flex items-center gap-4",
+  className = 'mb-6 flex items-center gap-4',
 }: StatusFilterTabsProps) {
   const getCount = (optionValue: string) => {
-    if (!items || optionValue === "ALL") return null;
-    return items.filter(
-      (item) => item.status?.toUpperCase() === optionValue
-    ).length;
+    if (!items || optionValue === 'ALL') return null;
+    return items.filter((item) => item.status?.toUpperCase() === optionValue).length;
   };
 
   return (
@@ -55,16 +49,14 @@ export function StatusFilterTabs({
               kind="secondary"
               size="slim"
               onClick={() => onChange(option.value)}
-              className={`px-3 py-1.5 text-sm transition-colors ${
+              className={`text-sm px-3 py-1.5 transition-colors ${
                 isActive
-                  ? "bg-primaryPurple2 text-white"
-                  : "bg-gray-100 text-gray-700 hover:primaryPurple2"
+                  ? 'bg-primaryPurple2 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:primaryPurple2'
               }`}
             >
               {option.label}
-              {count !== null && (
-                <span className="ml-1.5 text-xs">({count})</span>
-              )}
+              {count !== null && <span className="text-xs ml-1.5">({count})</span>}
             </Button>
           );
         })}

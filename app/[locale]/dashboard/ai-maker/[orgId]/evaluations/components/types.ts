@@ -9,8 +9,6 @@ export type CustomPromptRow = {
   selected: boolean;
 };
 
-export type AuditType = 'Technical' | 'Domain' | 'Cultural';
-
 export type Module = {
   name: string;
   displayName: string;
@@ -22,4 +20,3 @@ export type Module = {
     mandatoryInputs?: string[];
   }>;
 };
-

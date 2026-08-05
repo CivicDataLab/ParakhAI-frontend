@@ -1,34 +1,25 @@
-﻿"use client";
+﻿'use client';
 
-import RichTextRenderer from "@/components/common/RichTextRenderer";
-import { useGraphQL } from "@/lib/graphql-client";
-import { isDeprecatedLifecycle } from "@/utils/lifecycle";
-import { useAppSession } from "@/hooks/use-app-session";
-import { statusColors } from "@/utils/status-colors";
-import { formatAssignmentStatusLabel, formatStatusLabel, isPendingAssignmentStatus } from "@/utils";
-import { createColumnHelper } from "@tanstack/react-table";
+import React from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { IconArrowLeft, IconCheck, IconPlayerPlay, IconX } from '@tabler/icons-react';
+import { createColumnHelper } from '@tanstack/react-table';
+import { Badge, Button, DataTable, Divider, Spinner, Tag, Text, toast, Tooltip } from 'opub-ui';
+import RichTextRenderer from '@/components/common/RichTextRenderer';
+import { useAppSession } from '@/hooks/use-app-session';
+import { useGraphQL } from '@/lib/graphql-client';
+import { isDeprecatedLifecycle } from '@/utils/lifecycle';
+import { statusColors } from '@/utils/status-colors';
 import {
-  IconArrowLeft,
-  IconCheck,
-  IconPlayerPlay,
-  IconX,
-} from "@tabler/icons-react";
-import Image from "next/image";
-import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import {
-  Badge,
-  Button,
-  DataTable,
-  Divider,
-  Spinner,
-  Tag,
-  Text,
-  Tooltip,
-  toast,
-} from "opub-ui";
-import React from "react";
-import ModelSelectionModal from "../../../ai-maker/[orgId]/evaluations/components/ModelSelectionModal";
+  ASSIGNMENT_STATUS,
+  getAuditTypeLabel,
+  getEvaluationModeLabel,
+  isActiveAssignmentStatus,
+} from '@/constants';
+import { formatAssignmentStatusLabel, formatStatusLabel, isPendingAssignmentStatus } from '@/utils';
+import ModelSelectionModal from '../../../ai-maker/[orgId]/evaluations/components/ModelSelectionModal';
 
 const GET_AI_MODEL = `
   query GetAIModel($modelId: ID!) {
@@ -99,41 +90,41 @@ type AIModel = {
 };
 
 const modelTypeLabels: Record<string, string> = {
-  TRANSLATION: "Translation",
-  TEXT_GENERATION: "Text Generation",
-  SUMMARIZATION: "Summarisation",
-  QUESTION_ANSWERING: "Question Answering",
-  SENTIMENT_ANALYSIS: "Sentiment Analysis",
-  TEXT_CLASSIFICATION: "Text Classification",
-  NAMED_ENTITY_RECOGNITION: "Named Entity Recognition",
-  TEXT_TO_SPEECH: "Text to Speech",
-  SPEECH_TO_TEXT: "Speech to Text",
-  OTHER: "Other",
+  TRANSLATION: 'Translation',
+  TEXT_GENERATION: 'Text Generation',
+  SUMMARIZATION: 'Summarisation',
+  QUESTION_ANSWERING: 'Question Answering',
+  SENTIMENT_ANALYSIS: 'Sentiment Analysis',
+  TEXT_CLASSIFICATION: 'Text Classification',
+  NAMED_ENTITY_RECOGNITION: 'Named Entity Recognition',
+  TEXT_TO_SPEECH: 'Text to Speech',
+  SPEECH_TO_TEXT: 'Speech to Text',
+  OTHER: 'Other',
 };
 
 const providerLabels: Record<string, string> = {
-  OPENAI: "OpenAI",
-  LLAMA_OLLAMA: "Llama (Ollama)",
-  LLAMA_TOGETHER: "Llama (Together AI)",
-  LLAMA_REPLICATE: "Llama (Replicate)",
-  LLAMA_CUSTOM: "Llama (Custom)",
-  CUSTOM: "Custom API",
-  HUGGINGFACE: "HuggingFace",
+  OPENAI: 'OpenAI',
+  LLAMA_OLLAMA: 'Llama (Ollama)',
+  LLAMA_TOGETHER: 'Llama (Together AI)',
+  LLAMA_REPLICATE: 'Llama (Replicate)',
+  LLAMA_CUSTOM: 'Llama (Custom)',
+  CUSTOM: 'Custom API',
+  HUGGINGFACE: 'HuggingFace',
 };
 
 const formatDateShort = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
+  return new Date(dateString).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
   });
 };
 
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
+  return new Date(dateString).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
   });
 };
 
@@ -223,21 +214,15 @@ type Evaluation = {
   evaluationMode: string;
 };
 
-const auditTypeLabels: Record<string, string> = {
-  TECHNICAL_AUDIT: "Technical",
-  DOMAIN_AUDIT: "Domain",
-  CULTURAL_AUDIT: "Cultural",
-};
-
 const AuditorModelDetailPage = () => {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { request, isAuthenticated } = useGraphQL();
   const { user } = useAppSession();
-  const locale = params?.locale || "en";
+  const locale = params?.locale || 'en';
   const modelId = params?.modelId as string;
-  const highlightVersionId = searchParams.get("versionId");
+  const highlightVersionId = searchParams.get('versionId');
 
   const [model, setModel] = React.useState<AIModel | null>(null);
   const [assignments, setAssignments] = React.useState<AuditorAssignment[]>([]);
@@ -245,9 +230,9 @@ const AuditorModelDetailPage = () => {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [updatingId, setUpdatingId] = React.useState<string | null>(null);
-  const [evaluationModalVersionId, setEvaluationModalVersionId] = React.useState<
-    number | null
-  >(null);
+  const [evaluationModalVersionId, setEvaluationModalVersionId] = React.useState<number | null>(
+    null
+  );
 
   React.useEffect(() => {
     if (!isAuthenticated) return;
@@ -255,15 +240,14 @@ const AuditorModelDetailPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [modelResponse, assignmentsResponse, evaluationsResponse] =
-          await Promise.all([
-            request<{ aiModel: AIModel }>(GET_AI_MODEL, { modelId }),
-            request(GET_MY_ASSIGNMENTS_FOR_MODEL, { modelId }),
-            request<{ myEvaluations: Evaluation[] }>(GET_MY_EVALUATIONS, {
-              modelId,
-              limit: 50,
-            }),
-          ]);
+        const [modelResponse, assignmentsResponse, evaluationsResponse] = await Promise.all([
+          request<{ aiModel: AIModel }>(GET_AI_MODEL, { modelId }),
+          request(GET_MY_ASSIGNMENTS_FOR_MODEL, { modelId }),
+          request<{ myEvaluations: Evaluation[] }>(GET_MY_EVALUATIONS, {
+            modelId,
+            limit: 50,
+          }),
+        ]);
 
         if (modelResponse?.aiModel) setModel(modelResponse.aiModel);
         if (assignmentsResponse?.myAssignments) {
@@ -273,7 +257,7 @@ const AuditorModelDetailPage = () => {
           setEvaluations(evaluationsResponse.myEvaluations);
         }
       } catch (err: any) {
-        setError(err.message || "Failed to fetch model details");
+        setError(err.message || 'Failed to fetch model details');
       } finally {
         setLoading(false);
       }
@@ -282,10 +266,7 @@ const AuditorModelDetailPage = () => {
     fetchData();
   }, [isAuthenticated, modelId, request]);
 
-  const handleUpdateStatus = async (
-    assignmentId: string,
-    newStatus: string,
-  ) => {
+  const handleUpdateStatus = async (assignmentId: string, newStatus: string) => {
     try {
       setUpdatingId(assignmentId);
 
@@ -296,20 +277,15 @@ const AuditorModelDetailPage = () => {
 
       if (response?.updateAuditorAssignmentStatus?.success) {
         setAssignments((prev) =>
-          prev.map((a) =>
-            a.id === assignmentId ? { ...a, status: newStatus } : a,
-          ),
+          prev.map((a) => (a.id === assignmentId ? { ...a, status: newStatus } : a))
         );
 
         toast.success(`Assignment ${newStatus.toLowerCase()} successfully`);
       } else {
-        toast.error(
-          response?.updateAuditorAssignmentStatus?.message ||
-            "Failed to update status",
-        );
+        toast.error(response?.updateAuditorAssignmentStatus?.message || 'Failed to update status');
       }
     } catch (err: any) {
-      toast.error(err?.message || "Error updating status");
+      toast.error(err?.message || 'Error updating status');
     } finally {
       setUpdatingId(null);
     }
@@ -352,58 +328,43 @@ const AuditorModelDetailPage = () => {
 
   const assignedVersionIds = new Set(assignments.map((a) => a.modelVersionId));
   const assignedVersions =
-    model?.versions?.filter((v) => assignedVersionIds.has(parseInt(v.id))) ||
-    [];
+    model?.versions?.filter((v) => assignedVersionIds.has(parseInt(v.id))) || [];
 
   const columnHelper = createColumnHelper<Evaluation>();
   const evaluationColumns = [
-    columnHelper.accessor("name", {
-      header: "Evaluation Name",
+    columnHelper.accessor('name', {
+      header: 'Evaluation Name',
       cell: (info) => (
         <Link
           href={`/${locale}/dashboard/auditor/evaluations/${info.row.original.id}`}
           className="text-primary-purple hover:underline"
         >
-          {info.getValue() || "Untitled Evaluation"}
+          {info.getValue() || 'Untitled Evaluation'}
         </Link>
       ),
     }),
-    columnHelper.accessor("auditType", {
-      header: "Evaluation Type",
-      cell: (info) => {
-        const typeValue = info.getValue();
-        return <Badge>{typeValue}</Badge>;
-      },
+    columnHelper.accessor('auditType', {
+      header: 'Evaluation Type',
+      cell: (info) => <Badge>{getAuditTypeLabel(info.getValue())}</Badge>,
     }),
-    columnHelper.accessor("evaluationMode", {
-      header: "Evaluation Mode",
-      cell: (info) => {
-        const mode = info.getValue()?.toLowerCase();
-        const label =
-          mode === "manual" || mode === "playground"
-            ? "Playground Evaluation"
-            : mode === "bulk" || mode === "automated"
-              ? "Bulk Evaluation"
-              : info.getValue() || "--";
-        return <Text variant="bodySm">{label}</Text>;
-      },
+    columnHelper.accessor('evaluationMode', {
+      header: 'Evaluation Mode',
+      cell: (info) => <Text variant="bodySm">{getEvaluationModeLabel(info.getValue())}</Text>,
     }),
-    columnHelper.accessor("status", {
-      header: "Status",
+    columnHelper.accessor('status', {
+      header: 'Status',
       cell: (info) => {
         const status = info.getValue();
         const colors = statusColors[status] || statusColors.DRAFT;
         return (
-          <span
-            className={`px-2 py-1 text-xs rounded-full ${colors.bg} ${colors.text}`}
-          >
+          <span className={`text-xs rounded-full px-2 py-1 ${colors.bg} ${colors.text}`}>
             {formatStatusLabel(status)}
           </span>
         );
       },
     }),
-    columnHelper.accessor("totalTests", {
-      header: "Tests",
+    columnHelper.accessor('totalTests', {
+      header: 'Tests',
       cell: (info) => {
         const total = info.getValue();
         const row = info.row.original;
@@ -417,14 +378,8 @@ const AuditorModelDetailPage = () => {
         return (
           <div className="flex items-center gap-2">
             <div className="test-result-bar">
-              <div
-                className="test-result-pass"
-                style={{ width: `${(passed / total) * 100}%` }}
-              />
-              <div
-                className="test-result-fail"
-                style={{ width: `${(failed / total) * 100}%` }}
-              />
+              <div className="test-result-pass" style={{ width: `${(passed / total) * 100}%` }} />
+              <div className="test-result-fail" style={{ width: `${(failed / total) * 100}%` }} />
             </div>
             <Text variant="bodySm">
               {passed}/{total} passed
@@ -433,25 +388,23 @@ const AuditorModelDetailPage = () => {
         );
       },
     }),
-    columnHelper.accessor("completedAt", {
-      header: "Completed on",
+    columnHelper.accessor('completedAt', {
+      header: 'Completed on',
       cell: (info) => (
         <Text variant="bodySm">
-          {info.getValue() ? formatDate(info.getValue() as string) : "--"}
+          {info.getValue() ? formatDate(info.getValue() as string) : '--'}
         </Text>
       ),
     }),
-    columnHelper.accessor("id", {
-      header: "Evaluation ID",
-      cell: (info) => (
-        <span className="text-gray-600">ID #{info.getValue().slice(0, 8)}</span>
-      ),
+    columnHelper.accessor('id', {
+      header: 'Evaluation ID',
+      cell: (info) => <span className="text-gray-600">ID #{info.getValue().slice(0, 8)}</span>,
     }),
   ];
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 min-h-[400px]">
+      <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
         <Spinner />
         <Text variant="bodyMd" className="text-gray-600">
           Loading model details...
@@ -462,9 +415,9 @@ const AuditorModelDetailPage = () => {
 
   if (error || !model) {
     return (
-      <div className="flex flex-col justify-center items-center min-h-[400px]">
+      <div className="flex min-h-[400px] flex-col items-center justify-center">
         <Text variant="bodyMd" className="text-red-600 mb-4">
-          {error || "Model not found"}
+          {error || 'Model not found'}
         </Text>
         <Button kind="secondary" onClick={() => router.back()}>
           Go Back
@@ -486,10 +439,10 @@ const AuditorModelDetailPage = () => {
         </Link>
       </div> */}
 
-      <div className="flex-1 lg:py-7 overflow-hidden">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex-1 overflow-hidden lg:py-7">
+        <div className="flex flex-col gap-8 lg:flex-row">
           {/* Main Content - same structure as ai-maker model detail */}
-          <div className="flex-1 min-w-0 lg:border-r border-gray-100">
+          <div className="lg:border-r border-gray-100 min-w-0 flex-1">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-3">
                 <Text variant="heading3xl" fontWeight="semibold">
@@ -522,32 +475,24 @@ const AuditorModelDetailPage = () => {
                 </div> */}
               </div>
 
-              <div className="overflow-hidden flex flex-col gap-2 mt-8">
-                <Text
-                  variant="headingXl"
-                  fontWeight="semibold"
-                  className="mb-4 text-gray-900"
-                >
+              <div className="mt-8 flex flex-col gap-2 overflow-hidden">
+                <Text variant="headingXl" fontWeight="semibold" className="text-gray-900 mb-4">
                   About
                 </Text>
                 <div className="prose prose-sm max-w-none overflow-x-hidden break-words">
-                  <RichTextRenderer
-                    content={model.description || "No description available."}
-                  />
+                  <RichTextRenderer content={model.description || 'No description available.'} />
                 </div>
               </div>
 
               {/* Your Assigned Versions - ai-maker style cards, no Invite Auditors */}
               <div className="mt-8">
-                <div className="flex flex-col gap-1 mb-5">
+                <div className="mb-5 flex flex-col gap-1">
                   <Text variant="headingXl">Your Assigned Versions</Text>
-                  <Text variant="bodyLg">
-                    Versions you have been invited to evaluate
-                  </Text>
+                  <Text variant="bodyLg">Versions you have been invited to evaluate</Text>
                 </div>
 
                 {assignedVersions.length === 0 ? (
-                  <div className="p-6 border border-dashed border-gray-300 rounded-lg text-center bg-gray-50">
+                  <div className="border border-gray-300 rounded-lg bg-gray-50 border-dashed p-6 text-center">
                     <Text variant="bodyMd" className="text-gray-500">
                       No versions assigned to you for this model.
                     </Text>
@@ -555,28 +500,25 @@ const AuditorModelDetailPage = () => {
                 ) : (
                   <div className="flex flex-col gap-4">
                     {assignedVersions.map((v) => {
-                      const assignment = getAssignmentForVersion(
-                        parseInt(v.id),
-                      );
+                      const assignment = getAssignmentForVersion(parseInt(v.id));
                       const isHighlighted = highlightVersionId === v.id;
                       const colors = assignment
-                        ? statusColors[assignment.status] ||
-                          statusColors.PENDING
+                        ? statusColors[assignment.status] || statusColors.PENDING
                         : statusColors.PENDING;
 
                       return (
                         <div
                           key={v.id}
-                          className={`mt-2 flex flex-col gap-2 border-solid border-2 ${
+                          className={`mt-2 flex flex-col gap-2 border-2 border-solid ${
                             isHighlighted
-                              ? "border-purple-400 ring-2 ring-purple-200"
-                              : "border-baseGraySlateSolid6"
-                          } bg-white p-4 rounded-2 lg:mx-0 lg:p-4 shadow-sm`}
+                              ? 'border-purple-400 ring-purple-200 ring-2'
+                              : 'border-baseGraySlateSolid6'
+                          } shadow-sm rounded-2 bg-white p-4 lg:mx-0 lg:p-4`}
                         >
                           {/* Header row - version name, tags: Primary, status (Accepted etc), My past evaluation */}
                           <div className="flex flex-wrap items-center justify-between gap-4 md:flex-nowrap">
                             <div className="flex flex-wrap items-center gap-4 md:flex-nowrap">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 border border-gray-200">
+                              <div className="bg-gray-100 border border-gray-200 flex h-10 w-10 items-center justify-center rounded-full">
                                 <Image
                                   src="/images/icons/version.svg"
                                   alt="Version"
@@ -584,18 +526,11 @@ const AuditorModelDetailPage = () => {
                                   height={40}
                                 />
                               </div>
-                              <Text
-                                variant="headingMd"
-                                className="line-clamp-1"
-                              >
+                              <Text variant="headingMd" className="line-clamp-1">
                                 Version {v.version}
                               </Text>
                               {v.isLatest && (
-                                <Tag
-                                  variation="filled"
-                                  fillColor="#E2F5C4"
-                                  textColor="#59682C"
-                                >
+                                <Tag variation="filled" fillColor="#E2F5C4" textColor="#59682C">
                                   Primary
                                 </Tag>
                               )}
@@ -616,30 +551,20 @@ const AuditorModelDetailPage = () => {
                             </div>
 
                             <div className="flex items-center gap-4">
-                              {assignment &&
-                                isPendingAssignmentStatus(assignment.status) && (
+                              {assignment && isPendingAssignmentStatus(assignment.status) && (
                                 <>
                                   <Button
                                     size="slim"
                                     kind="tertiary"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleUpdateStatus(
-                                        assignment.id,
-                                        "ACCEPTED",
-                                      );
+                                      handleUpdateStatus(assignment.id, ASSIGNMENT_STATUS.ACCEPTED);
                                     }}
                                     disabled={updatingId === assignment.id}
                                   >
                                     <div className="flex items-end gap-1">
-                                      <IconCheck
-                                        color="#5746AF"
-                                        size={16}
-                                        className="mr-1"
-                                      />
-                                      <span className="text-baseVioletSolid11 pt-0.4">
-                                        Accept
-                                      </span>
+                                      <IconCheck color="#5746AF" size={16} className="mr-1" />
+                                      <span className="pt-0.4 text-baseVioletSolid11">Accept</span>
                                     </div>
                                   </Button>
                                   <Button
@@ -647,29 +572,19 @@ const AuditorModelDetailPage = () => {
                                     kind="tertiary"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleUpdateStatus(
-                                        assignment.id,
-                                        "DECLINED",
-                                      );
+                                      handleUpdateStatus(assignment.id, ASSIGNMENT_STATUS.DECLINED);
                                     }}
                                     disabled={updatingId === assignment.id}
                                   >
                                     <div className="flex items-start justify-center gap-1">
-                                      <IconX
-                                        color="#5746AF"
-                                        size={16}
-                                        className="mr-1"
-                                      />
-                                      <span className="text-baseVioletSolid11 pt-0.4">
-                                        Decline
-                                      </span>
+                                      <IconX color="#5746AF" size={16} className="mr-1" />
+                                      <span className="pt-0.4 text-baseVioletSolid11">Decline</span>
                                     </div>
                                   </Button>
                                 </>
                               )}
 
-                              {(assignment?.status === "ACCEPTED" ||
-                                assignment?.status === "IN_PROGRESS") && (
+                              {assignment && isActiveAssignmentStatus(assignment.status) && (
                                 <Button
                                   size="slim"
                                   kind="tertiary"
@@ -683,14 +598,11 @@ const AuditorModelDetailPage = () => {
                                     ? "Continue Evaluation"
                                     : "Start Evaluation"} */}
                                   <div className="flex items-center justify-center gap-1">
-                                    <IconPlayerPlay
-                                      size={16}
-                                      className="mr-1"
-                                    />
+                                    <IconPlayerPlay size={16} className="mr-1" />
                                     <span className="pt-0.5">
-                                      {assignment.status === "IN_PROGRESS"
-                                        ? "Continue"
-                                        : "Start Evaluation"}
+                                      {assignment.status === ASSIGNMENT_STATUS.IN_PROGRESS
+                                        ? 'Continue'
+                                        : 'Start Evaluation'}
                                     </span>
                                   </div>
                                 </Button>
@@ -699,68 +611,49 @@ const AuditorModelDetailPage = () => {
                           </div>
 
                           {/* Table-like details row - same as ai-maker */}
-                          <div className="mt-4 rounded-lg border border-baseGraySlateSolid4 overflow-hidden">
-                            <div className="grid grid-cols-1 md:grid-cols-3 bg-baseGraySlateSolid2">
-                              <div className="px-4 py-2 border-b md:border-b-0 md:border-r border-baseGraySlateSolid4">
-                                <Text
-                                  variant="bodySm"
-                                  className="uppercase text-gray-500"
-                                >
+                          <div className="rounded-lg border mt-4 overflow-hidden border-baseGraySlateSolid4">
+                            <div className="grid grid-cols-1 bg-baseGraySlateSolid2 md:grid-cols-3">
+                              <div className="border-b md:border-b-0 md:border-r border-baseGraySlateSolid4 px-4 py-2">
+                                <Text variant="bodySm" className="text-gray-500 uppercase">
                                   DATE UPDATED
                                 </Text>
                               </div>
-                              <div className="px-4 py-2 border-b md:border-b-0 md:border-r border-baseGraySlateSolid4">
-                                <Text
-                                  variant="bodySm"
-                                  className="uppercase text-gray-500"
-                                >
+                              <div className="border-b md:border-b-0 md:border-r border-baseGraySlateSolid4 px-4 py-2">
+                                <Text variant="bodySm" className="text-gray-500 uppercase">
                                   CAPABILITIES
                                 </Text>
                               </div>
-                              <div className="px-4 py-2 border-b md:border-b-0 border-baseGraySlateSolid4">
-                                <Text
-                                  variant="bodySm"
-                                  className="uppercase text-gray-500"
-                                >
-                                  {v.isLatest ? "LIFECYCLE STAGE" : "STATUS"}
+                              <div className="border-b md:border-b-0 border-baseGraySlateSolid4 px-4 py-2">
+                                <Text variant="bodySm" className="text-gray-500 uppercase">
+                                  {v.isLatest ? 'LIFECYCLE STAGE' : 'STATUS'}
                                 </Text>
                               </div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 bg-white">
-                              <div className="px-4 py-3 border-t md:border-t-0 md:border-r border-baseGraySlateSolid4">
+                            <div className="grid grid-cols-1 bg-white md:grid-cols-3">
+                              <div className="border-t md:border-t-0 md:border-r border-baseGraySlateSolid4 px-4 py-3">
                                 <Text variant="bodyMd">
                                   {formatDateShort(
-                                    v.createdAt ||
-                                      model.updatedAt ||
-                                      new Date().toISOString(),
+                                    v.createdAt || model.updatedAt || new Date().toISOString()
                                   )}
                                 </Text>
                               </div>
-                              <div className="px-4 py-3 border-t md:border-t-0 md:border-r border-baseGraySlateSolid4">
+                              <div className="border-t md:border-t-0 md:border-r border-baseGraySlateSolid4 px-4 py-3">
                                 <div className="flex flex-wrap gap-2">
-                                  {model.supportsStreaming && (
-                                    <Badge>Streaming</Badge>
-                                  )}
+                                  {model.supportsStreaming && <Badge>Streaming</Badge>}
                                   {model.maxTokens ? (
-                                    <Badge>
-                                      {`${model.maxTokens.toLocaleString()} Tokens`}
-                                    </Badge>
+                                    <Badge>{`${model.maxTokens.toLocaleString()} Tokens`}</Badge>
                                   ) : null}
-                                  {!model.supportsStreaming &&
-                                    !model.maxTokens && (
-                                      <Text
-                                        variant="bodyMd"
-                                        className="text-gray-500"
-                                      >
-                                        --
-                                      </Text>
-                                    )}
+                                  {!model.supportsStreaming && !model.maxTokens && (
+                                    <Text variant="bodyMd" className="text-gray-500">
+                                      --
+                                    </Text>
+                                  )}
                                 </div>
                               </div>
-                              <div className="px-4 py-3 border-t md:border-t-0 border-baseGraySlateSolid4">
+                              <div className="border-t md:border-t-0 border-baseGraySlateSolid4 px-4 py-3">
                                 <Text variant="bodyMd" className="capitalize">
                                   {v.isLatest
-                                    ? v.lifecycleStage.replace(/_/g, " ")
+                                    ? v.lifecycleStage.replace(/_/g, ' ')
                                     : formatStatusLabel(v.status)}
                                 </Text>
                               </div>
@@ -768,17 +661,11 @@ const AuditorModelDetailPage = () => {
                           </div>
 
                           {assignment?.notes && (
-                            <div className="mt-3 pt-3 border-t border-baseGraySlateSolid4">
-                              <Text
-                                variant="bodySm"
-                                className="uppercase text-gray-500 pr-2"
-                              >
-                                INVITATION NOTES :{" "}
+                            <div className="border-t mt-3 border-baseGraySlateSolid4 pt-3">
+                              <Text variant="bodySm" className="text-gray-500 pr-2 uppercase">
+                                INVITATION NOTES :{' '}
                               </Text>
-                              <Text
-                                variant="bodyMd"
-                                className="text-gray-700 mt-1"
-                              >
+                              <Text variant="bodyMd" className="text-gray-700 mt-1">
                                 {assignment.notes}
                               </Text>
                             </div>
@@ -792,13 +679,13 @@ const AuditorModelDetailPage = () => {
 
               {/* My past evaluation - table (same as ai-maker Past Evaluations) */}
               <div className="mt-16">
-                <div className="flex justify-between items-center mb-6">
+                <div className="mb-6 flex items-center justify-between">
                   <Text variant="headingXl" as="h2" fontWeight="bold">
                     My past evaluation
                   </Text>
                 </div>
                 {evaluations.length > 0 ? (
-                  <div className="bg-purple-50/30 rounded-lg overflow-hidden border border-purple-100">
+                  <div className="bg-purple-50/30 rounded-lg border border-purple-100 overflow-hidden">
                     <DataTable
                       rows={evaluations}
                       columns={evaluationColumns}
@@ -808,7 +695,7 @@ const AuditorModelDetailPage = () => {
                     />
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                  <div className="bg-gray-50 rounded-lg border border-gray-300 flex flex-col items-center justify-center border-dashed py-12">
                     <Text variant="bodyMd" className="text-gray-500 mb-4">
                       No evaluations yet for this model.
                     </Text>
@@ -816,16 +703,14 @@ const AuditorModelDetailPage = () => {
                       kind="primary"
                       onClick={() => {
                         if (assignedVersions[0]) {
-                          handleStartEvaluation(
-                            parseInt(assignedVersions[0].id),
-                          );
+                          handleStartEvaluation(parseInt(assignedVersions[0].id));
                         } else {
                           router.push(
-                            `/${locale}/dashboard/auditor/evaluations/new?modelId=${modelId}`,
+                            `/${locale}/dashboard/auditor/evaluations/new?modelId=${modelId}`
                           );
                         }
                       }}
-                      className="bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white px-8 py-3 rounded-[8px] font-bold text-base"
+                      className="text-base rounded-[8px] bg-primaryPurple2 px-8 py-3 font-bold text-white hover:bg-[#6849EE] hover:text-white"
                     >
                       Start First Evaluation
                     </Button>
@@ -837,14 +722,10 @@ const AuditorModelDetailPage = () => {
 
           {/* ABOUT THE MODEL - commented out */}
           {false && model && (
-            <div className="w-full lg:w-80 shrink-0">
+            <div className="w-full shrink-0 lg:w-80">
               <div className="flex flex-col gap-5 lg:gap-10">
                 <div className="flex flex-col gap-2">
-                  <Text
-                    variant="headingLg"
-                    fontWeight="semibold"
-                    className="text-primary-purple"
-                  >
+                  <Text variant="headingLg" fontWeight="semibold" className="text-primary-purple">
                     ABOUT THE MODEL
                   </Text>
 
@@ -859,17 +740,17 @@ const AuditorModelDetailPage = () => {
                   <div className="flex items-center gap-2">
                     <Text
                       variant="bodyMd"
-                      className="min-w-[120px] basis-1/4 uppercase text-gray-500"
+                      className="text-gray-500 min-w-[120px] basis-1/4 uppercase"
                     >
                       Organization
                     </Text>
-                    <Tooltip content={model?.organization || "N/A"}>
+                    <Tooltip content={model?.organization || 'N/A'}>
                       <Text
                         variant="bodyLg"
                         fontWeight="medium"
                         className="text-gray-900 line-clamp-2"
                       >
-                        {model?.organization || "N/A"}
+                        {model?.organization || 'N/A'}
                       </Text>
                     </Tooltip>
                   </div>
@@ -877,44 +758,31 @@ const AuditorModelDetailPage = () => {
                   <div className="flex items-center gap-2">
                     <Text
                       variant="bodyMd"
-                      className="min-w-[120px] basis-1/4 uppercase text-gray-500"
+                      className="text-gray-500 min-w-[120px] basis-1/4 uppercase"
                     >
                       Model Type
                     </Text>
-                    <Text
-                      variant="bodyLg"
-                      fontWeight="medium"
-                      className="text-gray-900"
-                    >
-                      {model
-                        ? (modelTypeLabels[model!.modelType] ??
-                          model!.modelType)
-                        : null}
+                    <Text variant="bodyLg" fontWeight="medium" className="text-gray-900">
+                      {model ? (modelTypeLabels[model!.modelType] ?? model!.modelType) : null}
                     </Text>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <Text
                       variant="bodyMd"
-                      className="min-w-[120px] basis-1/4 uppercase text-gray-500"
+                      className="text-gray-500 min-w-[120px] basis-1/4 uppercase"
                     >
                       Source
                     </Text>
-                    <Text
-                      variant="bodyLg"
-                      fontWeight="medium"
-                      className="text-gray-900"
-                    >
-                      {model
-                        ? (providerLabels[model!.provider] ?? model!.provider)
-                        : null}
+                    <Text variant="bodyLg" fontWeight="medium" className="text-gray-900">
+                      {model ? (providerLabels[model!.provider] ?? model!.provider) : null}
                     </Text>
                   </div>
 
                   <div className="flex gap-2">
                     <Text
                       variant="bodyMd"
-                      className="min-w-[120px] basis-1/4 uppercase text-gray-500"
+                      className="text-gray-500 min-w-[120px] basis-1/4 uppercase"
                     >
                       Sector
                     </Text>
@@ -922,8 +790,8 @@ const AuditorModelDetailPage = () => {
                       {(model?.sectors?.length ?? 0) > 0 ? (
                         model!.sectors!.map((sector, idx) => (
                           <Tooltip content={sector} key={idx}>
-                            <div className="w-[52px] h-[52px] border border-gray-200 p-1 rounded bg-white flex items-center justify-center">
-                              <span className="text-xs text-center font-bold text-gray-400">
+                            <div className="border border-gray-200 rounded flex h-[52px] w-[52px] items-center justify-center bg-white p-1">
+                              <span className="text-xs text-gray-400 text-center font-bold">
                                 {sector.substring(0, 2).toUpperCase()}
                               </span>
                             </div>
@@ -940,29 +808,20 @@ const AuditorModelDetailPage = () => {
                   <div className="flex items-center gap-2">
                     <Text
                       variant="bodyMd"
-                      className="min-w-[120px] basis-1/4 uppercase text-gray-500"
+                      className="text-gray-500 min-w-[120px] basis-1/4 uppercase"
                     >
                       Geography
                     </Text>
                     <div className="flex flex-wrap gap-2">
                       {(model?.geographies?.length ?? 0) > 0 ? (
                         model!.geographies!.map((geo, idx) => (
-                          <Tag
-                            key={idx}
-                            variation="filled"
-                            fillColor="#F3EFFF"
-                            textColor="#6941C6"
-                          >
+                          <Tag key={idx} variation="filled" fillColor="#F3EFFF" textColor="#6941C6">
                             {geo}
                           </Tag>
                         ))
                       ) : (
                         <div className="flex gap-1">
-                          <Tag
-                            variation="filled"
-                            fillColor="#F3EFFF"
-                            textColor="#6941C6"
-                          >
+                          <Tag variation="filled" fillColor="#F3EFFF" textColor="#6941C6">
                             India
                           </Tag>
                         </div>

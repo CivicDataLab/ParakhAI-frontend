@@ -1,14 +1,10 @@
-﻿"use client";
+﻿'use client';
 
-import RichTextRenderer from "@/components/common/RichTextRenderer";
-import { useGraphQL } from "@/lib/graphql-client";
-import { isDeprecatedLifecycle } from "@/utils/lifecycle";
-import { getEvaluationStatusColor } from "@/utils/status-colors";
-import { formatStatusLabel } from "@/utils";
-import { createColumnHelper } from "@tanstack/react-table";
-import Image from "next/image";
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import React from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { createColumnHelper } from '@tanstack/react-table';
 import {
   AlertDialog,
   Avatar,
@@ -20,12 +16,17 @@ import {
   Text,
   toast,
   Tooltip,
-} from "opub-ui";
-import React from "react";
-import AuditorInvitation from "../../evaluations/components/AuditorInvitation";
-import ModelSelectionModal from "../../evaluations/components/ModelSelectionModal";
-import { useOrganization } from "../../OrganizationContext";
-import "../../evaluations/evaluations-page.css";
+} from 'opub-ui';
+import RichTextRenderer from '@/components/common/RichTextRenderer';
+import { useGraphQL } from '@/lib/graphql-client';
+import { isDeprecatedLifecycle } from '@/utils/lifecycle';
+import { getEvaluationStatusColor } from '@/utils/status-colors';
+import { EVALUATION_STATUS, getAuditTypeLabel, getEvaluationModeLabel } from '@/constants';
+import { formatStatusLabel } from '@/utils';
+import AuditorInvitation from '../../evaluations/components/AuditorInvitation';
+import ModelSelectionModal from '../../evaluations/components/ModelSelectionModal';
+import { useOrganization } from '../../OrganizationContext';
+import '../../evaluations/evaluations-page.css';
 
 const GET_AI_MODEL = `
   query GetAIModel($modelId: ID!) {
@@ -136,54 +137,48 @@ type Evaluation = {
 };
 
 const modelTypeLabels: Record<string, string> = {
-  TRANSLATION: "Translation",
-  TEXT_GENERATION: "Text Generation",
-  SUMMARIZATION: "Summarisation",
-  QUESTION_ANSWERING: "Question Answering",
-  SENTIMENT_ANALYSIS: "Sentiment Analysis",
-  TEXT_CLASSIFICATION: "Text Classification",
-  NAMED_ENTITY_RECOGNITION: "Named Entity Recognition",
-  TEXT_TO_SPEECH: "Text to Speech",
-  SPEECH_TO_TEXT: "Speech to Text",
-  OTHER: "Other",
+  TRANSLATION: 'Translation',
+  TEXT_GENERATION: 'Text Generation',
+  SUMMARIZATION: 'Summarisation',
+  QUESTION_ANSWERING: 'Question Answering',
+  SENTIMENT_ANALYSIS: 'Sentiment Analysis',
+  TEXT_CLASSIFICATION: 'Text Classification',
+  NAMED_ENTITY_RECOGNITION: 'Named Entity Recognition',
+  TEXT_TO_SPEECH: 'Text to Speech',
+  SPEECH_TO_TEXT: 'Speech to Text',
+  OTHER: 'Other',
 };
 
 const providerLabels: Record<string, string> = {
-  OPENAI: "OpenAI",
-  LLAMA_OLLAMA: "Llama (Ollama)",
-  LLAMA_TOGETHER: "Llama (Together AI)",
-  LLAMA_REPLICATE: "Llama (Replicate)",
-  LLAMA_CUSTOM: "Llama (Custom)",
-  CUSTOM: "Custom API",
-  HUGGINGFACE: "HuggingFace",
+  OPENAI: 'OpenAI',
+  LLAMA_OLLAMA: 'Llama (Ollama)',
+  LLAMA_TOGETHER: 'Llama (Together AI)',
+  LLAMA_REPLICATE: 'Llama (Replicate)',
+  LLAMA_CUSTOM: 'Llama (Custom)',
+  CUSTOM: 'Custom API',
+  HUGGINGFACE: 'HuggingFace',
 };
 
-const auditTypeLabels: Record<string, string> = {
-  TECHNICAL_AUDIT: "Technical",
-  DOMAIN_AUDIT: "Domain",
-  CULTURAL_AUDIT: "Cultural",
-};
-
-const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || "";
+const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || '';
 
 const formatEvaluationDate = (dateString: string | null) => {
-  if (!dateString) return "--";
+  if (!dateString) return '--';
   const date = new Date(dateString);
-  return date.toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+  return date.toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 };
 
 // Helper for formatted date (Short)
 const formatDateShort = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
+  return new Date(dateString).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
   });
 };
 
@@ -191,7 +186,7 @@ const ModelDetailPage = () => {
   const params = useParams();
   const router = useRouter();
   const { request, isAuthenticated } = useGraphQL();
-  const locale = params?.locale || "en";
+  const locale = params?.locale || 'en';
   const orgId = params?.orgId as string;
   const modelId = params?.modelId as string;
 
@@ -201,37 +196,30 @@ const ModelDetailPage = () => {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   // Auditor invitation state
-  const [selectedVersionForAuditor, setSelectedVersionForAuditor] =
-    React.useState<{
-      id: number;
-      version: string;
-    } | null>(null);
-  const [showEditRedirectPrompt, setShowEditRedirectPrompt] =
-    React.useState(false);
-  const [isEvaluationModalOpen, setIsEvaluationModalOpen] =
-    React.useState(false);
+  const [selectedVersionForAuditor, setSelectedVersionForAuditor] = React.useState<{
+    id: number;
+    version: string;
+  } | null>(null);
+  const [showEditRedirectPrompt, setShowEditRedirectPrompt] = React.useState(false);
+  const [isEvaluationModalOpen, setIsEvaluationModalOpen] = React.useState(false);
   const [evaluationModalVersionId, setEvaluationModalVersionId] = React.useState<
     string | undefined
   >();
 
   const editModelUrl = React.useMemo(() => {
-    const orgSlug = encodeURIComponent(
-      String(organization?.slug ?? orgId ?? "").trim(),
-    );
+    const orgSlug = encodeURIComponent(String(organization?.slug ?? orgId ?? '').trim());
     const externalHost =
-      process.env.NEXT_PUBLIC_DATASPACE_HOST ||
-      process.env.NEXT_PUBLIC_AI_MAKER_URL ||
-      "";
+      process.env.NEXT_PUBLIC_DATASPACE_HOST || process.env.NEXT_PUBLIC_AI_MAKER_URL || '';
     const externalPath =
       orgSlug && modelId
         ? `/dashboard/organization/${orgSlug}/aimodels/edit/${modelId}/details`
-        : "";
+        : '';
 
-    if (!externalHost.trim() || !externalPath) return "";
+    if (!externalHost.trim() || !externalPath) return '';
 
-    const host = externalHost.replace(/\/$/, "");
+    const host = externalHost.replace(/\/$/, '');
     return /\/dashboard$/.test(host)
-      ? `${host}${externalPath.replace(/^\/dashboard/, "")}`
+      ? `${host}${externalPath.replace(/^\/dashboard/, '')}`
       : `${host}${externalPath}`;
   }, [organization?.slug, orgId, modelId]);
 
@@ -242,26 +230,22 @@ const ModelDetailPage = () => {
       try {
         setLoading(true);
         const [modelResponse, evalResponse] = await Promise.all([
-          request<{ aiModel: AIModel }>(
-            GET_AI_MODEL,
-            { modelId },
-            { organization: orgId },
-          ),
-          request<{ audits: { data: Evaluation[], totalItemsCount: number } }>(
+          request<{ aiModel: AIModel }>(GET_AI_MODEL, { modelId }, { organization: orgId }),
+          request<{ audits: { data: Evaluation[]; totalItemsCount: number } }>(
             GET_EVALUATIONS,
             {
               limit: 100,
               offset: 0,
-              filters: { field: "model_id", condition: "exact", value: modelId },
+              filters: { field: 'model_id', condition: 'exact', value: modelId },
             },
-            { organization: orgId },
+            { organization: orgId }
           ),
         ]);
 
         if (modelResponse?.aiModel) setModel(modelResponse.aiModel);
         if (evalResponse?.audits?.data) setEvaluations(evalResponse.audits?.data);
       } catch (err: any) {
-        setError(err.message || "Failed to fetch model details");
+        setError(err.message || 'Failed to fetch model details');
       } finally {
         setLoading(false);
       }
@@ -296,7 +280,7 @@ const ModelDetailPage = () => {
   }, [model]);
 
   const getAuditLink = (evaluation: Evaluation) => {
-    if (evaluation.status?.toUpperCase() === "DRAFT") {
+    if (evaluation.status?.toUpperCase() === EVALUATION_STATUS.DRAFT) {
       return `/${locale}/dashboard/ai-maker/${orgId}/evaluations/new?auditId=${evaluation.id}`;
     }
     return `/${locale}/dashboard/ai-maker/${orgId}/evaluations/${evaluation.id}`;
@@ -304,29 +288,23 @@ const ModelDetailPage = () => {
 
   const columnHelper = createColumnHelper<Evaluation>();
   const columns = [
-    columnHelper.accessor("name", {
-      header: "Evaluation Name",
+    columnHelper.accessor('name', {
+      header: 'Evaluation Name',
       cell: (info) => (
         <Link
           href={getAuditLink(info.row.original)}
-          className="text-primary-purple hover:underline font-medium"
+          className="text-primary-purple font-medium hover:underline"
         >
           {info.getValue() || `Evaluation #${info.row.original.id.slice(0, 8)}`}
         </Link>
       ),
     }),
-    columnHelper.accessor("auditType", {
-      header: "Evaluation Type",
-      cell: (info) => {
-        const typeValue = info.getValue();
-        const label = typeValue
-          ? auditTypeLabels[typeValue] || typeValue
-          : "--";
-        return <Badge>{label}</Badge>;
-      },
+    columnHelper.accessor('auditType', {
+      header: 'Evaluation Type',
+      cell: (info) => <Badge>{getAuditTypeLabel(info.getValue())}</Badge>,
     }),
-    columnHelper.accessor("status", {
-      header: "Status",
+    columnHelper.accessor('status', {
+      header: 'Status',
       cell: (info) => {
         const status = info.getValue();
         const colors = getEvaluationStatusColor(status);
@@ -334,7 +312,7 @@ const ModelDetailPage = () => {
           <Text
             variant="bodySm"
             as="span"
-            className="inline-block rounded px-2 py-0.5"
+            className="rounded inline-block px-2 py-0.5"
             style={{
               backgroundColor: colors.fillColor,
               color: colors.textColor,
@@ -345,21 +323,12 @@ const ModelDetailPage = () => {
         );
       },
     }),
-    columnHelper.accessor("evaluationMode", {
-      header: "Evaluation Mode",
-      cell: (info) => {
-        const mode = info.getValue()?.toLowerCase();
-        const label =
-          mode === "manual" || mode === "playground"
-            ? "Playground Evaluation"
-            : mode === "bulk" || mode === "automated"
-              ? "Bulk Evaluation"
-              : info.getValue() || "--";
-        return <Text variant="bodySm">{label}</Text>;
-      },
+    columnHelper.accessor('evaluationMode', {
+      header: 'Evaluation Mode',
+      cell: (info) => <Text variant="bodySm">{getEvaluationModeLabel(info.getValue())}</Text>,
     }),
-    columnHelper.accessor("totalTests", {
-      header: "Tests",
+    columnHelper.accessor('totalTests', {
+      header: 'Tests',
       cell: (info) => {
         const total = info.getValue() || 0;
         const passed = info.row.original.passedTests || 0;
@@ -372,14 +341,8 @@ const ModelDetailPage = () => {
         return (
           <div className="flex items-center gap-2">
             <div className="test-result-bar">
-              <div
-                className="test-result-pass"
-                style={{ width: `${(passed / total) * 100}%` }}
-              />
-              <div
-                className="test-result-fail"
-                style={{ width: `${(failed / total) * 100}%` }}
-              />
+              <div className="test-result-pass" style={{ width: `${(passed / total) * 100}%` }} />
+              <div className="test-result-fail" style={{ width: `${(failed / total) * 100}%` }} />
             </div>
             <Text variant="bodySm">
               {passed}/{total} passed
@@ -388,17 +351,15 @@ const ModelDetailPage = () => {
         );
       },
     }),
-    columnHelper.accessor("completedAt", {
-      header: "Completed on",
-      cell: (info) => (
-        <Text variant="bodySm">{formatEvaluationDate(info.getValue())}</Text>
-      ),
+    columnHelper.accessor('completedAt', {
+      header: 'Completed on',
+      cell: (info) => <Text variant="bodySm">{formatEvaluationDate(info.getValue())}</Text>,
     }),
   ];
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 min-h-screen">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4">
         <Spinner />
         <Text variant="bodyMd" className="text-gray-600">
           Loading model details...
@@ -409,9 +370,9 @@ const ModelDetailPage = () => {
 
   if (error || !model) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <Text variant="bodyMd" className="text-red-600">
-          {error || "Model not found"}
+          {error || 'Model not found'}
         </Text>
       </div>
     );
@@ -419,44 +380,34 @@ const ModelDetailPage = () => {
 
   return (
     <>
-      <div className="flex-1 lg:py-10 overflow-hidden">
-        <div className="flex flex-col lg:flex-row gap-8">
-          <div className="flex-1 min-w-0  lg:border-r border-gray-100">
+      <div className="flex-1 overflow-hidden lg:py-10">
+        <div className="flex flex-col gap-8 lg:flex-row">
+          <div className="lg:border-r border-gray-100  min-w-0 flex-1">
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center justify-between gap-4">
-                <Text
-                  variant="heading3xl"
-                  fontWeight="semibold"
-                  className="min-w-0"
-                >
+                <Text variant="heading3xl" fontWeight="semibold" className="min-w-0">
                   {model.displayName}
                 </Text>
                 <Button
                   kind="primary"
                   onClick={() => setShowEditRedirectPrompt(true)}
-                  className="shrink-0 bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-medium text-base border-none"
+                  className="text-base shrink-0 rounded-[8px] border-none bg-primaryPurple2 px-8 py-3 font-medium text-white hover:!bg-[#6849EE] hover:bg-[#6849EE] hover:!text-white hover:text-white"
                 >
                   Edit model
                 </Button>
               </div>
 
-              <div className="overflow-hidden flex flex-col gap-2 mt-8">
-                <Text
-                  variant="headingXl"
-                  fontWeight="semibold"
-                  className="mb-4 text-gray-900"
-                >
+              <div className="mt-8 flex flex-col gap-2 overflow-hidden">
+                <Text variant="headingXl" fontWeight="semibold" className="text-gray-900 mb-4">
                   About
                 </Text>
                 <div className="prose prose-sm max-w-none overflow-x-hidden break-words">
-                  <RichTextRenderer
-                    content={model.description || "No description available."}
-                  />
+                  <RichTextRenderer content={model.description || 'No description available.'} />
                 </div>
               </div>
 
               <div className="mt-8">
-                <div className="flex flex-col gap-1 mb-5">
+                <div className="mb-5 flex flex-col gap-1">
                   <Text variant="headingXl">Versions</Text>
                   {/* <Text variant="bodyLg">
                     All versions linked to DataSpace and available for public
@@ -466,158 +417,138 @@ const ModelDetailPage = () => {
 
                 <div className="flex flex-col gap-4">
                   {(model.versions || []).map((v) => {
-                    const isDeprecated = isDeprecatedLifecycle(
-                      v.lifecycleStage,
-                    );
+                    const isDeprecated = isDeprecatedLifecycle(v.lifecycleStage);
 
                     return (
-                    <div
-                      key={v.id}
-                      className="mt-2 flex flex-col gap-2 border-solid border-2 border-baseGraySlateSolid6 bg-white bg-white p-4 rounded-2 lg:mx-0 lg:p-4 shadow-sm"
-                    >
-                      {/* Header row - version name, badges, actions */}
-                      <div className="flex flex-wrap items-center justify-between gap-4 md:flex-nowrap ">
-                        <div className="flex flex-wrap items-center gap-4 md:flex-nowrap">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 border border-gray-200">
-                            <Image
-                              src="/images/icons/version.svg"
-                              alt="Version"
-                              width={40}
-                              height={40}
-                            />
+                      <div
+                        key={v.id}
+                        className="shadow-sm mt-2 flex flex-col gap-2 rounded-2 border-2 border-solid border-baseGraySlateSolid6 bg-white bg-white p-4 lg:mx-0 lg:p-4"
+                      >
+                        {/* Header row - version name, badges, actions */}
+                        <div className="flex flex-wrap items-center justify-between gap-4 md:flex-nowrap ">
+                          <div className="flex flex-wrap items-center gap-4 md:flex-nowrap">
+                            <div className="bg-gray-100 border border-gray-200 flex h-10 w-10 items-center justify-center rounded-full">
+                              <Image
+                                src="/images/icons/version.svg"
+                                alt="Version"
+                                width={40}
+                                height={40}
+                              />
+                            </div>
+                            <Text variant="headingMd" className="line-clamp-1">
+                              Version {v.version}
+                            </Text>
+                            {v.isLatest && (
+                              <Tag
+                                variation="filled"
+                                fillColor="#E2F5C4" // light violet
+                                textColor="#59682C" // darker violet
+                              >
+                                Primary
+                              </Tag>
+                            )}
                           </div>
-                          <Text variant="headingMd" className="line-clamp-1">
-                            Version {v.version}
-                          </Text>
-                          {v.isLatest && (
-                            <Tag
-                              variation="filled"
-                              fillColor="#E2F5C4" // light violet
-                              textColor="#59682C" // darker violet
-                            >
-                              Primary
-                            </Tag>
-                          )}
-                        </div>
 
-                        <div className="flex items-center gap-3">
-                          {isDeprecated ? (
-                            <Tooltip content="This model version is deprecated">
-                              <span className="inline-flex cursor-not-allowed">
-                                <Button
-                                  kind="secondary"
-                                  disabled
-                                  className="!rounded-[8px] pointer-events-none"
-                                >
-                                  Start Evaluation
-                                </Button>
-                              </span>
-                            </Tooltip>
-                          ) : (
+                          <div className="flex items-center gap-3">
+                            {isDeprecated ? (
+                              <Tooltip content="This model version is deprecated">
+                                <span className="inline-flex cursor-not-allowed">
+                                  <Button
+                                    kind="secondary"
+                                    disabled
+                                    className="pointer-events-none !rounded-[8px]"
+                                  >
+                                    Start Evaluation
+                                  </Button>
+                                </span>
+                              </Tooltip>
+                            ) : (
+                              <Button
+                                kind="secondary"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleNewEvaluation(v.id);
+                                }}
+                                className="!rounded-[8px]"
+                              >
+                                Start Evaluation
+                              </Button>
+                            )}
                             <Button
-                              kind="secondary"
+                              kind="primary"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleNewEvaluation(v.id);
+                                setSelectedVersionForAuditor({
+                                  id: parseInt(v.id),
+                                  version: v.version,
+                                });
                               }}
-                              className="!rounded-[8px]"
+                              className="!rounded-[8px] !border-none !bg-primaryPurple2 !text-white hover:!bg-[#6849EE] hover:!text-white"
                             >
-                              Start Evaluation
+                              Invite Evaluators
                             </Button>
-                          )}
-                          <Button
-                            kind="primary"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedVersionForAuditor({
-                                id: parseInt(v.id),
-                                version: v.version,
-                              });
-                            }}
-                            className="!rounded-[8px] !border-none !bg-primaryPurple2 !text-white hover:!bg-[#6849EE] hover:!text-white"
-                          >
-                            Invite Evaluators
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Details row - table-like layout */}
-                      <div className="mt-4 rounded-lg border border-baseGraySlateSolid4 overflow-hidden">
-                        {/* Header row */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 bg-baseGraySlateSolid2">
-                          <div className="px-4 py-2 border-b md:border-b-0 md:border-r border-baseGraySlateSolid4">
-                            <Text
-                              variant="bodySm"
-                              className="uppercase text-gray-500"
-                            >
-                              DATE UPDATED
-                            </Text>
-                          </div>
-                          <div className="px-4 py-2 border-b md:border-b-0 md:border-r border-baseGraySlateSolid4">
-                            <Text
-                              variant="bodySm"
-                              className="uppercase text-gray-500"
-                            >
-                              CAPABILITIES
-                            </Text>
-                          </div>
-                          <div className="px-4 py-2 border-b md:border-b-0 border-baseGraySlateSolid4">
-                            <Text
-                              variant="bodySm"
-                              className="uppercase text-gray-500"
-                            >
-                              {v.isLatest ? "LIFECYCLE STAGE" : "STATUS"}
-                            </Text>
                           </div>
                         </div>
 
-                        {/* Values row */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 bg-white">
-                          <div className="px-4 py-3 border-t md:border-t-0 md:border-r border-baseGraySlateSolid4">
-                            <Text variant="bodyMd">
-                              {formatDateShort(
-                                v.createdAt ||
-                                  model.updatedAt ||
-                                  new Date().toISOString(),
-                              )}
-                            </Text>
-                          </div>
-
-                          <div className="px-4 py-3 border-t md:border-t-0 md:border-r border-baseGraySlateSolid4">
-                            <div className="flex flex-wrap gap-2">
-                              {model.supportsStreaming && (
-                                <Badge>Streaming</Badge>
-                              )}
-                              {model.maxTokens ? (
-                                <Badge>
-                                  {`${model.maxTokens.toLocaleString()} Tokens`}
-                                </Badge>
-                              ) : null}
-                              {!model.supportsStreaming && !model.maxTokens && (
-                                <Text
-                                  variant="bodyMd"
-                                  className="text-gray-500"
-                                >
-                                  --
-                                </Text>
-                              )}
+                        {/* Details row - table-like layout */}
+                        <div className="rounded-lg border mt-4 overflow-hidden border-baseGraySlateSolid4">
+                          {/* Header row */}
+                          <div className="grid grid-cols-1 bg-baseGraySlateSolid2 md:grid-cols-3">
+                            <div className="border-b md:border-b-0 md:border-r border-baseGraySlateSolid4 px-4 py-2">
+                              <Text variant="bodySm" className="text-gray-500 uppercase">
+                                DATE UPDATED
+                              </Text>
+                            </div>
+                            <div className="border-b md:border-b-0 md:border-r border-baseGraySlateSolid4 px-4 py-2">
+                              <Text variant="bodySm" className="text-gray-500 uppercase">
+                                CAPABILITIES
+                              </Text>
+                            </div>
+                            <div className="border-b md:border-b-0 border-baseGraySlateSolid4 px-4 py-2">
+                              <Text variant="bodySm" className="text-gray-500 uppercase">
+                                {v.isLatest ? 'LIFECYCLE STAGE' : 'STATUS'}
+                              </Text>
                             </div>
                           </div>
 
-                          <div className="px-4 py-3 border-t md:border-t-0 border-baseGraySlateSolid4">
-                            <Text variant="bodyMd" className="capitalize">
-                              {v.isLatest
-                                ? (v.lifecycleStage || "").replace(/_/g, " ")
-                                : formatStatusLabel(v.status)}
-                            </Text>
+                          {/* Values row */}
+                          <div className="grid grid-cols-1 bg-white md:grid-cols-3">
+                            <div className="border-t md:border-t-0 md:border-r border-baseGraySlateSolid4 px-4 py-3">
+                              <Text variant="bodyMd">
+                                {formatDateShort(
+                                  v.createdAt || model.updatedAt || new Date().toISOString()
+                                )}
+                              </Text>
+                            </div>
+
+                            <div className="border-t md:border-t-0 md:border-r border-baseGraySlateSolid4 px-4 py-3">
+                              <div className="flex flex-wrap gap-2">
+                                {model.supportsStreaming && <Badge>Streaming</Badge>}
+                                {model.maxTokens ? (
+                                  <Badge>{`${model.maxTokens.toLocaleString()} Tokens`}</Badge>
+                                ) : null}
+                                {!model.supportsStreaming && !model.maxTokens && (
+                                  <Text variant="bodyMd" className="text-gray-500">
+                                    --
+                                  </Text>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="border-t md:border-t-0 border-baseGraySlateSolid4 px-4 py-3">
+                              <Text variant="bodyMd" className="capitalize">
+                                {v.isLatest
+                                  ? (v.lifecycleStage || '').replace(/_/g, ' ')
+                                  : formatStatusLabel(v.status)}
+                              </Text>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
                     );
                   })}
                   {(model.versions || []).length === 0 && (
-                    <div className="p-6 border border-dashed border-gray-300 rounded-lg text-center bg-gray-50">
+                    <div className="border border-gray-300 rounded-lg bg-gray-50 border-dashed p-6 text-center">
                       <Text variant="bodyMd" className="text-gray-500">
                         No version information available for this model.
                       </Text>
@@ -828,7 +759,7 @@ const ModelDetailPage = () => {
 
         {/* Recent Evaluations Section */}
         <div className="mt-16">
-          <div className="flex justify-between items-center mb-6">
+          <div className="mb-6 flex items-center justify-between">
             <Text variant="headingXl" as="h2" fontWeight="bold">
               Past Evaluations
             </Text>
@@ -839,13 +770,7 @@ const ModelDetailPage = () => {
                 rows={evaluations}
                 columns={columns}
                 hoverable
-                sortColumns={[
-                  "name",
-                  "auditType",
-                  "status",
-                  "evaluationMode",
-                  "completedAt",
-                ]}
+                sortColumns={['name', 'auditType', 'status', 'evaluationMode', 'completedAt']}
                 initialSortColumnIndex={5}
                 defaultSortDirection="desc"
                 hideSelection
@@ -853,14 +778,14 @@ const ModelDetailPage = () => {
               />
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+            <div className="bg-gray-50 rounded-lg border border-gray-300 flex flex-col items-center justify-center border-dashed py-12">
               <Text variant="bodyMd" className="text-gray-500 mb-4">
                 No evaluations yet for this model.
               </Text>
               <Button
                 kind="primary"
                 onClick={() => handleNewEvaluation()}
-                className="bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white px-8 py-3 rounded-[8px] font-bold text-base"
+                className="text-base rounded-[8px] bg-primaryPurple2 px-8 py-3 font-bold text-white hover:bg-[#6849EE] hover:text-white"
               >
                 Start First Evaluation
               </Button>
@@ -901,38 +826,32 @@ const ModelDetailPage = () => {
           : {})}
       />
 
-      <AlertDialog
-        open={showEditRedirectPrompt}
-        onOpenChange={setShowEditRedirectPrompt}
-      >
+      <AlertDialog open={showEditRedirectPrompt} onOpenChange={setShowEditRedirectPrompt}>
         <AlertDialog.Content
           title="Redirect to CivicDataSpace"
-          primaryAction={{
-            content: "Yes, continue",
-            onAction: () => {
-              setShowEditRedirectPrompt(false);
-              if (editModelUrl) {
-                window.open(editModelUrl, "_blank", "noopener,noreferrer");
-              } else {
-                toast.error(
-                  "Unable to open model editor. Please try again later.",
-                );
-              }
-            },
-            className:
-              "bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white",
-          } as any}
+          primaryAction={
+            {
+              content: 'Yes, continue',
+              onAction: () => {
+                setShowEditRedirectPrompt(false);
+                if (editModelUrl) {
+                  window.open(editModelUrl, '_blank', 'noopener,noreferrer');
+                } else {
+                  toast.error('Unable to open model editor. Please try again later.');
+                }
+              },
+              className: 'bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white',
+            } as any
+          }
           secondaryActions={[
             {
-              content: "No",
+              content: 'No',
               onAction: () => setShowEditRedirectPrompt(false),
-              className:
-                "bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white",
+              className: 'bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white',
             } as any,
           ]}
         >
-          You are being redirected to CivicDataSpace to edit this model. Do you
-          want to continue?
+          You are being redirected to CivicDataSpace to edit this model. Do you want to continue?
         </AlertDialog.Content>
       </AlertDialog>
     </>

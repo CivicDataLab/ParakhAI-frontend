@@ -1,20 +1,16 @@
-﻿"use client";
+﻿'use client';
 
-import { useGraphQL } from "@/lib/graphql-client";
-import { useAppSession } from "@/hooks/use-app-session";
-import { statusColors } from "@/utils/status-colors";
-import { formatAssignmentStatusLabel, formatStatusLabel, isPendingAssignmentStatus } from "@/utils";
-import {
-  IconCheck,
-  IconFilter,
-  IconPlayerPlay,
-  IconX,
-} from "@tabler/icons-react";
-import { createColumnHelper } from "@tanstack/react-table";
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { Badge, Button, DataTable, Spinner, Text, toast } from "opub-ui";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { IconCheck, IconFilter, IconPlayerPlay, IconX } from '@tabler/icons-react';
+import { createColumnHelper } from '@tanstack/react-table';
+import { Badge, Button, DataTable, Spinner, Text, toast } from 'opub-ui';
+import { useAppSession } from '@/hooks/use-app-session';
+import { useGraphQL } from '@/lib/graphql-client';
+import { statusColors } from '@/utils/status-colors';
+import { ASSIGNMENT_STATUS, isActiveAssignmentStatus } from '@/constants';
+import { formatAssignmentStatusLabel, formatStatusLabel, isPendingAssignmentStatus } from '@/utils';
 
 // Types
 type AuditorAssignment = {
@@ -70,39 +66,34 @@ const UPDATE_ASSIGNMENT_STATUS = `
 `;
 
 const statusOptions = [
-  { label: "All", value: "ALL" },
-  // { label: "Queued", value: "QUEUED" },
-  { label: "Accepted", value: "ACCEPTED" },
-  // { label: "In Progress", value: "IN_PROGRESS" },
-  // { label: "Completed", value: "COMPLETED" },
-  { label: "Declined", value: "DECLINED" },
+  { label: 'All', value: 'ALL' },
+  // { label: "Queued", value: ASSIGNMENT_STATUS.QUEUED },
+  { label: 'Accepted', value: ASSIGNMENT_STATUS.ACCEPTED },
+  // { label: "In Progress", value: ASSIGNMENT_STATUS.IN_PROGRESS },
+  // { label: "Completed", value: ASSIGNMENT_STATUS.COMPLETED },
+  { label: 'Declined', value: ASSIGNMENT_STATUS.DECLINED },
 ];
 
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
+  return new Date(dateString).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
   });
 };
 
 const AssignmentsPage = () => {
   const params = useParams();
   const router = useRouter();
-  const locale = params?.locale || "en";
-  const {
-    request,
-    isAuthenticated,
-    isLoading: isSessionLoading,
-  } = useGraphQL();
+  const locale = params?.locale || 'en';
+  const { request, isAuthenticated, isLoading: isSessionLoading } = useGraphQL();
   const { user } = useAppSession();
 
   const [assignments, setAssignments] = useState<AuditorAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>("ALL");
-
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
   useEffect(() => {
     if (!isAuthenticated || isSessionLoading) return;
@@ -119,8 +110,8 @@ const AssignmentsPage = () => {
           setAssignments(response.myAssignments);
         }
       } catch (err: any) {
-        console.error("Error fetching assignments:", err);
-        setError(err?.message || "Failed to load assignments");
+        console.error('Error fetching assignments:', err);
+        setError(err?.message || 'Failed to load assignments');
       } finally {
         setLoading(false);
       }
@@ -129,10 +120,7 @@ const AssignmentsPage = () => {
     fetchAssignments();
   }, [isAuthenticated, isSessionLoading, request]);
 
-  const handleUpdateStatus = async (
-    assignmentId: string,
-    newStatus: string,
-  ) => {
+  const handleUpdateStatus = async (assignmentId: string, newStatus: string) => {
     try {
       setUpdatingId(assignmentId);
 
@@ -148,22 +136,18 @@ const AssignmentsPage = () => {
               ? {
                   ...a,
                   status: newStatus,
-                  updatedAt:
-                    response.updateAuditorAssignmentStatus.assignment.updatedAt,
+                  updatedAt: response.updateAuditorAssignmentStatus.assignment.updatedAt,
                 }
-              : a,
-          ),
+              : a
+          )
         );
 
         toast.success(`Assignment ${newStatus.toLowerCase()} successfully`);
       } else {
-        toast.error(
-          response?.updateAuditorAssignmentStatus?.message ||
-            "Failed to update status",
-        );
+        toast.error(response?.updateAuditorAssignmentStatus?.message || 'Failed to update status');
       }
     } catch (err: any) {
-      toast.error(err?.message || "Error updating status");
+      toast.error(err?.message || 'Error updating status');
     } finally {
       setUpdatingId(null);
     }
@@ -171,7 +155,7 @@ const AssignmentsPage = () => {
 
   const handleStartEvaluation = (assignment: AuditorAssignment) => {
     router.push(
-      `/${locale}/dashboard/auditor/models/${assignment.modelId}?versionId=${assignment.modelVersionId}`,
+      `/${locale}/dashboard/auditor/models/${assignment.modelId}?versionId=${assignment.modelVersionId}`
     );
   };
 
@@ -181,15 +165,13 @@ const AssignmentsPage = () => {
 
   // Filter assignments by status
   const filteredAssignments =
-    statusFilter === "ALL"
-      ? assignments
-      : assignments.filter((a) => a.status === statusFilter);
+    statusFilter === 'ALL' ? assignments : assignments.filter((a) => a.status === statusFilter);
 
   const columnHelper = createColumnHelper<AuditorAssignment>();
 
   const columns = [
-    columnHelper.accessor("modelName", {
-      header: "Model",
+    columnHelper.accessor('modelName', {
+      header: 'Model',
       cell: (info) => (
         // <button
         //   onClick={() => handleViewModel(info.row.original)}
@@ -199,59 +181,51 @@ const AssignmentsPage = () => {
         // </button>
         <Link
           href={`/${locale}/dashboard/auditor/models/${info.row.original.modelId}`}
-          className="text-baseGraySlateSolid12 hover:underline font-medium"
+          className="font-medium text-baseGraySlateSolid12 hover:underline"
         >
           {info.getValue() || `Model ${info.row.original.modelId.slice(0, 8)}`}
         </Link>
       ),
     }),
-    columnHelper.accessor("versionLabel", {
-      header: "Version",
-      cell: (info) => (
-        <Badge>
-          {info.getValue() || `v${info.row.original.modelVersionId}`}
-        </Badge>
-      ),
+    columnHelper.accessor('versionLabel', {
+      header: 'Version',
+      cell: (info) => <Badge>{info.getValue() || `v${info.row.original.modelVersionId}`}</Badge>,
     }),
-    columnHelper.accessor("organizationName", {
-      header: "Organization",
+    columnHelper.accessor('organizationName', {
+      header: 'Organization',
       cell: (info) => (
         <Text variant="bodySm">
           {info.getValue() || `ID #${info.row.original.organizationId.slice(0, 8)}`}
         </Text>
       ),
     }),
-    columnHelper.accessor("status", {
-      header: "Status",
+    columnHelper.accessor('status', {
+      header: 'Status',
       cell: (info) => {
         const status = info.getValue();
         const colors = statusColors[status] || statusColors.PENDING;
         return (
-          <span
-            className={`px-2 py-1 text-xs rounded-full ${colors.bg} ${colors.text}`}
-          >
+          <span className={`text-xs rounded-full px-2 py-1 ${colors.bg} ${colors.text}`}>
             {formatAssignmentStatusLabel(status)}
           </span>
         );
       },
     }),
-    columnHelper.accessor("notes", {
-      header: "Notes",
+    columnHelper.accessor('notes', {
+      header: 'Notes',
       cell: (info) => (
         <Text variant="bodySm" className="text-gray-600 max-w-xs truncate">
-          {info.getValue() || "-"}
+          {info.getValue() || '-'}
         </Text>
       ),
     }),
-    columnHelper.accessor("createdAt", {
-      header: "Invited On",
-      cell: (info) => (
-        <Text variant="bodySm">{formatDate(info.getValue())}</Text>
-      ),
+    columnHelper.accessor('createdAt', {
+      header: 'Invited On',
+      cell: (info) => <Text variant="bodySm">{formatDate(info.getValue())}</Text>,
     }),
     columnHelper.display({
-      id: "actions",
-      header: "Actions",
+      id: 'actions',
+      header: 'Actions',
       cell: ({ row }) => {
         const status = row.original.status;
 
@@ -262,33 +236,33 @@ const AssignmentsPage = () => {
                 kind="tertiary"
                 size="slim"
                 className="!text-baseGraySlateSolid12"
-                onClick={() => handleUpdateStatus(row.original.id, "ACCEPTED")}
+                onClick={() => handleUpdateStatus(row.original.id, ASSIGNMENT_STATUS.ACCEPTED)}
                 disabled={updatingId === row.original.id}
               >
                 <div className="flex items-end gap-1">
                   <IconCheck color="#11181C" size={16} className="mr-1" />
-                  <span className="text-baseGraySlateSolid12 pt-0.4">Accept</span>
+                  <span className="pt-0.4 text-baseGraySlateSolid12">Accept</span>
                 </div>
               </Button>
               <Button
                 kind="tertiary"
                 size="slim"
                 className="!text-baseGraySlateSolid12"
-                onClick={() => handleUpdateStatus(row.original.id, "DECLINED")}
+                onClick={() => handleUpdateStatus(row.original.id, ASSIGNMENT_STATUS.DECLINED)}
                 disabled={updatingId === row.original.id}
               >
                 <div className="flex items-start justify-center gap-1">
                   <IconX color="#11181C" size={16} className="mr-1" />
-                  <span className="text-baseGraySlateSolid12 pt-0.4">Decline</span>
+                  <span className="pt-0.4 text-baseGraySlateSolid12">Decline</span>
                 </div>
               </Button>
             </div>
           );
         }
 
-        if (status === "ACCEPTED" || status === "IN_PROGRESS") {
+        if (isActiveAssignmentStatus(status)) {
           return (
-            <div className="flex items-center gap-2 mr-1">
+            <div className="mr-1 flex items-center gap-2">
               <Button
                 kind="tertiary"
                 size="slim"
@@ -296,14 +270,11 @@ const AssignmentsPage = () => {
                 onClick={() => handleStartEvaluation(row.original)}
               >
                 <div className="flex items-center justify-center gap-1 text-baseGraySlateSolid12">
-                  <IconPlayerPlay
-                    size={16}
-                    className="mr-1 text-baseGraySlateSolid12"
-                  />
+                  <IconPlayerPlay size={16} className="mr-1 text-baseGraySlateSolid12" />
                   <span className="pt-0.5 text-baseGraySlateSolid12">
-                    {row.original.status === "IN_PROGRESS"
-                      ? "Continue"
-                      : "Start Evaluation"}
+                    {row.original.status === ASSIGNMENT_STATUS.IN_PROGRESS
+                      ? 'Continue'
+                      : 'Start Evaluation'}
                   </span>
                 </div>
               </Button>
@@ -362,7 +333,7 @@ const AssignmentsPage = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-8 mt-10 pl-1">
+      <div className="mb-8 mt-10 flex items-center justify-between pl-1">
         <div>
           <Text variant="headingLg" as="h1" fontWeight="bold">
             Assigned Models
@@ -388,17 +359,16 @@ const AssignmentsPage = () => {
               size="slim"
               key={option.value}
               onClick={() => setStatusFilter(option.value)}
-              className={`px-3 py-1.5 text-sm  transition-colors ${
+              className={`text-sm px-3 py-1.5  transition-colors ${
                 statusFilter === option.value
-                  ? "bg-primaryPurple2 text-white"
-                  : "bg-gray-100 text-gray-700 hover:primaryPurple2"
+                  ? 'bg-primaryPurple2 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:primaryPurple2'
               }`}
             >
               {option.label}
-              {option.value !== "ALL" && (
-                <span className="ml-1.5 text-xs">
-                  ({assignments.filter((a) => a.status === option.value).length}
-                  )
+              {option.value !== 'ALL' && (
+                <span className="text-xs ml-1.5">
+                  ({assignments.filter((a) => a.status === option.value).length})
                 </span>
               )}
             </Button>
@@ -408,21 +378,21 @@ const AssignmentsPage = () => {
 
       {/* Assignments Table */}
       {filteredAssignments.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 bg-white rounded-lg border border-gray-200">
+        <div className="rounded-lg border border-gray-200 flex flex-col items-center justify-center bg-white py-12">
           <IconFilter size={32} className="text-gray-400 mb-3" />
           <Text variant="bodyMd" className="text-gray-600">
-            {statusFilter === "ALL"
-              ? "No assignments found"
+            {statusFilter === 'ALL'
+              ? 'No assignments found'
               : `No ${formatStatusLabel(statusFilter, { lowercase: true })} assignments`}
           </Text>
           <Text variant="bodySm" className="text-gray-500 mt-1">
-            {statusFilter === "ALL"
+            {statusFilter === 'ALL'
               ? "You'll see your evaluation assignments here when organizations invite you"
-              : "Try selecting a different filter"}
+              : 'Try selecting a different filter'}
           </Text>
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="rounded-lg border border-gray-200 overflow-hidden bg-white">
           <DataTable
             rows={filteredAssignments}
             columns={columns}
@@ -432,7 +402,6 @@ const AssignmentsPage = () => {
           />
         </div>
       )}
-
     </>
   );
 };
