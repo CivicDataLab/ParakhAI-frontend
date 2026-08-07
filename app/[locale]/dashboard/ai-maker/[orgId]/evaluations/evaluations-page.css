@@ -47,7 +47,9 @@ Styles for ai-maker evaluations list page
   display: inline-flex !important;
   align-items: center;
   gap: 0.35rem;
-  flex-direction: row-reverse;
+  width: max-content !important;
+  max-width: 100%;
+  justify-content: flex-start;
 }
 
 /* Evaluation Type column (3rd) */
@@ -68,7 +70,9 @@ Styles for ai-maker evaluations list page
   display: inline-flex !important;
   align-items: center;
   gap: 0.35rem;
-  flex-direction: row-reverse;
+  width: max-content !important;
+  max-width: 100%;
+  justify-content: flex-start;
 }
 
 /* Nudge Evaluation Name values (first column) slightly right for better visual alignment */
@@ -151,40 +155,21 @@ Styles for ai-maker evaluations list page
   line-height: 1.4 !important;
 }
 
-/* Status header sort icon (4th column) */
-.evaluations-table-evaluation-mode-col th:nth-child(4) > * {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 0.35rem;
-  flex-direction: row-reverse;
-}
-
-.evaluations-table-evaluation-mode-col th:nth-child(4) {
-  padding-left: 0.9rem !important;
-}
-
-/* Evaluation Name header sort icon */
-.evaluations-table-evaluation-mode-col th:nth-child(1) > * {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 0.35rem;
-  flex-direction: row-reverse;
-}
-
-/* Evaluation Mode header sort icon (5th column) */
-.evaluations-table-evaluation-mode-col th:nth-child(5) > * {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 0.35rem;
-  flex-direction: row-reverse;
-}
-
-/* Completed header sort icon (7th column) */
+/* Keep header label + filter/sort icons grouped (not stretched across the cell) */
+.evaluations-table-evaluation-mode-col th:nth-child(1) > *,
+.evaluations-table-evaluation-mode-col th:nth-child(4) > *,
+.evaluations-table-evaluation-mode-col th:nth-child(5) > *,
 .evaluations-table-evaluation-mode-col th:nth-child(7) > * {
   display: inline-flex !important;
   align-items: center;
   gap: 0.35rem;
-  flex-direction: row-reverse;
+  width: max-content !important;
+  max-width: 100%;
+  justify-content: flex-start;
+}
+
+.evaluations-table-evaluation-mode-col th:nth-child(4) {
+  padding-left: 0.9rem !important;
 }
 
 .evaluations-table-evaluation-mode-col th:nth-child(7) {
@@ -233,7 +218,9 @@ Styles for ai-maker evaluations list page
   display: inline-flex !important;
   align-items: center;
   gap: 0.35rem;
-  flex-direction: row-reverse;
+  width: max-content !important;
+  max-width: 100%;
+  justify-content: flex-start;
 }
 
 .evaluations-table-model-detail-col td:first-child {
@@ -266,7 +253,9 @@ Styles for ai-maker evaluations list page
   display: inline-flex !important;
   align-items: center;
   gap: 0.35rem;
-  flex-direction: row-reverse;
+  width: max-content !important;
+  max-width: 100%;
+  justify-content: flex-start;
 }
 
 .evaluations-table-model-detail-col th:nth-child(3) {
@@ -290,7 +279,9 @@ Styles for ai-maker evaluations list page
   display: inline-flex !important;
   align-items: center;
   gap: 0.35rem;
-  flex-direction: row-reverse;
+  width: max-content !important;
+  max-width: 100%;
+  justify-content: flex-start;
 }
 
 .evaluations-table-model-detail-col th:nth-child(5),
@@ -315,18 +306,14 @@ Styles for ai-maker evaluations list page
   line-height: 1.4 !important;
 }
 
-.evaluations-table-model-detail-col th:first-child > * {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 0.35rem;
-  flex-direction: row-reverse;
-}
-
+.evaluations-table-model-detail-col th:first-child > *,
 .evaluations-table-model-detail-col th:nth-child(6) > * {
   display: inline-flex !important;
   align-items: center;
   gap: 0.35rem;
-  flex-direction: row-reverse;
+  width: max-content !important;
+  max-width: 100%;
+  justify-content: flex-start;
 }
 
 .evaluations-table-model-detail-col th:nth-child(6) {
