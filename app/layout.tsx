@@ -1,4 +1,5 @@
-﻿import {
+﻿import type { Metadata } from "next";
+import {
   Inter,
   Noto_Sans_Devanagari,
   Noto_Sans_Tamil,
@@ -175,9 +176,32 @@ const fontVariables = [
   notoMyanmar.variable,
 ].join(" ");
 
-export const metadata = {
-  title: "ParakhAI",
-  description: "Paricipatory AI Evaluation",
+const siteUrl =
+  process.env.NEXT_PUBLIC_PLATFORM_URL || "https://parakh.civicdatalab.in";
+
+export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "ParakhAI",
+    template: "%s | ParakhAI",
+  },
+  description: "Participatory AI Evaluation",
+  alternates: {
+    canonical: "./",
+  },
+  openGraph: {
+    title: "ParakhAI",
+    description: "Participatory AI Evaluation",
+    url: "./",
+    siteName: "ParakhAI",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "ParakhAI",
+    description: "Participatory AI Evaluation",
+  },
   icons: {
     icon: "/images/icons/Favicon.svg",
   },
