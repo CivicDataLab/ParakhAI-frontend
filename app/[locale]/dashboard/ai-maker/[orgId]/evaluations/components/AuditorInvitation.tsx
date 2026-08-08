@@ -540,10 +540,14 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                 </div>
               ) : availableAuditors.length > 0 ? (
                 <div>
-                  <label className="text-sm text-gray-700 mb-1 block font-medium">
+                  <label
+                    htmlFor="select-evaluator"
+                    className="text-sm text-gray-700 mb-1 block font-medium"
+                  >
                     Select Evaluator
                   </label>
                   <select
+                    id="select-evaluator"
                     value={selectedAuditorId}
                     onChange={(e) => setSelectedAuditorId(e.target.value)}
                     className="border border-gray-300 rounded-md focus:ring-purple-500 w-full px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2"
@@ -565,10 +569,14 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
               )}
 
               <div>
-                <label className="text-sm text-gray-700 mb-1 block font-medium">
+                <label
+                  htmlFor="evaluator-notes"
+                  className="text-sm text-gray-700 mb-1 block font-medium"
+                >
                   Notes (optional)
                 </label>
                 <textarea
+                  id="evaluator-notes"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Add any notes for the auditor..."
