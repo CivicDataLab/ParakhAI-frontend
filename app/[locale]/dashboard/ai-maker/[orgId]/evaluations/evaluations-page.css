@@ -43,15 +43,6 @@ Styles for ai-maker evaluations list page
   padding-left: 2.1rem !important;
 }
 
-.evaluations-table-evaluation-mode-col th:nth-child(2) > * {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 0.35rem;
-  width: max-content !important;
-  max-width: 100%;
-  justify-content: flex-start;
-}
-
 /* Evaluation Type column (3rd) */
 .evaluations-table-evaluation-mode-col th:nth-child(3),
 .evaluations-table-evaluation-mode-col td:nth-child(3) {
@@ -60,19 +51,6 @@ Styles for ai-maker evaluations list page
   min-width: 140px;
   box-sizing: border-box;
   text-align: left;
-}
-
-.evaluations-table-evaluation-mode-col th:nth-child(3) {
-  padding-left: 1.5rem !important;
-}
-
-.evaluations-table-evaluation-mode-col th:nth-child(3) > * {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 0.35rem;
-  width: max-content !important;
-  max-width: 100%;
-  justify-content: flex-start;
 }
 
 /* Nudge Evaluation Name values (first column) slightly right for better visual alignment */
@@ -122,10 +100,6 @@ Styles for ai-maker evaluations list page
   padding-left: 0.65rem;
 }
 
-.evaluations-table-evaluation-mode-col th:nth-child(5) {
-  padding-left: 0.15rem;
-}
-
 /* Tests (6th) and Completed (7th) columns */
 .evaluations-table-evaluation-mode-col th:nth-child(6),
 .evaluations-table-evaluation-mode-col td:nth-child(6),
@@ -155,12 +129,9 @@ Styles for ai-maker evaluations list page
   line-height: 1.4 !important;
 }
 
-/* Keep header label + filter/sort icons grouped (not stretched across the cell) */
-.evaluations-table-evaluation-mode-col th:nth-child(1) > *,
-.evaluations-table-evaluation-mode-col th:nth-child(4) > *,
-.evaluations-table-evaluation-mode-col th:nth-child(5) > *,
-.evaluations-table-evaluation-mode-col th:nth-child(7) > * {
-  display: inline-flex !important;
+/* Label + sort/filter icons grouped at the start of the header */
+.evaluations-table-evaluation-mode-col th > * {
+  display: flex !important;
   align-items: center;
   gap: 0.35rem;
   width: max-content !important;
@@ -168,12 +139,12 @@ Styles for ai-maker evaluations list page
   justify-content: flex-start;
 }
 
-.evaluations-table-evaluation-mode-col th:nth-child(4) {
-  padding-left: 0.9rem !important;
-}
-
-.evaluations-table-evaluation-mode-col th:nth-child(7) {
-  padding-left: 2.05rem !important;
+.evaluations-table-evaluation-mode-col th > * > button:first-child {
+  display: flex !important;
+  align-items: center;
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+  gap: 0.35rem;
 }
 
 /* Model detail page: same table without Model column */
@@ -210,19 +181,6 @@ Styles for ai-maker evaluations list page
   text-align: left;
 }
 
-.evaluations-table-model-detail-col th:nth-child(2) {
-  padding-left: 1.5rem !important;
-}
-
-.evaluations-table-model-detail-col th:nth-child(2) > * {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 0.35rem;
-  width: max-content !important;
-  max-width: 100%;
-  justify-content: flex-start;
-}
-
 .evaluations-table-model-detail-col td:first-child {
   padding-left: 0.75rem;
 }
@@ -249,19 +207,6 @@ Styles for ai-maker evaluations list page
   white-space: nowrap;
 }
 
-.evaluations-table-model-detail-col th:nth-child(3) > * {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 0.35rem;
-  width: max-content !important;
-  max-width: 100%;
-  justify-content: flex-start;
-}
-
-.evaluations-table-model-detail-col th:nth-child(3) {
-  padding-left: 0.9rem !important;
-}
-
 .evaluations-table-model-detail-col th:nth-child(4),
 .evaluations-table-model-detail-col td:nth-child(4) {
   width: 180px;
@@ -273,15 +218,6 @@ Styles for ai-maker evaluations list page
 
 .evaluations-table-model-detail-col td:nth-child(4) {
   padding-left: 0.65rem;
-}
-
-.evaluations-table-model-detail-col th:nth-child(4) > * {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 0.35rem;
-  width: max-content !important;
-  max-width: 100%;
-  justify-content: flex-start;
 }
 
 .evaluations-table-model-detail-col th:nth-child(5),
@@ -306,9 +242,8 @@ Styles for ai-maker evaluations list page
   line-height: 1.4 !important;
 }
 
-.evaluations-table-model-detail-col th:first-child > *,
-.evaluations-table-model-detail-col th:nth-child(6) > * {
-  display: inline-flex !important;
+.evaluations-table-model-detail-col th > * {
+  display: flex !important;
   align-items: center;
   gap: 0.35rem;
   width: max-content !important;
@@ -316,6 +251,10 @@ Styles for ai-maker evaluations list page
   justify-content: flex-start;
 }
 
-.evaluations-table-model-detail-col th:nth-child(6) {
-  padding-left: 2.05rem !important;
+.evaluations-table-model-detail-col th > * > button:first-child {
+  display: flex !important;
+  align-items: center;
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+  gap: 0.35rem;
 }
