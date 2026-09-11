@@ -1,18 +1,29 @@
-name: Update ParakhAI Dev
+name: Deploy ParakhAI
+
+# Covers both dev (push to `dev`) and prod (push to `main`) -- environment,
+# health-check/smoke targets, and the host's Node bin path all derive from
+# github.ref_name. Same shape DataSpaceFrontend's deploy-Dataspace.yml and
+# ParakhAPI's deploy-parakh-api.yml already use.
+#
+# Prod was, until this workflow, deployed manually -- the first push to
+# `main` through this pipeline is a real cutover, not just a config change.
 
 on:
   push:
-    branches: ['dev']
+    branches: ['dev', 'main']
   workflow_dispatch: {}
 
 concurrency:
-  group: parakh-dev-deploy
+  group: parakh-frontend-deploy-${{ github.ref_name }}
   cancel-in-progress: false
+
+env:
+  GH_ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || 'development' }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: development
+    environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
     timeout-minutes: 15
     env:
       KEYCLOAK_CLIENT_ID: ${{ secrets.KEYCLOAK_CLIENT_ID }}
@@ -64,14 +75,19 @@ jobs:
         continue-on-error: false
         env:
           HEALTH_CHECK_URL: ${{ vars.HEALTH_CHECK_URL || 'http://localhost:3000' }}
+          # Unverified on prod-parakh -- this repo has no engines: pin and the
+          # value below is copied from dev's known-working path. Confirm the
+          # real nvm Node path on prod-parakh and set vars.NODE_BIN_PATH in the
+          # `production` GH environment before trusting this default there.
+          NODE_BIN_PATH: ${{ vars.NODE_BIN_PATH || '/home/ubuntu/.nvm/versions/node/v24.11.1/bin' }}
         with:
           host: ${{ vars.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
-          envs: HEALTH_CHECK_URL
+          envs: HEALTH_CHECK_URL,NODE_BIN_PATH
           script: |
             set -e
-            export PATH="/home/ubuntu/.nvm/versions/node/v24.11.1/bin:$PATH"
+            export PATH="$NODE_BIN_PATH:$PATH"
             cd platform/ParakhAI-frontend
 
             npm ci --legacy-peer-deps --omit=dev
@@ -110,6 +126,14 @@ jobs:
     name: Smoke Tests
     needs: deploy
     uses: CivicDataLab/ParakhAI_test/.github/workflows/run-smoke.yml@main
+    with:
+      # Without these, run-smoke.yml falls back to its own hardcoded DEV
+      # defaults regardless of what was just deployed -- harmless for the dev
+      # branch (happens to match), but would silently smoke-test dev instead
+      # of prod on a push to main. Explicit for both, so neither relies on
+      # that fallback by coincidence.
+      base_url: ${{ github.ref_name == 'main' && vars.PROD_BASE_URL || vars.DEV_BASE_URL }}
+      graphql_url: ${{ github.ref_name == 'main' && vars.PROD_GRAPHQL_URL || vars.DEV_GRAPHQL_URL }}
     secrets:
       TEST_EMAIL_1: ${{ secrets.TEST_EMAIL_1 }}
       TEST_PASSWORD_1: ${{ secrets.TEST_PASSWORD_1 }}
@@ -119,24 +143,25 @@ jobs:
 
   rollback-on-smoke-failure:
     name: Rollback (smoke tests failed)
-    needs: smoke-tests
+    needs: [deploy, smoke-tests]
     if: failure() && needs.deploy.result == 'success'
     runs-on: ubuntu-latest
-    environment: development
+    environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
     timeout-minutes: 10
     steps:
       - name: Restore previous build and restart
         uses: appleboy/ssh-action@v1.0.3
         env:
           HEALTH_CHECK_URL: ${{ vars.HEALTH_CHECK_URL || 'http://localhost:3000' }}
+          NODE_BIN_PATH: ${{ vars.NODE_BIN_PATH || '/home/ubuntu/.nvm/versions/node/v24.11.1/bin' }}
         with:
           host: ${{ vars.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
-          envs: HEALTH_CHECK_URL
+          envs: HEALTH_CHECK_URL,NODE_BIN_PATH
           script: |
             set -e
-            export PATH="/home/ubuntu/.nvm/versions/node/v24.11.1/bin:$PATH"
+            export PATH="$NODE_BIN_PATH:$PATH"
             cd platform/ParakhAI-frontend
 
             if [ ! -d .next.bak ] || [ ! -d public.bak ]; then
@@ -168,10 +193,10 @@ jobs:
 
   finalize-deploy:
     name: Finalize Deploy
-    needs: smoke-tests
+    needs: [deploy, smoke-tests]
     if: success()
     runs-on: ubuntu-latest
-    environment: development
+    environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
     timeout-minutes: 5
     steps:
       - name: Clean up backup build
