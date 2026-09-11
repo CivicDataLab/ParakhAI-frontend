@@ -1,5 +1,10 @@
 import { Metadata } from 'next';
 import { twMerge, type ClassNameValue } from 'tailwind-merge';
+import {
+  ASSIGNMENT_STATUS,
+  EVALUATION_STATUS,
+  isPendingAssignmentStatus as isPendingAssignmentStatusFromConstants,
+} from '@/constants';
 
 type MetadataOptions = {
   title?: string;
@@ -80,7 +85,10 @@ export function formatStatusLabel(
   if (!status) return 'Unknown';
 
   const normalized = status.toUpperCase();
-  const label = normalized === 'PENDING' ? 'QUEUED' : normalized.replace(/_/g, ' ');
+  const label =
+    normalized === EVALUATION_STATUS.PENDING
+      ? EVALUATION_STATUS.QUEUED
+      : normalized.replace(/_/g, ' ');
 
   return options?.lowercase ? label.toLowerCase() : label;
 }
@@ -93,28 +101,21 @@ export function formatAssignmentStatusLabel(
   if (!status) return 'Unknown';
 
   const normalized = status.toUpperCase();
-  const displayStatus = normalized === 'QUEUED' ? 'PENDING' : normalized;
+  const displayStatus =
+    normalized === ASSIGNMENT_STATUS.QUEUED ? ASSIGNMENT_STATUS.PENDING : normalized;
   const label = displayStatus.replace(/_/g, ' ');
   return options?.lowercase ? label.toLowerCase() : label;
 }
 
-/** Pending invitation — API may return PENDING or QUEUED. */
-export function isPendingAssignmentStatus(status?: string | null): boolean {
-  const normalized = status?.toUpperCase();
-  return normalized === 'PENDING' || normalized === 'QUEUED';
-}
+/** Pending invitation — API may return PENDING or QUEUED. Re-exported from
+ *  `@/constants` for backward compatibility with existing import paths. */
+export const isPendingAssignmentStatus = isPendingAssignmentStatusFromConstants;
 
 const convertMap: any = {
   border: (value: { width: any; style: any; color: any }) => {
     return `${value.width} ${value.style} ${value.color}`;
   },
-  shadow: (value: {
-    offsetX: any;
-    offsetY: any;
-    blur: any;
-    spread: any;
-    color: any;
-  }) => {
+  shadow: (value: { offsetX: any; offsetY: any; blur: any; spread: any; color: any }) => {
     return `${value.offsetX} ${value.offsetY} ${value.blur} ${value.spread} ${value.color}`;
   },
   default: (value: any) => {
@@ -258,12 +259,7 @@ export const stripMarkdown = (markdown: string): string => {
 };
 
 export function formatGraphQLError(error: unknown, fallback = 'Something went wrong'): string {
-  const raw =
-    error instanceof Error
-      ? error.message
-      : typeof error === 'string'
-        ? error
-        : fallback;
+  const raw = error instanceof Error ? error.message : typeof error === 'string' ? error : fallback;
 
   const cleaned = raw
     .replace(/<[^>]*>/g, ' ')

@@ -1,4 +1,4 @@
-/* Styles for ai-maker evaluations list page */
+Styles for ai-maker evaluations list page
 
 /* Base padding for all header and body cells in this table for consistent gutters */
 .evaluations-table-evaluation-mode-col th,
@@ -43,13 +43,6 @@
   padding-left: 2.1rem !important;
 }
 
-.evaluations-table-evaluation-mode-col th:nth-child(2) > * {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 0.35rem;
-  flex-direction: row-reverse;
-}
-
 /* Evaluation Type column (3rd) */
 .evaluations-table-evaluation-mode-col th:nth-child(3),
 .evaluations-table-evaluation-mode-col td:nth-child(3) {
@@ -58,17 +51,6 @@
   min-width: 140px;
   box-sizing: border-box;
   text-align: left;
-}
-
-.evaluations-table-evaluation-mode-col th:nth-child(3) {
-  padding-left: 1.5rem !important;
-}
-
-.evaluations-table-evaluation-mode-col th:nth-child(3) > * {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 0.35rem;
-  flex-direction: row-reverse;
 }
 
 /* Nudge Evaluation Name values (first column) slightly right for better visual alignment */
@@ -118,10 +100,6 @@
   padding-left: 0.65rem;
 }
 
-.evaluations-table-evaluation-mode-col th:nth-child(5) {
-  padding-left: 0.15rem;
-}
-
 /* Tests (6th) and Completed (7th) columns */
 .evaluations-table-evaluation-mode-col th:nth-child(6),
 .evaluations-table-evaluation-mode-col td:nth-child(6),
@@ -151,44 +129,22 @@
   line-height: 1.4 !important;
 }
 
-/* Status header sort icon (4th column) */
-.evaluations-table-evaluation-mode-col th:nth-child(4) > * {
-  display: inline-flex !important;
+/* Label + sort/filter icons grouped at the start of the header */
+.evaluations-table-evaluation-mode-col th > * {
+  display: flex !important;
   align-items: center;
   gap: 0.35rem;
-  flex-direction: row-reverse;
+  width: max-content !important;
+  max-width: 100%;
+  justify-content: flex-start;
 }
 
-.evaluations-table-evaluation-mode-col th:nth-child(4) {
-  padding-left: 0.9rem !important;
-}
-
-/* Evaluation Name header sort icon */
-.evaluations-table-evaluation-mode-col th:nth-child(1) > * {
-  display: inline-flex !important;
+.evaluations-table-evaluation-mode-col th > * > button:first-child {
+  display: flex !important;
   align-items: center;
-  gap: 0.35rem;
   flex-direction: row-reverse;
-}
-
-/* Evaluation Mode header sort icon (5th column) */
-.evaluations-table-evaluation-mode-col th:nth-child(5) > * {
-  display: inline-flex !important;
-  align-items: center;
+  justify-content: flex-start;
   gap: 0.35rem;
-  flex-direction: row-reverse;
-}
-
-/* Completed header sort icon (7th column) */
-.evaluations-table-evaluation-mode-col th:nth-child(7) > * {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 0.35rem;
-  flex-direction: row-reverse;
-}
-
-.evaluations-table-evaluation-mode-col th:nth-child(7) {
-  padding-left: 2.05rem !important;
 }
 
 /* Model detail page: same table without Model column */
@@ -225,17 +181,6 @@
   text-align: left;
 }
 
-.evaluations-table-model-detail-col th:nth-child(2) {
-  padding-left: 1.5rem !important;
-}
-
-.evaluations-table-model-detail-col th:nth-child(2) > * {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 0.35rem;
-  flex-direction: row-reverse;
-}
-
 .evaluations-table-model-detail-col td:first-child {
   padding-left: 0.75rem;
 }
@@ -262,17 +207,6 @@
   white-space: nowrap;
 }
 
-.evaluations-table-model-detail-col th:nth-child(3) > * {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 0.35rem;
-  flex-direction: row-reverse;
-}
-
-.evaluations-table-model-detail-col th:nth-child(3) {
-  padding-left: 0.9rem !important;
-}
-
 .evaluations-table-model-detail-col th:nth-child(4),
 .evaluations-table-model-detail-col td:nth-child(4) {
   width: 180px;
@@ -284,13 +218,6 @@
 
 .evaluations-table-model-detail-col td:nth-child(4) {
   padding-left: 0.65rem;
-}
-
-.evaluations-table-model-detail-col th:nth-child(4) > * {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 0.35rem;
-  flex-direction: row-reverse;
 }
 
 .evaluations-table-model-detail-col th:nth-child(5),
@@ -315,20 +242,19 @@
   line-height: 1.4 !important;
 }
 
-.evaluations-table-model-detail-col th:first-child > * {
-  display: inline-flex !important;
+.evaluations-table-model-detail-col th > * {
+  display: flex !important;
   align-items: center;
   gap: 0.35rem;
-  flex-direction: row-reverse;
+  width: max-content !important;
+  max-width: 100%;
+  justify-content: flex-start;
 }
 
-.evaluations-table-model-detail-col th:nth-child(6) > * {
-  display: inline-flex !important;
+.evaluations-table-model-detail-col th > * > button:first-child {
+  display: flex !important;
   align-items: center;
-  gap: 0.35rem;
   flex-direction: row-reverse;
-}
-
-.evaluations-table-model-detail-col th:nth-child(6) {
-  padding-left: 2.05rem !important;
+  justify-content: flex-start;
+  gap: 0.35rem;
 }

@@ -1,3 +1,5 @@
+import { EVALUATION_STATUS } from '@/constants';
+
 /**
  * Shared status colors for assignment and evaluation status badges.
  * Used across auditor dashboard, assignments, evaluations, and model detail pages.
@@ -84,21 +86,21 @@ const EVALUATION_MODE_COLORS: TagColors = {
 /** Tag fill/text colors for evaluation status badges in tables and detail views. */
 export function getEvaluationStatusColor(status?: string | null): TagColors {
   switch (status?.toUpperCase()) {
-    case 'COMPLETED':
+    case EVALUATION_STATUS.COMPLETED:
       return { fillColor: '#E2F5C4', textColor: '#166534' };
-    case 'PENDING_REVIEW':
+    case EVALUATION_STATUS.PENDING_REVIEW:
       return { fillColor: '#FEF3C7', textColor: '#92400E' };
-    case 'IN_PROGRESS':
+    case EVALUATION_STATUS.IN_PROGRESS:
       return { fillColor: '#FEF3C7', textColor: '#92400E' };
-    case 'QUEUED':
-    case 'PENDING':
+    case EVALUATION_STATUS.QUEUED:
+    case EVALUATION_STATUS.PENDING:
       return { fillColor: '#E0E7FF', textColor: '#3730A3' };
-    case 'DRAFT':
+    case EVALUATION_STATUS.DRAFT:
       return { fillColor: '#FEF9C3', textColor: '#854D0E' };
-    case 'FAILED':
+    case EVALUATION_STATUS.FAILED:
     case 'ERROR':
       return { fillColor: '#FEE2E2', textColor: '#DC2626' };
-    case 'CANCELLED':
+    case EVALUATION_STATUS.CANCELLED:
       return { fillColor: '#F3F4F6', textColor: '#6B7280' };
     default:
       return DEFAULT_EVALUATION_STATUS_COLORS;

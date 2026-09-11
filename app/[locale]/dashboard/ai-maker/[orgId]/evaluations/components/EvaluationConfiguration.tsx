@@ -1,11 +1,10 @@
-"use client";
+'use client';
 
-import React from "react";
-import { Text, TextField, Label, Select, Combobox, Spinner } from "opub-ui";
-import type { SelectOption } from "./types";
-import styles from "./styles.module.scss";
-
-type AuditType = "Technical" | "Domain" | "Cultural";
+import React from 'react';
+import { Combobox, Label, Select, Spinner, Text, TextField } from 'opub-ui';
+import { AUDIT_TYPE_LABELS, AuditType } from '@/constants';
+import styles from './styles.module.scss';
+import type { SelectOption } from './types';
 
 type Module = {
   name: string;
@@ -34,17 +33,11 @@ interface EvaluationConfigurationProps {
   setModeOfEvaluation: (value: string) => void;
   modules: Module[];
   selectedModules: Record<string, boolean>;
-  setSelectedModules: React.Dispatch<
-    React.SetStateAction<Record<string, boolean>>
-  >;
+  setSelectedModules: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   selectedMetrics: Record<string, SelectOption[]>;
-  setSelectedMetrics: React.Dispatch<
-    React.SetStateAction<Record<string, SelectOption[]>>
-  >;
+  setSelectedMetrics: React.Dispatch<React.SetStateAction<Record<string, SelectOption[]>>>;
   moduleMetricsOptions: Record<string, SelectOption[]>;
-  setModuleMetricsOptions: React.Dispatch<
-    React.SetStateAction<Record<string, SelectOption[]>>
-  >;
+  setModuleMetricsOptions: React.Dispatch<React.SetStateAction<Record<string, SelectOption[]>>>;
   isLoadingModules: boolean;
   modulesError: string | null;
   fetchMetricsForModule: (moduleName: string) => Promise<SelectOption[]>;
@@ -106,50 +99,38 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
   workspaceOnly = false,
 }) => {
   const modeOfEvaluationOptions = [
-    { value: "bulk", label: "Bulk" },
-    { value: "manual", label: "Manual" },
+    { value: 'bulk', label: 'Bulk' },
+    { value: 'manual', label: 'Manual' },
   ];
 
   // Helper function to format selected metrics as comma-separated string with truncation
   const formatSelectedMetrics = (selected: SelectOption[]): string => {
     if (!selected || selected.length === 0) {
-      return "Select sub-modules from dropdown";
+      return 'Select sub-modules from dropdown';
     }
 
     const labels = selected.map((item) => item.label);
-    const joined = labels.join(", ");
+    const joined = labels.join(', ');
 
     if (joined.length <= 40) {
       return joined;
     }
 
-    return joined.substring(0, 37) + "...";
+    return joined.substring(0, 37) + '...';
   };
 
   const modulesSection = (
     <div className="mb-6">
-      <Text
-        variant="bodyMd"
-        fontWeight="medium"
-        className={styles.evaluationModulesLabel}
-      >
+      <Text variant="bodyMd" fontWeight="medium" className={styles.evaluationModulesLabel}>
         Evaluation Modules<span className="required-asterisk">*</span>
       </Text>
       {validationErrors.modules && (
-        <Text
-          variant="bodySm"
-          className="text-red-600 mt-1"
-          color="critical"
-        >
+        <Text variant="bodySm" className="text-red-600 mt-1" color="critical">
           {validationErrors.modules}
         </Text>
       )}
       {validationErrors.metrics && (
-        <Text
-          variant="bodySm"
-          className="text-red-600 mt-1"
-          color="critical"
-        >
+        <Text variant="bodySm" className="text-red-600 mt-1" color="critical">
           {validationErrors.metrics}
         </Text>
       )}
@@ -169,82 +150,142 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
       ) : (
         <>
           {modulesError ? (
-            <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3">
+            <div className="rounded-lg border border-amber-300 bg-amber-50 mt-4 px-4 py-3">
               <Text variant="bodySm" className="text-amber-900">
                 {modulesError}
               </Text>
             </div>
           ) : null}
-        <div
-          className={`flex flex-row gap-4 mt-4 ${styles.evaluationModulesRow}`}
-        >
-          {modules
-            .filter((module) => module?.name)
-            .map((module) => {
-              const moduleKey = module.name;
-              const isSelected = selectedModules[moduleKey] || false;
-              const selectedMetric = selectedMetrics[moduleKey] || [];
+          <div className={`mt-4 flex flex-row gap-4 ${styles.evaluationModulesRow}`}>
+            {modules
+              .filter((module) => module?.name)
+              .map((module) => {
+                const moduleKey = module.name;
+                const isSelected = selectedModules[moduleKey] || false;
+                const selectedMetric = selectedMetrics[moduleKey] || [];
 
-              const metricOptions: SelectOption[] =
-                moduleMetricsOptions[moduleKey]?.length > 0
-                  ? moduleMetricsOptions[moduleKey]
-                  : Array.isArray(module.metrics)
-                    ? module.metrics
-                        .map((metric) => ({
-                          value: metric?.name || "",
-                          label:
-                            metric?.displayName ||
-                            toTitleCase(
-                              (metric?.name || "").replace(/_/g, " "),
-                            ),
-                        }))
-                        .filter((opt) => opt.value)
-                    : [];
-              return (
-                <div
-                  key={moduleKey}
-                  className={`flex flex-col gap-2 ${styles.evaluationModuleWrapper}`}
-                >
-                  <label className={styles.evaluationModuleCard}>
-                    <div className="flex items-start gap-4">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={async (e) => {
-                          const isChecked = e.target.checked;
-                          setSelectedModules((prev) => ({
-                            ...prev,
-                            [moduleKey]: isChecked,
-                          }));
-
-                          if (setValidationErrors) {
-                            setValidationErrors((prev) => ({
+                const metricOptions: SelectOption[] =
+                  moduleMetricsOptions[moduleKey]?.length > 0
+                    ? moduleMetricsOptions[moduleKey]
+                    : Array.isArray(module.metrics)
+                      ? module.metrics
+                          .map((metric) => ({
+                            value: metric?.name || '',
+                            label:
+                              metric?.displayName ||
+                              toTitleCase((metric?.name || '').replace(/_/g, ' ')),
+                          }))
+                          .filter((opt) => opt.value)
+                      : [];
+                return (
+                  <div
+                    key={moduleKey}
+                    className={`flex flex-col gap-2 ${styles.evaluationModuleWrapper}`}
+                  >
+                    <label className={styles.evaluationModuleCard}>
+                      <div className="flex items-start gap-4">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={async (e) => {
+                            const isChecked = e.target.checked;
+                            setSelectedModules((prev) => ({
                               ...prev,
-                              modules: undefined,
-                              metrics: undefined,
+                              [moduleKey]: isChecked,
                             }));
-                          }
 
-                          if (isChecked) {
-                            const optionsToSelect =
-                              moduleMetricsOptions[moduleKey]?.length > 0
-                                ? moduleMetricsOptions[moduleKey]
-                                : metricOptions;
-
-                            if (optionsToSelect.length > 0) {
-                              setSelectedMetrics((prev) => ({
+                            if (setValidationErrors) {
+                              setValidationErrors((prev) => ({
                                 ...prev,
-                                [moduleKey]: optionsToSelect,
+                                modules: undefined,
+                                metrics: undefined,
                               }));
                             }
 
+                            if (isChecked) {
+                              const optionsToSelect =
+                                moduleMetricsOptions[moduleKey]?.length > 0
+                                  ? moduleMetricsOptions[moduleKey]
+                                  : metricOptions;
+
+                              if (optionsToSelect.length > 0) {
+                                setSelectedMetrics((prev) => ({
+                                  ...prev,
+                                  [moduleKey]: optionsToSelect,
+                                }));
+                              }
+
+                              if (
+                                (!module.metrics || module.metrics.length === 0) &&
+                                !moduleMetricsOptions[moduleKey]
+                              ) {
+                                const fetchedMetrics = await fetchMetricsForModule(moduleKey);
+                                if (fetchedMetrics.length > 0) {
+                                  setModuleMetricsOptions((prev) => ({
+                                    ...prev,
+                                    [moduleKey]: fetchedMetrics,
+                                  }));
+                                  setSelectedMetrics((prev) => ({
+                                    ...prev,
+                                    [moduleKey]: fetchedMetrics,
+                                  }));
+                                }
+                              }
+                            } else {
+                              setSelectedMetrics((prev) => {
+                                const updated = { ...prev };
+                                delete updated[moduleKey];
+                                return updated;
+                              });
+                            }
+                          }}
+                          className={styles.evaluationModuleCheckbox}
+                        />
+                        <div className="flex flex-1 flex-col">
+                          <Text
+                            variant="bodyMd"
+                            fontWeight="semibold"
+                            className="text-gray-900 mb-1"
+                          >
+                            {getModuleDisplayName(moduleKey)}
+                          </Text>
+                          <Text variant="bodySm" className="text-gray-600">
+                            {module.description || module.displayName || 'No description available'}
+                          </Text>
+                        </div>
+                      </div>
+                    </label>
+                    {isSelected && (
+                      <div className={styles.evaluationModuleDropdown}>
+                        <Combobox
+                          name={`${moduleKey}-metrics`}
+                          label="Select sub-modules from dropdown"
+                          labelHidden
+                          list={metricOptions}
+                          selectedValue={selectedMetric}
+                          placeholder={formatSelectedMetrics(selectedMetric)}
+                          onChange={async (value) => {
+                            const nextSelected = Array.isArray(value)
+                              ? value
+                              : metricOptions.filter((option) => option.value === value);
+
+                            setSelectedMetrics((prev) => ({
+                              ...prev,
+                              [moduleKey]: nextSelected,
+                            }));
+
+                            if (setValidationErrors) {
+                              setValidationErrors((prev) => ({
+                                ...prev,
+                                metrics: undefined,
+                              }));
+                            }
                             if (
-                              (!module.metrics ||
-                                module.metrics.length === 0) &&
+                              metricOptions.length === 0 &&
+                              value &&
                               !moduleMetricsOptions[moduleKey]
                             ) {
-                              const fetchedMetrics =
-                                await fetchMetricsForModule(moduleKey);
+                              const fetchedMetrics = await fetchMetricsForModule(moduleKey);
                               if (fetchedMetrics.length > 0) {
                                 setModuleMetricsOptions((prev) => ({
                                   ...prev,
@@ -256,85 +297,14 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                                 }));
                               }
                             }
-                          } else {
-                            setSelectedMetrics((prev) => {
-                              const updated = { ...prev };
-                              delete updated[moduleKey];
-                              return updated;
-                            });
-                          }
-                        }}
-                        className={styles.evaluationModuleCheckbox}
-                      />
-                      <div className="flex-1 flex flex-col">
-                        <Text
-                          variant="bodyMd"
-                          fontWeight="semibold"
-                          className="text-gray-900 mb-1"
-                        >
-                          {getModuleDisplayName(moduleKey)}
-                        </Text>
-                        <Text variant="bodySm" className="text-gray-600">
-                          {module.description ||
-                            module.displayName ||
-                            "No description available"}
-                        </Text>
+                          }}
+                        />
                       </div>
-                    </div>
-                  </label>
-                  {isSelected && (
-                    <div className={styles.evaluationModuleDropdown}>
-                      <Combobox
-                        name={`${moduleKey}-metrics`}
-                        label="Select sub-modules from dropdown"
-                        labelHidden
-                        list={metricOptions}
-                        selectedValue={selectedMetric}
-                        placeholder={formatSelectedMetrics(selectedMetric)}
-                        onChange={async (value) => {
-                          const nextSelected = Array.isArray(value)
-                            ? value
-                            : metricOptions.filter(
-                                (option) => option.value === value,
-                              );
-
-                          setSelectedMetrics((prev) => ({
-                            ...prev,
-                            [moduleKey]: nextSelected,
-                          }));
-
-                          if (setValidationErrors) {
-                            setValidationErrors((prev) => ({
-                              ...prev,
-                              metrics: undefined,
-                            }));
-                          }
-                          if (
-                            metricOptions.length === 0 &&
-                            value &&
-                            !moduleMetricsOptions[moduleKey]
-                          ) {
-                            const fetchedMetrics =
-                              await fetchMetricsForModule(moduleKey);
-                            if (fetchedMetrics.length > 0) {
-                              setModuleMetricsOptions((prev) => ({
-                                ...prev,
-                                [moduleKey]: fetchedMetrics,
-                              }));
-                              setSelectedMetrics((prev) => ({
-                                ...prev,
-                                [moduleKey]: fetchedMetrics,
-                              }));
-                            }
-                          }
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-        </div>
+                    )}
+                  </div>
+                );
+              })}
+          </div>
         </>
       )}
     </div>
@@ -352,27 +322,23 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
         </Text>
       </Label>
 
-      <div className={`flex gap-4 flex-wrap ${styles.auditOptionsContainer}`}>
+      <div className={`flex flex-wrap gap-4 ${styles.auditOptionsContainer}`}>
         {/* Technical Audit Option */}
         <label
-          className={`flex items-start gap-3 cursor-pointer transition-all ${styles.technicalAuditCard} ${
-            auditType === "Technical" ? "" : ""
+          className={`flex cursor-pointer items-start gap-3 transition-all ${styles.technicalAuditCard} ${
+            auditType === AUDIT_TYPE_LABELS.TECHNICAL_AUDIT ? '' : ''
           }`}
         >
           <input
             type="radio"
             name="auditType"
-            value="Technical"
-            checked={auditType === "Technical"}
+            value={AUDIT_TYPE_LABELS.TECHNICAL_AUDIT}
+            checked={auditType === AUDIT_TYPE_LABELS.TECHNICAL_AUDIT}
             onChange={(e) => setAuditType(e.target.value as AuditType)}
-            className="mt-1 w-4 h-4 text-primary-purple focus:ring-primary-purple focus:ring-2"
+            className="text-primary-purple focus:ring-primary-purple mt-1 h-4 w-4 focus:ring-2"
           />
           <div className="flex-1">
-            <Text
-              variant="bodyMd"
-              fontWeight="semibold"
-              className="text-gray-900 mb-2"
-            >
+            <Text variant="bodyMd" fontWeight="semibold" className="text-gray-900 mb-2">
               Technical Evaluation
             </Text>
             <Text variant="bodySm" className="text-gray-600 block">
@@ -383,24 +349,20 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
 
         {/* Domain Audit Option */}
         <label
-          className={`flex items-start gap-3 cursor-pointer transition-all ${styles.domainAuditCard} ${
-            auditType === "Domain" ? "" : ""
+          className={`flex cursor-pointer items-start gap-3 transition-all ${styles.domainAuditCard} ${
+            auditType === AUDIT_TYPE_LABELS.DOMAIN_AUDIT ? '' : ''
           }`}
         >
           <input
             type="radio"
             name="auditType"
-            value="Domain"
-            checked={auditType === "Domain"}
+            value={AUDIT_TYPE_LABELS.DOMAIN_AUDIT}
+            checked={auditType === AUDIT_TYPE_LABELS.DOMAIN_AUDIT}
             onChange={(e) => setAuditType(e.target.value as AuditType)}
-            className="mt-1 w-4 h-4 text-primary-purple focus:ring-primary-purple focus:ring-2"
+            className="text-primary-purple focus:ring-primary-purple mt-1 h-4 w-4 focus:ring-2"
           />
           <div className="flex-1">
-            <Text
-              variant="bodyMd"
-              fontWeight="semibold"
-              className="text-gray-900 mb-2"
-            >
+            <Text variant="bodyMd" fontWeight="semibold" className="text-gray-900 mb-2">
               Domain Evaluation
             </Text>
             <Text variant="bodySm" className="text-gray-600 block">
@@ -411,24 +373,20 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
 
         {/* Cultural Audit Option */}
         <label
-          className={`flex items-start gap-3 cursor-pointer transition-all ${styles.culturalAuditCard} ${
-            auditType === "Cultural" ? "" : ""
+          className={`flex cursor-pointer items-start gap-3 transition-all ${styles.culturalAuditCard} ${
+            auditType === AUDIT_TYPE_LABELS.CULTURAL_AUDIT ? '' : ''
           }`}
         >
           <input
             type="radio"
             name="auditType"
-            value="Cultural"
-            checked={auditType === "Cultural"}
+            value={AUDIT_TYPE_LABELS.CULTURAL_AUDIT}
+            checked={auditType === AUDIT_TYPE_LABELS.CULTURAL_AUDIT}
             onChange={(e) => setAuditType(e.target.value as AuditType)}
-            className="mt-1 w-4 h-4 text-primary-purple focus:ring-primary-purple focus:ring-2"
+            className="text-primary-purple focus:ring-primary-purple mt-1 h-4 w-4 focus:ring-2"
           />
           <div className="flex-1">
-            <Text
-              variant="bodyMd"
-              fontWeight="semibold"
-              className="text-gray-900 mb-2"
-            >
+            <Text variant="bodyMd" fontWeight="semibold" className="text-gray-900 mb-2">
               Cultural Evaluation
             </Text>
             <Text variant="bodySm" className="text-gray-600 block">
@@ -439,9 +397,9 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
       </div>
 
       {/* Audit Configuration Form - Show when Technical, Domain, or Cultural Audit is selected */}
-      {(auditType === "Technical" ||
-        auditType === "Domain" ||
-        auditType === "Cultural") && (
+      {(auditType === AUDIT_TYPE_LABELS.TECHNICAL_AUDIT ||
+        auditType === AUDIT_TYPE_LABELS.DOMAIN_AUDIT ||
+        auditType === AUDIT_TYPE_LABELS.CULTURAL_AUDIT) && (
         <div className={`${styles.auditConfigForm} mt-8`}>
           {/* Auditor Information Section */}
           {/* <div className="mb-6">
@@ -527,11 +485,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                 </Text>
               </Label>
               {validationErrors.auditScope && (
-                <Text
-                  variant="bodySm"
-                  className="text-red-600 mt-1"
-                  color="critical"
-                >
+                <Text variant="bodySm" className="text-red-600 mt-1" color="critical">
                   {validationErrors.auditScope}
                 </Text>
               )}
@@ -574,9 +528,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                     Evaluation Objective<span className="text-red-500">*</span>
                   </Text>
                 </Label>
-                <div
-                  className={`${styles.auditFormTextarea} ${styles.auditObjectiveTextarea}`}
-                >
+                <div className={`${styles.auditFormTextarea} ${styles.auditObjectiveTextarea}`}>
                   <TextField
                     id="auditObjective"
                     name="auditObjective"
@@ -586,10 +538,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                     value={auditObjective}
                     onChange={(value) => {
                       setAuditObjective(value);
-                      if (
-                        setValidationErrors &&
-                        validationErrors.auditObjective
-                      ) {
+                      if (setValidationErrors && validationErrors.auditObjective) {
                         setValidationErrors((prev) => ({
                           ...prev,
                           auditObjective: undefined,
@@ -607,9 +556,7 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
 
           {/* Mode of Evaluation Section */}
           <div className="mb-6 mt-6">
-            <Label
-              className={`${styles.auditFormLabel} ${styles.evaluationModulesLabel}`}
-            >
+            <Label className={`${styles.auditFormLabel} ${styles.evaluationModulesLabel}`}>
               <Text variant="bodyMd" fontWeight="medium">
                 Mode of Evaluation<span className="text-red-500">*</span>
               </Text>
@@ -625,16 +572,11 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
                   options={modeOfEvaluationOptions}
                   value={modeOfEvaluation}
                   className={
-                    isModeOfEvaluationLocked
-                      ? "mode-of-evaluation-select-disabled"
-                      : undefined
+                    isModeOfEvaluationLocked ? 'mode-of-evaluation-select-disabled' : undefined
                   }
                   onChange={(value) => {
                     setModeOfEvaluation(value);
-                    if (
-                      setValidationErrors &&
-                      validationErrors.modeOfEvaluation
-                    ) {
+                    if (setValidationErrors && validationErrors.modeOfEvaluation) {
                       setValidationErrors((prev) => ({
                         ...prev,
                         modeOfEvaluation: undefined,
@@ -648,20 +590,12 @@ const EvaluationConfiguration: React.FC<EvaluationConfigurationProps> = ({
               </div>
             </div>
             {isModeOfEvaluationLocked && (
-              <Text
-                variant="bodySm"
-                className="mt-2"
-                style={{ color: "#60646C" }}
-              >
+              <Text variant="bodySm" className="mt-2" style={{ color: '#60646C' }}>
                 Mode of Evaluation cannot be edited after adding test cases
               </Text>
             )}
             {validationErrors.modeOfEvaluation && (
-              <Text
-                variant="bodySm"
-                className="text-red-600 mt-1"
-                color="critical"
-              >
+              <Text variant="bodySm" className="text-red-600 mt-1" color="critical">
                 {validationErrors.modeOfEvaluation}
               </Text>
             )}

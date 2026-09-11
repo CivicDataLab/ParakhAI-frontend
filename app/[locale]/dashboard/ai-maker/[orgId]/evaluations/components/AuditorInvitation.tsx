@@ -1,15 +1,11 @@
-﻿"use client";
+﻿'use client';
 
-import { useGraphQL } from "@/lib/graphql-client";
-import { formatStatusLabel } from "@/utils";
-import {
-  IconPlus,
-  IconSearch,
-  IconUser,
-  IconUserCheck,
-} from "@tabler/icons-react";
-import { Button, Dialog, Spinner, Tag, Text, TextField, toast } from "opub-ui";
-import { useEffect, useState, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent } from 'react';
+import { IconPlus, IconSearch, IconUser, IconUserCheck } from '@tabler/icons-react';
+import { Button, Dialog, Spinner, Tag, Text, TextField, toast } from 'opub-ui';
+import { useGraphQL } from '@/lib/graphql-client';
+import { ASSIGNMENT_STATUS } from '@/constants';
+import { formatStatusLabel } from '@/utils';
 
 /** Profile image for search hit — same behavior as Add Evaluator on auditors page */
 const SearchResultAvatar = ({
@@ -22,14 +18,14 @@ const SearchResultAvatar = ({
   size?: number;
 }) => {
   const [imageError, setImageError] = useState(false);
-  const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || "";
-  const imageSrc = src ? `${dataspaceUrl}${src}` : "";
+  const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || '';
+  const imageSrc = src ? `${dataspaceUrl}${src}` : '';
 
   if (!imageSrc || imageError) {
     return <IconUser size={size} className="text-purple-600" />;
   }
 
-  const sizeClass = size === 20 ? "h-10 w-10" : "h-8 w-8";
+  const sizeClass = size === 20 ? 'h-10 w-10' : 'h-8 w-8';
 
   return (
     <img
@@ -72,8 +68,8 @@ type SearchUserResult = {
 };
 
 const getUserDisplayName = (user: Auditor): string => {
-  const firstName = user.firstName?.trim() || "";
-  const lastName = user.lastName?.trim() || "";
+  const firstName = user.firstName?.trim() || '';
+  const lastName = user.lastName?.trim() || '';
   const fullName = `${firstName} ${lastName}`.trim();
 
   if (fullName) return fullName;
@@ -83,10 +79,10 @@ const getUserDisplayName = (user: Auditor): string => {
   }
 
   if (user.email) {
-    return user.email.split("@")[0];
+    return user.email.split('@')[0];
   }
 
-  return "";
+  return '';
 };
 
 interface AuditorInvitationProps {
@@ -95,7 +91,7 @@ interface AuditorInvitationProps {
   modelName: string;
   modelVersionId: number;
   onAssignmentCreated?: (assignment: AuditorAssignment) => void;
-  onAssignmentResult?: (result: { type: "success" | "error"; message: string }) => void;
+  onAssignmentResult?: (result: { type: 'success' | 'error'; message: string }) => void;
   isOpen?: boolean;
   onClose?: () => void;
   versionLabel?: string;
@@ -218,20 +214,18 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
         if (!open && externalOnClose) externalOnClose();
       }
     : setInternalIsOpen;
-  const [selectedAuditorId, setSelectedAuditorId] = useState<string>("");
-  const [notes, setNotes] = useState("");
+  const [selectedAuditorId, setSelectedAuditorId] = useState<string>('');
+  const [notes, setNotes] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
 
   const [showAddNew, setShowAddNew] = useState(false);
-  const [emailInput, setEmailInput] = useState("");
-  const [searchResult, setSearchResult] = useState<SearchUserResult | null>(
-    null,
-  );
+  const [emailInput, setEmailInput] = useState('');
+  const [searchResult, setSearchResult] = useState<SearchUserResult | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isAddingNew, setIsAddingNew] = useState(false);
 
-  const showResultToast = (type: "success" | "error", message: string) => {
-    if (type === "success") {
+  const showResultToast = (type: 'success' | 'error', message: string) => {
+    if (type === 'success') {
       toast.success(message);
     } else {
       toast.error(message);
@@ -245,10 +239,10 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
     if (!isModalOpen) return;
 
     setShowAddNew(false);
-    setEmailInput("");
+    setEmailInput('');
     setSearchResult(null);
-    setSelectedAuditorId("");
-    setNotes("");
+    setSelectedAuditorId('');
+    setNotes('');
   }, [isModalOpen]);
 
   useEffect(() => {
@@ -257,15 +251,11 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
         setLoading(true);
 
         const [auditorsResponse, assignmentsResponse] = await Promise.all([
-          request(
-            GET_ORGANIZATION_AUDITORS,
-            { organizationId },
-            { organization: organizationId },
-          ),
+          request(GET_ORGANIZATION_AUDITORS, { organizationId }, { organization: organizationId }),
           request(
             GET_AUDITOR_ASSIGNMENTS,
             { modelId, modelVersionId },
-            { organization: organizationId },
+            { organization: organizationId }
           ),
         ]);
 
@@ -277,7 +267,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
           setAssignments(assignmentsResponse.auditorAssignments || []);
         }
       } catch (err) {
-        console.error("Error fetching evaluator data:", err);
+        console.error('Error fetching evaluator data:', err);
       } finally {
         setLoading(false);
       }
@@ -293,7 +283,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
     const hasActiveAssignment = assignments.some(
       (a) =>
         a.auditorEmail === auditor.email &&
-        ["PENDING", "ACCEPTED"].includes(a.status),
+        ([ASSIGNMENT_STATUS.PENDING, ASSIGNMENT_STATUS.ACCEPTED] as string[]).includes(a.status)
     );
 
     // The auditor is available if they DO NOT have an active assignment
@@ -310,20 +300,20 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
       const response = await request(
         SEARCH_USER_BY_EMAIL,
         { email: emailInput.trim() },
-        { organization: organizationId },
+        { organization: organizationId }
       );
 
       if (response?.searchUserByEmail) {
         const hit = response.searchUserByEmail;
         setSearchResult(hit);
         if (hit.found && hit.user) {
-          setEmailInput("");
+          setEmailInput('');
         }
       }
     } catch (err: any) {
       setSearchResult({
         found: false,
-        message: err?.message || "Error searching for user",
+        message: err?.message || 'Error searching for user',
       });
     } finally {
       setIsSearching(false);
@@ -340,8 +330,8 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
     if (!targetAuditorId) return;
 
     const auditor = auditors.find((a) => a.id === targetAuditorId);
-    const email = auditorEmail || auditor?.email || "";
-    const username = auditorUsername || auditor?.username || "";
+    const email = auditorEmail || auditor?.email || '';
+    const username = auditorUsername || auditor?.username || '';
 
     try {
       setIsAssigning(true);
@@ -357,7 +347,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
             notes,
           },
         },
-        { organization: organizationId },
+        { organization: organizationId }
       );
 
       if (response?.assignAuditorToVersion?.success) {
@@ -369,21 +359,20 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
         }
 
         if (!suppressSuccessToast) {
-          showResultToast("success", "Evaluator assigned successfully");
+          showResultToast('success', 'Evaluator assigned successfully');
         }
 
         setIsModalOpen(false);
-        setSelectedAuditorId("");
-        setNotes("");
+        setSelectedAuditorId('');
+        setNotes('');
       } else {
         showResultToast(
-          "error",
-          response?.assignAuditorToVersion?.message ||
-            "Failed to assign evaluator",
+          'error',
+          response?.assignAuditorToVersion?.message || 'Failed to assign evaluator'
         );
       }
     } catch (err: any) {
-      showResultToast("error", err?.message || "Error assigning evaluator");
+      showResultToast('error', err?.message || 'Error assigning evaluator');
     } finally {
       setIsAssigning(false);
     }
@@ -406,7 +395,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
           existingAuditor.username
         );
         setShowAddNew(false);
-        setEmailInput("");
+        setEmailInput('');
         setSearchResult(null);
         return;
       }
@@ -432,9 +421,8 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
         }
 
         showResultToast(
-          "success",
-          addResponse.addAuditorToOrganization.message ||
-            "Evaluator added successfully",
+          'success',
+          addResponse.addAuditorToOrganization.message || 'Evaluator added successfully'
         );
 
         // Now assign the newly added auditor, but avoid double success toasts
@@ -446,16 +434,15 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
         );
 
         setShowAddNew(false);
-        setEmailInput("");
+        setEmailInput('');
         setSearchResult(null);
       } else {
-        const errorMessage =
-          addResponse?.addAuditorToOrganization?.message || "";
+        const errorMessage = addResponse?.addAuditorToOrganization?.message || '';
 
-        showResultToast("error", errorMessage || "Failed to add evaluator");
+        showResultToast('error', errorMessage || 'Failed to add evaluator');
       }
     } catch (err: any) {
-      showResultToast("error", err?.message || "Error adding evaluator");
+      showResultToast('error', err?.message || 'Error adding evaluator');
     } finally {
       setIsAddingNew(false);
     }
@@ -467,19 +454,19 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
 
   const assignPrimaryLabel = showAddNew
     ? isAddingNew
-      ? "Adding..."
-      : "Add & Assign Evaluator"
+      ? 'Adding...'
+      : 'Add & Assign Evaluator'
     : isAssigning
-      ? "Assigning..."
-      : "Assign Evaluator";
+      ? 'Assigning...'
+      : 'Assign Evaluator';
 
   const handleCloseInviteModal = () => {
     setIsModalOpen(false);
     if (!isControlled) {
-      setSelectedAuditorId("");
-      setNotes("");
+      setSelectedAuditorId('');
+      setNotes('');
       setShowAddNew(false);
-      setEmailInput("");
+      setEmailInput('');
       setSearchResult(null);
     }
   };
@@ -488,19 +475,19 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
     event.preventDefault();
     event.stopPropagation();
     setSearchResult(null);
-    setEmailInput("");
+    setEmailInput('');
     setShowAddNew(true);
   };
 
   const auditorOptions = [
-    { label: "Select an evaluator...", value: "" },
+    { label: 'Select an evaluator...', value: '' },
     ...availableAuditors.map((auditor) => {
       const displayName =
         auditor.firstName && auditor.lastName
           ? `${auditor.firstName} ${auditor.lastName}`
           : auditor.username !== auditor.email
             ? auditor.username
-            : auditor.email.split("@")[0];
+            : auditor.email.split('@')[0];
       return {
         label: `${displayName} (${auditor.email})`,
         value: auditor.id,
@@ -511,31 +498,29 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   const inviteDialog = (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <Dialog.Content
-        key={showAddNew ? "invite-by-email" : "invite-select"}
-        title={
-          versionLabel
-            ? `Invite Evaluator for Version ${versionLabel}`
-            : "Invite Evaluator"
-        }
+        key={showAddNew ? 'invite-by-email' : 'invite-select'}
+        title={versionLabel ? `Invite Evaluator for Version ${versionLabel}` : 'Invite Evaluator'}
         footer={<></>}
-        primaryAction={{
-          content: assignPrimaryLabel,
-          onAction: () => {
-            if (isAssignPrimaryDisabled) return;
-            if (showAddNew) void handleAddNewAuditor();
-            else void handleAssignAuditor();
-          },
-          disabled: isAssignPrimaryDisabled,
-          className: isAssignPrimaryDisabled
-            ? "!rounded-[8px] !cursor-not-allowed !border-none !bg-[#8c949d] !text-white hover:!bg-[#8c949d]"
-            : "!rounded-[8px] !border-none !bg-primaryPurple2 !text-white hover:!bg-[#6849EE] hover:!text-white",
-        } as any}
+        primaryAction={
+          {
+            content: assignPrimaryLabel,
+            onAction: () => {
+              if (isAssignPrimaryDisabled) return;
+              if (showAddNew) void handleAddNewAuditor();
+              else void handleAssignAuditor();
+            },
+            disabled: isAssignPrimaryDisabled,
+            className: isAssignPrimaryDisabled
+              ? '!rounded-[8px] !cursor-not-allowed !border-none !bg-[#8c949d] !text-white hover:!bg-[#8c949d]'
+              : '!rounded-[8px] !border-none !bg-primaryPurple2 !text-white hover:!bg-[#6849EE] hover:!text-white',
+          } as any
+        }
         secondaryActions={[
           {
-            content: "Cancel",
+            content: 'Cancel',
             onAction: handleCloseInviteModal,
-            kind: "secondary",
-            className: "!rounded-[8px]",
+            kind: 'secondary',
+            className: '!rounded-[8px]',
           } as any,
         ]}
       >
@@ -543,12 +528,11 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
           {!showAddNew ? (
             <>
               <Text variant="bodySm" className="text-gray-600">
-                Select an evaluator from your organization to assign to this
-                model version.
+                Select an evaluator from your organization to assign to this model version.
               </Text>
 
               {loading ? (
-                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg flex flex-col items-center gap-4">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg flex flex-col items-center gap-4 p-4">
                   <Spinner />
                   <Text variant="bodySm" className="text-gray-600">
                     Loading evaluators...
@@ -556,13 +540,13 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                 </div>
               ) : availableAuditors.length > 0 ? (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="text-sm text-gray-700 mb-1 block font-medium">
                     Select Evaluator
                   </label>
                   <select
                     value={selectedAuditorId}
                     onChange={(e) => setSelectedAuditorId(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="border border-gray-300 rounded-md focus:ring-purple-500 w-full px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2"
                   >
                     {auditorOptions.map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -572,16 +556,16 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                   </select>
                 </div>
               ) : (
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <Text variant="bodySm" className="text-yellow-800">
-                    No available evaluators. All evaluators are already assigned
-                    or you need to add new evaluators to your organization.
+                    No available evaluators. All evaluators are already assigned or you need to add
+                    new evaluators to your organization.
                   </Text>
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="text-sm text-gray-700 mb-1 block font-medium">
                   Notes (optional)
                 </label>
                 <textarea
@@ -589,11 +573,11 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Add any notes for the auditor..."
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="border border-gray-300 rounded-md focus:ring-purple-500 w-full resize-none px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2"
                 />
               </div>
 
-              <div className="pt-2 border-t">
+              <div className="border-t pt-2">
                 <Button kind="tertiary" onClick={handleShowAddByEmail}>
                   Can&apos;t find the evaluator? Add by email
                 </Button>
@@ -602,37 +586,31 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
           ) : (
             <>
               <Text variant="bodySm" className="text-gray-600">
-                Search for a user by email. If found, they will be added as an
-                evaluator to your organization and assigned to this model version.
+                Search for a user by email. If found, they will be added as an evaluator to your
+                organization and assigned to this model version.
               </Text>
 
               <div>
                 <label
                   htmlFor="add-by-email-search"
-                  className="mb-1 block text-sm font-medium text-gray-700"
+                  className="text-sm text-gray-700 mb-1 block font-medium"
                 >
                   Email Address
                 </label>
                 <div className="flex items-center gap-2">
-                  <div
-                    className="min-w-0 flex-1 [&_#add-by-email-search-tags]:box-border [&_#add-by-email-search-tags]:flex [&_#add-by-email-search-tags]:min-h-10 [&_#add-by-email-search-tags]:flex-row [&_#add-by-email-search-tags]:flex-nowrap [&_#add-by-email-search-tags]:items-center [&_#add-by-email-search-tags]:gap-1 [&_#add-by-email-search-tags_input]:min-h-0 [&_#add-by-email-search-tags_input]:min-w-0 [&_#add-by-email-search-tags_input]:flex-[1_1_auto] [&_#add-by-email-search-tags_input]:leading-2"
-                  >
+                  <div className="min-w-0 flex-1 [&_#add-by-email-search-tags]:box-border [&_#add-by-email-search-tags]:flex [&_#add-by-email-search-tags]:min-h-10 [&_#add-by-email-search-tags]:flex-row [&_#add-by-email-search-tags]:flex-nowrap [&_#add-by-email-search-tags]:items-center [&_#add-by-email-search-tags]:gap-1 [&_#add-by-email-search-tags_input]:min-h-0 [&_#add-by-email-search-tags_input]:min-w-0 [&_#add-by-email-search-tags_input]:flex-[1_1_auto] [&_#add-by-email-search-tags_input]:leading-2">
                     <TextField
                       key={
                         searchResult?.found && searchResult.user
                           ? `tag-${searchResult.user.id}`
-                          : "email-entry"
+                          : 'email-entry'
                       }
                       id="add-by-email-search"
                       name="add-by-email-search"
                       label="Email Address"
                       labelHidden
                       type="email"
-                      value={
-                        searchResult?.found && searchResult.user
-                          ? ""
-                          : emailInput
-                      }
+                      value={searchResult?.found && searchResult.user ? '' : emailInput}
                       onChange={(value) => setEmailInput(value)}
                       onEnter={() => {
                         if (emailInput.trim() && !isSearching) {
@@ -640,9 +618,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                         }
                       }}
                       placeholder={
-                        searchResult?.found && searchResult.user
-                          ? ""
-                          : "evaluator@example.com"
+                        searchResult?.found && searchResult.user ? '' : 'evaluator@example.com'
                       }
                       readOnly={!!(searchResult?.found && searchResult.user)}
                       autoComplete="email"
@@ -652,7 +628,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                             value={searchResult.user.id}
                             onRemove={() => {
                               setSearchResult(null);
-                              setEmailInput("");
+                              setEmailInput('');
                             }}
                           >
                             {getUserDisplayName(searchResult.user)}
@@ -666,13 +642,11 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                       kind="secondary"
                       onClick={() => void handleSearchUser()}
                       disabled={!emailInput.trim() || isSearching}
-                      className="rounded-[8px] border-none bg-primaryPurple2 px-8 py-3 text-base font-medium text-white hover:bg-[#6849EE] hover:text-white disabled:cursor-not-allowed disabled:bg-[#f2f2f2] disabled:text-[#8e8e8e] disabled:hover:bg-[#f2f2f2]"
+                      className="text-base rounded-[8px] border-none bg-primaryPurple2 px-8 py-3 font-medium text-white hover:bg-[#6849EE] hover:text-white disabled:cursor-not-allowed disabled:bg-[#f2f2f2] disabled:text-[#8e8e8e] disabled:hover:bg-[#f2f2f2]"
                     >
                       <div className="flex h-full w-full items-center gap-2">
                         <IconSearch size={18} className="mr-1 shrink-0" />
-                        <div>
-                          {isSearching ? "Searching..." : "Search"}
-                        </div>
+                        <div>{isSearching ? 'Searching...' : 'Search'}</div>
                       </div>
                     </Button>
                   </div>
@@ -683,14 +657,14 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                 <div
                   className={`rounded-lg p-4 ${
                     searchResult.found
-                      ? "border border-green-200 bg-green-50"
-                      : "border border-red-200 bg-red-50"
+                      ? 'border border-green-200 bg-green-50'
+                      : 'border border-red-200 bg-red-50'
                   }`}
                 >
                   {searchResult.found && searchResult.user ? (
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex min-w-0 flex-1 items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-100">
+                        <div className="bg-purple-100 flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
                           <SearchResultAvatar
                             src={searchResult.user.profilePicture}
                             alt={searchResult.user.username}
@@ -704,10 +678,8 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                           <Text variant="bodySm" className="text-gray-600">
                             {searchResult.user.email}
                           </Text>
-                          {(searchResult.user.firstName ||
-                            searchResult.user.lastName) &&
-                            searchResult.user.username !==
-                              searchResult.user.email && (
+                          {(searchResult.user.firstName || searchResult.user.lastName) &&
+                            searchResult.user.username !== searchResult.user.email && (
                               <Text variant="bodySm" className="text-gray-500">
                                 @{searchResult.user.username}
                               </Text>
@@ -715,14 +687,8 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        <IconUserCheck
-                          size={20}
-                          className="text-green-600"
-                        />
-                        <Text
-                          variant="bodySm"
-                          className="font-medium text-green-700"
-                        >
+                        <IconUserCheck size={20} className="text-green-600" />
+                        <Text variant="bodySm" className="text-green-700 font-medium">
                           Ready to assign
                         </Text>
                       </div>
@@ -730,18 +696,18 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
                   ) : (
                     <Text variant="bodySm" className="text-red-700">
                       {searchResult.message ||
-                        "User not found. They must have a CivicDataSpace account."}
+                        'User not found. They must have a CivicDataSpace account.'}
                     </Text>
                   )}
                 </div>
               )}
 
-              <div className="pt-2 border-t">
+              <div className="border-t pt-2">
                 <Button
                   kind="tertiary"
                   onClick={() => {
                     setShowAddNew(false);
-                    setEmailInput("");
+                    setEmailInput('');
                     setSearchResult(null);
                   }}
                 >
@@ -756,16 +722,12 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
   );
 
   if (isControlled) {
-    return (
-      <>
-        {inviteDialog}
-      </>
-    );
+    return <>{inviteDialog}</>;
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-[#C4B8F3] p-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="rounded-2xl border border-[#C4B8F3] bg-white p-6">
+      <div className="mb-4 flex items-center justify-between">
         <div>
           <Text variant="headingMd" fontWeight="bold">
             Assigned Evaluators
@@ -774,11 +736,7 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
             Invite evaluators to evaluate this model version
           </Text>
         </div>
-        <Button
-          kind="primary"
-          onClick={() => setIsModalOpen(true)}
-          disabled={loading}
-        >
+        <Button kind="primary" onClick={() => setIsModalOpen(true)} disabled={loading}>
           <IconPlus size={18} className="mr-1" /> Invite Evaluator
         </Button>
       </div>
@@ -791,8 +749,8 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
           </Text>
         </div>
       ) : assignments.length === 0 ? (
-        <div className="text-center py-8 bg-gray-50 rounded-lg">
-          <IconUserCheck size={32} className="mx-auto text-gray-400" />
+        <div className="bg-gray-50 rounded-lg py-8 text-center">
+          <IconUserCheck size={32} className="text-gray-400 mx-auto" />
           <Text variant="bodySm" className="text-gray-500 mt-2">
             No evaluators assigned yet
           </Text>
@@ -802,10 +760,10 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
           {assignments.map((assignment) => (
             <div
               key={assignment.id}
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+              className="bg-gray-50 rounded-lg flex items-center justify-between p-3"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                <div className="bg-purple-100 flex h-8 w-8 items-center justify-center rounded-full">
                   <IconUser size={16} className="text-purple-600" />
                 </div>
                 <div>
@@ -819,14 +777,14 @@ const AuditorInvitation: React.FC<AuditorInvitationProps> = ({
               </div>
               <div className="flex items-center gap-2">
                 <span
-                  className={`px-2 py-1 text-xs rounded-full ${
-                    assignment.status === "ACCEPTED"
-                      ? "bg-green-100 text-green-700"
-                      : assignment.status === "DECLINED"
-                        ? "bg-red-100 text-red-700"
-                        : assignment.status === "COMPLETED"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-yellow-100 text-yellow-700"
+                  className={`text-xs rounded-full px-2 py-1 ${
+                    assignment.status === ASSIGNMENT_STATUS.ACCEPTED
+                      ? 'bg-green-100 text-green-700'
+                      : assignment.status === ASSIGNMENT_STATUS.DECLINED
+                        ? 'bg-red-100 text-red-700'
+                        : assignment.status === ASSIGNMENT_STATUS.COMPLETED
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-yellow-100 text-yellow-700'
                   }`}
                 >
                   {formatStatusLabel(assignment.status)}

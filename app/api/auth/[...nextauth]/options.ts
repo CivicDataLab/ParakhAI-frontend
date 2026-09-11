@@ -1,10 +1,10 @@
-import { jwtDecode } from "jwt-decode";
-import { AuthOptions } from "next-auth";
-import type { JWT } from "next-auth/jwt";
-import KeycloakProvider from "next-auth/providers/keycloak";
+import { AuthOptions } from 'next-auth';
+import type { JWT } from 'next-auth/jwt';
+import KeycloakProvider from 'next-auth/providers/keycloak';
+import { jwtDecode } from 'jwt-decode';
 
 // Extend NextAuth types
-declare module "next-auth" {
+declare module 'next-auth' {
   interface Session {
     access_token?: string;
     id_token?: string;
@@ -13,7 +13,7 @@ declare module "next-auth" {
   }
 }
 
-declare module "next-auth/jwt" {
+declare module 'next-auth/jwt' {
   interface JWT {
     decoded?: any;
     access_token?: string;
@@ -38,14 +38,14 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
     const params = new URLSearchParams({
       client_id: process.env.KEYCLOAK_CLIENT_ID!,
       client_secret: process.env.KEYCLOAK_CLIENT_SECRET!,
-      grant_type: "refresh_token",
+      grant_type: 'refresh_token',
       refresh_token: token.refresh_token!,
     });
 
     const response = await fetch(tokenEndpoint, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: params.toString(),
     });
@@ -53,8 +53,8 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
     const refreshedTokens = await response.json();
 
     if (!response.ok) {
-      console.error("Token refresh failed:", refreshedTokens);
-      throw new Error(refreshedTokens.error || "Failed to refresh token");
+      console.error('Token refresh failed:', refreshedTokens);
+      throw new Error(refreshedTokens.error || 'Failed to refresh token');
     }
 
     const newDecoded = jwtDecode(refreshedTokens.access_token);
@@ -72,10 +72,10 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
       error: undefined,
     };
   } catch (error) {
-    console.error("Error refreshing access token:", error);
+    console.error('Error refreshing access token:', error);
     return {
       ...token,
-      error: "RefreshAccessTokenError",
+      error: 'RefreshAccessTokenError',
     };
   }
 }
@@ -86,6 +86,10 @@ export const authOptions: AuthOptions = {
       clientId: process.env.KEYCLOAK_CLIENT_ID!,
       clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
       issuer: process.env.AUTH_ISSUER!,
+      // Default openid-client timeout is 3500ms, which is too aggressive on
+      // slow / high-latency networks and produces spurious
+      // "outgoing request timed out" errors during sign-in and token refresh.
+      httpOptions: { timeout: 15000 },
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
@@ -100,8 +104,7 @@ export const authOptions: AuthOptions = {
         token.refresh_token = account.refresh_token;
         // Store refresh token expiry if available (Keycloak provides this)
         token.refresh_token_expires_at = account.refresh_expires_in
-          ? Math.floor(Date.now() / 1000) +
-            (account.refresh_expires_in as number)
+          ? Math.floor(Date.now() / 1000) + (account.refresh_expires_in as number)
           : undefined;
 
         return token;
@@ -118,19 +121,16 @@ export const authOptions: AuthOptions = {
       }
 
       // Check if refresh token has also expired
-      if (
-        token.refresh_token_expires_at &&
-        now >= token.refresh_token_expires_at
-      ) {
-        console.log("Refresh token expired, user needs to re-authenticate");
+      if (token.refresh_token_expires_at && now >= token.refresh_token_expires_at) {
+        console.log('Refresh token expired, user needs to re-authenticate');
         return {
           ...token,
-          error: "RefreshTokenExpired",
+          error: 'RefreshTokenExpired',
         };
       }
 
       // Access token expired, try to refresh
-      console.log("Access token expired, attempting refresh...");
+      console.log('Access token expired, attempting refresh...');
       return await refreshAccessToken(token);
     },
 
