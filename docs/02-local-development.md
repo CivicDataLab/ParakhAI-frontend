@@ -32,6 +32,7 @@ npm install
 - `NEXT_PUBLIC_BACKEND_BASE_URL`
 - `NEXT_PUBLIC_DATASPACE_API_URL`
 - `NEXT_PUBLIC_DATASPACE_HOST` (or `NEXT_PUBLIC_AI_MAKER_URL`)
+- `STORAGE_PUBLIC_BASE_URL` (CDN in front of the DataSpace S3 bucket)
 
 ## Commands currently used
 

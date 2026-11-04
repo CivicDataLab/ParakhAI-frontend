@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 
 /**
- * Image remotePatterns are derived from NEXT_PUBLIC_* URLs at build time.
+ * Image remotePatterns are derived from the URL env vars below at build time.
  * Configure the same vars in GitHub Actions / deployment per environment.
  *
  * Optional: NEXT_PUBLIC_IMAGE_REMOTE_HOSTS — comma-separated URLs or hostnames
@@ -18,6 +18,8 @@ const IMAGE_HOST_URL_ENV_KEYS = [
   'NEXT_PUBLIC_BACKEND_BASE_URL',
   'NEXT_PUBLIC_BACKEND_URL',
   'NEXT_PUBLIC_PLATFORM_URL',
+  // CDN in front of the DataSpace S3 bucket
+  'STORAGE_PUBLIC_BASE_URL',
 ];
 
 const DEFAULT_EXTRA_IMAGE_HOSTS = 'images.unsplash.com';
