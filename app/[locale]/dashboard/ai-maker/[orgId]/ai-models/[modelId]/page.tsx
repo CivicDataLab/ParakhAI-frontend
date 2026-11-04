@@ -66,7 +66,12 @@ const GET_AI_MODEL = `
 
 const GET_EVALUATIONS = `
  query GetAudits($limit: Int, $offset: Int, $filters: [FilterSpec!]) {
-    audits(limit: $limit, offset: $offset, filters: $filters, sortOptions: null) {
+    audits(
+      limit: $limit
+      offset: $offset
+      filters: $filters
+      sortOptions: [{ field: "updated_at", direction: "desc" }]
+    ) {
       data{
       id
       name
@@ -80,6 +85,7 @@ const GET_EVALUATIONS = `
       createdAt
       startedAt
       completedAt
+      updatedAt
       evaluationMode
       requestedByName
     }
@@ -132,6 +138,7 @@ type Evaluation = {
   skippedTests: number | null;
   createdAt: string;
   completedAt: string | null;
+  updatedAt: string | null;
   modelName: string | null;
   requestedByName: string | null;
 };
@@ -159,7 +166,7 @@ const providerLabels: Record<string, string> = {
   HUGGINGFACE: 'HuggingFace',
 };
 
-const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || '';
+const EVALUATIONS_UPDATED_AT_SORT = [{ field: 'updatedAt', direction: 'desc' as const }];
 
 const formatEvaluationDate = (dateString: string | null) => {
   if (!dateString) return '--';
@@ -243,7 +250,15 @@ const ModelDetailPage = () => {
         ]);
 
         if (modelResponse?.aiModel) setModel(modelResponse.aiModel);
-        if (evalResponse?.audits?.data) setEvaluations(evalResponse.audits?.data);
+        if (evalResponse?.audits?.data) {
+          setEvaluations(
+            [...evalResponse.audits.data].sort(
+              (a, b) =>
+                new Date(b.updatedAt || b.createdAt || 0).getTime() -
+                new Date(a.updatedAt || a.createdAt || 0).getTime()
+            )
+          );
+        }
       } catch (err: any) {
         setError(err.message || 'Failed to fetch model details');
       } finally {
@@ -350,6 +365,10 @@ const ModelDetailPage = () => {
           </div>
         );
       },
+    }),
+    columnHelper.accessor('updatedAt', {
+      header: 'Last updated',
+      cell: (info) => <Text variant="bodySm">{formatEvaluationDate(info.getValue())}</Text>,
     }),
     columnHelper.accessor('completedAt', {
       header: 'Completed on',
@@ -587,8 +606,8 @@ const ModelDetailPage = () => {
                   <div className="rounded-lg border border-gray-200 p-2 lg:block">
                     <div className="flex justify-center items-center h-[100px]">
                       {organization.logoUrl ? (
-                        <Image
-                          src={`${dataspaceUrl.replace(/\/$/, "")}${organization.logoUrl}`}
+                        <MediaImage
+                          src={mediaUrl(organization.logoUrl)}
                           alt={organization.name}
                           width={100}
                           height={100}
@@ -770,7 +789,15 @@ const ModelDetailPage = () => {
                 rows={evaluations}
                 columns={columns}
                 hoverable
-                sortColumns={['name', 'auditType', 'status', 'evaluationMode', 'completedAt']}
+                sortColumns={[
+                  'name',
+                  'auditType',
+                  'status',
+                  'evaluationMode',
+                  'updatedAt',
+                  'completedAt',
+                ]}
+                sortingState={EVALUATIONS_UPDATED_AT_SORT}
                 initialSortColumnIndex={5}
                 defaultSortDirection="desc"
                 hideSelection

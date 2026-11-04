@@ -4,11 +4,10 @@ import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { AlertDialog, Button, Text } from 'opub-ui';
+import { AlertDialog, Button, Spinner, Text } from 'opub-ui';
 import { useMyOrganizations } from '@/features/ai-maker/api/use-organizations';
 import type { Organization } from '@/features/ai-maker/api/use-organizations';
 import BreadCrumbs from '@/components/common/Breadcrumbs';
-import { Loading } from '@/components/common/loading';
 import MediaImage from '@/components/common/MediaImage';
 import { useDashboardStore } from '@/stores';
 import { mediaUrl } from '@/utils';
@@ -21,6 +20,7 @@ const EntityCard = ({ org, locale }: { org: Organization; locale: string }) => {
     <Link
       key={org.name}
       href={`/${locale}/dashboard/ai-maker/${org.id}`}
+      prefetch={false}
       className="hover:border-highlight group flex h-72 w-56 flex-col items-center gap-3 rounded-2 border-2 border-solid border-baseGraySlateSolid4 bg-white px-4 py-5 text-center transition-all"
     >
       <div className="flex h-full w-full items-center justify-center rounded-2">
@@ -71,7 +71,57 @@ const OrganizationSelection = () => {
     process.env.NEXT_PUBLIC_DATASPACE_HOST || process.env.NEXT_PUBLIC_AI_MAKER_URL || '';
   const externalPath = '/dashboard/organization';
 
-  const { data: organizations = [], isLoading } = useMyOrganizations();
+  const { data: organizations, isLoading, isFetched } = useMyOrganizations();
+  const orgs = organizations ?? [];
+  const [logosReady, setLogosReady] = useState(false);
+
+  useEffect(() => {
+    if (!isFetched || isLoading) {
+      setLogosReady(false);
+      return;
+    }
+
+    const urls = [
+      ...new Set(
+        (organizations ?? []).map((org) => mediaUrl(org.logoUrl)).filter((url) => url.length > 0)
+      ),
+    ];
+
+    if (urls.length === 0) {
+      setLogosReady(true);
+      return;
+    }
+
+    let cancelled = false;
+    let remaining = urls.length;
+    setLogosReady(false);
+
+    const markDone = () => {
+      remaining -= 1;
+      if (!cancelled && remaining <= 0) setLogosReady(true);
+    };
+
+    const loaders = urls.map((url) => {
+      const img = new window.Image();
+      img.onload = markDone;
+      img.onerror = markDone;
+      img.src = url;
+      return img;
+    });
+
+    const timeoutId = window.setTimeout(() => {
+      if (!cancelled) setLogosReady(true);
+    }, 8000);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+      loaders.forEach((img) => {
+        img.onload = null;
+        img.onerror = null;
+      });
+    };
+  }, [isFetched, isLoading, organizations]);
 
   const { addOrganizationUrl, externalUrl } = useMemo(() => {
     let builtExternalUrl = '';
@@ -90,16 +140,16 @@ const OrganizationSelection = () => {
   }, [externalHost, inAppPath]);
 
   useEffect(() => {
-    if (organizations.length > 0) {
-      setAllEntityDetails({ organizations });
+    if (orgs.length > 0) {
+      setAllEntityDetails({ organizations: orgs });
     }
-  }, [organizations, setAllEntityDetails]);
+  }, [orgs, setAllEntityDetails]);
 
   useEffect(() => {
-    if (!isLoading && organizations.length === 0) {
+    if (!isLoading && logosReady && orgs.length === 0) {
       setShowRedirectPrompt(true);
     }
-  }, [isLoading, organizations.length]);
+  }, [isLoading, logosReady, orgs.length]);
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--page-background)]">
@@ -111,7 +161,7 @@ const OrganizationSelection = () => {
         ]}
       />
 
-      <div className="container mx-10 mb-40 mt-10 flex-1">
+      <div className="relative mx-10 mb-10 mt-10 flex min-h-[calc(100vh-10rem)] flex-col">
         <div className="flex flex-col gap-3 py-10">
           <Text variant="headingXl">Select Organization</Text>
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -128,15 +178,17 @@ const OrganizationSelection = () => {
           </div>
         </div>
 
-        {isLoading ? (
-          <Loading />
+        {!isFetched || isLoading || !logosReady ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Spinner />
+          </div>
         ) : (
           <div className="flex flex-wrap gap-6">
-            {organizations.map((org) => (
+            {orgs.map((org) => (
               <EntityCard key={org.id} org={org} locale={locale as string} />
             ))}
 
-            {organizations.length === 0 && (
+            {orgs.length === 0 && (
               <div className="bg-gray-50 col-span-full w-full rounded-4 py-20 text-center">
                 <Text variant="bodyLg" className="text-gray-500">
                   You are not a member of any organization yet.

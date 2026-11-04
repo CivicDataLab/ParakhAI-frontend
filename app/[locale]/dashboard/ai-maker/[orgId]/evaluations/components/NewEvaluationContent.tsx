@@ -4,12 +4,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { IconArrowLeft, IconTrash } from '@tabler/icons-react';
 import { Button, Icon, Label, Select, Spinner, Tag, Text, TextField } from 'opub-ui';
+import { getEvaluatorLabel } from '@/features/dashboard/utils/evaluation';
 import { useAppSession } from '@/hooks/use-app-session';
 import { useGraphQL } from '@/lib/graphql-client';
 import { getEvaluationStatusColor } from '@/utils/status-colors';
 import {
   AUDIT_TYPE,
-  AUDIT_TYPE_LABELS,
   AuditType,
   EVALUATION_MODE,
   EVALUATION_STATUS,
@@ -1954,19 +1954,6 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
     }
     return !BULK_CANCELLABLE.includes(evaluationStatus);
   })();
-
-  const getEvaluatorLabel = (type: AuditType) => {
-    switch (type) {
-      case AUDIT_TYPE_LABELS.TECHNICAL_AUDIT:
-        return 'Technical Evaluator';
-      case AUDIT_TYPE_LABELS.DOMAIN_AUDIT:
-        return 'Domain Expert';
-      case AUDIT_TYPE_LABELS.CULTURAL_AUDIT:
-        return 'Cultural Expert';
-      default:
-        return 'Evaluator';
-    }
-  };
 
   const getModeLabel = getEvaluationModeLabel;
 
