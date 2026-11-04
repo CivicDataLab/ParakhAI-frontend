@@ -5,7 +5,7 @@ import { IconPlus, IconSearch, IconUser, IconUserCheck } from '@tabler/icons-rea
 import { Button, Dialog, Spinner, Tag, Text, TextField, toast } from 'opub-ui';
 import { useGraphQL } from '@/lib/graphql-client';
 import { ASSIGNMENT_STATUS } from '@/constants';
-import { formatStatusLabel } from '@/utils';
+import { formatStatusLabel, mediaUrl } from '@/utils';
 
 /** Profile image for search hit — same behavior as Add Evaluator on auditors page */
 const SearchResultAvatar = ({
@@ -18,8 +18,7 @@ const SearchResultAvatar = ({
   size?: number;
 }) => {
   const [imageError, setImageError] = useState(false);
-  const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || '';
-  const imageSrc = src ? `${dataspaceUrl}${src}` : '';
+  const imageSrc = mediaUrl(src);
 
   if (!imageSrc || imageError) {
     return <IconUser size={size} className="text-purple-600" />;

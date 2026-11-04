@@ -1,14 +1,8 @@
-﻿"use client";
+﻿'use client';
 
-import BreadCrumbs from "@/components/common/Breadcrumbs";
-import { useGraphQL } from "@/lib/graphql-client";
-import {
-  IconPlus,
-  IconSearch,
-  IconTrash,
-  IconUser,
-} from "@tabler/icons-react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { IconPlus, IconSearch, IconTrash, IconUser } from '@tabler/icons-react';
 import {
   AlertDialog,
   Button,
@@ -17,10 +11,12 @@ import {
   Tag,
   Text,
   TextField,
-  Tooltip,
   toast,
-} from "opub-ui";
-import { useEffect, useMemo, useRef, useState } from "react";
+  Tooltip,
+} from 'opub-ui';
+import BreadCrumbs from '@/components/common/Breadcrumbs';
+import { useGraphQL } from '@/lib/graphql-client';
+import { mediaUrl } from '@/utils';
 
 // Custom Avatar component with error handling
 const Avatar = ({
@@ -35,14 +31,13 @@ const Avatar = ({
   size?: number;
 }) => {
   const [imageError, setImageError] = useState(false);
-  const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || "";
-  const imageSrc = src ? `${dataspaceUrl.replace(/\/$/, "")}${src}` : "";
+  const imageSrc = mediaUrl(src);
 
   if (!imageSrc || imageError) {
     return <IconUser size={size} className="text-purple-600" />;
   }
 
-  const sizeClass = size === 20 ? "w-10 h-10" : "w-8 h-8";
+  const sizeClass = size === 20 ? 'w-10 h-10' : 'w-8 h-8';
 
   return (
     <img
@@ -55,7 +50,7 @@ const Avatar = ({
 };
 
 const TruncatedAuditorBio = ({ bio }: { bio?: string | null }) => {
-  const text = bio?.trim() || "";
+  const text = bio?.trim() || '';
   const textRef = useRef<HTMLDivElement>(null);
   const [isTruncated, setIsTruncated] = useState(false);
 
@@ -67,25 +62,24 @@ const TruncatedAuditorBio = ({ bio }: { bio?: string | null }) => {
         return;
       }
       setIsTruncated(
-        element.scrollHeight > element.clientHeight ||
-          element.scrollWidth > element.clientWidth
+        element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth
       );
     };
 
     checkTruncation();
-    window.addEventListener("resize", checkTruncation);
-    return () => window.removeEventListener("resize", checkTruncation);
+    window.addEventListener('resize', checkTruncation);
+    return () => window.removeEventListener('resize', checkTruncation);
   }, [text]);
 
   const bioNode = (
     <div
       ref={textRef}
       style={{
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        display: "-webkit-box",
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        display: '-webkit-box',
         WebkitLineClamp: 1,
-        WebkitBoxOrient: "vertical",
+        WebkitBoxOrient: 'vertical',
       }}
     >
       <Text variant="bodySm" className="text-gray-600 break-words">
@@ -120,8 +114,8 @@ type SearchUserResult = {
 };
 
 const getUserDisplayName = (user: Auditor): string => {
-  const firstName = user.firstName?.trim() || "";
-  const lastName = user.lastName?.trim() || "";
+  const firstName = user.firstName?.trim() || '';
+  const lastName = user.lastName?.trim() || '';
   const fullName = `${firstName} ${lastName}`.trim();
 
   if (fullName) return fullName;
@@ -131,13 +125,11 @@ const getUserDisplayName = (user: Auditor): string => {
   }
 
   if (user.email) {
-    return user.email.split("@")[0];
+    return user.email.split('@')[0];
   }
 
-  return "";
+  return '';
 };
-
-
 
 // GraphQL Queries
 const GET_ORG_DETAILS = `
@@ -216,14 +208,10 @@ const REMOVE_AUDITOR_MUTATION = `
 const AuditorsPage = () => {
   const params = useParams();
   const router = useRouter();
-  const locale = params?.locale || "en";
+  const locale = params?.locale || 'en';
   const orgId = params?.orgId as string;
 
-  const {
-    request,
-    isAuthenticated,
-    isLoading: isSessionLoading,
-  } = useGraphQL();
+  const { request, isAuthenticated, isLoading: isSessionLoading } = useGraphQL();
 
   // State
   const [organization, setOrganization] = useState<{
@@ -231,17 +219,14 @@ const AuditorsPage = () => {
     logoUrl: string | null;
     slug?: string | null;
   } | null>(null);
-  const [showManageUsersRedirectPrompt, setShowManageUsersRedirectPrompt] =
-    useState(false);
+  const [showManageUsersRedirectPrompt, setShowManageUsersRedirectPrompt] = useState(false);
   const [auditors, setAuditors] = useState<Auditor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [emailInput, setEmailInput] = useState("");
-  const [searchResult, setSearchResult] = useState<SearchUserResult | null>(
-    null
-  );
+  const [emailInput, setEmailInput] = useState('');
+  const [searchResult, setSearchResult] = useState<SearchUserResult | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
@@ -249,21 +234,15 @@ const AuditorsPage = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const { manageUsersUrl, externalManageUsersUrl } = useMemo(() => {
-    const orgSlug = encodeURIComponent(
-      String(organization?.slug ?? orgId ?? "").trim()
-    );
-    const relativeAdminPath = orgSlug
-      ? `/dashboard/organization/${orgSlug}/admin`
-      : "";
+    const orgSlug = encodeURIComponent(String(organization?.slug ?? orgId ?? '').trim());
+    const relativeAdminPath = orgSlug ? `/dashboard/organization/${orgSlug}/admin` : '';
     const externalHost =
-      process.env.NEXT_PUBLIC_DATASPACE_HOST ||
-      process.env.NEXT_PUBLIC_AI_MAKER_URL ||
-      "";
-    let builtExternalUrl = "";
-    if (externalHost.trim() !== "" && relativeAdminPath) {
-      const host = externalHost.replace(/\/$/, "");
+      process.env.NEXT_PUBLIC_DATASPACE_HOST || process.env.NEXT_PUBLIC_AI_MAKER_URL || '';
+    let builtExternalUrl = '';
+    if (externalHost.trim() !== '' && relativeAdminPath) {
+      const host = externalHost.replace(/\/$/, '');
       builtExternalUrl = /\/dashboard$/.test(host)
-        ? `${host}${relativeAdminPath.replace(/^\/dashboard/, "")}`
+        ? `${host}${relativeAdminPath.replace(/^\/dashboard/, '')}`
         : `${host}${relativeAdminPath}`;
     }
     return {
@@ -282,11 +261,7 @@ const AuditorsPage = () => {
 
         const [orgResponse, auditorsResponse] = await Promise.all([
           request(GET_ORG_DETAILS, { orgId }),
-          request(
-            GET_ORGANIZATION_AUDITORS,
-            { organizationId: orgId },
-            { organization: orgId }
-          ),
+          request(GET_ORGANIZATION_AUDITORS, { organizationId: orgId }, { organization: orgId }),
         ]);
 
         if (orgResponse?.organization) {
@@ -301,8 +276,8 @@ const AuditorsPage = () => {
           setAuditors(auditorsResponse.organizationAuditors.auditors || []);
         }
       } catch (err: any) {
-        console.error("Error fetching data:", err);
-        setError(err?.message || "Failed to load evaluators");
+        console.error('Error fetching data:', err);
+        setError(err?.message || 'Failed to load evaluators');
       } finally {
         setLoading(false);
       }
@@ -329,13 +304,13 @@ const AuditorsPage = () => {
         const hit = response.searchUserByEmail;
         setSearchResult(hit);
         if (hit.found && hit.user) {
-          setEmailInput("");
+          setEmailInput('');
         }
       }
     } catch (err: any) {
       setSearchResult({
         found: false,
-        message: err?.message || "Error searching for user",
+        message: err?.message || 'Error searching for user',
       });
     } finally {
       setIsSearching(false);
@@ -370,22 +345,21 @@ const AuditorsPage = () => {
           setAuditors(auditorsResponse.organizationAuditors.auditors || []);
         }
 
-        toast.success("Evaluator added successfully");
+        toast.success('Evaluator added successfully');
 
         // Close modal and reset
         setIsAddModalOpen(false);
-        setEmailInput("");
+        setEmailInput('');
         setSearchResult(null);
       } else {
         const errorMessage =
-          response?.addAuditorToOrganization?.message ||
-          "Failed to add evaluator";
+          response?.addAuditorToOrganization?.message || 'Failed to add evaluator';
 
         setAddError(errorMessage);
         toast.error(errorMessage);
       }
     } catch (err: any) {
-      const errorMessage = err?.message || "Error adding evaluator";
+      const errorMessage = err?.message || 'Error adding evaluator';
       setAddError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -394,7 +368,7 @@ const AuditorsPage = () => {
   };
 
   const handleRemoveAuditor = async (userId: string) => {
-    if (!confirm("Are you sure you want to remove this evaluator?")) return;
+    if (!confirm('Are you sure you want to remove this evaluator?')) return;
 
     try {
       const response = await request(
@@ -405,15 +379,14 @@ const AuditorsPage = () => {
 
       if (response?.removeAuditorFromOrganization?.success) {
         setAuditors((prev) => prev.filter((a) => a.id !== userId));
-        toast.success("Evaluator removed successfully");
+        toast.success('Evaluator removed successfully');
       } else {
         toast.error(
-          response?.removeAuditorFromOrganization?.message ||
-            "Failed to remove evaluator",
+          response?.removeAuditorFromOrganization?.message || 'Failed to remove evaluator'
         );
       }
     } catch (err: any) {
-      toast.error(err?.message || "Error removing evaluator");
+      toast.error(err?.message || 'Error removing evaluator');
     }
   };
 
@@ -421,7 +394,7 @@ const AuditorsPage = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-8 mt-10">
+      <div className="mb-8 mt-10 flex items-center justify-between">
         <div>
           <Text variant="headingLg" as="h1" fontWeight="bold">
             Evaluators
@@ -434,14 +407,14 @@ const AuditorsPage = () => {
           <Button
             kind="secondary"
             onClick={() => setShowManageUsersRedirectPrompt(true)}
-            className="!rounded-[8px] px-8 py-3 text-base font-medium"
+            className="text-base !rounded-[8px] px-8 py-3 font-medium"
           >
             Manage Users
           </Button>
           <Button
             kind="primary"
             onClick={() => setIsAddModalOpen(true)}
-            className="!rounded-[8px] !border-none bg-primaryPurple2 px-8 py-3 text-base font-medium text-white hover:bg-[#6849EE] hover:text-white"
+            className="text-base !rounded-[8px] !border-none bg-primaryPurple2 px-8 py-3 font-medium text-white hover:bg-[#6849EE] hover:text-white"
           >
             Add Evaluator
           </Button>
@@ -465,23 +438,20 @@ const AuditorsPage = () => {
           </Button>
         </div>
       ) : auditors.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border border-gray-200">
-          <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mb-4">
+        <div className="rounded-lg border border-gray-200 flex flex-col items-center justify-center bg-white py-20">
+          <div className="bg-purple-100 mb-4 flex h-16 w-16 items-center justify-center rounded-full">
             <IconUser size={32} className="text-purple-600" />
           </div>
           <Text variant="bodyMd" className="text-gray-600 mb-2">
             No evaluators yet
           </Text>
-          <Text
-            variant="bodySm"
-            className="text-gray-500 mb-4 text-center max-w-md"
-          >
-            Add evaluators to your organization so they can evaluate your AI
-            models. Evaluators must have an account in CivicDataSpace.
+          <Text variant="bodySm" className="text-gray-500 mb-4 max-w-md text-center">
+            Add evaluators to your organization so they can evaluate your AI models. Evaluators must
+            have an account in CivicDataSpace.
           </Text>
           <Button
             kind="primary"
-            className="bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white"
+            className="bg-primaryPurple2 text-white hover:bg-[#6849EE] hover:text-white"
             onClick={() => setIsAddModalOpen(true)}
           >
             <IconPlus size={18} className="mr-1" /> Add Your First Auditor
@@ -490,18 +460,18 @@ const AuditorsPage = () => {
       ) : (
         <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {auditors.map((auditor) => {
-            const displayName = getUserDisplayName(auditor) || "-";
+            const displayName = getUserDisplayName(auditor) || '-';
 
             return (
               <div
                 key={auditor.id}
-                className="flex flex-col gap-4 rounded-4 border-1 border-solid border-[#D5E1EA] bg-white p-6 shadow-card cursor-pointer"
+                className="flex cursor-pointer flex-col gap-4 rounded-4 border-1 border-solid border-[#D5E1EA] bg-white p-6 shadow-card"
                 onClick={() => {
                   setSelectedAuditor(auditor);
                   setIsProfileModalOpen(true);
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
+                  if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     setSelectedAuditor(auditor);
                     setIsProfileModalOpen(true);
@@ -511,7 +481,7 @@ const AuditorsPage = () => {
                 tabIndex={0}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 shrink-0 rounded-full border-1 border-solid border-[#D5E1EA] bg-purple-100 flex items-center justify-center overflow-hidden">
+                  <div className="bg-purple-100 flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-1 border-solid border-[#D5E1EA]">
                     <Avatar
                       src={auditor.profilePicture}
                       alt={auditor.username}
@@ -519,11 +489,11 @@ const AuditorsPage = () => {
                       size={20}
                     />
                   </div>
-                  <div className="flex flex-col gap-2 min-w-0">
+                  <div className="flex min-w-0 flex-col gap-2">
                     <Text
                       variant="bodyMd"
                       fontWeight="semibold"
-                      className="truncate text-primaryBlue"
+                      className="text-primaryBlue truncate"
                     >
                       {displayName}
                     </Text>
@@ -558,7 +528,7 @@ const AuditorsPage = () => {
           setIsAddModalOpen(open);
           if (!open) {
             // Reset form and error state whenever the modal is closed
-            setEmailInput("");
+            setEmailInput('');
             setSearchResult(null);
             setAddError(null);
           }
@@ -567,39 +537,41 @@ const AuditorsPage = () => {
         <Dialog.Content
           title="Add Evaluator"
           footer={<></>}
-          primaryAction={{
-            content: isAdding ? "Adding..." : "Add Evaluator",
-            onAction: handleAddAuditor,
-            disabled: !searchResult?.found || isAdding,
-            className:
-              !searchResult?.found || isAdding
-                ? "!rounded-[8px] !cursor-not-allowed !border-none !bg-[#8c949d] !text-white hover:!bg-[#8c949d]"
-                : "!rounded-[8px] !border-none !bg-primaryPurple2 !text-white hover:!bg-[#6849EE] hover:!text-white",
-          } as any}
+          primaryAction={
+            {
+              content: isAdding ? 'Adding...' : 'Add Evaluator',
+              onAction: handleAddAuditor,
+              disabled: !searchResult?.found || isAdding,
+              className:
+                !searchResult?.found || isAdding
+                  ? '!rounded-[8px] !cursor-not-allowed !border-none !bg-[#8c949d] !text-white hover:!bg-[#8c949d]'
+                  : '!rounded-[8px] !border-none !bg-primaryPurple2 !text-white hover:!bg-[#6849EE] hover:!text-white',
+            } as any
+          }
           secondaryActions={[
             {
-              content: "Cancel",
+              content: 'Cancel',
               onAction: () => {
                 setIsAddModalOpen(false);
-                setEmailInput("");
+                setEmailInput('');
                 setSearchResult(null);
                 setAddError(null);
               },
-              kind: "secondary",
-              className: "!rounded-[8px]",
+              kind: 'secondary',
+              className: '!rounded-[8px]',
             } as any,
           ]}
         >
           <div className="space-y-4">
             <Text variant="bodySm" className="text-gray-600">
-              Search for a user by their email address. The user must have an
-              account in CivicDataSpace to be added as an evaluator.
+              Search for a user by their email address. The user must have an account in
+              CivicDataSpace to be added as an evaluator.
             </Text>
 
             <div>
               <label
                 htmlFor="add-auditor-email"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="text-sm text-gray-700 mb-1 block font-medium"
               >
                 Email Address
               </label>
@@ -608,25 +580,19 @@ const AuditorsPage = () => {
                   opub-ui renders the tags strip as #{id}-tags; styles target that id.
                   Breaks if the library removes that id pattern.
                 */}
-                <div
-                  className="min-w-0 flex-1 [&_#add-auditor-email-tags]:box-border [&_#add-auditor-email-tags]:flex [&_#add-auditor-email-tags]:min-h-10 [&_#add-auditor-email-tags]:flex-row [&_#add-auditor-email-tags]:flex-nowrap [&_#add-auditor-email-tags]:items-center [&_#add-auditor-email-tags]:gap-1 [&_#add-auditor-email-tags_input]:min-h-0 [&_#add-auditor-email-tags_input]:min-w-0 [&_#add-auditor-email-tags_input]:flex-[1_1_auto] [&_#add-auditor-email-tags_input]:leading-2"
-                >
+                <div className="min-w-0 flex-1 [&_#add-auditor-email-tags]:box-border [&_#add-auditor-email-tags]:flex [&_#add-auditor-email-tags]:min-h-10 [&_#add-auditor-email-tags]:flex-row [&_#add-auditor-email-tags]:flex-nowrap [&_#add-auditor-email-tags]:items-center [&_#add-auditor-email-tags]:gap-1 [&_#add-auditor-email-tags_input]:min-h-0 [&_#add-auditor-email-tags_input]:min-w-0 [&_#add-auditor-email-tags_input]:flex-[1_1_auto] [&_#add-auditor-email-tags_input]:leading-2">
                   <TextField
                     key={
                       searchResult?.found && searchResult.user
                         ? `tag-${searchResult.user.id}`
-                        : "email-entry"
+                        : 'email-entry'
                     }
                     id="add-auditor-email"
                     name="add-auditor-email"
                     label="Email Address"
                     labelHidden
                     type="email"
-                    value={
-                      searchResult?.found && searchResult.user
-                        ? ""
-                        : emailInput
-                    }
+                    value={searchResult?.found && searchResult.user ? '' : emailInput}
                     onChange={(value) => setEmailInput(value)}
                     onEnter={() => {
                       if (emailInput.trim() && !isSearching) {
@@ -634,9 +600,7 @@ const AuditorsPage = () => {
                       }
                     }}
                     placeholder={
-                      searchResult?.found && searchResult.user
-                        ? ""
-                        : "evaluator@example.com"
+                      searchResult?.found && searchResult.user ? '' : 'evaluator@example.com'
                     }
                     readOnly={!!(searchResult?.found && searchResult.user)}
                     autoComplete="email"
@@ -646,7 +610,7 @@ const AuditorsPage = () => {
                           value={searchResult.user.id}
                           onRemove={() => {
                             setSearchResult(null);
-                            setEmailInput("");
+                            setEmailInput('');
                             setAddError(null);
                           }}
                         >
@@ -661,11 +625,11 @@ const AuditorsPage = () => {
                     kind="secondary"
                     onClick={() => void handleSearchUser()}
                     disabled={!emailInput.trim() || isSearching}
-                    className="rounded-[8px] border-none bg-primaryPurple2 px-8 py-3 text-base font-medium text-white hover:bg-[#6849EE] hover:text-white disabled:cursor-not-allowed disabled:bg-[#f2f2f2] disabled:text-[#8e8e8e] disabled:hover:bg-[#f2f2f2]"
+                    className="text-base rounded-[8px] border-none bg-primaryPurple2 px-8 py-3 font-medium text-white hover:bg-[#6849EE] hover:text-white disabled:cursor-not-allowed disabled:bg-[#f2f2f2] disabled:text-[#8e8e8e] disabled:hover:bg-[#f2f2f2]"
                   >
                     <div className="flex h-full w-full items-center gap-2">
                       <IconSearch size={18} className="mr-1 shrink-0" />
-                      <div>{isSearching ? "Searching..." : "Search"}</div>
+                      <div>{isSearching ? 'Searching...' : 'Search'}</div>
                     </div>
                   </Button>
                 </div>
@@ -674,15 +638,15 @@ const AuditorsPage = () => {
 
             {searchResult && (
               <div
-                className={`p-4 rounded-lg ${
+                className={`rounded-lg p-4 ${
                   searchResult.found
-                    ? "bg-green-50 border border-green-200"
-                    : "bg-red-50 border border-red-200"
+                    ? 'bg-green-50 border border-green-200'
+                    : 'bg-red-50 border border-red-200'
                 }`}
               >
                 {searchResult.found && searchResult.user ? (
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                    <div className="bg-purple-100 flex h-10 w-10 items-center justify-center rounded-full">
                       <Avatar
                         src={searchResult.user.profilePicture}
                         alt={searchResult.user.username}
@@ -697,10 +661,8 @@ const AuditorsPage = () => {
                       <Text variant="bodySm" className="text-gray-600">
                         {searchResult.user.email}
                       </Text>
-                      {(searchResult.user.firstName ||
-                        searchResult.user.lastName) &&
-                        searchResult.user.username !==
-                          searchResult.user.email && (
+                      {(searchResult.user.firstName || searchResult.user.lastName) &&
+                        searchResult.user.username !== searchResult.user.email && (
                           <Text variant="bodySm" className="text-gray-500">
                             @{searchResult.user.username}
                           </Text>
@@ -709,18 +671,14 @@ const AuditorsPage = () => {
                   </div>
                 ) : (
                   <Text variant="bodySm" className="text-red-700">
-                    {searchResult.message || "User not found"}
+                    {searchResult.message || 'User not found'}
                   </Text>
                 )}
               </div>
             )}
 
             {addError && (
-              <Text
-                variant="bodySm"
-                color="critical"
-                className="mt-2"
-              >
+              <Text variant="bodySm" color="critical" className="mt-2">
                 {addError}
               </Text>
             )}
@@ -734,40 +692,34 @@ const AuditorsPage = () => {
       >
         <AlertDialog.Content
           title="Redirect to CivicDataSpace"
-          primaryAction={{
-            content: "Yes, continue",
-            onAction: () => {
-              setShowManageUsersRedirectPrompt(false);
-              if (!manageUsersUrl) {
-                toast.error(
-                  "Unable to open user management. Please try again later."
-                );
-                return;
-              }
-              if (externalManageUsersUrl) {
-                window.open(
-                  manageUsersUrl,
-                  "_blank",
-                  "noopener,noreferrer"
-                );
-              } else {
-                router.push(manageUsersUrl);
-              }
-            },
-            className:
-              "bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white",
-          } as any}
+          primaryAction={
+            {
+              content: 'Yes, continue',
+              onAction: () => {
+                setShowManageUsersRedirectPrompt(false);
+                if (!manageUsersUrl) {
+                  toast.error('Unable to open user management. Please try again later.');
+                  return;
+                }
+                if (externalManageUsersUrl) {
+                  window.open(manageUsersUrl, '_blank', 'noopener,noreferrer');
+                } else {
+                  router.push(manageUsersUrl);
+                }
+              },
+              className: 'bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white',
+            } as any
+          }
           secondaryActions={[
             {
-              content: "No",
+              content: 'No',
               onAction: () => setShowManageUsersRedirectPrompt(false),
-              className:
-                "bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white",
+              className: 'bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white',
             } as any,
           ]}
         >
-          You are being redirected to CivicDataSpace to manage organization
-          users. Do you want to continue?
+          You are being redirected to CivicDataSpace to manage organization users. Do you want to
+          continue?
         </AlertDialog.Content>
       </AlertDialog>
 
@@ -784,7 +736,7 @@ const AuditorsPage = () => {
           {selectedAuditor && (
             <div className="space-y-4">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 shrink-0 rounded-full border-1 border-solid border-[#D5E1EA] bg-purple-100 flex items-center justify-center overflow-hidden">
+                <div className="bg-purple-100 flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-1 border-solid border-[#D5E1EA]">
                   <Avatar
                     src={selectedAuditor.profilePicture}
                     alt={selectedAuditor.username}
@@ -794,15 +746,12 @@ const AuditorsPage = () => {
                 </div>
                 <div className="min-w-0">
                   <Text variant="headingSm" fontWeight="semibold" className="text-primaryBlue">
-                    {getUserDisplayName(selectedAuditor) || "-"}
+                    {getUserDisplayName(selectedAuditor) || '-'}
                   </Text>
                 </div>
               </div>
               <div className="ml-2">
-                <Text
-                  variant="bodyMd"
-                  className="text-gray-700 whitespace-pre-wrap break-words"
-                >
+                <Text variant="bodyMd" className="text-gray-700 whitespace-pre-wrap break-words">
                   {getAuditorBio(selectedAuditor)}
                 </Text>
               </div>
@@ -810,7 +759,6 @@ const AuditorsPage = () => {
           )}
         </Dialog.Content>
       </Dialog>
-
     </>
   );
 };

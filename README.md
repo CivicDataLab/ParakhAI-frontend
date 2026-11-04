@@ -17,7 +17,7 @@ ParakhAI is a platform for evaluating AI models, creating prompt datasets, and r
 
 ## Tech Stack
 
-- **Framework:** Next.js 
+- **Framework:** Next.js
 - **UI:** React + TypeScript + Tailwind CSS
 - **Data:** GraphQL
 - **Auth:** NextAuth + Keycloak
@@ -54,6 +54,8 @@ END_SESSION_URL=
 REFRESH_TOKEN_URL=
 NEXT_PUBLIC_AI_MAKER_URL=
 NEXT_PUBLIC_DATASPACE_API_URL=
+# CDN in front of the DataSpace S3 bucket, e.g. https://your-distribution.cloudfront.net
+STORAGE_PUBLIC_BASE_URL=
 
 # Backend URLs
 NEXT_PUBLIC_BACKEND_URL=

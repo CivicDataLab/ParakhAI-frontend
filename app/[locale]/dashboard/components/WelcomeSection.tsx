@@ -1,11 +1,13 @@
-﻿"use client";
+﻿'use client';
 
-import { useAppSession } from "@/hooks/use-app-session";
-import Image from "next/image";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Divider } from "opub-ui";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Divider } from 'opub-ui';
+import MediaImage from '@/components/common/MediaImage';
+import { useAppSession } from '@/hooks/use-app-session';
+import { mediaUrl } from '@/utils';
 
 export type NavItem = {
   icon: string;
@@ -16,61 +18,61 @@ export type NavItem = {
 
 const aiMakerNavItems: NavItem[] = [
   {
-    icon: "/images/icons/home-2.png",
-    label: "Home",
+    icon: '/images/icons/home-2.png',
+    label: 'Home',
     isImage: true,
-    path: "/dashboard/ai-maker",
+    path: '/dashboard/ai-maker',
   },
   {
-    icon: "/images/icons/topology-star-ring.png",
-    label: "Models",
+    icon: '/images/icons/topology-star-ring.png',
+    label: 'Models',
     isImage: true,
-    path: "/dashboard/ai-maker/ai-models",
+    path: '/dashboard/ai-maker/ai-models',
   },
   {
-    icon: "/images/icons/report-analytics.png",
-    label: "Evaluations",
+    icon: '/images/icons/report-analytics.png',
+    label: 'Evaluations',
     isImage: true,
-    path: "/dashboard/ai-maker/evaluations",
+    path: '/dashboard/ai-maker/evaluations',
   },
   {
-    icon: "/images/icons/messages.png",
-    label: "Prompt Libraries",
+    icon: '/images/icons/messages.png',
+    label: 'Prompt Libraries',
     isImage: true,
-    path: "/dashboard/ai-maker/prompt-libraries",
+    path: '/dashboard/ai-maker/prompt-libraries',
   },
   {
-    icon: "/images/icons/users-group.png",
-    label: "Evaluators",
+    icon: '/images/icons/users-group.png',
+    label: 'Evaluators',
     isImage: true,
-    path: "/dashboard/ai-maker/auditors",
+    path: '/dashboard/ai-maker/auditors',
   },
   // { icon: "/images/icons/settings.png", label: "Settings", isImage: true },
 ];
 
 export const auditorNavItems: NavItem[] = [
   {
-    icon: "/images/icons/home-2.png",
-    label: "Home",
+    icon: '/images/icons/home-2.png',
+    label: 'Home',
     isImage: true,
-    path: "/dashboard/auditor",
+    path: '/dashboard/auditor',
   },
   {
-    icon: "/images/icons/topology-star-ring.png",
-    label: "Assigned Models",
+    icon: '/images/icons/topology-star-ring.png',
+    label: 'Assigned Models',
     isImage: true,
-    path: "/dashboard/auditor/assignments",
+    path: '/dashboard/auditor/assignments',
   },
   {
-    icon: "/images/icons/report-analytics.png",
-    label: "Evaluations History",
+    icon: '/images/icons/report-analytics.png',
+    label: 'Evaluations History',
     isImage: true,
-    path: "/dashboard/auditor/evaluations",
+    path: '/dashboard/auditor/evaluations',
   },
   // { icon: "/images/icons/settings.png", label: "Settings", isImage: true },
 ];
 
-export type DashboardType = "ai-maker" | "auditor";
+export type DashboardType = 'ai-maker' | 'auditor';
 
 type WelcomeSectionProps = {
   orgName?: string;
@@ -84,22 +86,17 @@ type WelcomeSectionProps = {
 const WelcomeSection = ({
   orgName,
   orgLogo,
-  dashboardType = "ai-maker",
+  dashboardType = 'ai-maker',
   navItems: customNavItems,
   basePath,
   orgIdInPath: customOrgId,
 }: WelcomeSectionProps) => {
   const baseNavItems =
-    customNavItems ||
-    (dashboardType === "auditor" ? auditorNavItems : aiMakerNavItems);
+    customNavItems || (dashboardType === 'auditor' ? auditorNavItems : aiMakerNavItems);
   const dashboardBasePath =
-    basePath ||
-    (dashboardType === "auditor"
-      ? "/dashboard/auditor"
-      : "/dashboard/ai-maker");
+    basePath || (dashboardType === 'auditor' ? '/dashboard/auditor' : '/dashboard/ai-maker');
   const pathname = usePathname();
   const { user } = useAppSession();
-  const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || "";
   const [isImageValid, setIsImageValid] = useState(!!orgLogo);
 
   useEffect(() => {
@@ -107,17 +104,17 @@ const WelcomeSection = ({
   }, [orgLogo]);
 
   const normalizedPath = useMemo(() => {
-    if (!pathname) return "/";
+    if (!pathname) return '/';
 
-    const validLocales = ["en", "hi"];
+    const validLocales = ['en', 'hi'];
     const match = pathname.match(/^\/([^/]+)/);
     let withoutLocale = pathname;
 
     if (match && validLocales.includes(match[1])) {
-      withoutLocale = pathname.replace(/^\/[^/]+/, "") || "/";
+      withoutLocale = pathname.replace(/^\/[^/]+/, '') || '/';
     }
 
-    return withoutLocale.endsWith("/") && withoutLocale.length > 1
+    return withoutLocale.endsWith('/') && withoutLocale.length > 1
       ? withoutLocale.slice(0, -1)
       : withoutLocale;
   }, [pathname]);
@@ -125,16 +122,14 @@ const WelcomeSection = ({
   const orgIdFromPath = useMemo(() => {
     if (customOrgId !== undefined) return customOrgId;
 
-    if (dashboardType !== "ai-maker") return null;
+    if (dashboardType !== 'ai-maker') return null;
 
-    const parts = normalizedPath.split("/");
+    const parts = normalizedPath.split('/');
     if (
-      parts[1] === "dashboard" &&
-      parts[2] === "ai-maker" &&
+      parts[1] === 'dashboard' &&
+      parts[2] === 'ai-maker' &&
       parts[3] &&
-      !["ai-models", "evaluations", "prompt-libraries", "auditors"].includes(
-        parts[3]
-      )
+      !['ai-models', 'evaluations', 'prompt-libraries', 'auditors'].includes(parts[3])
     ) {
       return parts[3];
     }
@@ -143,10 +138,7 @@ const WelcomeSection = ({
 
   const matchingPath = useMemo(() => {
     if (!orgIdFromPath) return normalizedPath;
-    return normalizedPath.replace(
-      `${dashboardBasePath}/${orgIdFromPath}`,
-      dashboardBasePath
-    );
+    return normalizedPath.replace(`${dashboardBasePath}/${orgIdFromPath}`, dashboardBasePath);
   }, [normalizedPath, orgIdFromPath, dashboardBasePath]);
 
   const [selectedItem, setSelectedItem] = useState<string>(() => {
@@ -155,34 +147,28 @@ const WelcomeSection = ({
       .sort((a, b) => (b.path?.length ?? 0) - (a.path?.length ?? 0))
       .find((item) => {
         if (!item.path) return false;
-        return (
-          matchingPath === item.path || matchingPath.startsWith(`${item.path}/`)
-        );
+        return matchingPath === item.path || matchingPath.startsWith(`${item.path}/`);
       });
-    return activeFromPath ? activeFromPath.label : "Home";
+    return activeFromPath ? activeFromPath.label : 'Home';
   });
 
   const localePrefix = useMemo(() => {
-    if (!pathname) return "";
+    if (!pathname) return '';
     const match = pathname.match(/^\/([^/]+)/);
-    if (!match) return "";
+    if (!match) return '';
     const firstSegment = match[1];
-    const validLocales = ["en", "hi"];
-    return validLocales.includes(firstSegment) ? `/${firstSegment}` : "";
+    const validLocales = ['en', 'hi'];
+    return validLocales.includes(firstSegment) ? `/${firstSegment}` : '';
   }, [pathname]);
 
   const navItems = useMemo(
     () =>
       baseNavItems.map((item) => {
-        let href = item.path ? `${localePrefix}${item.path}` : "#";
+        let href = item.path ? `${localePrefix}${item.path}` : '#';
 
-        if (
-          orgIdFromPath &&
-          item.path &&
-          item.path.startsWith(dashboardBasePath)
-        ) {
-          const pathSuffix = item.path.replace(dashboardBasePath, "");
-          if (pathSuffix === "") {
+        if (orgIdFromPath && item.path && item.path.startsWith(dashboardBasePath)) {
+          const pathSuffix = item.path.replace(dashboardBasePath, '');
+          if (pathSuffix === '') {
             href = `${localePrefix}${dashboardBasePath}/${orgIdFromPath}`;
           } else {
             href = `${localePrefix}${dashboardBasePath}/${orgIdFromPath}${pathSuffix}`;
@@ -204,9 +190,7 @@ const WelcomeSection = ({
       .sort((a, b) => (b.path?.length ?? 0) - (a.path?.length ?? 0))
       .find((item) => {
         if (!item.path) return false;
-        return (
-          matchingPath === item.path || matchingPath.startsWith(`${item.path}/`)
-        );
+        return matchingPath === item.path || matchingPath.startsWith(`${item.path}/`);
       });
 
     if (activeFromPath) {
@@ -217,14 +201,14 @@ const WelcomeSection = ({
   return (
     <div className="welcome-section mt-12 sm:mt-8 lg:mt-14">
       <div className="text-center sm:pt-4 md:pt-0">
-        {dashboardType === "auditor" && (
-          <div className="mb-3 sm:mb-4 flex justify-center">
-            <div className="w-[80px] h-[80px] rounded-full bg-[var(--primary-purple-color2)] flex items-center justify-center shrink-0">
-              <span className="text-white text-2xl font-semibold select-none tracking-wide">
-                {(user?.name || user?.email || "E")
-                  .split(" ")
+        {dashboardType === 'auditor' && (
+          <div className="mb-3 flex justify-center sm:mb-4">
+            <div className="flex h-[80px] w-[80px] shrink-0 items-center justify-center rounded-full bg-[var(--primary-purple-color2)]">
+              <span className="text-2xl font-semibold select-none tracking-wide text-white">
+                {(user?.name || user?.email || 'E')
+                  .split(' ')
                   .map((w: string) => w[0])
-                  .join("")
+                  .join('')
                   .toUpperCase()
                   .slice(0, 3)}
               </span>
@@ -232,17 +216,17 @@ const WelcomeSection = ({
           </div>
         )}
 
-        {dashboardType !== "auditor" && (
-          <div className="mb-3 sm:mb-4 flex justify-center">
+        {dashboardType !== 'auditor' && (
+          <div className="mb-3 flex justify-center sm:mb-4">
             <div className="cdl-logo-container">
               {orgLogo && isImageValid ? (
-                <Image
-                  src={`${dataspaceUrl.replace(/\/$/, "")}${orgLogo}`}
+                <MediaImage
+                  src={mediaUrl(orgLogo)}
                   alt={`${orgName} Logo`}
                   width={140}
                   height={140}
                   onError={() => setIsImageValid(false)}
-                  className="object-contain w-full h-full"
+                  className="h-full w-full object-contain"
                 />
               ) : (
                 <Image
@@ -250,7 +234,7 @@ const WelcomeSection = ({
                   alt="ParakhAI Logo"
                   width={140}
                   height={140}
-                  className="object-contain w-full h-full"
+                  className="h-full w-full object-contain"
                 />
               )}
             </div>
@@ -258,26 +242,24 @@ const WelcomeSection = ({
         )}
 
         <p className="welcome-text sm:pt-4 md:pt-0">
-          {"Welcome,\u00A0"}
+          {'Welcome,\u00A0'}
           <span className="break-words">
-            {user?.name ||
-              orgName ||
-              (dashboardType === "auditor" ? "Auditor" : "CivicDataLab")}
+            {user?.name || orgName || (dashboardType === 'auditor' ? 'Auditor' : 'CivicDataLab')}
           </span>
         </p>
 
         <Link
           href="/dashboard"
-          className="mt-3 sm:mt-4 mb-3 sm:mb-4 inline-flex font-medium text-[#644FC1] underline transition-colors hover:opacity-90 switch-roles-link"
+          className="switch-roles-link mb-3 mt-3 inline-flex font-medium text-[#644FC1] underline transition-colors hover:opacity-90 sm:mb-4 sm:mt-4"
         >
           Switch Roles
         </Link>
       </div>
 
-      <div className="welcome-divider mt-3 sm:mt-4 mb-3 sm:mb-4">
+      <div className="welcome-divider mb-3 mt-3 sm:mb-4 sm:mt-4">
         <Divider />
       </div>
-      <nav className="space-y-1 sm:space-y-2 overflow-visible mx-0 sm:mx-1">
+      <nav className="mx-0 space-y-1 overflow-visible sm:mx-1 sm:space-y-2">
         {navItems.map((item) => {
           const isActive = selectedItem === item.label;
           return (
@@ -285,18 +267,18 @@ const WelcomeSection = ({
               key={item.label}
               href={item.href}
               onClick={(event) => {
-                if (item.href === "#") {
+                if (item.href === '#') {
                   event.preventDefault();
                 }
                 setSelectedItem(item.label);
               }}
-              className={`py-2.5 sm:py-2 text-left transition flex items-center nav-item-link min-w-0 ${
+              className={`nav-item-link flex min-w-0 items-center py-2.5 text-left transition sm:py-2 ${
                 isActive
-                  ? "font-semibold text-black bg-[#3b00ff0d] -mx-2 sm:-mx-3 w-[calc(100%+16px)] sm:w-[calc(100%+24px)] border-solid border-primaryPurple border-l-4 px-4 sm:px-6"
-                  : "hover:bg-gray-100 rounded-md text-[#60646C] pl-3 sm:pl-4 font-medium px-2 sm:px-3 w-full"
+                  ? 'font-semibold text-black -mx-2 w-[calc(100%+16px)] border-l-4 border-solid border-primaryPurple bg-[#3b00ff0d] px-4 sm:-mx-3 sm:w-[calc(100%+24px)] sm:px-6'
+                  : 'hover:bg-gray-100 rounded-md w-full px-2 pl-3 font-medium text-[#60646C] sm:px-3 sm:pl-4'
               }`}
             >
-              <span className="mr-2 sm:mr-2.5 pt-1 inline-block shrink-0">
+              <span className="mr-2 inline-block shrink-0 pt-1 sm:mr-2.5">
                 {item.isImage ? (
                   <Image
                     src={item.icon}

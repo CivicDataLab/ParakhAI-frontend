@@ -137,6 +137,17 @@ export const blobToBase64 = function (blob: Blob) {
   reader.readAsDataURL(blob);
 };
 
+// Org logos and profile pictures come from DataSpace, whose media lives in S3 and
+// is returned as absolute URLs. Values stored before the move still hold
+// DataSpace-relative paths ("/public/..."), so those keep the DataSpace API prefix,
+// which redirects them to S3.
+export function mediaUrl(url?: string | null): string {
+  if (!url) return '';
+  if (/^https?:\/\//.test(url)) return url;
+  const base = (process.env.NEXT_PUBLIC_DATASPACE_API_URL ?? '').replace(/\/+$/, '');
+  return `${base}/${url.replace(/^\/+/, '')}`;
+}
+
 export function bytesToSize(bytes: number) {
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
   if (bytes === 0) return '0 Byte';
