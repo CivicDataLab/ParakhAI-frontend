@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   cn,
   formatAssignmentStatusLabel,
@@ -6,6 +6,7 @@ import {
   formatGraphQLError,
   formatStatusLabel,
   isPendingAssignmentStatus,
+  mediaUrl,
   stripMarkdown,
   toTitleCase,
 } from './index';
@@ -115,5 +116,30 @@ describe('formatGraphQLError', () => {
     const result = formatGraphQLError(longMessage);
     expect(result.length).toBeLessThanOrEqual(180);
     expect(result.endsWith('...')).toBe(true);
+  });
+});
+
+describe('mediaUrl', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('returns an empty string when there is no url', () => {
+    expect(mediaUrl(null)).toBe('');
+    expect(mediaUrl(undefined)).toBe('');
+    expect(mediaUrl('')).toBe('');
+  });
+
+  it('leaves absolute S3/CloudFront urls untouched', () => {
+    vi.stubEnv('NEXT_PUBLIC_DATASPACE_API_URL', 'https://api.example.com');
+    const url = 'https://cdn.example.net/dev/public/organizations/logo.png';
+    expect(mediaUrl(url)).toBe(url);
+  });
+
+  it('prefixes legacy relative paths with the DataSpace API url', () => {
+    vi.stubEnv('NEXT_PUBLIC_DATASPACE_API_URL', 'https://api.example.com/');
+    const expected = 'https://api.example.com/public/logo.png';
+    expect(mediaUrl('/public/logo.png')).toBe(expected);
+    expect(mediaUrl('public/logo.png')).toBe(expected);
   });
 });
