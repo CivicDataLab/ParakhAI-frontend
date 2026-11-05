@@ -178,6 +178,12 @@ const AuditsListPage = () => {
         ),
       },
       {
+        id: 'updatedAt',
+        header: 'Last updated',
+        sortable: true,
+        cell: (audit) => <Text variant="bodySm">{formatDate(audit.updatedAt)}</Text>,
+      },
+      {
         id: 'completedAt',
         header: 'Completed on',
         sortable: true,

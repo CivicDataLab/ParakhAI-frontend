@@ -77,6 +77,7 @@ export const GET_EVALUATIONS = `
         createdAt
         startedAt
         completedAt
+        updatedAt
       }
       totalItemsCount
     }

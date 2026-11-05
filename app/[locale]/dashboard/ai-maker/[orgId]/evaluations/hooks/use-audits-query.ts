@@ -29,6 +29,7 @@ const AUDITS_QUERY = `
         createdAt
         startedAt
         completedAt
+        updatedAt
       }
       totalItemsCount
     }
@@ -51,11 +52,12 @@ export type Audit = {
   createdAt: string;
   startedAt: string | null;
   completedAt: string | null;
+  updatedAt: string | null;
 };
 
 const DEFAULT_PAGE_SIZE = 10;
 const DEFAULT_POLL_INTERVAL_MS = 15_000;
-const DEFAULT_SORTING: TableSortingState = [{ field: 'completedAt', direction: 'desc' }];
+const DEFAULT_SORTING: TableSortingState = [{ field: 'updatedAt', direction: 'desc' }];
 
 const toSnakeCase = (s: string) => s.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`);
 

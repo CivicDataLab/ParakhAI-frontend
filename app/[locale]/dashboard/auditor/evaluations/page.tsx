@@ -30,6 +30,7 @@ type Evaluation = {
   createdAt: string;
   startedAt?: string;
   completedAt?: string;
+  updatedAt?: string | null;
   modelId: string;
   modelName: string | null;
   modelVersionId?: number;
@@ -50,6 +51,7 @@ const GET_MY_EVALUATIONS = `
       createdAt
       startedAt
       completedAt
+      updatedAt
       modelId
       modelName
       modelVersionId
@@ -64,6 +66,15 @@ const auditTypeLabels: Record<string, string> = {
   DOMAIN_AUDIT: 'Domain',
   CULTURAL_AUDIT: 'Cultural',
 };
+
+const EVALUATIONS_UPDATED_AT_SORT = [{ field: 'updatedAt', direction: 'desc' as const }];
+
+const byUpdatedAtDesc = (
+  a: { updatedAt?: string | null; createdAt?: string | null },
+  b: { updatedAt?: string | null; createdAt?: string | null }
+) =>
+  new Date(b.updatedAt || b.createdAt || 0).getTime() -
+  new Date(a.updatedAt || a.createdAt || 0).getTime();
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('en-GB', {
@@ -102,7 +113,7 @@ const EvaluationsPage = () => {
         );
 
         if (response?.myEvaluations) {
-          setEvaluations(response.myEvaluations);
+          setEvaluations([...response.myEvaluations].sort(byUpdatedAtDesc));
         }
       } catch (err: any) {
         console.error('Error fetching evaluations:', err);
@@ -213,6 +224,14 @@ const EvaluationsPage = () => {
         );
       },
     }),
+    columnHelper.accessor('updatedAt', {
+      header: 'Last updated',
+      cell: (info) => (
+        <Text variant="bodySm">
+          {info.getValue() ? formatDate(info.getValue() as string) : '--'}
+        </Text>
+      ),
+    }),
     columnHelper.accessor('completedAt', {
       header: 'Completed on',
       cell: (info) => (
@@ -316,7 +335,9 @@ const EvaluationsPage = () => {
             hoverable={true}
             hideSelection={true}
             hideFooter={filteredEvaluations.length <= 10}
-            sortColumns={['completedAt', 'status', 'auditType', 'evaluationMode']}
+            sortColumns={['updatedAt', 'completedAt', 'status', 'auditType', 'evaluationMode']}
+            sortingState={EVALUATIONS_UPDATED_AT_SORT}
+            defaultSortDirection="desc"
           />
         </div>
       )}
