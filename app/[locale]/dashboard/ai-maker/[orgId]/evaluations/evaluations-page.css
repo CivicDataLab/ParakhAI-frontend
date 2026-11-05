@@ -100,19 +100,47 @@ Styles for ai-maker evaluations list page
   padding-left: 0.65rem;
 }
 
-/* Tests (6th) and Completed (7th) columns */
+/* Tests (6th) */
 .evaluations-table-evaluation-mode-col th:nth-child(6),
-.evaluations-table-evaluation-mode-col td:nth-child(6),
-.evaluations-table-evaluation-mode-col th:nth-child(7),
-.evaluations-table-evaluation-mode-col td:nth-child(7) {
+.evaluations-table-evaluation-mode-col td:nth-child(6) {
   width: 180px;
   max-width: 220px;
   min-width: 160px;
   box-sizing: border-box;
 }
 
-.evaluations-table-evaluation-mode-col td:nth-child(7) {
+/* Last updated (7th) and Completed on (8th) */
+.evaluations-table-evaluation-mode-col th:nth-child(7),
+.evaluations-table-evaluation-mode-col td:nth-child(7),
+.evaluations-table-evaluation-mode-col th:nth-child(8),
+.evaluations-table-evaluation-mode-col td:nth-child(8) {
+  width: 210px;
+  max-width: 260px;
+  min-width: 200px;
+  box-sizing: border-box;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.evaluations-table-evaluation-mode-col td:nth-child(7),
+.evaluations-table-evaluation-mode-col td:nth-child(8) {
   padding-left: 2.1rem;
+}
+
+/* Nudge header label + sort icon right to match the date values */
+.evaluations-table-evaluation-mode-col th:nth-child(7),
+.evaluations-table-evaluation-mode-col th:nth-child(8) {
+  padding-left: 2.25rem !important;
+}
+
+.evaluations-table-evaluation-mode-col th:nth-child(7) > *,
+.evaluations-table-evaluation-mode-col th:nth-child(8) > * {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.35rem;
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+  white-space: nowrap;
 }
 
 /* Table headers: force 14px for all header labels (and inner wrappers/icons) */
@@ -221,17 +249,43 @@ Styles for ai-maker evaluations list page
 }
 
 .evaluations-table-model-detail-col th:nth-child(5),
-.evaluations-table-model-detail-col td:nth-child(5),
-.evaluations-table-model-detail-col th:nth-child(6),
-.evaluations-table-model-detail-col td:nth-child(6) {
+.evaluations-table-model-detail-col td:nth-child(5) {
   width: 180px;
   max-width: 220px;
   min-width: 160px;
   box-sizing: border-box;
 }
 
-.evaluations-table-model-detail-col td:nth-child(6) {
+.evaluations-table-model-detail-col th:nth-child(6),
+.evaluations-table-model-detail-col td:nth-child(6),
+.evaluations-table-model-detail-col th:nth-child(7),
+.evaluations-table-model-detail-col td:nth-child(7) {
+  width: 210px;
+  max-width: 260px;
+  min-width: 200px;
+  box-sizing: border-box;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.evaluations-table-model-detail-col td:nth-child(6),
+.evaluations-table-model-detail-col td:nth-child(7) {
   padding-left: 2.1rem;
+}
+
+.evaluations-table-model-detail-col th:nth-child(6),
+.evaluations-table-model-detail-col th:nth-child(7) {
+  padding-left: 2.75rem;
+}
+
+.evaluations-table-model-detail-col th:nth-child(6) > *,
+.evaluations-table-model-detail-col th:nth-child(7) > * {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.35rem;
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+  white-space: nowrap;
 }
 
 .evaluations-table-model-detail-col th,
