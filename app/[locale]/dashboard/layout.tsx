@@ -4,7 +4,7 @@ import MainFooter from '@/components/layout/MainFooter';
 import MainNav from '@/components/layout/MainNav';
 
 export const metadata: Metadata = {
-  title: 'Dashboard | ParakhAI',
+  title: 'Dashboard',
   description: 'ParakhAI Dashboard - Select Your Role',
 };
 
