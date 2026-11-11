@@ -26,6 +26,7 @@ type Evaluation = {
   createdAt: string;
   startedAt: string | null;
   completedAt: string | null;
+  updatedAt: string | null;
   modelName: string | null;
   modelId: string;
   auditType: string;
@@ -114,7 +115,12 @@ const AIMakerDashboard = () => {
 
   const GET_EVALUATIONS = `
      query GetAudits($limit: Int, $offset: Int) {
-    audits(limit: $limit, offset: $offset, filters: null, sortOptions: null) {
+    audits(
+      limit: $limit
+      offset: $offset
+      filters: null
+      sortOptions: [{ field: "updated_at", direction: "desc" }]
+    ) {
       data{
       id
       name
@@ -131,6 +137,7 @@ const AIMakerDashboard = () => {
       createdAt
       startedAt
       completedAt
+      updatedAt
     }
     totalItemsCount
   }
@@ -216,7 +223,11 @@ const AIMakerDashboard = () => {
   const recentEvaluations = useMemo(
     () =>
       [...evaluations]
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .sort(
+          (a, b) =>
+            new Date(b.updatedAt || b.createdAt || 0).getTime() -
+            new Date(a.updatedAt || a.createdAt || 0).getTime()
+        )
         .slice(0, 5),
     [evaluations]
   );
@@ -324,6 +335,10 @@ const AIMakerDashboard = () => {
             </div>
           );
         },
+      }),
+      columnHelper.accessor('updatedAt', {
+        header: 'Last updated',
+        cell: (info) => <Text variant="bodySm">{formatEvaluationDate(info.getValue())}</Text>,
       }),
       columnHelper.accessor('completedAt', {
         header: 'Completed on',
