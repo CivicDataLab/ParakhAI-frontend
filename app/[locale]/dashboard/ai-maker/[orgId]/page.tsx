@@ -77,11 +77,11 @@ const AIMakerDashboard = () => {
 
   const inAppPath = `/${locale}/dashboard/ai-maker/${orgId}/ai-models`;
 
-  // External (CivicDataSpace): /dashboard/organization/{orgSlug}/aimodels?tab=registered
-  // e.g. https://dev.civicdataspace.in/dashboard/organization/civicdatalab/aimodels?tab=registered
+  // External (CivicDataSpace): /dashboard/organization/{orgSlug}/aimodels
+  // e.g. https://dev.civicdataspace.in/dashboard/organization/civicdatalab/aimodels
   const externalHost =
     process.env.NEXT_PUBLIC_DATASPACE_HOST || process.env.NEXT_PUBLIC_AI_MAKER_URL || '';
-  const externalPath = orgSlug ? `/dashboard/organization/${orgSlug}/aimodels?tab=registered` : '';
+  const externalPath = orgSlug ? `/dashboard/organization/${orgSlug}/aimodels` : '';
   let externalUrl = '';
   if (externalHost.trim() !== '' && externalPath) {
     const host = externalHost.replace(/\/$/, '');

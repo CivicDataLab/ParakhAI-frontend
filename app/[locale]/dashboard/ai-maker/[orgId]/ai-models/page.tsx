@@ -1,24 +1,14 @@
-﻿"use client";
+﻿'use client';
 
-import { Icons } from "@/components/icons";
-import { Pagination } from "@/components/common/Pagination/Pagination";
-import { useGraphQL } from "@/lib/graphql-client";
-import { stripMarkdown } from "@/utils";
-import { IconChevronDown, IconMinus, IconX } from "@tabler/icons-react";
-import { useParams, useRouter } from "next/navigation";
-import {
-  AlertDialog,
-  Button,
-  Card,
-  DataTable,
-  Dialog,
-  Popover,
-  Spinner,
-  Tag,
-  Text,
-} from "opub-ui";
-import React from "react";
-import { useOrganization } from "@/features/ai-maker/context/OrganizationContext";
+import React from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { IconChevronDown, IconMinus, IconX } from '@tabler/icons-react';
+import { AlertDialog, Button, Card, DataTable, Dialog, Popover, Spinner, Tag, Text } from 'opub-ui';
+import { useOrganization } from '@/features/ai-maker/context/OrganizationContext';
+import { Pagination } from '@/components/common/Pagination/Pagination';
+import { Icons } from '@/components/icons';
+import { useGraphQL } from '@/lib/graphql-client';
+import { stripMarkdown } from '@/utils';
 
 type AIModel = {
   id: string;
@@ -67,73 +57,73 @@ const AI_MODELS_QUERY = `
 `;
 
 const sectorOptions = [
-  "Healthcare",
-  "Technology",
-  "Finance",
-  "Law & Justice",
-  "General Translation",
+  'Healthcare',
+  'Technology',
+  'Finance',
+  'Law & Justice',
+  'General Translation',
 ];
 const tagOptions = [
-  "English",
-  "Clinical",
-  "Justice",
-  "Mizo",
-  "Odiya",
-  "Translation",
-  "Finance",
-  "Education",
-  "Healthcare",
-  "Technology",
-  "Agriculture",
-  "Manufacturing",
-  "Retail",
-  "Tourism",
-  "Transport",
-  "Energy",
-  "Environment",
-  "Public Policy",
-  "Data Science",
-  "Cybersecurity",
-  "Analytics",
-  "Compliance",
-  "Marketing",
-  "Legal",
-  "Research",
-  "Operations",
-  "Human Resources",
-  "Logistics",
-  "Content",
-  "Localization",
-  "Quality Assurance",
-  "Testing",
-  "Sales",
-  "Strategy",
-  "Innovation",
-  "Engineering",
-  "Automation",
-  "Simulation",
-  "Predictive Modeling",
-  "Benchmarking",
-  "Risk Assessment",
-  "Auditing",
-  "Accessibility",
-  "Performance",
-  "Ethics",
-  "Diversity",
-  "Inclusion",
-  "Governance",
-  "Regulation",
-  "Open Data",
-  "Knowledge Base",
-  "Documentation",
-  "Citizen Services",
-  "Smart Cities",
-  "Climate",
-  "Finance Analytics",
-  "Behavioral Insights",
-  "Scenario Planning",
-  "Rapid Prototyping",
-  "Localization QA",
+  'English',
+  'Clinical',
+  'Justice',
+  'Mizo',
+  'Odiya',
+  'Translation',
+  'Finance',
+  'Education',
+  'Healthcare',
+  'Technology',
+  'Agriculture',
+  'Manufacturing',
+  'Retail',
+  'Tourism',
+  'Transport',
+  'Energy',
+  'Environment',
+  'Public Policy',
+  'Data Science',
+  'Cybersecurity',
+  'Analytics',
+  'Compliance',
+  'Marketing',
+  'Legal',
+  'Research',
+  'Operations',
+  'Human Resources',
+  'Logistics',
+  'Content',
+  'Localization',
+  'Quality Assurance',
+  'Testing',
+  'Sales',
+  'Strategy',
+  'Innovation',
+  'Engineering',
+  'Automation',
+  'Simulation',
+  'Predictive Modeling',
+  'Benchmarking',
+  'Risk Assessment',
+  'Auditing',
+  'Accessibility',
+  'Performance',
+  'Ethics',
+  'Diversity',
+  'Inclusion',
+  'Governance',
+  'Regulation',
+  'Open Data',
+  'Knowledge Base',
+  'Documentation',
+  'Citizen Services',
+  'Smart Cities',
+  'Climate',
+  'Finance Analytics',
+  'Behavioral Insights',
+  'Scenario Planning',
+  'Rapid Prototyping',
+  'Localization QA',
 ];
 
 const AIModelsPage = () => {
@@ -142,41 +132,33 @@ const AIModelsPage = () => {
   const { request, isAuthenticated } = useGraphQL();
   const router = useRouter();
   const params = useParams();
-  const locale = params?.locale || "en";
+  const locale = params?.locale || 'en';
   const orgId = params?.orgId as string;
 
-  const [searchValue, setSearchValue] = React.useState("");
+  const [searchValue, setSearchValue] = React.useState('');
   const [showRedirectPrompt, setShowRedirectPrompt] = React.useState(false);
   const [selectedSectors, setSelectedSectors] = React.useState<string[]>([]);
   const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = React.useState(false);
-  const [resultsPerPage, setResultsPerPage] = React.useState("9");
+  const [resultsPerPage, setResultsPerPage] = React.useState('9');
   const [currentPage, setCurrentPage] = React.useState(1);
   const [sectorsExpanded, setSectorsExpanded] = React.useState(true);
   const [tagsExpanded, setTagsExpanded] = React.useState(true);
-  const [selectedModel, setSelectedModel] = React.useState<AIModel | null>(
-    null
-  );
+  const [selectedModel, setSelectedModel] = React.useState<AIModel | null>(null);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [showNotice, setShowNotice] = React.useState(true);
   const [aiModels, setAiModels] = React.useState<AIModel[]>([]);
   const { organization } = useOrganization();
-  const orgSlug = encodeURIComponent(
-    String(organization?.slug ?? orgId ?? "").trim(),
-  );
+  const orgSlug = encodeURIComponent(String(organization?.slug ?? orgId ?? '').trim());
   const inAppPath = `/${locale}/dashboard/ai-maker/${orgId}/ai-models`;
   const externalHost =
-    process.env.NEXT_PUBLIC_DATASPACE_HOST ||
-    process.env.NEXT_PUBLIC_AI_MAKER_URL ||
-    "";
-  const externalPath = orgSlug
-    ? `/dashboard/organization/${orgSlug}/aimodels?tab=registered`
-    : "";
-  let externalUrl = "";
-  if (externalHost.trim() !== "" && externalPath) {
-    const host = externalHost.replace(/\/$/, "");
+    process.env.NEXT_PUBLIC_DATASPACE_HOST || process.env.NEXT_PUBLIC_AI_MAKER_URL || '';
+  const externalPath = orgSlug ? `/dashboard/organization/${orgSlug}/aimodels` : '';
+  let externalUrl = '';
+  if (externalHost.trim() !== '' && externalPath) {
+    const host = externalHost.replace(/\/$/, '');
     if (/\/dashboard$/.test(host)) {
-      externalUrl = `${host}${externalPath.replace(/^\/dashboard/, "")}`;
+      externalUrl = `${host}${externalPath.replace(/^\/dashboard/, '')}`;
     } else {
       externalUrl = `${host}${externalPath}`;
     }
@@ -185,16 +167,16 @@ const AIModelsPage = () => {
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const modelTypeLabels: Record<string, string> = {
-    TRANSLATION: "Translation",
-    TEXT_GENERATION: "Text Generation",
-    SUMMARIZATION: "Summarisation",
-    QUESTION_ANSWERING: "Question Answering",
-    SENTIMENT_ANALYSIS: "Sentiment Analysis",
-    TEXT_CLASSIFICATION: "Text Classification",
-    NAMED_ENTITY_RECOGNITION: "Named Entity Recognition",
-    TEXT_TO_SPEECH: "Text to Speech",
-    SPEECH_TO_TEXT: "Speech to Text",
-    OTHER: "Other",
+    TRANSLATION: 'Translation',
+    TEXT_GENERATION: 'Text Generation',
+    SUMMARIZATION: 'Summarisation',
+    QUESTION_ANSWERING: 'Question Answering',
+    SENTIMENT_ANALYSIS: 'Sentiment Analysis',
+    TEXT_CLASSIFICATION: 'Text Classification',
+    NAMED_ENTITY_RECOGNITION: 'Named Entity Recognition',
+    TEXT_TO_SPEECH: 'Text to Speech',
+    SPEECH_TO_TEXT: 'Speech to Text',
+    OTHER: 'Other',
   };
 
   const handleToggleSelection = (
@@ -202,22 +184,20 @@ const AIModelsPage = () => {
     setter: React.Dispatch<React.SetStateAction<string[]>>
   ) => {
     setter((prev) =>
-      prev.includes(value)
-        ? prev.filter((item) => item !== value)
-        : [...prev, value]
+      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
     );
   };
 
   const formatDate = (dateString?: string | null) => {
-    if (!dateString) return "--";
+    if (!dateString) return '--';
 
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "--";
+    if (isNaN(date.getTime())) return '--';
 
-    return date.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
+    return date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
     });
   };
 
@@ -247,7 +227,7 @@ const AIModelsPage = () => {
         }>(
           AI_MODELS_QUERY,
           {
-            status: "ACTIVE",
+            status: 'ACTIVE',
             modelType: null,
             provider: null,
             limit: 50,
@@ -269,7 +249,7 @@ const AIModelsPage = () => {
           testCasesCount: model.testCasesCount, // Placeholder
           auditsCount: model.auditsCount, // Placeholder
           tags: [modelTypeLabels[model.modelType] || model.modelType],
-          owner: model.organization || "ParakhAI",
+          owner: model.organization || 'ParakhAI',
           updatedAt: model.updatedAt, // Placeholder
         }));
         // const formatted: AIModel[] = await Promise.all(
@@ -296,9 +276,9 @@ const AIModelsPage = () => {
 
         setAiModels(formatted);
       } catch (error: any) {
-        const errorMessage = error?.message || "Failed to load AI models";
+        const errorMessage = error?.message || 'Failed to load AI models';
         setError(errorMessage);
-        console.error("Error fetching AI models:", error);
+        console.error('Error fetching AI models:', error);
       } finally {
         setIsLoading(false);
       }
@@ -320,17 +300,11 @@ const AIModelsPage = () => {
     return matchesSearch && matchesSector && matchesTags;
   });
 
-  const formatNumber = React.useCallback(
-    (value: number) => value.toLocaleString(),
-    []
-  );
+  const formatNumber = React.useCallback((value: number) => value.toLocaleString(), []);
 
   // Pagination logic
   const itemsPerPage = parseInt(resultsPerPage, 10);
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredModels.length / itemsPerPage)
-  );
+  const totalPages = Math.max(1, Math.ceil(filteredModels.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedModels = filteredModels.slice(startIndex, endIndex);
@@ -349,9 +323,7 @@ const AIModelsPage = () => {
 
   // Handle card click to navigate to detail page
   const handleCardClick = (model: AIModel) => {
-    router.push(
-      `/${locale}/dashboard/ai-maker/${params.orgId}/ai-models/${model.id}`
-    );
+    router.push(`/${locale}/dashboard/ai-maker/${params.orgId}/ai-models/${model.id}`);
   };
 
   // Handle New Evaluation button click
@@ -368,10 +340,10 @@ const AIModelsPage = () => {
 
     // Generate sample data based on selected model
     return Array.from({ length: 13 }, (_, index) => ({
-      input: "Content",
-      idealOutput: "Content",
-      columnName1: "Content",
-      columnName2: "Content",
+      input: 'Content',
+      idealOutput: 'Content',
+      columnName1: 'Content',
+      columnName2: 'Content',
     }));
   }, [selectedModel]);
 
@@ -379,30 +351,25 @@ const AIModelsPage = () => {
   const columns = React.useMemo(
     () => [
       {
-        accessorKey: "input",
+        accessorKey: 'input',
         header: (
           <span className="dt-header-with-icon">
-            <img
-              src="/images/icons/arrows-sort.png"
-              alt=""
-              width={12}
-              height={12}
-            />
+            <img src="/images/icons/arrows-sort.png" alt="" width={12} height={12} />
             <span>Input</span>
           </span>
         ),
       },
       {
-        accessorKey: "idealOutput",
-        header: "Ideal Output",
+        accessorKey: 'idealOutput',
+        header: 'Ideal Output',
       },
       {
-        accessorKey: "columnName1",
-        header: "Column name",
+        accessorKey: 'columnName1',
+        header: 'Column name',
       },
       {
-        accessorKey: "columnName2",
-        header: "Column name",
+        accessorKey: 'columnName2',
+        header: 'Column name',
       },
     ],
     []
@@ -413,16 +380,11 @@ const AIModelsPage = () => {
       <div className="ai-models-content">
         <div className="prompt-page-header mt-10 text-left">
           <div>
-            <Text
-              as="h1"
-              className="prompt-page-title text-left"
-              fontWeight="bold"
-            >
+            <Text as="h1" className="prompt-page-title text-left" fontWeight="bold">
               AI Models
             </Text>
             <Text variant="bodySm" className="text-gray-600 mt-1">
-              Browse and manage AI models registered for evaluation in your
-              organization
+              Browse and manage AI models registered for evaluation in your organization
             </Text>
           </div>
         </div>
@@ -433,11 +395,7 @@ const AIModelsPage = () => {
               Search AI models
             </label>
             <div className="prompt-search-box">
-              <SearchIcon
-                size={18}
-                className="prompt-search-icon"
-                aria-hidden
-              />
+              <SearchIcon size={18} className="prompt-search-icon" aria-hidden />
               <input
                 id="aiModelsSearch"
                 type="text"
@@ -450,7 +408,7 @@ const AIModelsPage = () => {
                 <button
                   type="button"
                   className="prompt-search-clear"
-                  onClick={() => setSearchValue("")}
+                  onClick={() => setSearchValue('')}
                   aria-label="Clear search"
                 >
                   <ClearIcon size={16} aria-hidden />
@@ -462,7 +420,7 @@ const AIModelsPage = () => {
             <Button
               kind="primary"
               onClick={() => setShowRedirectPrompt(true)}
-              className="bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-medium text-base border-none"
+              className="text-base rounded-[8px] border-none bg-primaryPurple2 px-8 py-3 font-medium text-white hover:!bg-[#6849EE] hover:bg-[#6849EE] hover:!text-white hover:text-white"
             >
               Add A New Model
             </Button>
@@ -584,13 +542,9 @@ const AIModelsPage = () => {
                 textColor="#0A0704"
                 onRemove={() => {
                   if (selectedSectors.includes(filter)) {
-                    setSelectedSectors((prev) =>
-                      prev.filter((sector) => sector !== filter)
-                    );
+                    setSelectedSectors((prev) => prev.filter((sector) => sector !== filter));
                   } else {
-                    setSelectedTags((prev) =>
-                      prev.filter((tag) => tag !== filter)
-                    );
+                    setSelectedTags((prev) => prev.filter((tag) => tag !== filter));
                   }
                 }}
               >
@@ -600,22 +554,22 @@ const AIModelsPage = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center gap-4 py-8 col-span-full">
+            <div className="col-span-full flex flex-col items-center justify-center gap-4 py-8">
               <Spinner />
               <Text variant="bodySm" className="text-gray-600">
                 Loading AI models...
               </Text>
             </div>
           ) : error ? (
-            <div className="py-8 text-center col-span-full">
+            <div className="col-span-full py-8 text-center">
               <Text variant="bodySm" className="text-red-600">
                 {error}
               </Text>
             </div>
           ) : paginatedModels.length === 0 ? (
-            <div className="py-8 text-center col-span-full">
+            <div className="col-span-full py-8 text-center">
               <Text variant="bodySm" className="text-gray-600">
                 No AI models found.
               </Text>
@@ -628,22 +582,20 @@ const AIModelsPage = () => {
               const metadataContent = [
                 {
                   icon: Icons.testPipe,
-                  label: "Test cases",
+                  label: 'Test cases',
                   value: testCasesValue,
                 },
                 {
                   icon: Icons.discountCheck,
-                  label: "Evaluations",
+                  label: 'Evaluations',
                   value: auditsValue,
                 },
               ] as any;
 
               // Alternate between Parakh and CDL for different cards
               const rightIcon =
-                index % 2 === 0
-                  ? "/images/icons/Parakh.png"
-                  : "/images/icons/CDL.png";
-              const rightLabel = index % 2 === 0 ? "Parakh" : "CDL";
+                index % 2 === 0 ? '/images/icons/Parakh.png' : '/images/icons/CDL.png';
+              const rightLabel = index % 2 === 0 ? 'Parakh' : 'CDL';
 
               // const footerContent = [
               //   // {
@@ -658,22 +610,20 @@ const AIModelsPage = () => {
 
               const type = (model.tags || []).map((tag) => ({
                 label: tag,
-                fillColor: "#E2F5C4",
-                borderColor: "#E2F5C4",
+                fillColor: '#E2F5C4',
+                borderColor: '#E2F5C4',
               }));
 
               return (
                 <div key={model.id} className="ai-models-card-wrapper">
                   <div
                     onClick={() => handleCardClick(model)}
-                    style={{ cursor: "pointer" }}
+                    style={{ cursor: 'pointer' }}
                     className="h-full"
                   >
                     <Card
                       title={model.displayName}
-                      description={
-                        stripMarkdown(model.description || "") || ""
-                      }
+                      description={stripMarkdown(model.description || '') || ''}
                       variation="collapsed"
                       iconColor="highlight"
                       metadataContent={metadataContent}
@@ -711,31 +661,22 @@ const AIModelsPage = () => {
           headerHidden
           large
           className="AIModelDlg"
-          style={{ maxHeight: "85vh" }}
+          style={{ maxHeight: '85vh' }}
           primaryAction={{
-            content: "",
+            content: '',
             onAction: () => {},
           }}
           secondaryActions={[
             {
-              content: "",
+              content: '',
               onAction: () => setDialogOpen(false),
             },
           ]}
         >
           <div className="AIModelDlg__hdr">
             <div className="AIModelDlg__actions">
-              <button
-                className="AIModelDlg__flag"
-                aria-label="Flag this model"
-                onClick={() => {}}
-              >
-                <img
-                  src="/images/icons/flag-2-filled.png"
-                  alt="Flag"
-                  width={18}
-                  height={18}
-                />
+              <button className="AIModelDlg__flag" aria-label="Flag this model" onClick={() => {}}>
+                <img src="/images/icons/flag-2-filled.png" alt="Flag" width={18} height={18} />
               </button>
 
               <button
@@ -757,8 +698,8 @@ const AIModelsPage = () => {
           {showNotice && (
             <div className="AIModelDlg__note">
               <span>
-                Notice something wrong with this AI model? Flag the issue by
-                clicking the red flag above.
+                Notice something wrong with this AI model? Flag the issue by clicking the red flag
+                above.
               </span>
               <button
                 type="button"
@@ -784,36 +725,32 @@ const AIModelsPage = () => {
         </Dialog.Content>
       </Dialog>
 
-      <AlertDialog
-        open={showRedirectPrompt}
-        onOpenChange={setShowRedirectPrompt}
-      >
+      <AlertDialog open={showRedirectPrompt} onOpenChange={setShowRedirectPrompt}>
         <AlertDialog.Content
           title="Redirect to CivicDataSpace"
-          primaryAction={{
-            content: "Yes, continue",
-            onAction: () => {
-              setShowRedirectPrompt(false);
-              if (externalUrl) {
-                window.open(addModelUrl, "_blank", "noopener,noreferrer");
-              } else {
-                router.push(addModelUrl);
-              }
-            },
-            className:
-              "bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white",
-          } as any}
+          primaryAction={
+            {
+              content: 'Yes, continue',
+              onAction: () => {
+                setShowRedirectPrompt(false);
+                if (externalUrl) {
+                  window.open(addModelUrl, '_blank', 'noopener,noreferrer');
+                } else {
+                  router.push(addModelUrl);
+                }
+              },
+              className: 'bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white',
+            } as any
+          }
           secondaryActions={[
             {
-              content: "No",
+              content: 'No',
               onAction: () => setShowRedirectPrompt(false),
-              className:
-                "bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white",
+              className: 'bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white',
             } as any,
           ]}
         >
-          You are being redirected to CivicDataSpace to add a model. Do you want
-          to continue?
+          You are being redirected to CivicDataSpace to add a model. Do you want to continue?
         </AlertDialog.Content>
       </AlertDialog>
     </>
