@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useParams } from 'next/navigation';
-import { Button, Card, Popover, Spinner, Tag, Text } from 'opub-ui';
+import { AlertDialog, Button, Card, Popover, Spinner, Tag, Text } from 'opub-ui';
 import { useOrganization } from '@/features/ai-maker/context/OrganizationContext';
 import { Pagination } from '@/components/common/Pagination/Pagination';
 import { Icons } from '@/components/icons';
@@ -159,6 +159,21 @@ const PromptLibrariesPage = () => {
     return () => clearTimeout(timer);
   }, [searchValue]);
   const { organization } = useOrganization();
+  const [showRedirectPrompt, setShowRedirectPrompt] = React.useState(false);
+
+  // External (CivicDataSpace): /dashboard/organization/{orgSlug}/dataset
+  // e.g. https://dev.civicdataspace.in/dashboard/organization/civicdatalab/dataset
+  const orgSlug = encodeURIComponent(String(organization?.slug ?? params.orgId ?? '').trim());
+  const externalHost =
+    process.env.NEXT_PUBLIC_DATASPACE_HOST || process.env.NEXT_PUBLIC_AI_MAKER_URL || '';
+  const externalPath = orgSlug ? `/dashboard/organization/${orgSlug}/dataset` : '';
+  let addDatasetUrl = '';
+  if (externalHost.trim() !== '' && externalPath) {
+    const host = externalHost.replace(/\/$/, '');
+    addDatasetUrl = /\/dashboard$/.test(host)
+      ? `${host}${externalPath.replace(/^\/dashboard/, '')}`
+      : `${host}${externalPath}`;
+  }
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const handleToggleSelection = (
@@ -352,6 +367,14 @@ const PromptLibrariesPage = () => {
             </div>
           </div>
           <div className="prompt-search-actions">
+            <Button
+              kind="primary"
+              onClick={() => setShowRedirectPrompt(true)}
+              disabled={!addDatasetUrl}
+              className="text-base rounded-[8px] border-none bg-primaryPurple2 px-8 py-3 font-medium text-white hover:!bg-[#6849EE] hover:bg-[#6849EE] hover:!text-white hover:text-white"
+            >
+              Add Prompt Dataset
+            </Button>
             {/* Temporarily hidden for now. Keep this Add Filters block for future use.
             <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
               <Popover.Trigger asChild>
@@ -584,6 +607,33 @@ const PromptLibrariesPage = () => {
           label="Results per page"
         />
       </div>
+      <AlertDialog open={showRedirectPrompt} onOpenChange={setShowRedirectPrompt}>
+        <AlertDialog.Content
+          title="Redirect to CivicDataSpace"
+          primaryAction={
+            {
+              content: 'Yes, continue',
+              onAction: () => {
+                setShowRedirectPrompt(false);
+                if (addDatasetUrl) {
+                  window.open(addDatasetUrl, '_blank', 'noopener,noreferrer');
+                }
+              },
+              className: 'bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white',
+            } as any
+          }
+          secondaryActions={[
+            {
+              content: 'No',
+              onAction: () => setShowRedirectPrompt(false),
+              className: 'bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white',
+            } as any,
+          ]}
+        >
+          You are being redirected to CivicDataSpace to add a prompt dataset. Do you want to
+          continue?
+        </AlertDialog.Content>
+      </AlertDialog>
     </>
   );
 };
