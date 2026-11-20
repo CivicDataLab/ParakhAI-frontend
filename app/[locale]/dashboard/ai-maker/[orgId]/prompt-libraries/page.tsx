@@ -1,20 +1,13 @@
-﻿"use client";
+﻿'use client';
 
-import { Icons } from "@/components/icons";
-import { Pagination } from "@/components/common/Pagination/Pagination";
-import { useGraphQL } from "@/lib/graphql-client";
-import { useParams } from "next/navigation";
-import { stripMarkdown, toTitleCase } from "@/utils";
-import {
-  Button,
-  Card,
-  Popover,
-  Spinner,
-  Tag,
-  Text,
-} from "opub-ui";
-import React from "react";
-import { useOrganization } from "@/features/ai-maker/context/OrganizationContext";
+import React from 'react';
+import { useParams } from 'next/navigation';
+import { AlertDialog, Button, Card, Popover, Spinner, Tag, Text } from 'opub-ui';
+import { useOrganization } from '@/features/ai-maker/context/OrganizationContext';
+import { Pagination } from '@/components/common/Pagination/Pagination';
+import { Icons } from '@/components/icons';
+import { useGraphQL } from '@/lib/graphql-client';
+import { stripMarkdown, toTitleCase } from '@/utils';
 
 type PromptLibrary = {
   id: string;
@@ -57,73 +50,73 @@ const PROMPT_DATASETS_QUERY = `
 `;
 
 const sectorOptions = [
-  "Healthcare",
-  "Technology",
-  "Finance",
-  "Law & Justice",
-  "General Translation",
+  'Healthcare',
+  'Technology',
+  'Finance',
+  'Law & Justice',
+  'General Translation',
 ];
 const tagOptions = [
-  "English",
-  "Clinical",
-  "Justice",
-  "Mizo",
-  "Odiya",
-  "Translation",
-  "Finance",
-  "Education",
-  "Healthcare",
-  "Technology",
-  "Agriculture",
-  "Manufacturing",
-  "Retail",
-  "Tourism",
-  "Transport",
-  "Energy",
-  "Environment",
-  "Public Policy",
-  "Data Science",
-  "Cybersecurity",
-  "Analytics",
-  "Compliance",
-  "Marketing",
-  "Legal",
-  "Research",
-  "Operations",
-  "Human Resources",
-  "Logistics",
-  "Content",
-  "Localization",
-  "Quality Assurance",
-  "Testing",
-  "Sales",
-  "Strategy",
-  "Innovation",
-  "Engineering",
-  "Automation",
-  "Simulation",
-  "Predictive Modeling",
-  "Benchmarking",
-  "Risk Assessment",
-  "Auditing",
-  "Accessibility",
-  "Performance",
-  "Ethics",
-  "Diversity",
-  "Inclusion",
-  "Governance",
-  "Regulation",
-  "Open Data",
-  "Knowledge Base",
-  "Documentation",
-  "Citizen Services",
-  "Smart Cities",
-  "Climate",
-  "Finance Analytics",
-  "Behavioral Insights",
-  "Scenario Planning",
-  "Rapid Prototyping",
-  "Localization QA",
+  'English',
+  'Clinical',
+  'Justice',
+  'Mizo',
+  'Odiya',
+  'Translation',
+  'Finance',
+  'Education',
+  'Healthcare',
+  'Technology',
+  'Agriculture',
+  'Manufacturing',
+  'Retail',
+  'Tourism',
+  'Transport',
+  'Energy',
+  'Environment',
+  'Public Policy',
+  'Data Science',
+  'Cybersecurity',
+  'Analytics',
+  'Compliance',
+  'Marketing',
+  'Legal',
+  'Research',
+  'Operations',
+  'Human Resources',
+  'Logistics',
+  'Content',
+  'Localization',
+  'Quality Assurance',
+  'Testing',
+  'Sales',
+  'Strategy',
+  'Innovation',
+  'Engineering',
+  'Automation',
+  'Simulation',
+  'Predictive Modeling',
+  'Benchmarking',
+  'Risk Assessment',
+  'Auditing',
+  'Accessibility',
+  'Performance',
+  'Ethics',
+  'Diversity',
+  'Inclusion',
+  'Governance',
+  'Regulation',
+  'Open Data',
+  'Knowledge Base',
+  'Documentation',
+  'Citizen Services',
+  'Smart Cities',
+  'Climate',
+  'Finance Analytics',
+  'Behavioral Insights',
+  'Scenario Planning',
+  'Rapid Prototyping',
+  'Localization QA',
 ];
 
 const PromptLibrariesPage = () => {
@@ -131,19 +124,50 @@ const PromptLibrariesPage = () => {
   const ClearIcon = Icons.cross;
   const { request, isAuthenticated } = useGraphQL();
   const params = useParams();
+  const orgId = params?.orgId as string;
 
-  const [searchValue, setSearchValue] = React.useState("");
+  const [searchValue, setSearchValue] = React.useState('');
+  const [showRedirectPrompt, setShowRedirectPrompt] = React.useState(false);
   const [selectedSectors, setSelectedSectors] = React.useState<string[]>([]);
   const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = React.useState(false);
-  const [resultsPerPage, setResultsPerPage] = React.useState("9");
+  const [resultsPerPage, setResultsPerPage] = React.useState('9');
   const [currentPage, setCurrentPage] = React.useState(1);
   const [sectorsExpanded, setSectorsExpanded] = React.useState(true);
   const [tagsExpanded, setTagsExpanded] = React.useState(true);
-  const [promptLibraries, setPromptLibraries] = React.useState<PromptLibrary[]>(
-    []
-  );
+  const [promptLibraries, setPromptLibraries] = React.useState<PromptLibrary[]>([]);
   const { organization } = useOrganization();
+  // Prompt libraries are DataSpace datasets of type PROMPT; they are created
+  // from the org's dataset listing ("Create Dataset" → "Prompt").
+  const orgSlug = encodeURIComponent(String(organization?.slug ?? orgId ?? '').trim());
+  const externalHost =
+    process.env.NEXT_PUBLIC_DATASPACE_HOST || process.env.NEXT_PUBLIC_AI_MAKER_URL || '';
+  const externalPath = orgSlug ? `/dashboard/organization/${orgSlug}/dataset` : '';
+  let externalUrl = '';
+  if (externalHost.trim() !== '' && externalPath) {
+    const host = externalHost.replace(/\/$/, '');
+    if (/\/dashboard$/.test(host)) {
+      externalUrl = `${host}${externalPath.replace(/^\/dashboard/, '')}`;
+    } else {
+      externalUrl = `${host}${externalPath}`;
+    }
+  }
+  const redirectButtonClass = 'bg-primaryPurple2 hover:bg-[#6849EE] text-white hover:text-white';
+  const continueRedirectAction = {
+    content: 'Yes, continue',
+    onAction: () => {
+      setShowRedirectPrompt(false);
+      if (externalUrl) {
+        window.open(externalUrl, '_blank', 'noopener,noreferrer');
+      }
+    },
+    className: redirectButtonClass,
+  };
+  const cancelRedirectAction = {
+    content: 'No',
+    onAction: () => setShowRedirectPrompt(false),
+    className: redirectButtonClass,
+  };
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const handleToggleSelection = (
@@ -151,22 +175,20 @@ const PromptLibrariesPage = () => {
     setter: React.Dispatch<React.SetStateAction<string[]>>
   ) => {
     setter((prev) =>
-      prev.includes(value)
-        ? prev.filter((item) => item !== value)
-        : [...prev, value]
+      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
     );
   };
 
   const formatDate = (dateString?: string | null) => {
-    if (!dateString) return "--";
+    if (!dateString) return '--';
 
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "--";
+    if (isNaN(date.getTime())) return '--';
 
-    return date.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
+    return date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
     });
   };
 
@@ -216,19 +238,17 @@ const PromptLibrariesPage = () => {
           resourceCount: ds.resources?.length || 0,
           promptsCount: ds.resources?.[0]?.noOfEntries || 0,
           auditsCount: Math.floor(Math.random() * 300), // Placeholder since API doesn't provide audits
-          sectors: ds.promptMetadata?.domain
-            ? [ds.promptMetadata.domain]
-            : ["General"],
-          tags: ds.promptMetadata?.targetLanguages || ["English"],
-          owner: "ParakhAI",
+          sectors: ds.promptMetadata?.domain ? [ds.promptMetadata.domain] : ['General'],
+          tags: ds.promptMetadata?.targetLanguages || ['English'],
+          owner: 'ParakhAI',
           createdAt: ds.createdAt, // Placeholder since API doesn't provide this
         }));
 
         setPromptLibraries(formatted);
       } catch (error: any) {
-        const errorMessage = error?.message || "Failed to load prompt datasets";
+        const errorMessage = error?.message || 'Failed to load prompt datasets';
         setError(errorMessage);
-        console.error("Error fetching prompt datasets:", error);
+        console.error('Error fetching prompt datasets:', error);
       } finally {
         setIsLoading(false);
       }
@@ -238,30 +258,21 @@ const PromptLibrariesPage = () => {
   }, [isAuthenticated, request]);
 
   const filteredLibraries = promptLibraries.filter((library) => {
-    const matchesSearch = library.title
-      .toLowerCase()
-      .includes(searchValue.toLowerCase());
+    const matchesSearch = library.title.toLowerCase().includes(searchValue.toLowerCase());
     const matchesSector =
       selectedSectors.length === 0 ||
-      (library.sectors &&
-        library.sectors.some((sector) => selectedSectors.includes(sector)));
+      (library.sectors && library.sectors.some((sector) => selectedSectors.includes(sector)));
     const matchesTags =
       selectedTags.length === 0 ||
       (library.tags && library.tags.some((tag) => selectedTags.includes(tag)));
     return matchesSearch && matchesSector && matchesTags;
   });
 
-  const formatNumber = React.useCallback(
-    (value: number) => value.toLocaleString(),
-    []
-  );
+  const formatNumber = React.useCallback((value: number) => value.toLocaleString(), []);
 
   // Pagination logic
   const itemsPerPage = parseInt(resultsPerPage, 10);
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredLibraries.length / itemsPerPage)
-  );
+  const totalPages = Math.max(1, Math.ceil(filteredLibraries.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedLibraries = filteredLibraries.slice(startIndex, endIndex);
@@ -279,24 +290,24 @@ const PromptLibrariesPage = () => {
   }, [totalPages, currentPage]);
 
   const handleCardClick = (library: PromptLibrary) => {
-    let host = process.env.NEXT_PUBLIC_DATASPACE_HOST?.replace(/\/$/, "");
+    let host = process.env.NEXT_PUBLIC_DATASPACE_HOST?.replace(/\/$/, '');
 
     if (!host && process.env.NEXT_PUBLIC_AI_MAKER_URL) {
       try {
         // NEXT_PUBLIC_AI_MAKER_URL may include a path (e.g. /dashboard) — use only the origin
         host = new URL(process.env.NEXT_PUBLIC_AI_MAKER_URL).origin;
       } catch {
-        host = process.env.NEXT_PUBLIC_AI_MAKER_URL.replace(/\/$/, "");
+        host = process.env.NEXT_PUBLIC_AI_MAKER_URL.replace(/\/$/, '');
       }
     }
 
     if (!host) {
-      console.warn("No CivicDataSpace host configured (NEXT_PUBLIC_DATASPACE_HOST).");
+      console.warn('No CivicDataSpace host configured (NEXT_PUBLIC_DATASPACE_HOST).');
       return;
     }
 
     const url = `${host}/datasets/${library.id}`;
-    window.open(url, "_blank", "noopener,noreferrer");
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -319,11 +330,7 @@ const PromptLibrariesPage = () => {
               Search prompt libraries
             </label>
             <div className="prompt-search-box">
-              <SearchIcon
-                size={18}
-                className="prompt-search-icon"
-                aria-hidden
-              />
+              <SearchIcon size={18} className="prompt-search-icon" aria-hidden />
               <input
                 id="promptSearch"
                 type="text"
@@ -336,7 +343,7 @@ const PromptLibrariesPage = () => {
                 <button
                   type="button"
                   className="prompt-search-clear"
-                  onClick={() => setSearchValue("")}
+                  onClick={() => setSearchValue('')}
                   aria-label="Clear search"
                 >
                   <ClearIcon size={16} aria-hidden />
@@ -345,6 +352,13 @@ const PromptLibrariesPage = () => {
             </div>
           </div>
           <div className="prompt-search-actions">
+            <Button
+              kind="primary"
+              onClick={() => setShowRedirectPrompt(true)}
+              className="text-base rounded-[8px] border-none bg-primaryPurple2 px-8 py-3 font-medium text-white hover:!bg-[#6849EE] hover:bg-[#6849EE] hover:!text-white hover:text-white"
+            >
+              Add A New Prompt Library
+            </Button>
             {/* Temporarily hidden for now. Keep this Add Filters block for future use.
             <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
               <Popover.Trigger asChild>
@@ -463,13 +477,9 @@ const PromptLibrariesPage = () => {
                 textColor="#0A0704"
                 onRemove={() => {
                   if (selectedSectors.includes(filter)) {
-                    setSelectedSectors((prev) =>
-                      prev.filter((sector) => sector !== filter)
-                    );
+                    setSelectedSectors((prev) => prev.filter((sector) => sector !== filter));
                   } else {
-                    setSelectedTags((prev) =>
-                      prev.filter((tag) => tag !== filter)
-                    );
+                    setSelectedTags((prev) => prev.filter((tag) => tag !== filter));
                   }
                 }}
               >
@@ -479,36 +489,36 @@ const PromptLibrariesPage = () => {
           ))}
         </div>
 
-        <div className="prompt-card-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8 items-stretch">
+        <div className="prompt-card-grid mt-8 grid grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center gap-4 py-8 col-span-full">
+            <div className="col-span-full flex flex-col items-center justify-center gap-4 py-8">
               <Spinner />
               <Text variant="bodySm" className="text-gray-600">
                 Loading prompt libraries...
               </Text>
             </div>
           ) : error ? (
-            <div className="py-8 text-center col-span-full">
+            <div className="col-span-full py-8 text-center">
               <Text variant="bodySm" className="text-red-600">
                 {error}
               </Text>
             </div>
           ) : paginatedLibraries.length === 0 ? (
-            <div className="py-8 text-center col-span-full">
+            <div className="col-span-full py-8 text-center">
               <Text variant="bodySm" className="text-gray-600">
                 No prompt libraries found.
               </Text>
             </div>
           ) : (
             paginatedLibraries.map((library, index) => {
-              const createdValue = formatDate(library.createdAt) || "Unknown";
+              const createdValue = formatDate(library.createdAt) || 'Unknown';
               const testCasesValue = `${formatNumber(library.promptsCount || 0)} test cases`;
               const auditsValue = `${formatNumber(library.auditsCount || 0)} evaluations`;
 
               const metadataContent = [
                 {
                   icon: Icons.calendar,
-                  label: "Created",
+                  label: 'Created',
                   value: createdValue,
                 },
                 // {
@@ -525,15 +535,13 @@ const PromptLibrariesPage = () => {
 
               // Alternate between Parakh and CDL for different cards
               const rightIcon =
-                index % 2 === 0
-                  ? "/images/icons/Parakh.png"
-                  : "/images/icons/CDL.png";
-              const rightLabel = index % 2 === 0 ? "Parakh" : "CDL";
+                index % 2 === 0 ? '/images/icons/Parakh.png' : '/images/icons/CDL.png';
+              const rightLabel = index % 2 === 0 ? 'Parakh' : 'CDL';
 
               const footerContent = [
                 {
-                  icon: "/images/icons/Disaster.png",
-                  label: "Disaster",
+                  icon: '/images/icons/Disaster.png',
+                  label: 'Disaster',
                 },
                 {
                   icon: rightIcon,
@@ -543,22 +551,17 @@ const PromptLibrariesPage = () => {
 
               const type = (library.sectors || []).map((sector) => ({
                 label: toTitleCase(sector),
-                fillColor: "#E2F5C4",
-                borderColor: "#E2F5C4",
+                fillColor: '#E2F5C4',
+                borderColor: '#E2F5C4',
               }));
 
               return (
                 <div key={library.id} className="ai-models-card-wrapper">
-                  <div
-                    onClick={() => handleCardClick(library)}
-                    className="cursor-pointer h-full"
-                  >
+                  <div onClick={() => handleCardClick(library)} className="h-full cursor-pointer">
                     <Card
                       title={library.title}
                       withViewButton={false}
-                      description={
-                        stripMarkdown(library.description || "") || ""
-                      }
+                      description={stripMarkdown(library.description || '') || ''}
                       variation="collapsed"
                       iconColor="highlight"
                       metadataContent={metadataContent}
@@ -589,6 +592,16 @@ const PromptLibrariesPage = () => {
         />
       </div>
 
+      <AlertDialog open={showRedirectPrompt} onOpenChange={setShowRedirectPrompt}>
+        <AlertDialog.Content
+          title="Redirect to CivicDataSpace"
+          primaryAction={continueRedirectAction}
+          secondaryActions={[cancelRedirectAction]}
+        >
+          You are being redirected to CivicDataSpace to add a prompt library. Do you want to
+          continue?
+        </AlertDialog.Content>
+      </AlertDialog>
     </>
   );
 };
