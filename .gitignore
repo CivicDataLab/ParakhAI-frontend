@@ -47,3 +47,8 @@ next-env.d.ts
 
 # local agent instructions (keep on your machine only)
 AGENTS.md
+accessibility.md
+code-quality.md
+craft-standard.md
+qc.md
+safety-review.md

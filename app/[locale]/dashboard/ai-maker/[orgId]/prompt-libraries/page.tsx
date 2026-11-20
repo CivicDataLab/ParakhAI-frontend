@@ -161,6 +161,8 @@ const PromptLibrariesPage = () => {
   const { organization } = useOrganization();
   const [showRedirectPrompt, setShowRedirectPrompt] = React.useState(false);
 
+  // Prompt libraries are DataSpace datasets of type PROMPT; they are created
+  // from the org's dataset listing ("Create Dataset" → "Prompt").
   // External (CivicDataSpace): /dashboard/organization/{orgSlug}/dataset
   // e.g. https://dev.civicdataspace.in/dashboard/organization/civicdatalab/dataset
   const orgSlug = encodeURIComponent(String(organization?.slug ?? params.orgId ?? '').trim());
