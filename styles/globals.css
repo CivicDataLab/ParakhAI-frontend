@@ -4231,6 +4231,24 @@ div:has(> .recommendation-modal-footer) {
   margin-top: 1rem;
 }
 
+/* Heading + search row; wraps on narrow screens, search stays right-aligned */
+.select-prompt-library-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.select-prompt-library-header .select-prompt-library-heading,
+.select-prompt-library-header .select-prompt-library-heading [class*='Text'] {
+  margin-bottom: 0;
+}
+
+.select-prompt-library-search {
+  margin-left: auto;
+}
+
 /* Select Prompt Library Heading Styling */
 .select-prompt-library-heading {
   font-weight: 600;
