@@ -547,10 +547,20 @@ const TestCases: React.FC<TestCasesProps> = ({
         header: 'Name',
         enableSorting: true,
         cell: ({ row, getValue }) => {
-          const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_URL?.replace(/\/$/, '');
+          // Same host resolution as the Prompt Libraries cards: NEXT_PUBLIC_DATASPACE_URL
+          // isn't passed to the build, so it rendered as "undefined/datasets/<id>" (#467).
+          let host = process.env.NEXT_PUBLIC_DATASPACE_HOST?.replace(/\/$/, '');
+          if (!host && process.env.NEXT_PUBLIC_AI_MAKER_URL) {
+            try {
+              host = new URL(process.env.NEXT_PUBLIC_AI_MAKER_URL).origin;
+            } catch {
+              host = process.env.NEXT_PUBLIC_AI_MAKER_URL.replace(/\/$/, '');
+            }
+          }
+          if (!host) return getValue<string>();
           return (
             <a
-              href={`${dataspaceUrl}/datasets/${row.original.id}`}
+              href={`${host}/datasets/${row.original.id}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary-purple hover:underline"
