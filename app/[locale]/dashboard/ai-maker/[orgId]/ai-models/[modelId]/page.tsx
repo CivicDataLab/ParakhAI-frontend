@@ -17,12 +17,13 @@ import {
   toast,
   Tooltip,
 } from 'opub-ui';
+import MediaImage from '@/components/common/MediaImage';
 import RichTextRenderer from '@/components/common/RichTextRenderer';
 import { useGraphQL } from '@/lib/graphql-client';
 import { isDeprecatedLifecycle } from '@/utils/lifecycle';
 import { getEvaluationStatusColor } from '@/utils/status-colors';
 import { EVALUATION_STATUS, getAuditTypeLabel, getEvaluationModeLabel } from '@/constants';
-import { formatStatusLabel } from '@/utils';
+import { formatStatusLabel, mediaUrl } from '@/utils';
 import AuditorInvitation from '../../evaluations/components/AuditorInvitation';
 import ModelSelectionModal from '../../evaluations/components/ModelSelectionModal';
 import { useOrganization } from '../../OrganizationContext';
@@ -158,8 +159,6 @@ const providerLabels: Record<string, string> = {
   CUSTOM: 'Custom API',
   HUGGINGFACE: 'HuggingFace',
 };
-
-const dataspaceUrl = process.env.NEXT_PUBLIC_DATASPACE_API_URL || '';
 
 const formatEvaluationDate = (dateString: string | null) => {
   if (!dateString) return '--';
@@ -587,8 +586,8 @@ const ModelDetailPage = () => {
                   <div className="rounded-lg border border-gray-200 p-2 lg:block">
                     <div className="flex justify-center items-center h-[100px]">
                       {organization.logoUrl ? (
-                        <Image
-                          src={`${dataspaceUrl.replace(/\/$/, "")}${organization.logoUrl}`}
+                        <MediaImage
+                          src={mediaUrl(organization.logoUrl)}
                           alt={organization.name}
                           width={100}
                           height={100}

@@ -43,12 +43,14 @@ const EvaluationDetail = ({
     isSavingEvaluation,
     isGeneratingReport,
     isDownloading,
+    isDownloadingExport,
     showSubmitRecommendationModal,
     setEditableName,
     setShowSubmitRecommendationModal,
     saveEvaluationName,
     submitBulkReview,
     handlePrimaryActionClick,
+    downloadExport,
     computed,
   } = useEvaluationDetail(evaluationId, orgId);
 
@@ -206,7 +208,9 @@ const EvaluationDetail = ({
             isSavingEvaluation={isSavingEvaluation}
             isGeneratingReport={isGeneratingReport}
             isDownloading={isDownloading}
+            isDownloadingExport={isDownloadingExport}
             onPrimaryAction={handlePrimaryActionClick}
+            onDownloadExport={downloadExport}
             backLink={backLink}
             backLinkText={backLinkText}
           />

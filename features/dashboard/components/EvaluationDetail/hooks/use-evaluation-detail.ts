@@ -36,6 +36,7 @@ export type UseEvaluationDetailReturn = {
   isSavingEvaluation: boolean;
   isGeneratingReport: boolean;
   isDownloading: boolean;
+  isDownloadingExport: boolean;
   isEvaluationSaved: boolean;
   showSubmitRecommendationModal: boolean;
   // setters
@@ -46,6 +47,7 @@ export type UseEvaluationDetailReturn = {
   submitBulkReview: (recommendation: string) => Promise<void>;
   generateReport: () => Promise<void>;
   downloadReport: () => Promise<void>;
+  downloadExport: () => Promise<void>;
   handlePrimaryActionClick: () => void;
   // computed
   computed: {
@@ -237,6 +239,7 @@ export function useEvaluationDetail(
     isSavingEvaluation: actions.isSavingEvaluation,
     isGeneratingReport: actions.isGeneratingReport,
     isDownloading: actions.isDownloading,
+    isDownloadingExport: actions.isDownloadingExport,
     isEvaluationSaved,
     showSubmitRecommendationModal: actions.showSubmitRecommendationModal,
     // setters
@@ -247,6 +250,7 @@ export function useEvaluationDetail(
     submitBulkReview: actions.submitBulkReview,
     generateReport: actions.generateReport,
     downloadReport: actions.downloadReport,
+    downloadExport: actions.downloadExport,
     handlePrimaryActionClick,
     // computed
     computed: {

@@ -21,6 +21,7 @@ module.exports = {
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './lib/**/*.{js,ts,jsx,tsx}',
+    './features/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     // Spacing tokens - controls padding, margin, gap utilities
