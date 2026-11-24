@@ -38,7 +38,7 @@ export default function Sidebar({
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <Sheet.Content className={"p-4 overflow-y-auto overflow-x-visible"}>
+      <Sheet.Content title="Navigation menu" className={"p-4 overflow-y-auto overflow-x-visible"}>
         <div className="flex flex-row justify-between">
           <div className="flex-1">
             {data.map((item, index) => {
