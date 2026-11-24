@@ -1,8 +1,23 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { Button, Icon, Text } from "opub-ui";
-import { IconDownload } from "@tabler/icons-react";
+import Link from 'next/link';
+import { IconArrowLeft, IconDownload, IconFileTypePdf, IconFileZip } from '@tabler/icons-react';
+import { Button, Icon, Menu, Text } from 'opub-ui';
+
+// Shared size/shape so the action buttons line up in one row.
+// Tailwind preflight is off in this project, so borders need an explicit `border-solid`.
+const ACTION_BUTTON =
+  'min-h-[48px] px-6 py-3 rounded-[8px] !font-bold !text-base [&_svg]:shrink-0 disabled:!opacity-60 disabled:!cursor-not-allowed';
+// The `!` overrides beat opub-ui's button styles. Icons need `stroke` overridden, not `color`:
+// opub-ui's Icon passes `color="var(--icon-default)"` to the tabler icon, which writes it into
+// the SVG's stroke attribute (grey), and CSS `stroke` beats that attribute.
+// Primary: filled purple, for the main action (Download / Submit).
+const PRIMARY_BUTTON =
+  '!bg-primaryPurple2 hover:!bg-[#3a1a99] !border !border-solid !border-primaryPurple2 !text-white [&_*]:!text-white [&_svg]:![stroke:#ffffff]';
+// Ghost (Back to List): no background or border, regular weight, light fill on hover.
+// Same height and padding as ACTION_BUTTON so it lines up with the Download button.
+const GHOST_BUTTON =
+  'min-h-[48px] px-6 py-3 rounded-[8px] text-base font-regular bg-transparent text-primaryPurple2 hover:bg-[#F1EEFF] [&_svg]:shrink-0';
 
 type EvaluationActionsProps = {
   showDownloadActions: boolean;
@@ -12,7 +27,9 @@ type EvaluationActionsProps = {
   isSavingEvaluation: boolean;
   isGeneratingReport: boolean;
   isDownloading: boolean;
+  isDownloadingExport: boolean;
   onPrimaryAction: () => void;
+  onDownloadExport: () => void;
   backLink: string;
   backLinkText: string;
 };
@@ -25,76 +42,99 @@ const EvaluationActions = ({
   isSavingEvaluation,
   isGeneratingReport,
   isDownloading,
+  isDownloadingExport,
   onPrimaryAction,
+  onDownloadExport,
   backLink,
   backLinkText,
 }: EvaluationActionsProps) => {
-  const primaryLabel = isSavingEvaluation
-    ? "Submitting..."
-    : showDownloadActions
-      ? isDownloading
-        ? "Downloading..."
-        : isGeneratingReport
-          ? "Generating Report..."
-          : isReportReady
-            ? "Download Report"
-            : "Generate Report"
-      : "Submit";
+  // Submit button (shown before the evaluation is finalised).
+  const showSubmitButton = !isPlaygroundEvaluation;
+  const isSubmitDisabled = isSavingEvaluation || !isBulkPendingReview;
+  const submitLabel = isSavingEvaluation ? 'Submitting...' : 'Submit';
 
-  const isPrimaryDisabled =
-    isSavingEvaluation ||
-    isGeneratingReport ||
-    (showDownloadActions ? isDownloading : !isBulkPendingReview);
-
-  const showPrimaryButton = !isPlaygroundEvaluation || showDownloadActions;
+  // Download menu: the PDF report and the evaluation data share one button. The ZIP is built
+  // on the fly, so it stays available while the PDF is generating; each item is disabled
+  // only while its own download is in flight.
+  const isPdfBusy = isGeneratingReport || isDownloading;
+  const downloadLabel = isGeneratingReport
+    ? 'Generating Report...'
+    : isDownloading || isDownloadingExport
+      ? 'Downloading...'
+      : 'Download';
 
   return (
-    <div className="flex flex-col items-center gap-4 pt-8">
+    <div className="flex w-full flex-col items-center gap-3 pt-4">
       {!showDownloadActions &&
         !isPlaygroundEvaluation &&
         isBulkPendingReview &&
         !isSavingEvaluation && (
           <Text variant="bodyMd" color="critical" className="text-center">
-            Ready to submit? Submitting will finalise this evaluation. This
-            action cannot be undone.
+            Ready to submit? Submitting will finalise this evaluation. This action cannot be undone.
           </Text>
         )}
 
-      {showPrimaryButton && (
-        <Button
-          kind="secondary"
-          disabled={isPrimaryDisabled}
-          icon={
-            showDownloadActions && isReportReady ? (
-              <Icon source={IconDownload} size={18} className="text-white" />
-            ) : undefined
-          }
-          onClick={onPrimaryAction}
-          className={
-            showDownloadActions && isReportReady
-              ? "bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base [&_svg]:text-white [&_svg]:fill-white [&_svg]:stroke-white [&_*]:text-white [&_*]:fill-white [&_*]:stroke-white"
-              : "bg-primaryPurple2 hover:bg-[#6849EE] hover:!bg-[#6849EE] text-white hover:text-white hover:!text-white px-8 py-3 rounded-[8px] font-bold !font-bold text-base !text-base"
-          }
-        >
-          {primaryLabel}
-        </Button>
-      )}
+      <div className="flex w-full flex-wrap items-center justify-between gap-3">
+        <Link href={backLink} className={`${GHOST_BUTTON} inline-flex items-center gap-2`}>
+          <IconArrowLeft size={18} stroke={2} style={{ color: 'var(--primary-purple-color2)' }} />
+          {backLinkText}
+        </Link>
+
+        {showDownloadActions ? (
+          <Menu
+            align="end"
+            side="bottom"
+            sideOffset={6}
+            closeOnSelect
+            trigger={
+              <Button
+                kind="secondary"
+                icon={<Icon source={IconDownload} size={18} />}
+                disclosure
+                className={`${ACTION_BUTTON} ${PRIMARY_BUTTON}`}
+              >
+                {downloadLabel}
+              </Button>
+            }
+            items={[
+              {
+                content: isReportReady ? 'Report (PDF)' : 'Generate report (PDF)',
+                helpText: isReportReady
+                  ? 'Summary with sampled issues'
+                  : 'Creates the report. Download it once it is ready.',
+                icon: IconFileTypePdf,
+                disabled: isPdfBusy,
+                onAction: onPrimaryAction,
+              },
+              {
+                content: 'Evaluation data (ZIP)',
+                helpText: 'Every prompt and result, as JSON',
+                icon: IconFileZip,
+                disabled: isDownloadingExport,
+                onAction: onDownloadExport,
+              },
+            ]}
+          />
+        ) : (
+          showSubmitButton && (
+            <Button
+              kind="secondary"
+              disabled={isSubmitDisabled}
+              onClick={onPrimaryAction}
+              className={`${ACTION_BUTTON} ${PRIMARY_BUTTON}`}
+            >
+              {submitLabel}
+            </Button>
+          )
+        )}
+      </div>
 
       {isGeneratingReport && (
         <Text variant="bodySm" className="text-gray-600 text-center">
-          Your report is being generated. This button will enable automatically
-          when it is ready.
+          Your report is being generated. You can download it from the Download menu once it is
+          ready.
         </Text>
       )}
-
-      <Link href={backLink}>
-        <Button
-          kind="secondary"
-          className="px-8 py-3 rounded-[8px] font-bold text-base"
-        >
-          {backLinkText}
-        </Button>
-      </Link>
     </div>
   );
 };
