@@ -181,7 +181,7 @@ const parseDomainOptions = (domains: unknown[]): SelectOption[] => {
     }
   });
 
-  return options;
+  return options.sort((a, b) => a.label.localeCompare(b.label));
 };
 
 interface ModelSelectionModalProps {
@@ -562,10 +562,12 @@ const ModelSelectionModal = ({
                       className={
                         lockModelSelection ? 'mode-of-evaluation-select-disabled' : undefined
                       }
-                      options={aiModels.map((model) => ({
-                        value: model.id,
-                        label: model.displayName || model.name,
-                      }))}
+                      options={aiModels
+                        .map((model) => ({
+                          value: model.id,
+                          label: model.displayName || model.name,
+                        }))
+                        .sort((a, b) => a.label.localeCompare(b.label))}
                       value={selectedModelId || ''}
                       onChange={(value) => {
                         setSelectedModelId(value);

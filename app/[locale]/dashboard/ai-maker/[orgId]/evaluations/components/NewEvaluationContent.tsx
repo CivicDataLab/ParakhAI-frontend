@@ -417,6 +417,8 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
           }
         });
 
+        options.sort((a, b) => a.label.localeCompare(b.label));
+
         setEvaluationScopeOptions(options);
       } catch {
         setEvaluationScopeOptions([]);
@@ -2137,10 +2139,12 @@ const NewEvaluationContent: React.FC<NewEvaluationContentProps> = ({
                     <Select
                       name="modelSelect"
                       label="Select AI Model"
-                      options={aiModels.map((model) => ({
-                        value: model.id,
-                        label: model.displayName || model.name,
-                      }))}
+                      options={aiModels
+                        .map((model) => ({
+                          value: model.id,
+                          label: model.displayName || model.name,
+                        }))
+                        .sort((a, b) => a.label.localeCompare(b.label))}
                       value={selectedModelId || ''}
                       onChange={(value) => {
                         setSelectedModelId(value);
